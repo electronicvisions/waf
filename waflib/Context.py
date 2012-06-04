@@ -528,10 +528,28 @@ class Context(ctx):
 
 	def load_special_tools(self, var, ban=[]):
 		global waf_dir
-		lst = self.root.find_node(waf_dir).find_node('waflib/extras').ant_glob(var)
-		for x in lst:
-			if not x.name in ban:
-				load_tool(x.name.replace('.py', ''))
+		if os.path.isdir(waf_dir):
+			lst = self.root.find_node(waf_dir).find_node('waflib/extras').ant_glob(var)
+			for x in lst:
+				if not x.name in ban:
+					load_tool(x.name.replace('.py', ''))
+		else:
+			from zipfile import PyZipFile
+			import re
+			waflibs = PyZipFile(waf_dir)
+			lst = waflibs.namelist()
+			for x in lst:
+				if not re.match("waflib/extras/%s" % var.replace("*", ".*"), var):
+					continue
+				f = os.path.basename(x)
+				doban = False
+				for b in ban:
+					r = b.replace("*", ".*")
+					if re.match(b, f):
+						doban = True
+				if not doban:
+					f = f.replace('.py', '')
+					load_tool(f)
 
 cache_modules = {}
 """
@@ -595,21 +613,17 @@ def load_tool(tool, tooldir=None):
 			for d in tooldir:
 				sys.path.remove(d)
 	else:
-		global waf_dir
-		try:
-			os.stat(os.path.join(waf_dir, 'waflib', 'extras', tool + '.py'))
-		except OSError:
+		for x in ('waflib.extras.%s', 'waflib.Tools.%s', 'waflib.%s', '%s'):
 			try:
-				os.stat(os.path.join(waf_dir, 'waflib', 'Tools', tool + '.py'))
-			except OSError:
-				d = tool # user has messed with sys.path
-			else:
-				d = 'waflib.Tools.%s' % tool
-		else:
-			d = 'waflib.extras.%s' % tool
-
-		__import__(d)
-		ret = sys.modules[d]
+				__import__(x % tool)
+				break
+			except ImportError as e:
+				if not e.args[0].endswith(tool):
+					raise
+				x = None
+		if x is None: # raise an exception
+			__import__(tool)
+		ret = sys.modules[x % tool]
 		Context.tools[tool] = ret
 		return ret
 
