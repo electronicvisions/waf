@@ -14,6 +14,7 @@ from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
 from pprint import pprint
 
 from ConfigParser import RawConfigParser
+from StringIO import StringIO
 
 def gitviz(name, *init):
     return ('git', 'git@gitviz.kip.uni-heidelberg.de:{name}'.format(name = name)) + init
@@ -126,7 +127,9 @@ class MR(object):
         return parser
 
     def save_config(self, parser):
-        parser.write(self.config)
+        tmp = StringIO()
+        parser.write(tmp)
+        self.config.write(tmp.getvalue())
 
     def project_node(self, name, branch):
         """returns a tuple of project name (for the mr config) and node representing the project folder"""
@@ -138,6 +141,12 @@ class MR(object):
     def call_mr(self, *args, **kw):
         #if not os.path.exists('mr'):
         #    raise IOError('mr does not exist (maybe non-distcleaned builds in components?)')
+        
+        # mr bug?
+        env = kw.get('env', os.environ.copy())
+        if args and args[0] == 'register':
+            env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
+
 
         cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base) ]
         cmd.extend(args)
@@ -145,6 +154,7 @@ class MR(object):
         kw['output'] = Context.BOTH
         kw['cwd']    = self.base.abspath()
         kw['quiet']  = Context.BOTH
+        kw['env']    = env
         stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         return cmd, stdout, stderr
 
@@ -174,25 +184,52 @@ class MR(object):
         if self.has_project(node):
             return path
 
+        repo = name
+        if branch:
+            repo += " (branch: " + branch + ")"
         # Check if the project folder exists (in this case the repo)
         # should be checked out there
         if os.path.isdir(node.abspath()):
-            self.call_mr('register', node.name)
+            self.ctx.start_msg("Register existing repository %s" % repo)
+            self.call_mr('register', path)
         else:
+            self.ctx.start_msg("Checkout repository %s" % repo)
             co = self.db.build_checkout_cmd(name, branch, node.name)
             args = [ 'config', node.name, co]
             self.call_mr(*args)
             self.call_mr('checkout')
+
+        self.ctx.end_msg("done")
         self.update_projects()
         return path
 
-    def remove_project(self, name, branch = None):
-        assert(false)
-        path = self.module_path(name, folder)
-        parser = self.parseConfig()
-        parser.remove_section(path)
-        self.writeConfig(parser)
+    def remove_projects(self, projects):
+        parser = self.load_config()
+        for p in projects:
+            name, branch = p
+            node = self.project_node(name, branch)
+            if not self.has_project(node):
+                continue
+
+            repo = name
+            if branch:
+                repo += " (branch: " + branch + ")"
+
+            self.ctx.start_msg("Ignoring from now on repository %s" % repo)
+            parser.remove_section(node.name)
+
+            self.ctx.end_msg(repo)
+
+        self.save_config(parser)
         self.update_projects()
+
+    def get_projects(self):
+        def f(p):
+            n = self.modules.find_dir(p)
+            assert(n)
+            name = n.path_from(self.modules).split('__') + [None]
+            return tuple(name[:2])
+        return [ f(p)for p in self.projects ]
 
 
 class MRContext(Build.BuildContext):
