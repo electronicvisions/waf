@@ -9,7 +9,7 @@ A :py:class:`waflib.Dependencies.DependenciesContext` instance is created when `
 """
 
 import os, shlex, sys, time
-from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
+from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors, Node
 
 from pprint import pprint
 
@@ -93,16 +93,22 @@ class Repo_DB(object):
 class MR(object):
     MR         = "mr"
     MR_CONFIG  = "repo.conf"
+    MR_LOG     = "repo.log"
     MODULE_DIR = "modules"
 
-    def __init__(self, ctx):
+    def __init__(self, ctx, clear_log = False):
         self.ctx = ctx
         self.init_dirs()
 
         # TODO make it better
-        self.mr_tool = self.base.find_or_declare(self.MR)
+        self.mr_tool = self.base.find_node(self.MR)
         self.db = Repo_DB()
         self.update_projects()
+        if clear_log:
+            self.log.write("")
+
+        self.to_log("Found managed repository: " + str(self.get_projects() ))
+        self.check_repos()
 
     def init_dirs(self):
         # Find top node
@@ -119,6 +125,10 @@ class MR(object):
         self.modules = top.make_node(self.MODULE_DIR)
         self.modules.mkdir()
         self.config = self.modules.make_node(self.MR_CONFIG)
+        self.log = self.modules.make_node(self.MR_LOG)
+
+    def to_log(self, msg):
+        self.log.write(msg, 'a')
 
     def load_config(self):
         """Load mr config file, returns an empty config if the file does not exits"""
@@ -141,7 +151,7 @@ class MR(object):
     def call_mr(self, *args, **kw):
         #if not os.path.exists('mr'):
         #    raise IOError('mr does not exist (maybe non-distcleaned builds in components?)')
-        
+
         # mr bug?
         env = kw.get('env', os.environ.copy())
         if args and args[0] == 'register':
@@ -151,11 +161,25 @@ class MR(object):
         cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base) ]
         cmd.extend(args)
 
+        self.to_log('-' * 80 + '\n' + str(cmd) + ':\n')
+
         kw['output'] = Context.BOTH
         kw['cwd']    = self.base.abspath()
         kw['quiet']  = Context.BOTH
         kw['env']    = env
-        stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
+        try:
+            stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
+        except Errors.WafError as e:
+            msg = 'stdout:\n"' + getattr(e, 'stdout', str(e))
+            msg += '\nstderr:\n"' + getattr(e, 'stderr', "") + '"\n'
+            self.to_log(msg)
+            self.ctx.to_log(msg)
+            raise e
+
+        msg = 'stdout:\n"' + stdout + '"\n'
+        msg += 'stderr:\n"' + stderr + '"\n'
+        self.to_log(msg)
+
         return cmd, stdout, stderr
 
     def update_projects(self):
@@ -190,24 +214,33 @@ class MR(object):
         # Check if the project folder exists (in this case the repo)
         # should be checked out there
         if os.path.isdir(node.abspath()):
-            self.ctx.start_msg("Register existing repository %s" % repo)
+            Logs.pprint('BLACK', 'Register existing repository %s:' % repo)
             self.call_mr('register', path)
         else:
-            self.ctx.start_msg("Checkout repository %s" % repo)
+            Logs.pprint('BLACK', 'Checkout repository %s:' % repo)
             co = self.db.build_checkout_cmd(name, branch, node.name)
             args = [ 'config', node.name, co]
             self.call_mr(*args)
             self.call_mr('checkout')
 
-        self.ctx.end_msg("done")
+        Logs.pprint('GREEN', 'done')
         self.update_projects()
         return path
+
+    def check_repos(self):
+        not_existing_repos = []
+        for p in self.projects:
+            n = self.modules.find_dir(p)
+            if n is None:
+                not_existing_repos.append(self.split_path(p))
+        self.remove_projects(not_existing_repos)
 
     def remove_projects(self, projects):
         parser = self.load_config()
         for p in projects:
             name, branch = p
             node = self.project_node(name, branch)
+            print node
             if not self.has_project(node):
                 continue
 
@@ -215,10 +248,8 @@ class MR(object):
             if branch:
                 repo += " (branch: " + branch + ")"
 
-            self.ctx.start_msg("Ignoring from now on repository %s" % repo)
+            Logs.pprint('BLACK', "Remove repository %s from repo.conf" % repo)
             parser.remove_section(node.name)
-
-            self.ctx.end_msg(repo)
 
         self.save_config(parser)
         self.update_projects()
@@ -227,8 +258,14 @@ class MR(object):
         def f(p):
             n = self.modules.find_dir(p)
             assert(n)
-            name = n.path_from(self.modules).split('__') + [None]
-            return tuple(name[:2])
+            return self.split_path(n.path_from(self.modules))
+
+    @staticmethod
+    def split_path(name):
+        if isinstance(name, Node.Node):
+            name = name.name
+        tmp = name.split('__') + [None]
+        return tmp[0], tmp[1]
         return [ f(p)for p in self.projects ]
 
 
