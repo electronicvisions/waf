@@ -109,7 +109,7 @@ class MR(object):
         self.mr_print('commands are logged to "%s"' % self.log.path_from(self.base))
 
         self.init_mr()
-        self.mr_print("Found managed repository: " + str(self.get_projects() ))
+        self.mr_print("Found managed repositories: " + str(self.pretty_projects() ))
 
     def init_dirs(self):
         # Find top node
@@ -144,9 +144,9 @@ class MR(object):
     def mr_log(self, msg):
         self.log.write(msg, 'a')
 
-    def mr_print(self, msg, color = None):
+    def mr_print(self, msg, color = None, sep = '\n'):
         self.mr_log(msg)
-        Logs.pprint(color if color else self.LOG_COLOR, msg)
+        Logs.pprint(color if color else self.LOG_COLOR, msg, sep = sep)
 
     def load_config(self):
         """Load mr config file, returns an empty config if the file does not exits"""
@@ -228,7 +228,7 @@ class MR(object):
             self.mr_print('Register existing repository %s:' % repo)
             self.call_mr('register', path)
         else:
-            self.mr_print('Trying to checkout repository %s:' % repo)
+            self.mr_print('Trying to checkout repository %s:' % repo, sep = '')
             co = self.db.build_checkout_cmd(name, branch, node.name)
             args = [ 'config', node.name, co]
             self.call_mr(*args)
@@ -258,6 +258,15 @@ class MR(object):
 
     def get_projects(self):
         return self.projects
+
+    def pretty_projects(self):
+        names = []
+        for p in self.projects:
+            name, branch = p
+            if branch:
+                name += " {" + branch + "}"
+            names.append(name)
+        return ", ".join(names)
 
     @staticmethod
     def split_path(name):
