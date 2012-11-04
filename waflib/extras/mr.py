@@ -95,20 +95,21 @@ class MR(object):
     MR_CONFIG  = "repo.conf"
     MR_LOG     = "repo.log"
     MODULE_DIR = "modules"
+    LOG_COLOR  = "BLUE"
 
     def __init__(self, ctx, clear_log = False):
         self.ctx = ctx
         self.init_dirs()
-
-        # TODO make it better
-        self.mr_tool = self.base.find_node(self.MR)
+        self.find_mr()
         self.db = Repo_DB()
-        self.update_projects()
         if clear_log:
             self.log.write("")
 
-        self.to_log("Found managed repository: " + str(self.get_projects() ))
-        self.check_repos()
+        self.mr_print('Using "%s" to manage repositories' % self.mr_tool.abspath())
+        self.mr_print('commands are logged to "%s"' % self.log.path_from(self.base))
+
+        self.init_mr()
+        self.mr_print("Found managed repository: " + str(self.get_projects() ))
 
     def init_dirs(self):
         # Find top node
@@ -127,8 +128,25 @@ class MR(object):
         self.config = self.modules.make_node(self.MR_CONFIG)
         self.log = self.modules.make_node(self.MR_LOG)
 
-    def to_log(self, msg):
+    def find_mr(self):
+        # TODO make it better
+        self.mr_tool = self.base.find_node(self.MR)
+
+    def init_mr(self):
+        self.update_projects()
+        not_on_filesystem = []
+        for p in self.projects:
+            n = self.repo_node(*p)
+            if not os.path.isdir(n.abspath()):
+                not_on_filesystem.append(p)
+        self.remove_projects(not_on_filesystem)
+
+    def mr_log(self, msg):
         self.log.write(msg, 'a')
+
+    def mr_print(self, msg, color = None):
+        self.mr_log(msg)
+        Logs.pprint(color if color else self.LOG_COLOR, msg)
 
     def load_config(self):
         """Load mr config file, returns an empty config if the file does not exits"""
@@ -140,13 +158,6 @@ class MR(object):
         tmp = StringIO()
         parser.write(tmp)
         self.config.write(tmp.getvalue())
-
-    def project_node(self, name, branch):
-        """returns a tuple of project name (for the mr config) and node representing the project folder"""
-        if branch:
-            name = name + '__' + branch
-        node = self.modules.make_node(name)
-        return node
 
     def call_mr(self, *args, **kw):
         #if not os.path.exists('mr'):
@@ -161,7 +172,7 @@ class MR(object):
         cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base) ]
         cmd.extend(args)
 
-        self.to_log('-' * 80 + '\n' + str(cmd) + ':\n')
+        self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
 
         kw['output'] = Context.BOTH
         kw['cwd']    = self.base.abspath()
@@ -170,24 +181,25 @@ class MR(object):
         try:
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
-            msg = 'stdout:\n"' + getattr(e, 'stdout', str(e))
-            msg += '\nstderr:\n"' + getattr(e, 'stderr', "") + '"\n'
-            self.to_log(msg)
-            self.ctx.to_log(msg)
+            stdout = getattr(e, 'stdout', None)
+            stderr = getattr(e, 'stdout', None)
+            self.mr_log('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
+            if stderr:
+                e.msg += ':\n\n' + stderr
             raise e
 
         msg = 'stdout:\n"' + stdout + '"\n'
         msg += 'stderr:\n"' + stderr + '"\n'
-        self.to_log(msg)
-
+        self.mr_log(msg)
         return cmd, stdout, stderr
 
     def update_projects(self):
-        self.projects = self.load_config().sections()
+        parser = self.load_config()
+        self.projects = [ self.split_path(p) for p in parser.sections() ]
 
     def register_top(self):
         master = '..'
-        if master in self.projects:
+        if (master, None) in self.projects:
             return
         try:
             self.call_mr('register', master)
@@ -197,12 +209,10 @@ class MR(object):
         self.update_projects()
 
     def has_project(self, node, branch = None):
-        if isinstance(node, basestring):
-            node = self.project_node(node, branch)
-        return node.name in self.projects
+        return (node.name, branch) in self.projects
 
     def checkout_project(self, name, branch = None):
-        node = self.project_node(name, branch)
+        node = self.repo_node(name, branch)
         path = node.path_from(self.base)
 
         if self.has_project(node):
@@ -211,36 +221,28 @@ class MR(object):
         repo = name
         if branch:
             repo += " (branch: " + branch + ")"
-        # Check if the project folder exists (in this case the repo)
-        # should be checked out there
+
+        # Check if the project folder exists, in this case the repo 
+        # needs only to be registered
         if os.path.isdir(node.abspath()):
-            Logs.pprint('BLACK', 'Register existing repository %s:' % repo)
+            self.mr_print('Register existing repository %s:' % repo)
             self.call_mr('register', path)
         else:
-            Logs.pprint('BLACK', 'Checkout repository %s:' % repo)
+            self.mr_print('Trying to checkout repository %s:' % repo)
             co = self.db.build_checkout_cmd(name, branch, node.name)
             args = [ 'config', node.name, co]
             self.call_mr(*args)
             self.call_mr('checkout')
 
-        Logs.pprint('GREEN', 'done')
+        self.mr_print('done', 'GREEN')
         self.update_projects()
         return path
-
-    def check_repos(self):
-        not_existing_repos = []
-        for p in self.projects:
-            n = self.modules.find_dir(p)
-            if n is None:
-                not_existing_repos.append(self.split_path(p))
-        self.remove_projects(not_existing_repos)
 
     def remove_projects(self, projects):
         parser = self.load_config()
         for p in projects:
             name, branch = p
-            node = self.project_node(name, branch)
-            print node
+            node = self.repo_node(name, branch)
             if not self.has_project(node):
                 continue
 
@@ -248,17 +250,14 @@ class MR(object):
             if branch:
                 repo += " (branch: " + branch + ")"
 
-            Logs.pprint('BLACK', "Remove repository %s from repo.conf" % repo)
+            self.mr_print("Remove repository %s from repo.conf" % repo)
             parser.remove_section(node.name)
 
         self.save_config(parser)
         self.update_projects()
 
     def get_projects(self):
-        def f(p):
-            n = self.modules.find_dir(p)
-            assert(n)
-            return self.split_path(n.path_from(self.modules))
+        return self.projects
 
     @staticmethod
     def split_path(name):
@@ -267,6 +266,13 @@ class MR(object):
         tmp = name.split('__') + [None]
         return tmp[0], tmp[1]
         return [ f(p)for p in self.projects ]
+
+    def repo_node(self, name, branch):
+        """returns a a node representing the repo folder"""
+        if branch:
+            name = name + '__' + branch
+        node = self.modules.make_node(name)
+        return node
 
 
 class MRContext(Build.BuildContext):
