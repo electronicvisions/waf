@@ -54,7 +54,7 @@ db = {
     'ztl':                         ('git', 'https://github.com/ignatz/ztl.git'),
     'rant':                        ('git', 'https://github.com/ignatz/rant.git'),
     'odeint-v2':                   ('git', 'https://github.com/headmyshoulder/odeint-v2.git'),
-    'ztl_local':                   ('git', '/home/ckoke/Code/symap2ic/components/ztl'),
+    'ztl_local':                   ('git', '/home/ckoke/Code/symap2ic/components/ztl', 'echo "Hallo"'),
 }
 
 class Repo_DB(object):

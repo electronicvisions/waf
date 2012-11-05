@@ -11,7 +11,7 @@ projects = set()
 project_pathes = []
 
 def options(ctx):
-    global repo_tool 
+    global repo_tool
     repo_tool = mr.MR(ctx, True)
     repo_tool.register_top()
     projects.add( ('..', None) )
