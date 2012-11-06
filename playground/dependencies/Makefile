@@ -14,4 +14,4 @@ clean:
 	$(MAKE) -f $(FILENAME) clean
 	rm -rf $(FILENAME)
 
-.PHONY: clean main
+.PHONY: clean main $(FILENAME)
