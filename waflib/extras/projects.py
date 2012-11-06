@@ -29,15 +29,13 @@ def load_project(ctx, name, branch = None):
 def configure(ctx):
     ctx.recurse(reversed(project_pathes))
 
-def setup(ctx):
-    """Called by Context classes inherited from BuildContext"""
-    ctx.init_dirs()
-    return
-    init(ctx)
-    if isinstance(Build.BuildContext):
-        env = ConfigSet().load(ctx.cache_dir.xyz)
-        m = Utils.to_list(env.MODULES)
-        ctx.add_pre_fun(lambda ctx: ctx.recurse(m))
+@Configure.conf
+def get_repo_tool(ctx):
+    """Makes repo tool instance accessible for Configuartion and BuildContext
+    This allows to use it in the MRContext
+    """
+    assert repo_tool
+    return repo_tool
 
 def patchContextClass(cls, fun):
     old = getattr(cls, fun)

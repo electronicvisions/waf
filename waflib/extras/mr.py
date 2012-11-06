@@ -8,11 +8,11 @@ A :py:class:`waflib.Dependencies.DependenciesContext` instance is created when `
 
 """
 
-import os, shlex, sys, time
+import os, sys
 from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors, Node
-
 from pprint import pprint
 
+import subprocess
 from ConfigParser import RawConfigParser
 from StringIO import StringIO
 
@@ -159,11 +159,8 @@ class MR(object):
         parser.write(tmp)
         self.config.write(tmp.getvalue())
 
-    def call_mr(self, *args, **kw):
-        #if not os.path.exists('mr'):
-        #    raise IOError('mr does not exist (maybe non-distcleaned builds in components?)')
-
-        # mr bug?
+    def format_cmd(self, *args, **kw):
+        """ """
         env = kw.get('env', os.environ.copy())
         if args and args[0] == 'register':
             env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
@@ -174,10 +171,15 @@ class MR(object):
 
         self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
 
-        kw['output'] = Context.BOTH
         kw['cwd']    = self.base.abspath()
-        kw['quiet']  = Context.BOTH
         kw['env']    = env
+        return cmd, kw
+
+
+    def call_mr(self, *args, **kw):
+        cmd, kw = self.format_cmd(*args, **kw)
+        kw['quiet']  = Context.BOTH
+        kw['output'] = Context.BOTH
         try:
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
@@ -289,31 +291,19 @@ class MRContext(Build.BuildContext):
     cmd = 'status'
     def __init__(self, **kw):
         super(MRContext, self).__init__(**kw)
+        print "CREATE MRContext"
 
     def execute(self):
         """
         See :py:func:`waflib.Context.Context.execute`.
         """
-        self.init_dirs()
-        self.restore()
-        if not self.all_envs:
-            self.load_envs()
+        self.mr = self.get_repo_tool()
 
-        self.mr = getattr(self, 'mr', MR(self))
-        args = self.get_args()
-        cmd, stdout, stderr = self.mr.call_mr(*args)
-        if stderr:
-            self.to_log(cmd)
-            self.to_log(stderr)
-
-        self.to_log(stdout)
-        #try:
-        #        conf.cmd_and_log(['which', 'someapp'], output=waflib.Context.BOTH, env=env)
-        #except Exception as e:
-        #        print(e.stdout, e.stderr)
+        cmd, kw = self.mr.format_cmd(*self.get_args())
+        subprocess.call(cmd, **kw)
 
     def get_args(self):
-        return [getattr(self, 'mr_cmd', self.cmd)]
+        return Utils.to_list(getattr(self, 'mr_cmd', self.cmd))
 
 
 class mr_up(MRContext):
