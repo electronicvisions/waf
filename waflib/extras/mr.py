@@ -59,36 +59,91 @@ db = {
 
 class Repo_DB(object):
     db = db
-    co_cmd = {
-        'git' : 'git clone {url} {target}',
-        'svn' : 'svn co {url} {target}',
-    }
 
-    branch_cmd = {
-        'git' : 'git checkout {branch}',
-    }
+    def get_data(self, name):
+        return self.db[name][1:]
 
-    default_branch = {
-        'git' : 'master',
-    }
-
-    def build_checkout_cmd(self, name, branch, target, extra_cmds=[]):
+    def get_type(self, name):
         entry = db[name]
-        vcs, url, init = entry[0], entry[1], list(entry[2:])
+        return entry[0]
 
-        if not branch is None:
-            if target in db:
-                raise AttributeError(
-                        "There is a specific target named '%s', cannot checkout"
-                        "branch '%s' of '%s'" % (target, branch, name) )
-            try:
-                init.append(branch_cmd[vcs].format(branch = branch))
-            except KeyError:
-                raise AttributeError("Branching is not supported by %s." % vcs)
 
-        co_cmd = self.co_cmd[vcs].format(url=url,target=target)
-        cmd = [co_cmd] + init + extra_cmds
+class Project(object):
+    def __init__(self, name, node, branch = None):
+        assert isinstance(name, basestring)
+        assert node
+        self._name = name
+        self._node = node
+        self._branch = branch
+
+    def __eq__(self, another):
+        return self.name == another.name
+
+    def __hash__(self):
+        return hash(self.name)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def branch(self):
+        return self._branch
+
+    def set_branch(self, branch):
+        if self._branch is None:
+            self._branch = branch if branch else self.default_branch
+        else:
+            raise RuntimeError, "branch allready set"
+
+    @property
+    def node(self):
+        return self._node
+
+    @property
+    def real_branch(self):
+        stdout, stderr = self.exec_cmd(self.get_branch_cmd)
+        return stdout
+
+    def path_from(self, modules_dir):
+        return self.node.path_from(modules_dir)
+
+#    def set_real_branch(self):
+#        self.exec_cmd(get_branch_cmd)
+#        return self.get_branch()
+
+    def exec_cmd(self, cmd, **kw):
+        defaults = {
+                'pwd'    : self.node.abspath(),
+                'stdout' : subprocess.PIPE,
+                'stderr' : subprocess.PIPE,
+                }
+        defaults.update(kw)
+        subprocess.check_call(cmd, **defaults)
+        return subprocess.communicate()
+
+
+class GitProject(Project):
+    vcs = 'git'
+    default_branch = 'master'
+
+    def get_branch_cmd(self):
+        return ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
+
+    def get_branch_cmd(self, branch = None):
+         set_branch_cmd = ['git', 'checkout', branch if branch else self.branch]
+
+    def __init__(self, *args, **kw):
+        super(self.__class__, self).__init__(*args, **kw)
+
+    def mr_checkout_cmd(self, base_node, url, init_cmds):
+        path = self.path_from(base_node)
+        cmd = ['git clone {url} {target}'.format(url=url, target=path)]
+        cmd.extend(Utils.to_list(init_cmds))
+        cmd.append(" ".join(self.get_branch_cmd))
+
         return 'checkout=%s' % ";".join(cmd)
+
 
 class MR(object):
     MR         = "mr"
@@ -96,6 +151,11 @@ class MR(object):
     MR_LOG     = "repo.log"
     MODULE_DIR = "modules"
     LOG_COLOR  = "BLUE"
+    LOG_WARN_COLOR  = "ORANGE"
+
+    project_types = {
+            'git' : GitProject
+    }
 
     def __init__(self, ctx, clear_log = False):
         self.ctx = ctx
@@ -113,7 +173,6 @@ class MR(object):
 
     def init_dirs(self):
         # Find top node
-        # TODO place config file to find top node from dependend repositories
         top = None
         if not top:
             top = getattr(self.ctx, 'srcnode', None)
@@ -128,17 +187,22 @@ class MR(object):
         self.config = self.modules.make_node(self.MR_CONFIG)
         self.log = self.modules.make_node(self.MR_LOG)
 
+    def load_projects(self):
+        parser = self.load_config()
+        self.projects = projects = {}
+        for name in parser.sections():
+            projects[name] = self._get_or_create_project(name)
+
     def find_mr(self):
         # TODO make it better
         self.mr_tool = self.base.find_node(self.MR)
 
     def init_mr(self):
-        self.update_projects()
+        self.load_projects()
         not_on_filesystem = []
-        for p in self.projects:
-            n = self.repo_node(*p)
-            if not os.path.isdir(n.abspath()):
-                not_on_filesystem.append(p)
+        for name, p in self.projects.iteritems():
+            if not os.path.isdir(p.node.abspath()):
+                not_on_filesystem.append(name)
         self.remove_projects(not_on_filesystem)
 
     def mr_log(self, msg):
@@ -183,8 +247,8 @@ class MR(object):
         try:
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
-            stdout = getattr(e, 'stdout', None)
-            stderr = getattr(e, 'stdout', None)
+            stdout = getattr(e, 'stdout', "")
+            stderr = getattr(e, 'stdout', "")
             self.mr_log('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
             if stderr:
                 e.msg += ':\n\n' + stderr
@@ -195,96 +259,85 @@ class MR(object):
         self.mr_log(msg)
         return cmd, stdout, stderr
 
-    def update_projects(self):
-        parser = self.load_config()
-        self.projects = [ self.split_path(p) for p in parser.sections() ]
 
     def register_top(self):
+        # TODO we need the name of the master repo...
         master = '..'
-        if (master, None) in self.projects:
+        if master in self.projects:
             return
         try:
             self.call_mr('register', master)
+            self._get_or_create_project(master)
         except Errors.WafError as e:
             if not (hasattr(e, 'stderr') and e.stderr == "mr register: unknown repository type\n"):
                 raise e
-        self.update_projects()
-
-    def has_project(self, node, branch = None):
-        return (node.name, branch) in self.projects
 
     def checkout_project(self, name, branch = None):
-        node = self.repo_node(name, branch)
-        path = node.path_from(self.base)
+        if name in self.projects:
+            p = self.projects[name]
+            if p.branch != branch:
+                raise AttributeError, "Project %s is required with different branches '%s' and '%s'" % (p.name, p.branch, branch)
+            return p.node.path_from(self.base)
 
-        if self.has_project(node):
-            return path
-
-        repo = name
-        if branch:
-            repo += " (branch: " + branch + ")"
+        repo = self.pretty_name(name, branch)
+        p = self._get_or_create_project(name)
+        p.set_branch(branch)
+        path = p.node.path_from(self.base)
 
         # Check if the project folder exists, in this case the repo 
         # needs only to be registered
-        if os.path.isdir(node.abspath()):
+        if os.path.isdir(p.node.abspath()):
             self.mr_print('Register existing repository %s:' % repo)
             self.call_mr('register', path)
         else:
             self.mr_print('Trying to checkout repository %s:' % repo, sep = '')
-            co = self.db.build_checkout_cmd(name, branch, node.name)
-            args = [ 'config', node.name, co]
+            args = ['config', p.name, 
+                    p.mr_checkout_cmd(self.modules, *self.db.get_data(name))]
             self.call_mr(*args)
             self.call_mr('checkout')
 
         self.mr_print('done', 'GREEN')
-        self.update_projects()
         return path
 
     def remove_projects(self, projects):
         parser = self.load_config()
-        for p in projects:
-            name, branch = p
-            node = self.repo_node(name, branch)
-            if not self.has_project(node):
+        removed = []
+        for name in projects:
+            if not name in self.projects:
                 continue
-
-            repo = name
-            if branch:
-                repo += " (branch: " + branch + ")"
-
-            self.mr_print("Remove repository %s from repo.conf" % repo)
-            parser.remove_section(node.name)
+            p = self.projects[name]
+            self.mr_print("Remove repository %s from repo.conf" % p.name)
+            parser.remove_section(p.path_from(self.modules))
+            del self.projects[name]
 
         self.save_config(parser)
-        self.update_projects()
 
     def get_projects(self):
         return self.projects
 
     def pretty_projects(self):
         names = []
-        for p in self.projects:
-            name, branch = p
-            if branch:
-                name += " {" + branch + "}"
-            names.append(name)
+        for name, p in self.projects.iteritems():
+            names.append(self.pretty_name(p.name, p.branch))
         return ", ".join(names)
 
-    @staticmethod
-    def split_path(name):
-        if isinstance(name, Node.Node):
-            name = name.name
-        tmp = name.split('__') + [None]
-        return tmp[0], tmp[1]
-        return [ f(p)for p in self.projects ]
-
-    def repo_node(self, name, branch):
-        """returns a a node representing the repo folder"""
+    def pretty_name(self, name, branch):
         if branch:
-            name = name + '__' + branch
+            name += " {" + branch + "}"
+        return name
+
+    def _repo_node(self, name):
+        """returns a a node representing the repo folder"""
         node = self.modules.make_node(name)
         return node
 
+    def _get_or_create_project(self, name):
+        try:
+            return self.projects[name]
+        except KeyError:
+            vcs = self.db.get_type(name)
+            node = self.modules.make_node(name)
+            return self.project_types[vcs](name = name, node = node)
 
 class MRContext(Build.BuildContext):
     '''lists the targets to execute'''
