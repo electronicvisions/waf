@@ -127,7 +127,7 @@ class GitProject(Project):
     vcs = 'git'
     default_branch = 'master'
 
-    def get_branch_cmd(self):
+    def get_branch(self):
         return ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
 
     def get_branch_cmd(self, branch = None):
