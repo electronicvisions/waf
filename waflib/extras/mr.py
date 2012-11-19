@@ -102,14 +102,14 @@ class Project(object):
 
     @property
     def real_branch(self):
-        stdout, stderr = self.exec_cmd(self.get_branch_cmd)
+        stdout, stderr = self.exec_cmd(self.get_branch_cmd())
         return stdout
 
     def path_from(self, modules_dir):
         return self.node.path_from(modules_dir)
 
 #    def set_real_branch(self):
-#        self.exec_cmd(get_branch_cmd)
+#        self.exec_cmd(get_branch_cmd())
 #        return self.get_branch()
 
     def exec_cmd(self, cmd, **kw):
@@ -131,16 +131,17 @@ class GitProject(Project):
         return ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
 
     def get_branch_cmd(self, branch = None):
-         set_branch_cmd = ['git', 'checkout', branch if branch else self.branch]
+        return ['git', 'checkout', branch if branch else self.branch]
 
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
 
-    def mr_checkout_cmd(self, base_node, url, init_cmds):
+    def mr_checkout_cmd(self, base_node, url, init_cmds=""):
         path = self.path_from(base_node)
         cmd = ['git clone {url} {target}'.format(url=url, target=path)]
+        cmd.append( "cd {target}".format(target=path))
         cmd.extend(Utils.to_list(init_cmds))
-        cmd.append(" ".join(self.get_branch_cmd))
+        cmd.append(" ".join(self.get_branch_cmd()))
 
         return 'checkout=%s' % ";".join(cmd)
 
@@ -205,11 +206,11 @@ class MR(object):
                 not_on_filesystem.append(name)
         self.remove_projects(not_on_filesystem)
 
-    def mr_log(self, msg):
-        self.log.write(msg, 'a')
+    def mr_log(self, msg, sep = "\n"):
+        self.log.write(msg + sep, 'a')
 
     def mr_print(self, msg, color = None, sep = '\n'):
-        self.mr_log(msg)
+        self.mr_log(msg, sep = sep)
         Logs.pprint(color if color else self.LOG_COLOR, msg, sep = sep)
 
     def load_config(self):
@@ -291,7 +292,7 @@ class MR(object):
             self.call_mr('register', path)
         else:
             self.mr_print('Trying to checkout repository %s:' % repo, sep = '')
-            args = ['config', p.name, 
+            args = ['config', p.name,
                     p.mr_checkout_cmd(self.modules, *self.db.get_data(name))]
             self.call_mr(*args)
             self.call_mr('checkout')
