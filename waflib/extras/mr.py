@@ -19,6 +19,7 @@ from StringIO import StringIO
 def gitviz(name, *init):
     return ('git', 'git@gitviz.kip.uni-heidelberg.de:{name}'.format(name = name)) + init
 
+
 db = {
     'symap2ic':                    gitviz('symap2ic'),
     'spikeyhal':                   gitviz('spikeyhal'),
@@ -64,8 +65,7 @@ class Repo_DB(object):
         return self.db[name][1:]
 
     def get_type(self, name):
-        entry = db[name]
-        return entry[0]
+        return self.db[name][0]
 
 
 class Project(object):
@@ -102,7 +102,7 @@ class Project(object):
 
     @property
     def real_branch(self):
-        stdout, stderr = self.exec_cmd(self.get_branch_cmd())
+        stdout, stderr = self.exec_cmd(self.set_branch_cmd())
         return stdout
 
     def path_from(self, modules_dir):
@@ -127,10 +127,10 @@ class GitProject(Project):
     vcs = 'git'
     default_branch = 'master'
 
-    def get_branch(self):
+    def get_branch_cmd(self):
         return ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
 
-    def get_branch_cmd(self, branch = None):
+    def set_branch_cmd(self, branch = None):
         return ['git', 'checkout', branch if branch else self.branch]
 
     def __init__(self, *args, **kw):
@@ -288,7 +288,7 @@ class MR(object):
         # Check if the project folder exists, in this case the repo 
         # needs only to be registered
         if os.path.isdir(p.node.abspath()):
-            self.mr_print('Register existing repository %s:' % repo)
+            self.mr_print('Register existing repository %s:' % repo, sep = '')
             self.call_mr('register', path)
         else:
             self.mr_print('Trying to checkout repository %s:' % repo, sep = '')

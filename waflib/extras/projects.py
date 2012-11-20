@@ -41,7 +41,9 @@ def patchContextClass(cls, fun):
     old = getattr(cls, fun)
     def new(ctx):
         old(ctx)
-        old_projects = set(repo_tool.get_projects()) - projects
+        all_projects = ((name, p.branch) for name, p in repo_tool.get_projects().items())
+        old_projects = set(all_projects) - projects
+        del all_projects
         repo_tool.remove_projects(old_projects)
     setattr(cls, fun, new)
 
