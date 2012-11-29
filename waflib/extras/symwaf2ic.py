@@ -27,7 +27,7 @@ def prelude():
 # Regular Script #
 ##################
 
-from waflib.extras import Context, Logs
+from waflib import Context, Logs
 
 def entry_point():
     Logs.info("Entry point successfully patched.")
