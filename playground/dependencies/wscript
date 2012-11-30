@@ -1,12 +1,9 @@
 
-def options(opt):
-    opt.load("projects")
+# default wscript
+# can be modified/deleted if needed
 
-    opt.load_project('rant')
-    opt.load_project('ztl') #, branch = 'pythonic')
-#    opt.load_project('pest')
-
+def depends(dep):
+    dep._recurse_projects()
 
 def configure(ctx):
-    ctx.load("projects")
     pass

@@ -150,7 +150,8 @@ class MR(object):
     MR         = "mr"
     MR_CONFIG  = "repo.conf"
     MR_LOG     = "repo.log"
-    MODULE_DIR = "modules"
+    # MODULE_DIR = "modules"
+    CFGFOLDER  = "mr_conf"
     LOG_COLOR  = "BLUE"
     LOG_WARN_COLOR  = "ORANGE"
 
@@ -158,9 +159,9 @@ class MR(object):
             'git' : GitProject
     }
 
-    def __init__(self, ctx, clear_log = False):
+    def __init__(self, ctx, top = None, cfg = None, clear_log = False):
         self.ctx = ctx
-        self.init_dirs()
+        self.init_dirs(top, cfg)
         self.find_mr()
         self.db = Repo_DB()
         if clear_log:
@@ -172,9 +173,8 @@ class MR(object):
         self.init_mr()
         self.mr_print("Found managed repositories: " + str(self.pretty_projects() ))
 
-    def init_dirs(self):
+    def init_dirs(self, top, cfg):
         # Find top node
-        top = None
         if not top:
             top = getattr(self.ctx, 'srcnode', None)
         if not top:
@@ -183,10 +183,13 @@ class MR(object):
             self.ctx.fatal("Could not find top dir")
 
         self.base = top
-        self.modules = top.make_node(self.MODULE_DIR)
-        self.modules.mkdir()
-        self.config = self.modules.make_node(self.MR_CONFIG)
-        self.log = self.modules.make_node(self.MR_LOG)
+        if cfg is None:
+            self.cfg_node = top.make_node(self.CONFIG_DIR)
+            self.cfg_node.mkdir()
+        else:
+            self.cfg_node = cfg
+        self.config = self.cfg_node.make_node(self.MR_CONFIG)
+        self.log = self.cfg_node.make_node(self.MR_LOG)
 
     def load_projects(self):
         parser = self.load_config()
@@ -293,7 +296,7 @@ class MR(object):
         else:
             self.mr_print('Trying to checkout repository %s:' % repo, sep = '')
             args = ['config', p.name,
-                    p.mr_checkout_cmd(self.modules, *self.db.get_data(name))]
+                    p.mr_checkout_cmd(self.cfg_node, *self.db.get_data(name))]
             self.call_mr(*args)
             self.call_mr('checkout')
 
@@ -308,7 +311,7 @@ class MR(object):
                 continue
             p = self.projects[name]
             self.mr_print("Remove repository %s from repo.conf" % p.name)
-            parser.remove_section(p.path_from(self.modules))
+            parser.remove_section(p.path_from(self.cfg_node))
             del self.projects[name]
 
         self.save_config(parser)
@@ -329,7 +332,7 @@ class MR(object):
 
     def _repo_node(self, name):
         """returns a a node representing the repo folder"""
-        node = self.modules.make_node(name)
+        node = self.cfg_node.make_node(name)
         return node
 
     def _get_or_create_project(self, name):
@@ -337,7 +340,7 @@ class MR(object):
             return self.projects[name]
         except KeyError:
             vcs = self.db.get_type(name)
-            node = self.modules.make_node(name)
+            node = self.base.make_node(name)
             return self.project_types[vcs](name = name, node = node)
 
 class MRContext(Build.BuildContext):
