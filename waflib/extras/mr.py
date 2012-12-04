@@ -56,7 +56,18 @@ db = {
     'rant':                        ('git', 'https://github.com/ignatz/rant.git'),
     'odeint-v2':                   ('git', 'https://github.com/headmyshoulder/odeint-v2.git'),
     'ztl_local':                   ('git', '/home/ckoke/Code/symap2ic/components/ztl', 'echo "Hallo"'),
+
+    # DEBUGGING
+    'dummy_A':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_A'),
+    'dummy_B':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_B'),
+    'dummy_C':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_C'),
 }
+
+
+def get_repo_tool():
+    # will be set from symwaf2ic
+    pass
+
 
 class Repo_DB(object):
     db = db
@@ -137,11 +148,12 @@ class GitProject(Project):
         super(self.__class__, self).__init__(*args, **kw)
 
     def mr_checkout_cmd(self, base_node, url, init_cmds=""):
-        path = self.path_from(base_node)
+        path = self.node.abspath()
         cmd = ['git clone {url} {target}'.format(url=url, target=path)]
         cmd.append( "cd {target}".format(target=path))
         cmd.extend(Utils.to_list(init_cmds))
-        cmd.append(" ".join(self.get_branch_cmd()))
+        if self.branch != self.default_branch:
+            cmd.append(" ".join(self.set_branch_cmd()))
 
         return 'checkout=%s' % ";".join(cmd)
 
@@ -234,7 +246,7 @@ class MR(object):
             env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
 
 
-        cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base) ]
+        cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base), '-d', self.base.abspath() ]
         cmd.extend(args)
 
         self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
@@ -246,21 +258,23 @@ class MR(object):
 
     def call_mr(self, *args, **kw):
         cmd, kw = self.format_cmd(*args, **kw)
-        kw['quiet']  = Context.BOTH
+        # kw['quiet']  = Context.BOTH
         kw['output'] = Context.BOTH
         try:
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
             stdout = getattr(e, 'stdout', "")
             stderr = getattr(e, 'stdout', "")
-            self.mr_log('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
+            # self.mr_log('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
+            Logs.warn('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
             if stderr:
                 e.msg += ':\n\n' + stderr
             raise e
 
         msg = 'stdout:\n"' + stdout + '"\n'
         msg += 'stderr:\n"' + stderr + '"\n'
-        self.mr_log(msg)
+        # self.mr_log(msg)
+        Logs.info(msg)
         return cmd, stdout, stderr
 
 
@@ -279,7 +293,7 @@ class MR(object):
     def checkout_project(self, name, branch = None):
         if name in self.projects:
             p = self.projects[name]
-            if p.branch != branch:
+            if branch is not None and p.branch != branch:
                 raise AttributeError, "Project %s is required with different branches '%s' and '%s'" % (p.name, p.branch, branch)
             return p.node.path_from(self.base)
 
@@ -294,9 +308,9 @@ class MR(object):
             self.mr_print('Register existing repository %s:' % repo, sep = '')
             self.call_mr('register', path)
         else:
-            self.mr_print('Trying to checkout repository %s:' % repo, sep = '')
+            self.mr_print('Trying to checkout repository %s:\n' % repo, sep = '')
             args = ['config', p.name,
-                    p.mr_checkout_cmd(self.cfg_node, *self.db.get_data(name))]
+                    p.mr_checkout_cmd(self.base, *self.db.get_data(name))]
             self.call_mr(*args)
             self.call_mr('checkout')
 
@@ -311,7 +325,7 @@ class MR(object):
                 continue
             p = self.projects[name]
             self.mr_print("Remove repository %s from repo.conf" % p.name)
-            parser.remove_section(p.path_from(self.cfg_node))
+            parser.remove_section(p.path_from(self.base))
             del self.projects[name]
 
         self.save_config(parser)
@@ -330,10 +344,10 @@ class MR(object):
             name += " {" + branch + "}"
         return name
 
-    def _repo_node(self, name):
-        """returns a a node representing the repo folder"""
-        node = self.cfg_node.make_node(name)
-        return node
+    # def _repo_node(self, name):
+        # """returns a a node representing the repo folder"""
+        # node = self.base.make_node(name)
+        # return node
 
     def _get_or_create_project(self, name):
         try:
@@ -354,7 +368,7 @@ class MRContext(Build.BuildContext):
         """
         See :py:func:`waflib.Context.Context.execute`.
         """
-        self.mr = self.get_repo_tool()
+        self.mr = get_repo_tool()
 
         cmd, kw = self.mr.format_cmd(*self.get_args())
         subprocess.call(cmd, **kw)

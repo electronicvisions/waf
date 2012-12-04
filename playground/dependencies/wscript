@@ -5,5 +5,3 @@
 def depends(dep):
     dep._recurse_projects()
 
-def configure(ctx):
-    pass
