@@ -19,6 +19,7 @@ from waflib.extras import mr
 
 LOCKFILE = ".symwaf2ic.lock"
 CFGFOLDER = ".symwaf2ic"
+FILEPREFIX = ".symwaf2ic"
 
 SETUP_CMD = "setup"
 
@@ -278,7 +279,7 @@ class DependencyContext(Context.Context):
 
         path = storage.repo_tool.checkout_project(project, branch)
         if len(subfolder) > 0:
-            path = os.join(path, subfolder)
+            path = os.path.join(path, subfolder)
         self._add_required_path(path)
 
     def execute(self):
@@ -310,10 +311,17 @@ def distclean(ctx):
     # make sure no other commands are being run
     if not Options.commands:
         shutil.rmtree(os.path.join(os.getcwd(), CFGFOLDER), ignore_errors=True)
-        try:
-            os.remove(os.path.join(os.getcwd(), LOCKFILE))
-        except OSError:
-            pass
+        # try:
+            # os.remove(os.path.join(os.getcwd(), LOCKFILE))
+        # except OSError:
+            # pass
+
+        for f in os.listdir(os.getcwd()):
+            if f.startswith(FILEPREFIX):
+                try:
+                    os.remove(os.path.join(os.getcwd(), f))
+                except OSError:
+                    pass
 
 
 _toplevel_wscript_contents = """
@@ -324,6 +332,9 @@ def depends(dep):
     dep._recurse_projects()
 
 def configure(cfg):
+    pass
+
+def build(bld):
     pass
 
 """

@@ -64,9 +64,8 @@ db = {
 }
 
 
-def get_repo_tool():
-    # will be set from symwaf2ic
-    pass
+# will be set from symwaf2ic
+get_repo_tool = lambda: None
 
 
 class Repo_DB(object):
@@ -148,7 +147,7 @@ class GitProject(Project):
         super(self.__class__, self).__init__(*args, **kw)
 
     def mr_checkout_cmd(self, base_node, url, init_cmds=""):
-        path = self.node.abspath()
+        path = self.node.path_from(base_node)
         cmd = ['git clone {url} {target}'.format(url=url, target=path)]
         cmd.append( "cd {target}".format(target=path))
         cmd.extend(Utils.to_list(init_cmds))
@@ -160,7 +159,8 @@ class GitProject(Project):
 
 class MR(object):
     MR         = "mr"
-    MR_CONFIG  = "repo.conf"
+    # MR_CONFIG  = "repo.conf"
+    MR_CONFIG  = ".symwaf2ic.repo.conf"
     MR_LOG     = "repo.log"
     # MODULE_DIR = "modules"
     CFGFOLDER  = "mr_conf"
@@ -200,7 +200,7 @@ class MR(object):
             self.cfg_node.mkdir()
         else:
             self.cfg_node = cfg
-        self.config = self.cfg_node.make_node(self.MR_CONFIG)
+        self.config = self.base.make_node(self.MR_CONFIG)
         self.log = self.cfg_node.make_node(self.MR_LOG)
 
     def load_projects(self):
@@ -246,7 +246,7 @@ class MR(object):
             env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
 
 
-        cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base), '-d', self.base.abspath() ]
+        cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base)]
         cmd.extend(args)
 
         self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
@@ -305,10 +305,10 @@ class MR(object):
         # Check if the project folder exists, in this case the repo 
         # needs only to be registered
         if os.path.isdir(p.node.abspath()):
-            self.mr_print('Register existing repository %s:' % repo, sep = '')
+            self.mr_print('Register existing repository %s..' % repo, sep = '\n')
             self.call_mr('register', path)
         else:
-            self.mr_print('Trying to checkout repository %s:\n' % repo, sep = '')
+            self.mr_print('Trying to checkout repository %s..' % repo, sep = '\n')
             args = ['config', p.name,
                     p.mr_checkout_cmd(self.base, *self.db.get_data(name))]
             self.call_mr(*args)

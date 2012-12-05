@@ -5,3 +5,8 @@
 def depends(dep):
     dep._recurse_projects()
 
+def configure(cfg):
+    pass
+
+def build(cfg):
+    pass
