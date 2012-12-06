@@ -8,6 +8,8 @@ import sys
 import argparse
 import shutil
 
+import json
+
 import types
 import inspect
 
@@ -23,17 +25,16 @@ from waflib.extras import mr
 
 SYMWAF2IC_VERSION = 1
 
-LOCKFILE = ".symwaf2ic.lock"
-CFGFOLDER = ".symwaf2ic"
 FILEPREFIX = ".symwaf2ic"
+CFGFOLDER = ".symwaf2ic"
+LOCKFILE = FILEPREFIX + ".conf.json"
 
 SETUP_CMD = "setup"
+# upon which commands shall the config be written 
+STORE_CMDS = "setup configure".split()
 
 # items to strip from command line before parsing with own parser
 STRIP_FROM_PARSER = "-h --help".split()
-
-# which cmds should not have their execute patched
-NO_PATCH_CMDS = "dependeny_resolution".split()
 
 
 ##############################
@@ -107,7 +108,7 @@ def patch_distclean(module=Scripting, name="distclean"):
 
 def run_symwaf2ic():
     "Return whether or not to run symwaf2ic."
-    return not set("istclean".split()) & set(sys.argv)
+    return not set("distclean".split()) & set(sys.argv)
 
 
 def prelude():
@@ -175,7 +176,7 @@ def entry_point():
     storage.paths = []
     storage.projects = set()
 
-    Logs.info("Reached entry point.")
+    Logs.debug("Reached entry point.")
 
     # if the user specifies the help option, our own argparser
     # would catch that and only print the symwaf2ic help
@@ -183,6 +184,7 @@ def entry_point():
     if run_symwaf2ic():
         Scripting.run_command("symwaf2ic")
         Scripting.run_command("dependency_resolution")
+        store_config()
 
 
 class Symwaf2icError(Errors.WafError):
@@ -225,8 +227,8 @@ class Symwaf2icContext(Context.Context):
 
 # NOTE: This is only a dummy class to make setup show up in the help
 class SetupContext(Symwaf2icContext):
-    __doc__ = "setup symwaf2ic (execute in desired toplevel directory)"
-    cmd = "setup"
+    __doc__ = "set up symwaf2ic (execute in desired toplevel directory)"
+    cmd = SETUP_CMD
 
     def execute(self):
         pass
@@ -241,13 +243,30 @@ class MainContext(Symwaf2icContext):
         Logs.info("Starting up symwaf2ic")
 
         self.set_toplevel()
-        self.set_projects()
+        self.get_config()
         self.setup_repo_tool()
 
+    def get_config(self):
+        """ Load the config from storage config
+        """
+        storage.config_node = self.toplevel.make_node(CFGFOLDER)
+        storage.config_node.mkdir()
+
+        # projects are only set during setup phase
+        cmdopts = OptionParserContext().parse_args()
+        if SETUP_CMD in sys.argv:
+            storage.projects = cmdopts.projects
+            storage.set_options = {}
+        else:
+            config = json.load(storage.lockfile)
+            storage.projects = config["projects"]
+            storage.set_options = config["set_options"]
+
     def set_toplevel(self):
-        Logs.info("Finding toplevel")
+        Logs.debug("Finding toplevel")
         if SETUP_CMD in sys.argv:
             Logs.info("Setting up symwaf2ic toplevel.")
+
             # Since we need the toplevel in several commands, only store the path
             storage.toplevel = self.path.abspath()
             self.toplevel = self.root.find_node(storage.toplevel)
@@ -272,23 +291,6 @@ class MainContext(Symwaf2icContext):
         Logs.info("Toplevel set to: {0}".format(storage.toplevel))
 
 
-    def set_projects(self):
-        # parse command line
-        OptionParserContext().parse_args()
-
-        # check if user supplied projects via command line
-        if storage.projects is not None:
-            # write them to lockfile
-            storage.lockfile.write("\n".join(storage.projects) + "\n")
-        else:
-            # no project specified, read them from lockfile
-            storage.projects = [ line.strip()
-                    for line in storage.lockfile.read().split("\n") if len(line) > 0 ]
-
-        storage.config_node = self.toplevel.make_node(CFGFOLDER)
-        storage.config_node.mkdir()
-
-
     def setup_repo_tool(self):
         repoconf = storage.config_node.make_node( "mr_conf" )
         repoconf.mkdir()
@@ -305,11 +307,31 @@ class OptionParserContext(Symwaf2icContext):
         self._first_recursion = False # disable symwaf2ic recursion
 
 
+    def load(self, *k, **kw):
+        """ Tools are of no use during dependency step -> ignore.
+
+        """
+        pass
+
+    def _parse_type(self, type_):
+        try:
+            return {
+                "string" : str
+                }[type_]
+        except KeyError:
+            return eval(type_)
+
     # wrapper functions to use argparse even though waf still uses optparse
     def add_option(self, *k, **kw):
         # fixes for optparse -> argparse compatability
         if "type" in kw:
             kw["type"] = eval(kw["type"])
+        if storage.set_options:
+            opt = k[0]
+            while opt.startswith(self.parser.prefix_chars):
+                opt = opt[len(self.parser.prefix_chars):]
+            if opt in storage.set_options:
+                kw["default"] = storage.set_options[opt]
         self.parser.add_argument(*k, **kw)
 
 
@@ -341,12 +363,28 @@ class OptionParserContext(Symwaf2icContext):
         # avoid things like -h/--help that would only confuse the parser
         cmdline = [a for a in sys.argv[1:] if not a in STRIP_FROM_PARSER]
 
-        opts, unkown = self.parser.parse_known_args(cmdline)
+        opts, unknown = self.parser.parse_known_args(cmdline)
+        return opts
 
-        if path is None:
-            storage.projects = opts.projects
-        else:
-            return opts
+
+def write_config():
+    "Determines if the config shall be loaded/written"
+    returnval = False
+    for cmd in STORE_CMDS:
+        if cmd in sys.argv:
+            returnval = True
+    return returnval
+
+
+def store_config():
+    if not write_config():
+        return
+    config = {}
+    config["projects"] = storage.projects
+    config["set_options"] = dict(storage.options._get_kwargs())
+
+    print json.dumps(config)
+    storage.lockfile.write(json.dumps(config)+"\n")
 
 
 class DependencyContext(Symwaf2icContext):
@@ -372,10 +410,14 @@ class DependencyContext(Symwaf2icContext):
             path = os.path.join(path, subfolder)
         self._add_required_path(path)
 
+
     def execute(self):
         # Only recurse into the toplevel wscript because all dependencies will
         # be defined from there. Also it shall be possible to have no dependencies.
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
+
+        storage.options = self.options
+
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
@@ -389,10 +431,10 @@ class DependencyContext(Symwaf2icContext):
 
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
-        Logs.info("Requiring toplevel projects: {0}".format( ", ".join(storage.projects)))
         if storage.projects is None or len(storage.projects) == 0:
             raise Symwaf2icError("Please specify target projects to build via --project.")
 
+        Logs.info("Requiring toplevel projects: {0}".format( ", ".join(storage.projects)))
         for project in storage.projects:
             path = storage.repo_tool.checkout_project(project)
             self._add_required_path(path)
@@ -431,6 +473,9 @@ def build(bld):
 """
 
 # Currently only kept for posterity
+
+# which cmds should not have their execute patched
+NO_PATCH_CMDS = "dependeny_resolution".split()
 
 # utils for `patch_execute`
 def find_indent(s):

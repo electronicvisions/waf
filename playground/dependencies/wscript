@@ -2,10 +2,6 @@
 # default wscript
 # can be modified/deleted if needed
 
-def options(opt):
-    # from pudb import set_trace; set_trace()
-    pass
-
 def depends(dep):
     dep._recurse_projects()
 
