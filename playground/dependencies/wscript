@@ -8,5 +8,6 @@ def depends(dep):
 def configure(cfg):
     pass
 
-def build(cfg):
+def build(bld):
     pass
+
