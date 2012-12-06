@@ -357,12 +357,12 @@ class MR(object):
             node = self.base.make_node(name)
             return self.project_types[vcs](name = name, node = node)
 
+
 class MRContext(Build.BuildContext):
     '''lists the targets to execute'''
     cmd = 'status'
     def __init__(self, **kw):
         super(MRContext, self).__init__(**kw)
-        print "CREATE MRContext"
 
     def execute(self):
         """

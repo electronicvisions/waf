@@ -21,11 +21,16 @@ from waflib.extras import mr
 # CONSTANTS #
 #############
 
+SYMWAF2IC_VERSION = 1
+
 LOCKFILE = ".symwaf2ic.lock"
 CFGFOLDER = ".symwaf2ic"
 FILEPREFIX = ".symwaf2ic"
 
 SETUP_CMD = "setup"
+
+# items to strip from command line before parsing with own parser
+STRIP_FROM_PARSER = "-h --help".split()
 
 # which cmds should not have their execute patched
 NO_PATCH_CMDS = "dependeny_resolution".split()
@@ -66,17 +71,17 @@ def patch_context():
 
     def init(self, *k, **kw):
         # to find out if recurse has been run before or not
-        self._first_run = True
+        self._first_recursion = True
+        self.symwaf2ic_version = SYMWAF2IC_VERSION
         orig_init(self, *k, **kw)
-
     init.__name__ = "__init__"
 
     def recurse(self, paths, *k, **kw):
-        if not self._first_run:
+        if not self._first_recursion:
             # if we are not in the first run, run as normal
             orig_recurse(self, paths, *k, **kw)
         else:
-            self._first_run = False
+            self._first_recursion = False
 
             # run the desired toplevel recurse..
             orig_recurse(self, paths, *k, **kw)
@@ -102,7 +107,7 @@ def patch_distclean(module=Scripting, name="distclean"):
 
 def run_symwaf2ic():
     "Return whether or not to run symwaf2ic."
-    return not set("-h --help distclean".split()) & set(sys.argv)
+    return not set("istclean".split()) & set(sys.argv)
 
 
 def prelude():
@@ -110,11 +115,6 @@ def prelude():
     # patch recurse mode of Context.Context to also recurse into dependencies
     # on first invocation
     patch_context()
-
-    class TestContext(Symwaf2icContext):
-        cmd = "testing"
-        def execute(self):
-            self.recurse("testtest")
 
     # patch run_commands-method  
     funcname = "run_commands"
@@ -211,7 +211,7 @@ def options(opt):
     gr.add_option(
             "--project", dest="projects", action="append",
             help="Declare the specified project as required build target "+\
-                 "(Can be specified several times).")
+                 "(can be specified several times).")
 
 class Symwaf2icContext(Context.Context):
     cmd = None
@@ -224,10 +224,13 @@ class Symwaf2icContext(Context.Context):
 
 
 # NOTE: This is only a dummy class to make setup show up in the help
-#       "setup" will be stripped from sys.argv before waf gets its hands on it
 class SetupContext(Symwaf2icContext):
     __doc__ = "setup symwaf2ic (execute in desired toplevel directory)"
     cmd = "setup"
+
+    def execute(self):
+        pass
+
 
 class MainContext(Symwaf2icContext):
     __doc__ = "(Automatically executed on each invokation of waf.)"
@@ -238,6 +241,7 @@ class MainContext(Symwaf2icContext):
         Logs.info("Starting up symwaf2ic")
 
         self.set_toplevel()
+        self.set_projects()
         self.setup_repo_tool()
 
     def set_toplevel(self):
@@ -252,7 +256,7 @@ class MainContext(Symwaf2icContext):
             storage.lockfile = self.path.make_node(LOCKFILE)
             storage.lockfile.write("")
 
-            sys.argv.remove(SETUP_CMD)
+            # sys.argv.remove(SETUP_CMD)
 
         else:
             cur_dir = self.root.find_node(os.getcwd())
@@ -267,7 +271,11 @@ class MainContext(Symwaf2icContext):
 
         Logs.info("Toplevel set to: {0}".format(storage.toplevel))
 
-        self.parse_command_line()
+
+    def set_projects(self):
+        # parse command line
+        OptionParserContext().parse_args()
+
         # check if user supplied projects via command line
         if storage.projects is not None:
             # write them to lockfile
@@ -287,17 +295,14 @@ class MainContext(Symwaf2icContext):
         storage.repo_tool = mr.MR(self, top=self.toplevel, cfg=repoconf, clear_log=True)
 
 
-    def parse_command_line(self):
-        """Parse command line to extract commands directed at symwaf2ic before
-        the regular option-parsing by waf can be done.
+class OptionParserContext(Symwaf2icContext):
+    cmd = None
+    fun = "options"
 
-        """
+    def __init__(self, *k, **kw):
+        super(OptionParserContext, self).__init__(*k, **kw)
         self.parser = argparse.ArgumentParser()
-
-        # parse command line options specified
-        options(self)
-        opts, unkown = self.parser.parse_known_args(sys.argv[1:])
-        storage.projects = opts.projects
+        self._first_recursion = False # disable symwaf2ic recursion
 
 
     # wrapper functions to use argparse even though waf still uses optparse
@@ -307,15 +312,41 @@ class MainContext(Symwaf2icContext):
             kw["type"] = eval(kw["type"])
         self.parser.add_argument(*k, **kw)
 
+
     # Since we are only interested in the arguments themselves and provide no output
     # in the depdency system, optparse's OptionGropus are irrelevent, since they only
     # serve to produce nicer help messages.
     def add_option_group(self, *k, **kw):
         return self
 
+
     def get_option_group(self, opt_str):
         return self
 
+
+    def parse_args(self, path = None):
+        """Parse args from wscript path (or command line if path is None)
+
+        This is done to extract commands directed at symwaf2ic before
+        the regular option-parsing by waf can be done as well as have options
+        affect the dependency resolution.
+
+        """
+        if path is None:
+            # parse command line options specified by symwaf2ic
+            options(self)
+        else:
+            self.recurse([path])
+
+        # avoid things like -h/--help that would only confuse the parser
+        cmdline = [a for a in sys.argv[1:] if not a in STRIP_FROM_PARSER]
+
+        opts, unkown = self.parser.parse_known_args(cmdline)
+
+        if path is None:
+            storage.projects = opts.projects
+        else:
+            return opts
 
 
 class DependencyContext(Symwaf2icContext):
@@ -323,6 +354,10 @@ class DependencyContext(Symwaf2icContext):
 
     cmd = "dependency_resolution"
     fun = "depends"
+
+    def __init__(self, *k, **kw):
+        super(DependencyContext, self).__init__(*k, **kw)
+        self.options_parser = OptionParserContext()
 
     def __call__(self, project, subfolder="", branch=None):
         Logs.info("Required by {script}: {project}{branch}{subfolder}".format(
@@ -342,13 +377,15 @@ class DependencyContext(Symwaf2icContext):
         # be defined from there. Also it shall be possible to have no dependencies.
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
 
+    def pre_recurse(self, node):
+        super(DependencyContext, self).pre_recurse(node)
+        self.options = self.options_parser.parse_args(self.path.abspath())
 
     def _add_required_path(self, path):
         path = os.path.join(self.toplevel.abspath(), path)
         if path not in storage.paths:
             storage.paths.append(path)
             self.recurse([path], mandatory=False)
-
 
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
@@ -359,7 +396,6 @@ class DependencyContext(Symwaf2icContext):
         for project in storage.projects:
             path = storage.repo_tool.checkout_project(project)
             self._add_required_path(path)
-
 
 
 def distclean(ctx):
