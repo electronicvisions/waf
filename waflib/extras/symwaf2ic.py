@@ -418,6 +418,9 @@ class DependencyContext(Symwaf2icContext):
             ))
 
         path = storage.repo_tool.checkout_project(project, branch)
+        if not os.path.isdir(os.path.join(path, subfolder)):
+            Logs.error("Folder '{0}' not found in project {1}".format(subfolder, project))
+
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
         self._add_required_path(path)
