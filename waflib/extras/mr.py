@@ -54,6 +54,7 @@ db = {
     'pygccxml':                    gitviz('pygccxml'),
     'ztl':                         ('git', 'https://github.com/ignatz/ztl.git'),
     'rant':                        ('git', 'https://github.com/ignatz/rant.git'),
+    'bitter':                      ('git', 'https://github.com/ignatz/bitter.git'),
     'odeint-v2':                   ('git', 'https://github.com/headmyshoulder/odeint-v2.git'),
     'ztl_local':                   ('git', '/home/ckoke/Code/symap2ic/components/ztl', 'echo "Hallo"'),
 
@@ -148,13 +149,13 @@ class GitProject(Project):
 
     def mr_checkout_cmd(self, base_node, url, init_cmds=""):
         path = self.node.path_from(base_node)
-        cmd = ['git clone {url} {target}'.format(url=url, target=path)]
+        cmd = ["git clone '{url}' '{target}'".format(url=url, target=path)]
         cmd.append( "cd {target}".format(target=path))
         cmd.extend(Utils.to_list(init_cmds))
         if self.branch != self.default_branch:
             cmd.append(" ".join(self.set_branch_cmd()))
 
-        return 'checkout=%s' % ";".join(cmd)
+        return 'checkout=%s' % "; ".join(cmd)
 
 
 class MR(object):
@@ -210,8 +211,12 @@ class MR(object):
             projects[name] = self._get_or_create_project(name)
 
     def find_mr(self):
-        # TODO make it better
-        self.mr_tool = self.base.find_node(self.MR)
+        mr_path = which("mr")
+        if mr_path is None:
+            # we didnt find the mr tool in path, just look in local directory
+            self.mr_tool = self.base.find_node(self.MR)
+        else:
+            self.mr_tool = self.ctx.root.find_node(mr_path)
 
     def init_mr(self):
         self.load_projects()
@@ -266,7 +271,7 @@ class MR(object):
             stdout = getattr(e, 'stdout', "")
             stderr = getattr(e, 'stdout', "")
             # self.mr_log('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
-            Logs.warn('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
+            Logs.warn('stdout: \n"%s"\nstderr: \n"%s"\n' % (stdout, stderr))
             if stderr:
                 e.msg += ':\n\n' + stderr
             raise e
@@ -355,7 +360,9 @@ class MR(object):
         except KeyError:
             vcs = self.db.get_type(name)
             node = self.base.make_node(name)
-            return self.project_types[vcs](name = name, node = node)
+            p = self.project_types[vcs](name = name, node = node)
+            self.projects[name] = p
+            return p
 
 
 class MRContext(Build.BuildContext):
@@ -406,3 +413,19 @@ class mr_push(MRContext):
 #class mr_checkout(MRContext):
 #    cmd = 'checkout'
 
+def which(program):
+    import os
+    def is_exe(fpath):
+       return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+       if is_exe(program):
+           return program
+    else:
+       for path in os.environ["PATH"].split(os.pathsep):
+           exe_file = os.path.join(path, program)
+           if is_exe(exe_file):
+               return exe_file
+
+    return None

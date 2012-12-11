@@ -187,6 +187,10 @@ def entry_point():
         store_config()
 
 
+def get_toplevel_path():
+    return storage.toplevel
+
+
 class Symwaf2icError(Errors.WafError):
     pass
 
@@ -256,11 +260,17 @@ class MainContext(Symwaf2icContext):
         cmdopts = OptionParserContext().parse_args()
         if SETUP_CMD in sys.argv:
             storage.projects = cmdopts.projects
+            # already write projects to store
+            config = {"projects": storage.projects}
+            storage.lockfile.write(json.dumps(config))
             storage.set_options = {}
         else:
             config = json.load(storage.lockfile)
             storage.projects = config["projects"]
-            storage.set_options = config["set_options"]
+            if "set_options" in config:
+                storage.set_options = config["set_options"]
+            else:
+                storage.set_options = {}
 
     def set_toplevel(self):
         Logs.debug("Finding toplevel")
@@ -396,6 +406,8 @@ class DependencyContext(Symwaf2icContext):
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
+        # dont recurse into all already dependency directories again
+        self._first_recursion = False
 
     def __call__(self, project, subfolder="", branch=None):
         Logs.info("Required by {script}: {project}{branch}{subfolder}".format(
@@ -417,7 +429,6 @@ class DependencyContext(Symwaf2icContext):
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
 
         storage.options = self.options
-
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
@@ -563,14 +574,11 @@ def patch_execute(
     method whenever a class is generated.
 
     """
-    from pudb import set_trace; set_trace()
-
     # make sure only undefined methods are overwritten
     if getattr(meta, meta_method) != getattr(type, meta_method):
         raise Symwaf2icError("FATAL: Would overwrite defined waf method with unkown consquences!")
 
     def new_meta(cls, cls2, name, bases, dict):
-        from pudb import set_trace; set_trace()
         perform_patching = not ("cmd" in dict and dict["cmd"] in NO_PATCH_CMDS)
         perform_patching = perform_patching and method_name in dict
 
