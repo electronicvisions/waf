@@ -108,19 +108,11 @@ def patch_distclean(module=Scripting, name="distclean"):
 
 def run_symwaf2ic():
     "Return whether or not to run symwaf2ic."
-    return not set("distclean".split()) & set(sys.argv)
+    return not set("distclean".split() + STRIP_FROM_PARSER) & set(sys.argv)
 
 
 def prelude():
     "Prelude function to invoke symwaf2ic before any waf commands."
-    # patch recurse mode of Context.Context to also recurse into dependencies
-    # on first invocation
-    patch_context()
-
-    # patch run_commands-method  
-    funcname = "run_commands"
-    setattr(Scripting, funcname,
-            prepend_entry_point(getattr(Scripting, funcname)))
 
     # patch default execute function of Context
     # so that all required wscripts will be recursed into
@@ -141,9 +133,21 @@ def prelude():
     # patch mr config to get the repo_tool
     setattr(mr, "get_repo_tool", lambda: storage.repo_tool)
 
-    # Only assert toplevel if we really do things
+    # if the user specifies the help option, our own argparser
+    # would catch that and only print the symwaf2ic help
+    # Since the normal workflow will not be executed and we can omit everything
+    # By the same train of thought, only assert toplevel if we really do things
     if run_symwaf2ic():
         assert_toplevel_wscript()
+        # patch run_commands-method  
+        funcname = "run_commands"
+        setattr(Scripting, funcname,
+                prepend_entry_point(getattr(Scripting, funcname)))
+
+        # patch recurse mode of Context.Context to also recurse into dependencies
+        # on first invocation
+        patch_context()
+
 
 
 def assert_toplevel_wscript():
@@ -178,13 +182,9 @@ def entry_point():
 
     Logs.debug("Reached entry point.")
 
-    # if the user specifies the help option, our own argparser
-    # would catch that and only print the symwaf2ic help
-    # Since the normal workflow will not be executed and we can omit everything
-    if run_symwaf2ic():
-        Scripting.run_command("symwaf2ic")
-        Scripting.run_command("dependency_resolution")
-        store_config()
+    Scripting.run_command("symwaf2ic")
+    Scripting.run_command("dependency_resolution")
+    store_config()
 
 
 def get_toplevel_path():
@@ -218,6 +218,17 @@ def options(opt):
             "--project", dest="projects", action="append",
             help="Declare the specified project as required build target "+\
                  "(can be specified several times).")
+
+    gr.add_option(
+            "--repo-db-url", dest="repo_db_url", action="store",
+            help="URL for the repository containing the database with information about all other repositories.",
+            default="git@gitviz.kip.uni-heidelberg.de:projects.git"
+            )
+    gr.add_option(
+            "--repo-db-type", dest="repo_db_type", action="store",
+            help="Type of the repository containting the repo DB (default: git). Can also be 'wget'.",
+            default="git"
+            )
 
 class Symwaf2icContext(Context.Context):
     cmd = None
@@ -272,6 +283,10 @@ class MainContext(Symwaf2icContext):
             else:
                 storage.set_options = {}
 
+        self.repo_db_url = cmdopts.repo_db_url
+        self.repo_db_type = cmdopts.repo_db_type
+
+
     def set_toplevel(self):
         Logs.debug("Finding toplevel")
         if SETUP_CMD in sys.argv:
@@ -304,7 +319,7 @@ class MainContext(Symwaf2icContext):
     def setup_repo_tool(self):
         repoconf = storage.config_node.make_node( "mr_conf" )
         repoconf.mkdir()
-        storage.repo_tool = mr.MR(self, top=self.toplevel, cfg=repoconf, clear_log=True)
+        storage.repo_tool = mr.MR(self, self.repo_db_url, self.repo_db_type, top=self.toplevel, cfg=repoconf, clear_log=True)
 
 
 class OptionParserContext(Symwaf2icContext):

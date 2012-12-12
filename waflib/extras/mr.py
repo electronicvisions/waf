@@ -9,60 +9,61 @@ A :py:class:`waflib.Dependencies.DependenciesContext` instance is created when `
 """
 
 import os, sys
-from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors, Node
+from waflib import Utils, Logs, Context, Build, Errors
 from pprint import pprint
+import json
 
 import subprocess
 from ConfigParser import RawConfigParser
 from StringIO import StringIO
 
-def gitviz(name, *init):
-    return ('git', 'git@gitviz.kip.uni-heidelberg.de:{name}'.format(name = name)) + init
+# def gitviz(name, *init):
+    # return ('git', 'git@gitviz.kip.uni-heidelberg.de:{name}'.format(name = name)) + init
 
 
-db = {
-    'symap2ic':                    gitviz('symap2ic'),
-    'spikeyhal':                   gitviz('spikeyhal'),
-    'flyspi-fpga':                 gitviz('flyspi-fpga'),
-    'fpgasystem':                  gitviz('fpgasystem'),
-    'fpgasystem-projects':         gitviz('fpgasystem-projects'),
-    'pynnhw':                      gitviz('pynn-hardware'),
-    'systemsim-stage2':            gitviz('systemsim-stage2'),
-    'mappingtool':                 gitviz('mappingtool.git'),
-    'sctrltp':                     gitviz('sctrltp'),
-    'demonstrator-ai-states':      gitviz('model-ai-states'),
-    'demonstrator-kth-l23':        gitviz('model-kth-l23'),
-    'demonstrator-locally':        gitviz('model-locally'),
-    'demonstrator-microcircuit':   gitviz('model-microcircuit'),
-    'demonstrator-quantitative':   gitviz('model-quantitative'),
-    'demonstrator-synfire-ffi':    gitviz('model-synfire-ffi'),
-    'hicann-system':               gitviz('hicann-system'),
-    'ncf-hicann':                  gitviz('ncf-hicann'),
-    'ncf-hicann-fc':               gitviz('ncf-hicann-fc'),
-    'deb-pynn':                    gitviz('deb-pynn'),
-    'calibration':                 gitviz('calibration'),
-    'jenkins-techdemo':            gitviz('jenkins-techdemo'),
-    'ester':                       gitviz('ester'),
-    'pyhmf':                       gitviz('pyhmf'),
-    'halbe':                       gitviz('halbe'),
-    'lib-rcf':                     gitviz('lib-rcf'),
-    'lib-boost-patches':           gitviz('lib-boost-patches'),
-    'marocco':                     gitviz('marocco'),
-    'pest':                        gitviz('pest'),
-    'hicann-system2':              gitviz('hicann-system'),
-    'pyplusplus':                  gitviz('pyplusplus'),
-    'pygccxml':                    gitviz('pygccxml'),
-    'ztl':                         ('git', 'https://github.com/ignatz/ztl.git'),
-    'rant':                        ('git', 'https://github.com/ignatz/rant.git'),
-    'bitter':                      ('git', 'https://github.com/ignatz/bitter.git'),
-    'odeint-v2':                   ('git', 'https://github.com/headmyshoulder/odeint-v2.git'),
-    'ztl_local':                   ('git', '/home/ckoke/Code/symap2ic/components/ztl', 'echo "Hallo"'),
+# db = {
+    # 'symap2ic':                    gitviz('symap2ic'),
+    # 'spikeyhal':                   gitviz('spikeyhal'),
+    # 'flyspi-fpga':                 gitviz('flyspi-fpga'),
+    # 'fpgasystem':                  gitviz('fpgasystem'),
+    # 'fpgasystem-projects':         gitviz('fpgasystem-projects'),
+    # 'pynnhw':                      gitviz('pynn-hardware'),
+    # 'systemsim-stage2':            gitviz('systemsim-stage2'),
+    # 'mappingtool':                 gitviz('mappingtool.git'),
+    # 'sctrltp':                     gitviz('sctrltp'),
+    # 'demonstrator-ai-states':      gitviz('model-ai-states'),
+    # 'demonstrator-kth-l23':        gitviz('model-kth-l23'),
+    # 'demonstrator-locally':        gitviz('model-locally'),
+    # 'demonstrator-microcircuit':   gitviz('model-microcircuit'),
+    # 'demonstrator-quantitative':   gitviz('model-quantitative'),
+    # 'demonstrator-synfire-ffi':    gitviz('model-synfire-ffi'),
+    # 'hicann-system':               gitviz('hicann-system'),
+    # 'ncf-hicann':                  gitviz('ncf-hicann'),
+    # 'ncf-hicann-fc':               gitviz('ncf-hicann-fc'),
+    # 'deb-pynn':                    gitviz('deb-pynn'),
+    # 'calibration':                 gitviz('calibration'),
+    # 'jenkins-techdemo':            gitviz('jenkins-techdemo'),
+    # 'ester':                       gitviz('ester'),
+    # 'pyhmf':                       gitviz('pyhmf'),
+    # 'halbe':                       gitviz('halbe'),
+    # 'lib-rcf':                     gitviz('lib-rcf'),
+    # 'lib-boost-patches':           gitviz('lib-boost-patches'),
+    # 'marocco':                     gitviz('marocco'),
+    # 'pest':                        gitviz('pest'),
+    # 'hicann-system2':              gitviz('hicann-system'),
+    # 'pyplusplus':                  gitviz('pyplusplus'),
+    # 'pygccxml':                    gitviz('pygccxml'),
+    # 'ztl':                         ('git', 'https://github.com/ignatz/ztl.git'),
+    # 'rant':                        ('git', 'https://github.com/ignatz/rant.git'),
+    # 'bitter':                      ('git', 'https://github.com/ignatz/bitter.git'),
+    # 'odeint-v2':                   ('git', 'https://github.com/headmyshoulder/odeint-v2.git'),
+    # 'ztl_local':                   ('git', '/home/ckoke/Code/symap2ic/components/ztl', 'echo "Hallo"'),
 
-    # DEBUGGING
-    'dummy_A':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_A'),
-    'dummy_B':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_B'),
-    'dummy_C':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_C'),
-}
+    # # DEBUGGING
+    # 'dummy_A':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_A'),
+    # 'dummy_B':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_B'),
+    # 'dummy_C':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_C'),
+# }
 
 
 # will be set from symwaf2ic
@@ -70,7 +71,8 @@ get_repo_tool = lambda: None
 
 
 class Repo_DB(object):
-    db = db
+    def __init__(self, filepath):
+        self.db = json.load(open(filepath, "r"))
 
     def get_data(self, name):
         return self.db[name][1:]
@@ -105,7 +107,7 @@ class Project(object):
         if self._branch is None:
             self._branch = branch if branch else self.default_branch
         else:
-            raise RuntimeError, "branch allready set"
+            raise RuntimeError, "branch already set"
 
     @property
     def node(self):
@@ -149,8 +151,8 @@ class GitProject(Project):
 
     def mr_checkout_cmd(self, base_node, url, init_cmds=""):
         path = self.node.path_from(base_node)
-        cmd = ["git clone '{url}' '{target}'".format(url=url, target=path)]
-        cmd.append( "cd {target}".format(target=path))
+        cmd = ["git clone '{url}' '{target}'".format(url=url, target=os.path.basename(path))]
+        cmd.append( "cd {target}".format(target=os.path.basename(path)))
         cmd.extend(Utils.to_list(init_cmds))
         if self.branch != self.default_branch:
             cmd.append(" ".join(self.set_branch_cmd()))
@@ -163,6 +165,8 @@ class MR(object):
     # MR_CONFIG  = "repo.conf"
     MR_CONFIG  = ".symwaf2ic.repo.conf"
     MR_LOG     = "repo.log"
+    DB_FOLDER  = "repo_db"
+    DB_FILE    = "repo_db.json"
     # MODULE_DIR = "modules"
     CFGFOLDER  = "mr_conf"
     LOG_COLOR  = "BLUE"
@@ -172,16 +176,18 @@ class MR(object):
             'git' : GitProject
     }
 
-    def __init__(self, ctx, top = None, cfg = None, clear_log = False):
+    def __init__(self, ctx, db_url="git@example.com:db.git", db_type="git", top=None, cfg=None, clear_log=False):
         self.ctx = ctx
         self.init_dirs(top, cfg)
         self.find_mr()
-        self.db = Repo_DB()
+        self.projects = {}
         if clear_log:
             self.log.write("")
 
         self.mr_print('Using "%s" to manage repositories' % self.mr_tool.abspath())
         self.mr_print('commands are logged to "%s"' % self.log.path_from(self.base))
+
+        self.setup_repo_db(db_url, db_type)
 
         self.init_mr()
         self.mr_print("Found managed repositories: " + str(self.pretty_projects() ))
@@ -206,7 +212,7 @@ class MR(object):
 
     def load_projects(self):
         parser = self.load_config()
-        self.projects = projects = {}
+        projects = self.projects
         for name in parser.sections():
             projects[name] = self._get_or_create_project(name)
 
@@ -217,6 +223,33 @@ class MR(object):
             self.mr_tool = self.base.find_node(self.MR)
         else:
             self.mr_tool = self.ctx.root.find_node(mr_path)
+
+    def setup_repo_db(self, db_url, db_type):
+        # first install some mock object that servers to create the repo db repository
+        class MockDB(object):
+            def get_data(self, *k, **kw):
+                return [db_url]
+            def get_type(self, *k, **kw):
+                return db_type
+        self.db = MockDB()
+
+        db_node = self.cfg_node.make_node(self.DB_FOLDER)
+        db_path = db_node.path_from(self.base)
+        if db_type == "wget":
+            # TODO: implement download via wget
+            raise Errors.WafError("wget support not implemented yet. Poke obreitwi!")
+        else:
+            # see if db repository is already checked out, if not, add it
+            # since we have not read all managed repositories, manually read the mr config
+            parser = self.load_config()
+            self.projects[db_path] = db_repo = self.project_types[db_type](name=db_path, node=db_node)
+            db_repo.set_branch(None)
+            if db_path not in parser.sections():
+                # we need to add it manually because if project isn't found we would look in the
+                # not yet existing db
+                self.mr_checkout_project(db_repo)
+
+        self.db = Repo_DB(os.path.join(db_node.abspath(), self.DB_FILE))
 
     def init_mr(self):
         self.load_projects()
@@ -263,7 +296,7 @@ class MR(object):
 
     def call_mr(self, *args, **kw):
         cmd, kw = self.format_cmd(*args, **kw)
-        # kw['quiet']  = Context.BOTH
+        kw['quiet']  = Context.BOTH
         kw['output'] = Context.BOTH
         try:
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
@@ -285,6 +318,7 @@ class MR(object):
 
     def register_top(self):
         # TODO we need the name of the master repo...
+        # NOT USED!
         master = '..'
         if master in self.projects:
             return
@@ -301,10 +335,12 @@ class MR(object):
             if branch is not None and p.branch != branch:
                 raise AttributeError, "Project %s is required with different branches '%s' and '%s'" % (p.name, p.branch, branch)
             return p.node.path_from(self.base)
+        else:
+            return self.mr_checkout_project(self._get_or_create_project(name, branch))
 
-        repo = self.pretty_name(name, branch)
-        p = self._get_or_create_project(name)
-        p.set_branch(branch)
+    def mr_checkout_project(self, p):
+        "Perform the actual mr checkout"
+        repo = self.pretty_name(p.name, p.branch)
         path = p.node.path_from(self.base)
 
         # Check if the project folder exists, in this case the repo 
@@ -315,7 +351,7 @@ class MR(object):
         else:
             self.mr_print('Trying to checkout repository %s..' % repo, sep = '\n')
             args = ['config', p.name,
-                    p.mr_checkout_cmd(self.base, *self.db.get_data(name))]
+                    p.mr_checkout_cmd(self.base, *self.db.get_data(p.name))]
             self.call_mr(*args)
             self.call_mr('checkout')
 
@@ -324,7 +360,6 @@ class MR(object):
 
     def remove_projects(self, projects):
         parser = self.load_config()
-        removed = []
         for name in projects:
             if not name in self.projects:
                 continue
@@ -354,13 +389,14 @@ class MR(object):
         # node = self.base.make_node(name)
         # return node
 
-    def _get_or_create_project(self, name):
+    def _get_or_create_project(self, name, branch=None):
         try:
             return self.projects[name]
         except KeyError:
             vcs = self.db.get_type(name)
             node = self.base.make_node(name)
             p = self.project_types[vcs](name = name, node = node)
+            p.set_branch(branch)
             self.projects[name] = p
             return p
 
