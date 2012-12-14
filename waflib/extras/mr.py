@@ -130,7 +130,7 @@ class Project(object):
                 'pwd'    : self.node.abspath(),
                 'stdout' : subprocess.PIPE,
                 'stderr' : subprocess.PIPE,
-                }
+            }
         defaults.update(kw)
         subprocess.check_call(cmd, **defaults)
         return subprocess.communicate()
@@ -312,7 +312,7 @@ class MR(object):
         msg = 'stdout:\n"' + stdout + '"\n'
         msg += 'stderr:\n"' + stderr + '"\n'
         # self.mr_log(msg)
-        Logs.info(msg)
+        Logs.debug(msg)
         return cmd, stdout, stderr
 
 
@@ -346,10 +346,10 @@ class MR(object):
         # Check if the project folder exists, in this case the repo 
         # needs only to be registered
         if os.path.isdir(p.node.abspath()):
-            self.mr_print('Register existing repository %s..' % repo, sep = '\n')
+            self.mr_print('Register existing repository %s..' % repo, sep = '')
             self.call_mr('register', path)
         else:
-            self.mr_print('Trying to checkout repository %s..' % repo, sep = '\n')
+            self.mr_print('Trying to check out repository %s..' % repo, sep = '')
             args = ['config', p.name,
                     p.mr_checkout_cmd(self.base, *self.db.get_data(p.name))]
             self.call_mr(*args)

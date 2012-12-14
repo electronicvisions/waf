@@ -278,10 +278,12 @@ class MainContext(Symwaf2icContext):
         else:
             config = json.load(storage.lockfile)
             storage.projects = config["projects"]
-            if "set_options" in config:
-                storage.set_options = config["set_options"]
-            else:
-                storage.set_options = {}
+            storage.set_options = config.get("set_options", {})
+
+            # check if config is going to get written, if not, we require the
+            # paths saved in a previous run
+            if not write_config():
+                storage.saved_paths = config.get("saved_paths", [])
 
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
@@ -393,7 +395,7 @@ class OptionParserContext(Symwaf2icContext):
 
 
 def write_config():
-    "Determines if the config shall be loaded/written"
+    "Determines if the config shall be written"
     returnval = False
     for cmd in STORE_CMDS:
         if cmd in sys.argv:
@@ -407,8 +409,8 @@ def store_config():
     config = {}
     config["projects"] = storage.projects
     config["set_options"] = dict(storage.options._get_kwargs())
+    config["saved_paths"] = storage.paths
 
-    print json.dumps(config)
     storage.lockfile.write(json.dumps(config)+"\n")
 
 
@@ -421,8 +423,6 @@ class DependencyContext(Symwaf2icContext):
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
-        # dont recurse into all already dependency directories again
-        self._first_recursion = False
 
     def __call__(self, project, subfolder="", branch=None):
         Logs.info("Required by {script}: {project}{branch}{subfolder}".format(
@@ -433,15 +433,19 @@ class DependencyContext(Symwaf2icContext):
             ))
 
         path = storage.repo_tool.checkout_project(project, branch)
-        if not os.path.isdir(os.path.join(path, subfolder)):
-            Logs.error("Folder '{0}' not found in project {1}".format(subfolder, project))
 
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
+
+        if not self.toplevel.find_dir(path):
+            raise Symwaf2icError("Folder '{0}' not found in project {1}".format(subfolder, project))
+
         self._add_required_path(path)
 
 
     def execute(self):
+        # dont recurse into all already dependency directories again
+        self._first_recursion = False
         # Only recurse into the toplevel wscript because all dependencies will
         # be defined from there. Also it shall be possible to have no dependencies.
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
@@ -453,7 +457,11 @@ class DependencyContext(Symwaf2icContext):
         self.options = self.options_parser.parse_args(self.path.abspath())
 
     def _add_required_path(self, path):
-        path = os.path.join(self.toplevel.abspath(), path)
+        path = self.toplevel.find_node(path).abspath()
+        # check if path is in saved_paths, else throw error
+        if storage.saved_paths is not None and path not in storage.saved_paths:
+            raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
+
         if path not in storage.paths:
             storage.paths.append(path)
             self.recurse([path], mandatory=False)
@@ -503,6 +511,7 @@ def build(bld):
 
 # Currently only kept for posterity
 
+# TODO: Delete Me
 # which cmds should not have their execute patched
 NO_PATCH_CMDS = "dependeny_resolution".split()
 
