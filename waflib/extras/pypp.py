@@ -21,8 +21,13 @@ from waflib.Tools import c_preproc
 from pprint import pprint
 from waflib.Tools.ccroot import to_incnodes, link_task
 
-base_dir = os.environ["SYMAP2IC_PATH"]
-base_dir = os.path.join(base_dir, 'components')
+try:
+    from waflib.extras import symwaf2ic
+    base_dir = symwaf2ic.get_toplevel_path()
+except ImportError:
+    base_dir = os.environ["SYMAP2IC_PATH"]
+    base_dir = os.path.join(base_dir, 'components')
+
 module_folders = [ os.path.abspath(p) for p in [
     os.path.join(base_dir, 'pyplusplus'),
     os.path.join(base_dir, 'pygccxml'),
