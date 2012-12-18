@@ -302,7 +302,7 @@ class MR(object):
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
             stdout = getattr(e, 'stdout', "")
-            stderr = getattr(e, 'stdout', "")
+            stderr = getattr(e, 'stderr', "")
             # self.mr_log('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
             Logs.warn('stdout: \n"%s"\nstderr: \n"%s"\n' % (stdout, stderr))
             if stderr:
