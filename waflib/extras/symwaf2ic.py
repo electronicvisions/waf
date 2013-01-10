@@ -34,7 +34,8 @@ SETUP_CMD = "setup"
 STORE_CMDS = "setup configure".split()
 
 # items to strip from command line before parsing with own parser
-STRIP_FROM_PARSER = "-h --help".split()
+HELP_CMDS = "-h --help".split()
+STRIP_FROM_PARSER = HELP_CMDS
 
 
 ##############################
@@ -147,6 +148,11 @@ def prelude():
         # patch recurse mode of Context.Context to also recurse into dependencies
         # on first invocation
         patch_context()
+
+    else:
+        # make sure toplevel wscript is present if --help specified
+        if set(sys.argv) & set(HELP_CMDS):
+            assert_toplevel_wscript()
 
 
 

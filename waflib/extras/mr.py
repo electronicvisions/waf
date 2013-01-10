@@ -12,6 +12,7 @@ import os, sys
 from waflib import Utils, Logs, Context, Build, Errors
 from pprint import pprint
 import json
+import tempfile
 
 import subprocess
 from ConfigParser import RawConfigParser
@@ -74,11 +75,14 @@ class Repo_DB(object):
     def __init__(self, filepath):
         self.db = json.load(open(filepath, "r"))
 
-    def get_data(self, name):
-        return self.db[name][1:]
+    def get_init(self, name):
+        return self.db[name]["init_cmds"]
 
     def get_type(self, name):
-        return self.db[name][0]
+        return self.db[name]["type"]
+
+    def get_url(self, name):
+        return self.db[name]["url"]
 
 
 class Project(object):
@@ -135,6 +139,12 @@ class Project(object):
         subprocess.check_call(cmd, **defaults)
         return subprocess.communicate()
 
+    # TO IMPLEMENT
+    def mr_checkout_cmd(self, *k, **kw):
+        pass
+    def mr_init_cmd(self, *k, **kw):
+        pass
+
 
 class GitProject(Project):
     vcs = 'git'
@@ -149,15 +159,19 @@ class GitProject(Project):
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
 
-    def mr_checkout_cmd(self, base_node, url, init_cmds=""):
+    def mr_checkout_cmd(self, base_node, url):
         path = self.node.path_from(base_node)
         cmd = ["git clone '{url}' '{target}'".format(url=url, target=os.path.basename(path))]
-        cmd.append( "cd {target}".format(target=os.path.basename(path)))
-        cmd.extend(Utils.to_list(init_cmds))
-        if self.branch != self.default_branch:
-            cmd.append(" ".join(self.set_branch_cmd()))
+        # if self.branch != self.default_branch:
+            # cmd.append(" ".join(self.set_branch_cmd()))
 
         return 'checkout=%s' % "; ".join(cmd)
+
+    def mr_init_cmd(self, init):
+        init_cmd = " ".join(self.set_branch_cmd()) + "; " + init
+        return "post_checkout = cd {name} && {init}".format(
+            name=os.path.basename(self.name), init=init_cmd)
+
 
 
 class MR(object):
@@ -227,8 +241,10 @@ class MR(object):
     def setup_repo_db(self, db_url, db_type):
         # first install some mock object that servers to create the repo db repository
         class MockDB(object):
-            def get_data(self, *k, **kw):
-                return [db_url]
+            def get_url(self, *k, **kw):
+                return db_url
+            def get_init(self, *k, **kw):
+                return ""
             def get_type(self, *k, **kw):
                 return db_type
         self.db = MockDB()
@@ -278,13 +294,20 @@ class MR(object):
         self.config.write(tmp.getvalue())
 
     def format_cmd(self, *args, **kw):
-        """ """
+        """ use _conf_file to override config file destination """
         env = kw.get('env', os.environ.copy())
-        if args and args[0] == 'register':
-            env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
+        # if args and args[0] == 'register':
+            # env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
 
+        custom_conf_file = "_conf_file" in kw
 
-        cmd = [self.mr_tool.abspath(), '-t', '-c', self.config.path_from(self.base)]
+        conf_file = self.config.path_from(self.base)\
+            if not custom_conf_file else kw["_conf_file"]
+
+        if custom_conf_file:
+            del kw["_conf_file"]
+
+        cmd = [self.mr_tool.abspath(), '-t', '-c', conf_file]
         cmd.extend(args)
 
         self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
@@ -295,6 +318,19 @@ class MR(object):
 
 
     def call_mr(self, *args, **kw):
+
+        tmpfile = None
+
+        if args and args[0] == "register":
+            # because mr seems to have a bug not trusting any config file
+            # during "register" we write the config to a tempfile and append manually .. ¬_¬
+
+            # NOTE: we can be sure that register is only called if the project is not present
+            # in the config file
+
+            tmpfile = tempfile.NamedTemporaryFile()
+            kw["_conf_file"] = tmpfile.name
+
         cmd, kw = self.format_cmd(*args, **kw)
         kw['quiet']  = Context.BOTH
         kw['output'] = Context.BOTH
@@ -307,12 +343,22 @@ class MR(object):
             Logs.warn('stdout: \n"%s"\nstderr: \n"%s"\n' % (stdout, stderr))
             if stderr:
                 e.msg += ':\n\n' + stderr
+            if tmpfile is not None:
+                tmpfile.close()
             raise e
 
         msg = 'stdout:\n"' + stdout + '"\n'
         msg += 'stderr:\n"' + stderr + '"\n'
         # self.mr_log(msg)
+        if tmpfile is not None:
+            # write config to repo conf
+            tmpfile.seek(0)
+            self.config.write(tmpfile.file.read(), 'a')
+            tmpfile.close()
         Logs.debug(msg)
+
+        
+
         return cmd, stdout, stderr
 
 
@@ -351,7 +397,8 @@ class MR(object):
         else:
             self.mr_print('Trying to check out repository %s..' % repo, sep = '')
             args = ['config', p.name,
-                    p.mr_checkout_cmd(self.base, *self.db.get_data(p.name))]
+                    p.mr_checkout_cmd(self.base, self.db.get_url(p.name)),
+                    p.mr_init_cmd(self.db.get_init(p.name))]
             self.call_mr(*args)
             self.call_mr('checkout')
 
@@ -369,6 +416,7 @@ class MR(object):
             del self.projects[name]
 
         self.save_config(parser)
+
 
     def get_projects(self):
         return self.projects
