@@ -142,7 +142,7 @@ class merge_cxx_objects(Task.Task):
     color = 'PINK'
     ext_out = ['.o']
     after = ["cxx", "pyplusplus"]
-    before = ["cxxshlib", "cshlib", "cxxstlib", "cstlib"]
+    before = ["cxxshlib", "cxxstlib"]
     run_str = 'ld -r ${CXXLNK_SRC_F}${SRC} ${CXXLNK_TGT_F}${TGT[0].abspath()}'
 #    run_str = '${LINK_CXX} -Wl,-r -o ${TGT[0].abspath()} ${SRC}'
 
