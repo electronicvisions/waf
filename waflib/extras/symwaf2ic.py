@@ -10,9 +10,6 @@ import shutil
 
 import json
 
-import types
-import inspect
-
 from waflib import Context, Errors, Logs, Options, Scripting
 from waflib.extras import mr
 
@@ -36,6 +33,8 @@ STORE_CMDS = "setup configure".split()
 # items to strip from command line before parsing with own parser
 HELP_CMDS = "-h --help".split()
 STRIP_FROM_PARSER = HELP_CMDS
+# commands which will cause symwaf2ic to be disabled when specified
+NO_EXECUTE_CMDS = "distclean".split()
 
 
 ##############################
@@ -109,7 +108,10 @@ def patch_distclean(module=Scripting, name="distclean"):
 
 def run_symwaf2ic():
     "Return whether or not to run symwaf2ic."
-    return not set("distclean".split() + STRIP_FROM_PARSER) & set(sys.argv)
+    return not set(NO_EXECUTE_CMDS) & set(sys.argv)
+
+def is_help_requested():
+    return set(sys.argv) & set(HELP_CMDS)
 
 
 def prelude():
@@ -137,7 +139,6 @@ def prelude():
     # if the user specifies the help option, our own argparser
     # would catch that and only print the symwaf2ic help
     # Since the normal workflow will not be executed and we can omit everything
-    # By the same train of thought, only assert toplevel if we really do things
     if run_symwaf2ic():
         assert_toplevel_wscript()
         # patch run_commands-method  
@@ -153,7 +154,6 @@ def prelude():
         # make sure toplevel wscript is present if --help specified
         if set(sys.argv) & set(HELP_CMDS):
             assert_toplevel_wscript()
-
 
 
 def assert_toplevel_wscript():
@@ -199,6 +199,7 @@ def get_toplevel_path():
 
 class Symwaf2icError(Errors.WafError):
     pass
+
 
 class Storage(object):
     def __repr__(self):
@@ -465,7 +466,7 @@ class DependencyContext(Symwaf2icContext):
     def _add_required_path(self, path):
         path = self.toplevel.find_node(path).abspath()
         # check if path is in saved_paths, else throw error
-        if storage.saved_paths is not None and path not in storage.saved_paths:
+        if storage.saved_paths is not None and path not in storage.saved_paths and not is_help_requested():
             raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
 
         if path not in storage.paths:
@@ -475,7 +476,7 @@ class DependencyContext(Symwaf2icContext):
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
         if storage.projects is None or len(storage.projects) == 0:
-            raise Symwaf2icError("Please specify target projects to build via --project.")
+            raise Symwaf2icError("Please specify target projects to build during 'setup' via --project.")
 
         Logs.info("Requiring toplevel projects: {0}".format( ", ".join(storage.projects)))
         for project in storage.projects:
@@ -516,150 +517,153 @@ def build(bld):
 """
 
 # Currently only kept for posterity
+# import types
+# import inspect
+
 
 # TODO: Delete Me
-# which cmds should not have their execute patched
-NO_PATCH_CMDS = "dependeny_resolution".split()
+# # which cmds should not have their execute patched
+# NO_PATCH_CMDS = "dependeny_resolution".split()
 
-# utils for `patch_execute`
-def find_indent(s):
-    i = 0
-    while s[:(i+1)].isspace():
-        i += 1
-    return i
-
-
-def remove_indent(lines):
-    n_indent = find_indent(lines[0])
-    indent = lines[0][:n_indent]
-    newlines = [s[n_indent:] for s in lines]
-    return newlines, indent
-
-_execute_insertion="""
-# the rest of the wscripts do not have to include the specified
-paths = get_required_paths()
-self.recurse(paths, mandatory = False)
-print 'PATCHED EXECUTE'
-
-""".split("\n")
-
-def patch_context_meta():
-    """Monkey patch store_context to modify the sourcecode of execute()
-    method whenever a class is generated.
-
-    """
-    meta        = Context.store_context
-    method_name = "execute"
-    insertion   = _execute_insertion
-
-    class new_meta(meta):
-        def __new__(cls, name, bases, dct):
-            perform_patching = not ("cmd" in dict and dict["cmd"] in NO_PATCH_CMDS)
-            perform_patching = perform_patching and method_name in dict
-
-            if perform_patching:
-                method = dict[method_name]
-                sourcelines = inspect.getsource(method).split("\n")
-
-                # remove indent so that we can recompile without error
-                sourcelines, indent = remove_indent(sourcelines)
-
-                # NOTE: We assume the first argument to be called 'self'
-                #       Which is reasonable
-                #       Also we assume the header to be contained in one line,
-                #       which for execute is also reasonable since it should
-                #       always be invoked with no arguments
-                header = sourcelines[0]
-                content = sourcelines[1:]
-
-                for i, l in enumerate(content):
-                    if "self.recurse(" in l:
-                        # we found the recurse statement, insert the other statements below
-                        i += 1
-                        for insertline in reversed(insertion):
-                            content.insert(i, insertline)
-                        break
-
-                new_source = "\n".join([header] + content)
-                exec compile(new_source, '<string>', 'exec') in globals(), locals()
-
-                dict[method_name] = eval(method_name)
-                dict["symwaf2ic_patched"] = True
-
-            return super(new_meta,meta).__new__(cls, name, bases, dict)
-
-    # # NOTE: Reimplementation of waf code (hack)
-    # created_classes = []
-    # while Context.classes.count() > 0:
-        # created_classes.append(Context.classes.pop())
-
-    # Context.ctx = new_meta('ctx', (object,), {})
+# # utils for `patch_execute`
+# def find_indent(s):
+    # i = 0
+    # while s[:(i+1)].isspace():
+        # i += 1
+    # return i
 
 
-# TODO: DELETEME
-def patch_execute(
-        meta=Context.store_context,
-        meta_method="__new__",
-        method_name="execute",
-        insertion=_execute_insertion
-    ):
-    """Monkey patch store_context to modify the sourcecode of execute()
-    method whenever a class is generated.
+# def remove_indent(lines):
+    # n_indent = find_indent(lines[0])
+    # indent = lines[0][:n_indent]
+    # newlines = [s[n_indent:] for s in lines]
+    # return newlines, indent
 
-    """
-    # make sure only undefined methods are overwritten
-    if getattr(meta, meta_method) != getattr(type, meta_method):
-        raise Symwaf2icError("FATAL: Would overwrite defined waf method with unkown consquences!")
+# _execute_insertion="""
+# # the rest of the wscripts do not have to include the specified
+# paths = get_required_paths()
+# self.recurse(paths, mandatory = False)
+# print 'PATCHED EXECUTE'
 
-    def new_meta(cls, cls2, name, bases, dict):
-        perform_patching = not ("cmd" in dict and dict["cmd"] in NO_PATCH_CMDS)
-        perform_patching = perform_patching and method_name in dict
+# """.split("\n")
 
-        if perform_patching:
-            method = dict[method_name]
-            sourcelines = inspect.getsource(method).split("\n")
+# def patch_context_meta():
+    # """Monkey patch store_context to modify the sourcecode of execute()
+    # method whenever a class is generated.
 
-            # remove indent so that we can recompile without error
-            sourcelines, indent = remove_indent(sourcelines)
+    # """
+    # meta        = Context.store_context
+    # method_name = "execute"
+    # insertion   = _execute_insertion
 
-            # NOTE: We assume the first argument to be called 'self'
-            #       Which is reasonable
-            #       Also we assume the header to be contained in one line,
-            #       which for execute is also reasonable since it should
-            #       always be invoked with no arguments
-            header = sourcelines[0]
-            content = sourcelines[1:]
+    # class new_meta(meta):
+        # def __new__(cls, name, bases, dct):
+            # perform_patching = not ("cmd" in dict and dict["cmd"] in NO_PATCH_CMDS)
+            # perform_patching = perform_patching and method_name in dict
 
-            for i, l in enumerate(content):
-                if "self.recurse(" in l:
-                    # we found the recurse statement, insert the other statements below
-                    i += 1
-                    for insertline in reversed(insertion):
-                        content.insert(i, insertline)
-                    break
+            # if perform_patching:
+                # method = dict[method_name]
+                # sourcelines = inspect.getsource(method).split("\n")
 
-            new_source = "\n".join([header] + content)
-            print new_source
-            exec compile(new_source, '<string>', 'exec') in globals(), locals()
+                # # remove indent so that we can recompile without error
+                # sourcelines, indent = remove_indent(sourcelines)
 
-            dict[method_name] = eval(method_name)
+                # # NOTE: We assume the first argument to be called 'self'
+                # #       Which is reasonable
+                # #       Also we assume the header to be contained in one line,
+                # #       which for execute is also reasonable since it should
+                # #       always be invoked with no arguments
+                # header = sourcelines[0]
+                # content = sourcelines[1:]
 
-        return type.__new__(cls, name, bases, dict)
+                # for i, l in enumerate(content):
+                    # if "self.recurse(" in l:
+                        # # we found the recurse statement, insert the other statements below
+                        # i += 1
+                        # for insertline in reversed(insertion):
+                            # content.insert(i, insertline)
+                        # break
 
-    new_meta.__name__ = meta_method
-    setattr(meta, meta_method, types.MethodType(new_meta, meta, meta.__class__))
+                # new_source = "\n".join([header] + content)
+                # exec compile(new_source, '<string>', 'exec') in globals(), locals()
+
+                # dict[method_name] = eval(method_name)
+                # dict["symwaf2ic_patched"] = True
+
+            # return super(new_meta,meta).__new__(cls, name, bases, dict)
+
+    # # # NOTE: Reimplementation of waf code (hack)
+    # # created_classes = []
+    # # while Context.classes.count() > 0:
+        # # created_classes.append(Context.classes.pop())
+
+    # # Context.ctx = new_meta('ctx', (object,), {})
 
 
-def _patched_execute(self):
-    """Patched version of Context.Context.execute() so that not only the root
-    wscript is recursed into but all required wscripts as well.
+# # TODO: DELETEME
+# def patch_execute(
+        # meta=Context.store_context,
+        # meta_method="__new__",
+        # method_name="execute",
+        # insertion=_execute_insertion
+    # ):
+    # """Monkey patch store_context to modify the sourcecode of execute()
+    # method whenever a class is generated.
 
-    """
-    # first recurse main g_module mandatorily
-    self.recurse([os.path.dirname(Context.g_module.root_path)])
+    # """
+    # # make sure only undefined methods are overwritten
+    # if getattr(meta, meta_method) != getattr(type, meta_method):
+        # raise Symwaf2icError("FATAL: Would overwrite defined waf method with unkown consquences!")
 
-    # the rest of the wscripts do not have to include the specified
-    paths = get_required_paths()
-    self.recurse(paths, mandatory = False)
+    # def new_meta(cls, cls2, name, bases, dict):
+        # perform_patching = not ("cmd" in dict and dict["cmd"] in NO_PATCH_CMDS)
+        # perform_patching = perform_patching and method_name in dict
+
+        # if perform_patching:
+            # method = dict[method_name]
+            # sourcelines = inspect.getsource(method).split("\n")
+
+            # # remove indent so that we can recompile without error
+            # sourcelines, indent = remove_indent(sourcelines)
+
+            # # NOTE: We assume the first argument to be called 'self'
+            # #       Which is reasonable
+            # #       Also we assume the header to be contained in one line,
+            # #       which for execute is also reasonable since it should
+            # #       always be invoked with no arguments
+            # header = sourcelines[0]
+            # content = sourcelines[1:]
+
+            # for i, l in enumerate(content):
+                # if "self.recurse(" in l:
+                    # # we found the recurse statement, insert the other statements below
+                    # i += 1
+                    # for insertline in reversed(insertion):
+                        # content.insert(i, insertline)
+                    # break
+
+            # new_source = "\n".join([header] + content)
+            # print new_source
+            # exec compile(new_source, '<string>', 'exec') in globals(), locals()
+
+            # dict[method_name] = eval(method_name)
+
+        # return type.__new__(cls, name, bases, dict)
+
+    # new_meta.__name__ = meta_method
+    # setattr(meta, meta_method, types.MethodType(new_meta, meta, meta.__class__))
+
+
+# def _patched_execute(self):
+    # """Patched version of Context.Context.execute() so that not only the root
+    # wscript is recursed into but all required wscripts as well.
+
+    # """
+    # # first recurse main g_module mandatorily
+    # self.recurse([os.path.dirname(Context.g_module.root_path)])
+
+    # # the rest of the wscripts do not have to include the specified
+    # paths = get_required_paths()
+    # self.recurse(paths, mandatory = False)
 
 

@@ -13,6 +13,7 @@ from waflib import Utils, Logs, Context, Build, Errors
 from pprint import pprint
 import json
 import tempfile
+import re
 
 import subprocess
 from ConfigParser import RawConfigParser
@@ -265,6 +266,8 @@ class MR(object):
                 # not yet existing db
                 self.mr_checkout_project(db_repo)
 
+        # make sure every
+        self.call_mr('checkout')
         self.db = Repo_DB(os.path.join(db_node.abspath(), self.DB_FILE))
 
     def init_mr(self):
@@ -353,11 +356,17 @@ class MR(object):
         if tmpfile is not None:
             # write config to repo conf
             tmpfile.seek(0)
-            self.config.write(tmpfile.file.read(), 'a')
+            tmpfile_lines = tmpfile.file.readlines()
             tmpfile.close()
-        Logs.debug(msg)
 
-        
+            # make sure path in header is relative (as if we had registered it without
+            # all the 'security' shennanigans from mr)
+            header_idx = 1
+            path = tmpfile_lines[header_idx].strip()[1:-1]
+            node = self.ctx.root.find_node(path)
+            tmpfile_lines[header_idx] = "[{0}]\n".format(node.path_from(self.base))
+            self.config.write("".join(tmpfile_lines), 'a')
+        Logs.debug(msg)
 
         return cmd, stdout, stderr
 
