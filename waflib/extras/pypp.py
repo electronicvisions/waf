@@ -73,6 +73,29 @@ class pyplusplus(Task.Task):
         self.generator.bld.raw_deps[self.uid()] = [self.signature()] + self.outputs
         self.add_cxx_tasks(self.outputs)
 
+    def __str__(self):
+        "string to display to the user"
+        env = self.env
+        src_str = ' '.join([a.nice_path(env) for a in self.inputs])
+        mod = self.module
+        return '%s: %s -> module %s\n' % (self.__class__.__name__.replace('_task', ''), src_str, mod)
+
+
+    def uid(self):
+        try:
+            return self.uid_
+        except AttributeError:
+            # this is not a real hot zone, but we want to avoid surprises here
+            m = Utils.md5()
+            up = m.update
+            up(self.__class__.__name__.encode())
+            up(self.output_dir.abspath().encode())
+            up(self.module.encode())
+            for x in self.inputs + self.outputs:
+                up(x.abspath().encode())
+            self.uid_ = m.digest()
+            return self.uid_
+
     def scan(task):
         """
             Modified from c_preproc, to scan all input nodes except the first one
@@ -164,8 +187,8 @@ def create_pyplusplus(self):
     input_nodes = self.to_nodes( [self.script] + headers )
 
     if not getattr(self, 'output_dir', None):
-        self.generator.bld.fatal('no output directory (outdir = ) set')
-    output_dir = self.bld.path.find_or_declare(self.output_dir)
+        self.bld.fatal('no output directory (outdir = ) set')
+    output_dir = self.bld.path.make_node(self.output_dir)
     output_dir.mkdir()
 
     helper_task = self.create_compiled_task('merge_cxx_objects', output_dir)
