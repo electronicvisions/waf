@@ -476,7 +476,8 @@ class DependencyContext(Symwaf2icContext):
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
         if storage.projects is None or len(storage.projects) == 0:
-            raise Symwaf2icError("Please specify target projects to build during 'setup' via --project.")
+            Logs.warn("Please specify target projects to build during 'setup' via --project.")
+            return
 
         Logs.info("Requiring toplevel projects: {0}".format( ", ".join(storage.projects)))
         for project in storage.projects:
