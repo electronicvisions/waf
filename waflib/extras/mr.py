@@ -238,6 +238,9 @@ class MR(object):
             self.mr_tool = self.base.find_node(self.MR)
         else:
             self.mr_tool = self.ctx.root.find_node(mr_path)
+        if self.mr_tool is None:
+            self.ctx.fatal("Could not find mr repo tool:\n" +
+            "Please install mr on your machine or place mr in this folder")
 
     def setup_repo_db(self, db_url, db_type):
         # first install some mock object that servers to create the repo db repository
