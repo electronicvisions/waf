@@ -31,7 +31,7 @@ SETUP_CMD = "setup"
 STORE_CMDS = "setup configure".split()
 
 # items to strip from command line before parsing with own parser
-HELP_CMDS = "-h --help".split()
+HELP_CMDS = "-h --help show_repos".split()
 STRIP_FROM_PARSER = HELP_CMDS
 # commands which will cause symwaf2ic to be disabled when specified
 NO_EXECUTE_CMDS = "distclean".split()
