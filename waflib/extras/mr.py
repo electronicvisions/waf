@@ -35,6 +35,14 @@ class Repo_DB(object):
     def get_url(self, name):
         return self.db[name]["url"]
 
+    def get_description(self, name):
+        return self.db[name].get("description",
+                "- No description available -")
+
+    def list_repos(self):
+        names = self.db.keys()
+        return filter(lambda x: not x.startswith("_"), names)
+
 
 class Project(object):
     def __init__(self, name, node, branch = None):
@@ -458,6 +466,64 @@ class mr_push(MRContext):
 #
 #class mr_checkout(MRContext):
 #    cmd = 'checkout'
+
+class show_repos_context(Build.BuildContext):
+    __doc__ = '''lists all available repositories'''
+    cmd = 'show_repos'
+    def __init__(self, **kw):
+        super(Build.BuildContext, self).__init__(**kw)
+
+    def build_repo_info(self, r):
+        info = {"name" : r,
+                "used" : str(r  in self.used),
+                "desc" : self.db.get_description(r),
+                "url"  : self.db.get_url(r),
+        }
+        return info
+
+    def get_longest_field(self, d, key):
+        if d:
+            item = max(d, key = lambda x: len(x[key]))
+            return len(item[key])
+        else:
+            return 0
+
+    def truncate_field(self, data, field, length):
+        cut = max(length - 3, 0)
+        for k in data:
+            f = k[field]
+            if len(f) > length:
+                k[field] = f[:cut] + "..."
+
+    def execute(self):
+        """
+        See :py:func:`waflib.Context.Context.execute`.
+        """
+        self.mr = get_repo_tool()
+        self.db = self.mr.db
+
+        self.repos = sorted(self.db.list_repos())
+        self.used = set(self.mr.get_projects().keys())
+
+        data = [ self.build_repo_info(r) for r in self.repos ]
+
+        self.truncate_field(data, "desc", 50)
+
+        field = "{{{name}: <{len}}}"
+        fields = [ ("name", self.get_longest_field(data, "name")),
+                   ("used", 6),
+                   ("desc", self.get_longest_field(data, "desc")),
+                   ("url", self.get_longest_field(data, "url")),
+        ]
+        line = "| " + " | ".join([field.format(name = n, len = l) for n, l in fields]) + " |"
+
+        header = line.format(name = "repo", used = "used", desc = "description", url = "url")
+        print header
+        print "-" * len(header)
+        for d in data:
+            print line.format(**d)
+
+
 
 def which(program):
     import os
