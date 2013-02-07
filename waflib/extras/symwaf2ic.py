@@ -152,14 +152,14 @@ def prelude():
 
     else:
         # make sure toplevel wscript is present if --help specified
-        if set(sys.argv) & set(HELP_CMDS):
+        if is_help_requested():
             assert_toplevel_wscript()
 
 
 def assert_toplevel_wscript():
     # if there is no wscript and there is a setup command present, create the default wscript
     if Context.WSCRIPT_FILE not in os.listdir(os.getcwd()):
-        if SETUP_CMD in sys.argv:
+        if SETUP_CMD in sys.argv or is_help_requested() or len(sys.argv) == 1:
             with open(os.path.join(os.getcwd(), Context.WSCRIPT_FILE), "w") as wf:
                 wf.write(_toplevel_wscript_contents)
 
@@ -295,28 +295,32 @@ class MainContext(Symwaf2icContext):
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
 
+    def init_toplevel(self):
+        Logs.info("Setting up symwaf2ic toplevel.")
+
+        # Since we need the toplevel in several commands, only store the path
+        storage.toplevel = self.path.abspath()
+        self.toplevel = self.root.find_node(storage.toplevel)
+
+        # create lockfile indicating the toplevel directory
+        storage.lockfile = self.path.make_node(LOCKFILE)
+        storage.lockfile.write("")
+
+        # sys.argv.remove(SETUP_CMD)
 
     def set_toplevel(self):
         Logs.debug("Finding toplevel")
         if SETUP_CMD in sys.argv:
-            Logs.info("Setting up symwaf2ic toplevel.")
-
-            # Since we need the toplevel in several commands, only store the path
-            storage.toplevel = self.path.abspath()
-            self.toplevel = self.root.find_node(storage.toplevel)
-
-            # create lockfile indicating the toplevel directory
-            storage.lockfile = self.path.make_node(LOCKFILE)
-            storage.lockfile.write("")
-
-            # sys.argv.remove(SETUP_CMD)
-
+            self.init_toplevel()
         else:
             cur_dir = self.root.find_node(os.getcwd())
             while cur_dir.find_node(LOCKFILE) is None:
                 cur_dir = cur_dir.parent
                 if cur_dir is None:
-                    raise Symwaf2icError("Could not find symwaf2ic lockfile. Please run 'setup' first.")
+                    self.init_toplevel()
+                    cur_dir = self.root.find_node(os.getcwd())
+                    sys.argv.append(SETUP_CMD)
+                    #raise Symwaf2icError("Could not find symwaf2ic lockfile. Please run 'setup' first.")
             # be sure not to create new nodes
             self.toplevel = self.root.find_node(cur_dir.abspath())
             storage.toplevel = self.toplevel.abspath()
@@ -432,12 +436,13 @@ class DependencyContext(Symwaf2icContext):
         self.options_parser = OptionParserContext()
 
     def __call__(self, project, subfolder="", branch=None):
-        Logs.info("Required by {script}: {project}{branch}{subfolder}".format(
-                project=project,
-                subfolder="" if len(subfolder) == 0 else " ({0})".format(subfolder),
-                branch="" if branch is None else "@{0}".format(branch),
-                script=self.cur_script.path_from(self.toplevel)
-            ))
+        if Logs.verbose > 0:
+            Logs.info("Required by {script}: {project}{branch}{subfolder}".format(
+                    project=project,
+                    subfolder="" if len(subfolder) == 0 else " ({0})".format(subfolder),
+                    branch="" if branch is None else "@{0}".format(branch),
+                    script=self.cur_script.path_from(self.toplevel)
+                ))
 
         path = storage.repo_tool.checkout_project(project, branch)
 
