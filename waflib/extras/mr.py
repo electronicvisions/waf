@@ -19,58 +19,8 @@ import subprocess
 from ConfigParser import RawConfigParser
 from StringIO import StringIO
 
-# def gitviz(name, *init):
-    # return ('git', 'git@gitviz.kip.uni-heidelberg.de:{name}'.format(name = name)) + init
-
-
-# db = {
-    # 'symap2ic':                    gitviz('symap2ic'),
-    # 'spikeyhal':                   gitviz('spikeyhal'),
-    # 'flyspi-fpga':                 gitviz('flyspi-fpga'),
-    # 'fpgasystem':                  gitviz('fpgasystem'),
-    # 'fpgasystem-projects':         gitviz('fpgasystem-projects'),
-    # 'pynnhw':                      gitviz('pynn-hardware'),
-    # 'systemsim-stage2':            gitviz('systemsim-stage2'),
-    # 'mappingtool':                 gitviz('mappingtool.git'),
-    # 'sctrltp':                     gitviz('sctrltp'),
-    # 'demonstrator-ai-states':      gitviz('model-ai-states'),
-    # 'demonstrator-kth-l23':        gitviz('model-kth-l23'),
-    # 'demonstrator-locally':        gitviz('model-locally'),
-    # 'demonstrator-microcircuit':   gitviz('model-microcircuit'),
-    # 'demonstrator-quantitative':   gitviz('model-quantitative'),
-    # 'demonstrator-synfire-ffi':    gitviz('model-synfire-ffi'),
-    # 'hicann-system':               gitviz('hicann-system'),
-    # 'ncf-hicann':                  gitviz('ncf-hicann'),
-    # 'ncf-hicann-fc':               gitviz('ncf-hicann-fc'),
-    # 'deb-pynn':                    gitviz('deb-pynn'),
-    # 'calibration':                 gitviz('calibration'),
-    # 'jenkins-techdemo':            gitviz('jenkins-techdemo'),
-    # 'ester':                       gitviz('ester'),
-    # 'pyhmf':                       gitviz('pyhmf'),
-    # 'halbe':                       gitviz('halbe'),
-    # 'lib-rcf':                     gitviz('lib-rcf'),
-    # 'lib-boost-patches':           gitviz('lib-boost-patches'),
-    # 'marocco':                     gitviz('marocco'),
-    # 'pest':                        gitviz('pest'),
-    # 'hicann-system2':              gitviz('hicann-system'),
-    # 'pyplusplus':                  gitviz('pyplusplus'),
-    # 'pygccxml':                    gitviz('pygccxml'),
-    # 'ztl':                         ('git', 'https://github.com/ignatz/ztl.git'),
-    # 'rant':                        ('git', 'https://github.com/ignatz/rant.git'),
-    # 'bitter':                      ('git', 'https://github.com/ignatz/bitter.git'),
-    # 'odeint-v2':                   ('git', 'https://github.com/headmyshoulder/odeint-v2.git'),
-    # 'ztl_local':                   ('git', '/home/ckoke/Code/symap2ic/components/ztl', 'echo "Hallo"'),
-
-    # # DEBUGGING
-    # 'dummy_A':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_A'),
-    # 'dummy_B':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_B'),
-    # 'dummy_C':                     ('git', '/afs/kip.uni-heidelberg.de/user/obreitwi/git/symwaf2ic_test/dummy_C'),
-# }
-
-
 # will be set from symwaf2ic
 get_repo_tool = lambda: None
-
 
 class Repo_DB(object):
     def __init__(self, filepath):
