@@ -176,6 +176,15 @@ def fix_pyplusplus_compiler(self):
     self.env.detach()
     self.env.CXX = self.env.CXX_PYPP
 
+    if not getattr(self, 'output_dir', None):
+        self.bld.fatal('no output directory (outdir = ) set')
+    self.pypp_output_dir = self.bld.path.make_node(self.output_dir)
+    self.pypp_output_dir.mkdir()
+
+    self.pypp_helper_task = self.create_compiled_task(
+            'merge_cxx_objects', self.pypp_output_dir)
+    self.pypp_helper_task.inputs = []
+
 @feature('pypp')
 @after_method('process_use', 'apply_incpaths')
 def create_pyplusplus(self):
@@ -186,25 +195,17 @@ def create_pyplusplus(self):
 
     input_nodes = self.to_nodes( [self.script] + headers )
 
-    if not getattr(self, 'output_dir', None):
-        self.bld.fatal('no output directory (outdir = ) set')
-    output_dir = self.bld.path.make_node(self.output_dir)
-    output_dir.mkdir()
-
-    helper_task = self.create_compiled_task('merge_cxx_objects', output_dir)
-    helper_task.inputs = []
-
     defines = self.to_list(getattr(self, 'gen_defines', []))
     includes = to_incnodes(self, getattr(self, 'includes', []))
     t = self.create_task('pyplusplus', input_nodes)
-    t.env.OUTPUT_DIR = output_dir.abspath()
+    t.env.OUTPUT_DIR = self.pypp_output_dir.abspath()
     t.env.DEF_ST = ["-D"]
     t.env.INC_ST = ["-I"]
     t.env.DEFINES = defines
     t.env.INCLUDES = [ inc.abspath() for inc in includes ]
     t.module = self.module
-    t.output_dir = output_dir
-    t.helper_task = helper_task
+    t.output_dir = self.pypp_output_dir
+    t.helper_task = self.pypp_helper_task
 
 
 not_found_msg = """Please use the patched pygccxml and pyplusplus provided at:
