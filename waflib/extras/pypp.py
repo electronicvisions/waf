@@ -176,10 +176,15 @@ def fix_pyplusplus_compiler(self):
     self.env.detach()
     self.env.CXX = self.env.CXX_PYPP
 
-    if not getattr(self, 'output_dir', None):
+    if not getattr(self, 'script', None):
+        self.generator.bld.fatal('script file not set')
+    if not getattr(self, 'module', None):
+        self.generator.bld.fatal('module name not set')
+    if not getattr(self, 'output_dir', self.module):
         self.bld.fatal('no output directory (outdir = ) set')
-    self.pypp_output_dir = self.bld.path.make_node(self.output_dir)
-    self.pypp_output_dir.mkdir()
+    out_dir = self.path.get_bld().make_node(self.output_dir)
+    out_dir.mkdir()
+    self.pypp_output_dir = out_dir
 
     self.pypp_helper_task = self.create_compiled_task(
             'merge_cxx_objects', self.pypp_output_dir)
@@ -188,10 +193,7 @@ def fix_pyplusplus_compiler(self):
 @feature('pypp')
 @after_method('process_use', 'apply_incpaths')
 def create_pyplusplus(self):
-
     headers = self.to_list(getattr(self, 'headers', []))
-    if not getattr(self, 'script', None):
-        self.generator.bld.fatal('script file not set')
 
     input_nodes = self.to_nodes( [self.script] + headers )
 
