@@ -78,8 +78,8 @@ class Project(object):
 
     @property
     def real_branch(self):
-        stdout, stderr = self.exec_cmd(self.set_branch_cmd())
-        return stdout
+        stdout, stderr = self.exec_cmd(self.get_branch_cmd())
+        return stdout.strip()
 
     def path_from(self, modules_dir):
         return self.node.path_from(modules_dir)
@@ -90,13 +90,13 @@ class Project(object):
 
     def exec_cmd(self, cmd, **kw):
         defaults = {
-                'pwd'    : self.node.abspath(),
+                'cwd'    : self.node.abspath(),
                 'stdout' : subprocess.PIPE,
                 'stderr' : subprocess.PIPE,
             }
         defaults.update(kw)
-        subprocess.check_call(cmd, **defaults)
-        return subprocess.communicate()
+        p = subprocess.Popen(cmd, **defaults)
+        return p.communicate()
 
     # TO IMPLEMENT
     def mr_checkout_cmd(self, *k, **kw):
