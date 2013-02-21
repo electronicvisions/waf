@@ -50,7 +50,7 @@ class pyplusplus(Task.Task):
         args = self.env.PYTHON + [self.inputs[0].abspath()]
         args += ["-o", self.output_dir.abspath() ]
         args += ["-M", self.module ]
-        args += self.colon("INC_ST", "INCLUDES" )
+        args += self.colon("INC_ST", "INCPATHS" )
         args += self.colon("DEF_ST", "DEFINES" )
         args += [ x.abspath() for x in self.inputs[1:] ]
 
@@ -196,13 +196,11 @@ def create_pyplusplus(self):
     input_nodes = self.to_nodes( [self.script] + headers )
 
     defines = self.to_list(getattr(self, 'gen_defines', []))
-    includes = to_incnodes(self, getattr(self, 'includes', []))
     t = self.create_task('pyplusplus', input_nodes)
     t.env.OUTPUT_DIR = self.pypp_output_dir.abspath()
     t.env.DEF_ST = ["-D"]
     t.env.INC_ST = ["-I"]
     t.env.DEFINES = defines
-    t.env.INCLUDES = [ inc.abspath() for inc in includes ]
     t.module = self.module
     t.output_dir = self.pypp_output_dir
     t.helper_task = self.pypp_helper_task
