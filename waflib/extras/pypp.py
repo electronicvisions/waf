@@ -178,11 +178,9 @@ def fix_pyplusplus_compiler(self):
 
     if not getattr(self, 'script', None):
         self.generator.bld.fatal('script file not set')
-    if not getattr(self, 'module', None):
-        self.generator.bld.fatal('module name not set')
-    if not getattr(self, 'output_dir', self.module):
-        self.bld.fatal('no output directory (outdir = ) set')
-    out_dir = self.path.get_bld().make_node(self.output_dir)
+    self.module = getattr(self, 'module', self.target)
+    out_dir = getattr(self, 'output_dir', self.module)
+    out_dir = self.path.get_bld().make_node(out_dir)
     out_dir.mkdir()
     self.pypp_output_dir = out_dir
 
