@@ -232,7 +232,7 @@ class TestBase(Task.Task):
         except AttributeError:
             env = self.generator.bld.pytest_environ = os.environ.copy()
             # Env polution, hihi
-            envvars =  ["PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH' ]
+            envvars =  ["PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH' ]
 
             pathes = set()
             for g in self.generator.bld.groups:
