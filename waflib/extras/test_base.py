@@ -95,7 +95,15 @@ def removeDuplicates(seq):
     seen = set()
     return [ x for x in seq if x not in seen and not seen.add(x)]
 
-result_line = "{file:.<{len_file}}: {status:<{len_status}} (execution time: {time:.2f}ms)"
+def getStatusColor(results):
+    st = results["status"]
+    if st == TestBase.PASSED:
+        return "GREEN"
+    elif st == TestBase.TIMEOUT:
+        return "YELLOW"
+    else:
+        return "RED"
+
 
 @Utils.run_once
 def summary(ctx):
@@ -112,11 +120,17 @@ def summary(ctx):
     len_status = getLongestField(results, "status")
     scaleTime(results, 1000.0)
 
-    Logs.pprint(COLOR, 'Test results:')
+    result_line = (
+            "{{:.<{len_file}}}:".format(len_file = len_file),
+            "{{:<{len_status}}}".format(len_status = len_status),
+            "(execution time: {:.2f}ms)"
+    )
 
+    Logs.pprint(COLOR, 'Test results:')
     for line in results:
-        l = result_line.format(len_file = len_file, len_status = len_status, **line)
-        Logs.pprint(COLOR, l)
+        Logs.pprint(COLOR, result_line[0].format(line["file"]), sep=" ")
+        Logs.pprint(getStatusColor(line), result_line[1].format(line["status"]), sep=" ")
+        Logs.pprint(COLOR, result_line[2].format(line["time"]))
 
     Logs.pprint(COLOR, "\n" + statusSummary(results))
 
