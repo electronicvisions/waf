@@ -475,7 +475,7 @@ class DependencyContext(Symwaf2icContext):
             raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
 
         if path not in storage.paths:
-            storage.paths.append(path)
+            storage.paths.insert(0, path)
             self.recurse([path], mandatory=False)
 
     def _recurse_projects(self):
