@@ -84,13 +84,13 @@ def patch_context():
         else:
             self._first_recursion = False
 
-            # run the desired toplevel recurse..
-            orig_recurse(self, paths, *k, **kw)
-
-            # ..and also all required dependencies (not mandatory)
+            # raun all required dependencies (not mandatory)
             kw["mandatory"] = False
             dep_paths = get_required_paths()
             orig_recurse(self, dep_paths, *k, **kw)
+
+            # and then the desired toplevel recurse..
+            orig_recurse(self, paths, *k, **kw)
 
     setattr(Context.Context, "__init__", init)
     setattr(Context.Context, "recurse", recurse)
@@ -461,8 +461,8 @@ class DependencyContext(Symwaf2icContext):
         
         # If we are running from a subfolder wie have to add this folder to
         # required scripts list
-		if self.path != self.toplevel:
-			self._add_required_path(self.path.path_from(self.toplevel))
+        if self.path != self.toplevel:
+            self._add_required_path(self.path.path_from(self.toplevel))
         # Only recurse into the toplevel wscript because all dependencies will
         # be defined from there. Also it shall be possible to have no dependencies.
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
