@@ -458,6 +458,11 @@ class DependencyContext(Symwaf2icContext):
     def execute(self):
         # dont recurse into all already dependency directories again
         self._first_recursion = False
+        
+        # If we are running from a subfolder wie have to add this folder to
+        # required scripts list
+		if self.path != self.toplevel:
+			self._add_required_path(self.path.path_from(self.toplevel))
         # Only recurse into the toplevel wscript because all dependencies will
         # be defined from there. Also it shall be possible to have no dependencies.
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
