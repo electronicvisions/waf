@@ -67,8 +67,7 @@ class pyplusplus(Task.Task):
 
         old_nodes = self.output_dir.ant_glob('*.cpp', quiet=True)
 
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.pathsep.join(module_folders + env.get("PYHTONPATH", "").split(os.pathsep))
+        env = self.getEnviron()
 
         try:
             stdout, stderr = bld.cmd_and_log(args, cwd = bld.variant_dir, env=env, output=Context.BOTH, quiet=Context.BOTH)
@@ -146,11 +145,23 @@ class pyplusplus(Task.Task):
 
     def getEnviron(self):
         # Add python path to env
-        seen = set()
+        bld = self.generator.bld
+
         env = os.environ.copy()
-        pyhtonpath = modules_folders + env.get("PYTHONPATH", "").split(os.pathsep)
-        pythonpath = [ x for x in pythonpath if x not in seen and not seen.add(x)]
-        env["PYTHONPATH"] = os.pathsep.join(pyhtonpath)
+        if bld.env.env:
+            try:
+                env = bld.env.env.copy()
+            except AttributeError:
+                pass
+
+        pp = module_folders[:]
+        for path in env.get('PYTHONPATH', '').split(os.pathsep):
+            if path not in pp:
+                pp.append(path)
+
+        env["PYTHONPATH"] = os.pathsep.join(pp)
+
+        return env
 
     def runnable_status(self):
         ret = super(pyplusplus, self).runnable_status()
