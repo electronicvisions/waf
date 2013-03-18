@@ -18,6 +18,7 @@ import os, sys
 from waflib import Task, Utils, Node, Logs, Context, Errors, Options
 from waflib.TaskGen import feature, after_method, before_method
 from waflib.Tools import c_preproc
+from waflib.Configure import conf
 from pprint import pprint
 from waflib.Tools.ccroot import to_incnodes, link_task
 
@@ -28,13 +29,25 @@ except ImportError:
     base_dir = os.environ["SYMAP2IC_PATH"]
     base_dir = os.path.join(base_dir, 'components')
 
-module_folders = [ os.path.abspath(p) for p in [
-    os.path.join(base_dir, 'pyplusplus'),
-    os.path.join(base_dir, 'pygccxml'),
-    ]]
+ENV_PYPP_MODULE_PATHS = "PYPP_MODULE_PATHS"
 
-for path in module_folders:
-    sys.path.insert(0, path)
+@conf
+def pypp_add_module_path(cfg, *paths):
+    cfg.env.append_unique(ENV_PYPP_MODULE_PATHS,
+        [os.path.abspath(path) for path in paths])
+
+def getEnviron(conf):
+    env = os.environ.copy()
+
+    pp = []
+    for path in conf.env[ENV_PYPP_MODULE_PATHS] + env.get('PYTHONPATH', '').split(os.pathsep):
+        if path not in pp:
+            pp.append(path)
+
+    env["PYTHONPATH"] = os.pathsep.join(pp)
+
+    return env
+
 
 def options(opt):
     """
@@ -67,7 +80,7 @@ class pyplusplus(Task.Task):
 
         old_nodes = self.output_dir.ant_glob('*.cpp', quiet=True)
 
-        env = self.getEnviron()
+        env = getEnviron(bld)
 
         try:
             stdout, stderr = bld.cmd_and_log(args, cwd = bld.variant_dir, env=env, output=Context.BOTH, quiet=Context.BOTH)
@@ -142,26 +155,6 @@ class pyplusplus(Task.Task):
 
             self.helper_task.set_run_after(tsk)
             self.helper_task.inputs.extend(tsk.outputs)
-
-    def getEnviron(self):
-        # Add python path to env
-        bld = self.generator.bld
-
-        env = os.environ.copy()
-        if bld.env.env:
-            try:
-                env = bld.env.env.copy()
-            except AttributeError:
-                pass
-
-        pp = module_folders[:]
-        for path in env.get('PYTHONPATH', '').split(os.pathsep):
-            if path not in pp:
-                pp.append(path)
-
-        env["PYTHONPATH"] = os.pathsep.join(pp)
-
-        return env
 
     def runnable_status(self):
         ret = super(pyplusplus, self).runnable_status()
@@ -253,19 +246,16 @@ def configure(conf):
         conf.check_python_version(minver=(2,5))
         conf.check_python_headers()
 
-        try:
-            import pyplusplus
-            import pygccxml
-        except ImportError:
-            conf.fatal(not_found_msg)
+        conf.pypp_add_module_path(
+            os.path.join(base_dir, 'pyplusplus'),
+            os.path.join(base_dir, 'pygccxml'))
 
-        try:
-            if not pyplusplus.symap2ic_patched:
-                raise AttributeError
-            if not pygccxml.symap2ic_patched:
-                raise AttributeError
-        except AttributeError:
-            conf.fatal(not_found_msg)
+        for mod in ['pyplusplus', 'pygccxml']:
+            test = 'import {0}; {0}.symap2ic_patched'.format(mod)
+            try:
+                conf.cmd_and_log(conf.env['PYTHON'] + ['-c', test], env=getEnviron(conf))
+            except Errors.WafError:
+                conf.fatal(not_found_msg)
 
         # ECM: We would have to check if compiled boost library was compiled
         # with the current compiler. => This is not possible for non-debug builds.
