@@ -15,7 +15,7 @@ ported from waf 1.5 (incomplete)
 """
 
 import os, sys
-from waflib import Task, Utils, Node, Logs, Context, Errors
+from waflib import Task, Utils, Node, Logs, Context, Errors, Options
 from waflib.TaskGen import feature, after_method, before_method
 from waflib.Tools import c_preproc
 from pprint import pprint
@@ -35,6 +35,17 @@ module_folders = [ os.path.abspath(p) for p in [
 
 for path in module_folders:
     sys.path.insert(0, path)
+
+def options(opt):
+    """
+    Provide options for gtest tests
+    """
+    grp = opt.add_option_group('Py++ Options')
+    grp.add_option('--pypp-force', action='store_true', default=False,
+                   help='Enforces to run Py++ scripts', dest='pypp_force')
+
+def force_run():
+    return getattr(Options.options, 'pypp_force', False)
 
 # See http://docs.waf.googlecode.com/git/book_17/single.html at
 # 10.4.2. A compiler producing source files with names unknown in advance
@@ -60,7 +71,7 @@ class pyplusplus(Task.Task):
         env["PYTHONPATH"] = os.pathsep.join(module_folders + env.get("PYHTONPATH", "").split(os.pathsep))
 
         try:
-            bld.cmd_and_log(args, cwd = bld.variant_dir, env=env, output=Context.BOTH, quiet=Context.BOTH)
+            stdout, stderr = bld.cmd_and_log(args, cwd = bld.variant_dir, env=env, output=Context.BOTH, quiet=Context.BOTH)
         except Errors.WafError as e:
             try:
                 print e.stdout
@@ -68,6 +79,9 @@ class pyplusplus(Task.Task):
                 return e.returncode
             except AttributeError:
                 raise e
+
+        Logs.debug("pypp: " + stdout)
+        Logs.debug("pypp: " + stderr)
 
         self.outputs = self.output_dir.ant_glob('*.cpp', quiet=True)
         self.generator.bld.raw_deps[self.uid()] = [self.signature()] + self.outputs
@@ -140,7 +154,9 @@ class pyplusplus(Task.Task):
 
     def runnable_status(self):
         ret = super(pyplusplus, self).runnable_status()
-        if ret == Task.SKIP_ME:
+        if ret == Task.SKIP_ME and force_run():
+            return Task.RUN_ME
+        elif ret == Task.SKIP_ME:
 
             lst = self.generator.bld.raw_deps[self.uid()]
             if lst[0] != self.signature():
