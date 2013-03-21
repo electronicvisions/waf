@@ -298,6 +298,7 @@ class MR(object):
         cmd, kw = self.format_cmd(*args, **kw)
         kw['quiet']  = Context.BOTH
         kw['output'] = Context.BOTH
+        kw['env'] = self.get_mr_env()
         try:
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
@@ -331,6 +332,11 @@ class MR(object):
 
         return cmd, stdout, stderr
 
+    def get_mr_env(self):
+        env = os.environ
+        path = env["PATH"].split(os.pathsep)
+        path.insert(0, self.mr_tool.parent.abspath())
+        env["PATH"] = os.pathsep.join(path)
 
     def register_top(self):
         # TODO we need the name of the master repo...
