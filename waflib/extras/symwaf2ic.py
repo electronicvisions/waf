@@ -84,7 +84,7 @@ def patch_context():
         else:
             self._first_recursion = False
 
-            # raun all required dependencies (not mandatory)
+            # run all required dependencies (not mandatory)
             kw["mandatory"] = False
             dep_paths = get_required_paths()
             orig_recurse(self, dep_paths, *k, **kw)
@@ -361,7 +361,7 @@ class OptionParserContext(Symwaf2icContext):
 
     # wrapper functions to use argparse even though waf still uses optparse
     def add_option(self, *k, **kw):
-        # fixes for optparse -> argparse compatability
+        # fixes for optparse -> argparse compatability (NOTE: Might not be complete)
         if "type" in kw:
             kw["type"] = eval(kw["type"])
         if storage.set_options:
@@ -458,7 +458,7 @@ class DependencyContext(Symwaf2icContext):
     def execute(self):
         # dont recurse into all already dependency directories again
         self._first_recursion = False
-        
+
         # If we are running from a subfolder wie have to add this folder to
         # required scripts list
         if self.path != self.toplevel:
@@ -496,7 +496,7 @@ class DependencyContext(Symwaf2icContext):
 
 
 def distclean(ctx):
-    # make sure no other commands are being run
+    # make sure no other commands are being run (otherwise: don't clean)
     if not Options.commands:
         shutil.rmtree(os.path.join(os.getcwd(), CFGFOLDER), ignore_errors=True)
         # try:
