@@ -51,6 +51,14 @@ class Project(object):
         self._name = name
         self._node = node
         self._branch = branch
+        self._real_branch = None
+        self._mr_registered = False
+
+    def __str__(self):
+        try:
+            return self.name + " {" + self.required_branch + "}"
+        except RuntimeError:
+            return self.name + " {???}"
 
     def __eq__(self, another):
         return self.name == another.name
@@ -63,14 +71,27 @@ class Project(object):
         return self._name
 
     @property
-    def branch(self):
+    def mr_registered(self):
+        return self._mr_registered
+
+    @mr_registered.setter
+    def mr_registered(self, value):
+        self._mr_registered = value
+
+    @property
+    def required_branch(self):
+        if self._branch is None:
+            raise RuntimeError, "required branch unkown"
         return self._branch
 
-    def set_branch(self, branch):
+    @required_branch.setter
+    def required_branch(self, branch):
         if self._branch is None:
-            self._branch = branch if branch else self.default_branch
-        else:
+            self._branch = branch if branch is not None else self.default_branch
+        elif self._branch != branch:
             raise RuntimeError, "branch already set"
+        else:
+            pass
 
     @property
     def node(self):
@@ -78,8 +99,10 @@ class Project(object):
 
     @property
     def real_branch(self):
-        stdout, stderr = self.exec_cmd(self.get_branch_cmd())
-        return stdout.strip()
+        if self._real_branch is None:
+            stdout, stderr = self.exec_cmd(self.get_branch_cmd())
+            self._real_branch =  stdout.strip()
+        return self._real_branch
 
     def path_from(self, modules_dir):
         return self.node.path_from(modules_dir)
@@ -100,10 +123,9 @@ class Project(object):
 
     # TO IMPLEMENT
     def mr_checkout_cmd(self, *k, **kw):
-        pass
+        raise AttributeError
     def mr_init_cmd(self, *k, **kw):
-        pass
-
+        raise AttributeError
 
 class GitProject(Project):
     vcs = 'git'
@@ -113,7 +135,7 @@ class GitProject(Project):
         return ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
 
     def set_branch_cmd(self, branch = None):
-        return ['git', 'checkout', branch if branch else self.branch]
+        return ['git', 'checkout', branch if branch else self.required_branch]
 
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
@@ -121,9 +143,6 @@ class GitProject(Project):
     def mr_checkout_cmd(self, base_node, url):
         path = self.node.path_from(base_node)
         cmd = ["git clone '{url}' '{target}'".format(url=url, target=os.path.basename(path))]
-        # if self.branch != self.default_branch:
-            # cmd.append(" ".join(self.set_branch_cmd()))
-
         return 'checkout=%s' % "; ".join(cmd)
 
     def mr_init_cmd(self, init):
@@ -188,6 +207,7 @@ class MR(object):
         projects = self.projects
         for name in parser.sections():
             projects[name] = self._get_or_create_project(name)
+            projects[name].mr_registered = True
 
     def find_mr(self):
         mr_path = which("mr")
@@ -221,14 +241,12 @@ class MR(object):
             # since we have not read all managed repositories, manually read the mr config
             parser = self.load_config()
             self.projects[db_path] = db_repo = self.project_types[db_type](name=db_path, node=db_node)
-            db_repo.set_branch(None)
-            if db_path not in parser.sections():
+            db_repo.required_branch = None
+            if db_path not in parser.sections() or os.path.isdir(db_repo.node.abspath()):
                 # we need to add it manually because if project isn't found we would look in the
                 # not yet existing db
                 self.mr_checkout_project(db_repo)
 
-        # make sure every
-        self.call_mr('checkout')
         self.db = Repo_DB(os.path.join(db_node.abspath(), self.DB_FILE))
 
     def init_mr(self):
@@ -338,44 +356,38 @@ class MR(object):
         path.insert(0, self.mr_tool.parent.abspath())
         env["PATH"] = os.pathsep.join(path)
 
-    def register_top(self):
-        # TODO we need the name of the master repo...
-        # NOT USED!
-        master = '..'
-        if master in self.projects:
-            return
-        try:
-            self.call_mr('register', master)
-            self._get_or_create_project(master)
-        except Errors.WafError as e:
-            if not (hasattr(e, 'stderr') and e.stderr == "mr register: unknown repository type\n"):
-                raise e
 
     def checkout_project(self, name, branch = None):
-        if name in self.projects:
-            p = self.projects[name]
-            if branch is not None and p.branch != branch:
-                raise AttributeError, "Project %s is required with different branches '%s' and '%s'" % (p.name, p.branch, branch)
+        p = self._get_or_create_project(name)
+        if branch is None:
+            branch = p.default_branch
+
+        p.required_branch = branch
+        if p.mr_registered and os.path.isdir(p.node.abspath()):
             return p.node.path_from(self.base)
         else:
-            return self.mr_checkout_project(self._get_or_create_project(name, branch))
+            return self.mr_checkout_project(p)
 
     def mr_checkout_project(self, p):
         "Perform the actual mr checkout"
-        repo = self.pretty_name(p.name, p.branch)
         path = p.node.path_from(self.base)
+        do_checkout = False
 
         # Check if the project folder exists, in this case the repo 
         # needs only to be registered
         if os.path.isdir(p.node.abspath()):
-            self.mr_print('Register existing repository %s..' % repo, sep = '')
+            self.mr_print('Register existing repository %s..' % p, sep = '')
             self.call_mr('register', path)
         else:
-            self.mr_print('Trying to check out repository %s..' % repo, sep = '')
-            args = ['config', p.name,
-                    p.mr_checkout_cmd(self.base, self.db.get_url(p.name)),
-                    p.mr_init_cmd(self.db.get_init(p.name))]
-            self.call_mr(*args)
+            do_checkout = True
+            self.mr_print('Trying to check out repository %s..' % p, sep = '')
+
+        args = ['config', p.name,
+                p.mr_checkout_cmd(self.base, self.db.get_url(p.name)),
+                p.mr_init_cmd(self.db.get_init(p.name))]
+        self.call_mr(*args)
+
+        if do_checkout:
             self.call_mr('checkout')
 
         self.mr_print('done', 'GREEN')
@@ -393,6 +405,12 @@ class MR(object):
 
         self.save_config(parser)
 
+    def get_wrong_brachnes(self):
+        ret = []
+        for name, p in self.projects.iteritems():
+            if p.required_branch != p.real_branch:
+                ret.append( (name, p.required_branch, p.real_branch) )
+        return ret
 
     def get_projects(self):
         return self.projects
@@ -400,27 +418,25 @@ class MR(object):
     def pretty_projects(self):
         names = []
         for name, p in self.projects.iteritems():
-            names.append(self.pretty_name(p.name, p.branch))
+            names.append(self.pretty_name(p))
         return ", ".join(names)
 
-    def pretty_name(self, name, branch):
-        if branch:
-            name += " {" + branch + "}"
-        return name
+    def pretty_name(self, prj):
+        out = prj.name + " {on " + prj.real_branch + "}"
+        return out
 
     # def _repo_node(self, name):
         # """returns a a node representing the repo folder"""
         # node = self.base.make_node(name)
         # return node
 
-    def _get_or_create_project(self, name, branch=None):
+    def _get_or_create_project(self, name):
         try:
             return self.projects[name]
         except KeyError:
             vcs = self.db.get_type(name)
             node = self.base.make_node(name)
             p = self.project_types[vcs](name = name, node = node)
-            p.set_branch(branch)
             self.projects[name] = p
             return p
 
