@@ -185,6 +185,7 @@ def entry_point():
     storage = Storage(None)
     storage.paths = []
     storage.projects = set()
+    storage.directories = set()
 
     Logs.debug("Reached entry point.")
 
@@ -225,7 +226,10 @@ def options(opt):
             "--project", dest="projects", action="append",
             help="Declare the specified project as required build target "+\
                  "(can be specified several times).")
-
+    gr.add_option(
+            "--directory", dest="directories", action="append",
+            help="Make waf to recurse into the given folders." +
+                 "(can be specified several times).")
     gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
             help="URL for the repository containing the database with information about all other repositories.",
@@ -236,6 +240,11 @@ def options(opt):
             help="Type of the repository containting the repo DB (default: git). Can also be 'wget'.",
             default="git"
             )
+
+def list_items_to_str(lst):
+    if lst is None:
+        return []
+    return [str(x) for x in lst]
 
 class Symwaf2icContext(Context.Context):
     cmd = None
@@ -277,20 +286,21 @@ class MainContext(Symwaf2icContext):
         # projects are only set during setup phase
         cmdopts = OptionParserContext().parse_args()
         if SETUP_CMD in sys.argv:
-            storage.projects = cmdopts.projects
             # already write projects to store
-            config = {"projects": storage.projects}
+            config = {"projects": list_items_to_str(cmdopts.projects),
+                      "directories" : list_items_to_str(cmdopts.directories) } 
             storage.lockfile.write(json.dumps(config))
             storage.set_options = {}
         else:
             config = json.load(storage.lockfile)
-            storage.projects = config["projects"]
-            storage.set_options = config.get("set_options", {})
-
             # check if config is going to get written, if not, we require the
             # paths saved in a previous run
             if not write_config():
                 storage.saved_paths = config.get("saved_paths", [])
+
+        storage.projects = list_items_to_str(config["projects"])
+        storage.directories = list_items_to_str(config["directories"])
+        storage.set_options = config.get("set_options", {})
 
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
@@ -419,6 +429,7 @@ def store_config():
         return
     config = {}
     config["projects"] = storage.projects
+    config["directories"] = storage.directories
     config["set_options"] = dict(storage.options._get_kwargs())
     config["saved_paths"] = storage.paths
 
@@ -459,10 +470,20 @@ class DependencyContext(Symwaf2icContext):
         # dont recurse into all already dependency directories again
         self._first_recursion = False
 
+        info = []
+        info.extend(["project " + s for s in  storage.projects])
+        info.extend(["directory " + s for s in  storage.directories])
+        Logs.info("Required from toplevel: {0}".format( ", ".join(info)))
+
         # If we are running from a subfolder wie have to add this folder to
         # required scripts list
         if self.path != self.toplevel:
             self._add_required_path(self.path.path_from(self.toplevel))
+
+        # Recurse through all manually given wscripts
+        for path in storage.directories:
+            self._add_required_path(path)
+
         # Only recurse into the toplevel wscript because all dependencies will
         # be defined from there. Also it shall be possible to have no dependencies.
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
@@ -475,6 +496,9 @@ class DependencyContext(Symwaf2icContext):
 
     def _add_required_path(self, path):
         path = self.toplevel.find_node(path).abspath()
+        if not os.path.isdir(path):
+            raise Symwaf2icError("%s is not a valid directory" % path)
+
         # check if path is in saved_paths, else throw error
         if storage.saved_paths is not None and path not in storage.saved_paths and not is_help_requested():
             raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
@@ -485,12 +509,12 @@ class DependencyContext(Symwaf2icContext):
 
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
-        if storage.projects is None or len(storage.projects) == 0:
-            Logs.warn("Please specify target projects to build during 'setup' via --project.")
+        if len(storage.paths) == 0 and len(storage.projects) == 0:
+            Logs.warn("Please specify target projects to build during 'setup' via --project or --directory.")
             return
 
-        Logs.info("Requiring toplevel projects: {0}".format( ", ".join(storage.projects)))
-        for project in storage.projects:
+        projects = storage.projects if storage.projects else []
+        for project in projects:
             path = storage.repo_tool.checkout_project(project)
             self._add_required_path(path)
 
