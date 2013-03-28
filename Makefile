@@ -4,7 +4,7 @@ PRELUDE=from waflib.extras.symwaf2ic import prelude; prelude()
 TOP=$(CURDIR)/$(dir $(lastword $(MAKEFILE_LIST)))
 
 waf:
-	cd $(TOP) && ./waf-light '--tools=${TOOLS}' '--prelude=	${PRELUDE}' configure build
+	cd $(TOP) && ./waf-light '--tools=${TOOLS}' '--prelude=	${PRELUDE}' --nostrip configure build
 
 clean:
 	cd $(TOP) && ./waf-light distclean
