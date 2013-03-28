@@ -30,11 +30,16 @@ except ImportError:
     base_dir = os.path.join(base_dir, 'components')
 
 ENV_PYPP_MODULE_PATHS = "PYPP_MODULE_PATHS"
+ENV_PYPP_USES = "PYPP_USES"
 
 @conf
 def pypp_add_module_path(cfg, *paths):
     cfg.env.append_unique(ENV_PYPP_MODULE_PATHS,
         [os.path.abspath(path) for path in paths])
+
+@conf
+def pypp_add_use(cfg, *uses):
+    cfg.env.append_unique(ENV_PYPP_USES, uses)
 
 def getEnviron(conf):
     env = os.environ.copy()
@@ -195,6 +200,8 @@ class merge_cxx_objects(Task.Task):
 def fix_pyplusplus_compiler(self):
     self.env.detach()
     self.env.CXX = self.env.CXX_PYPP
+    self.use = self.to_list(getattr(self, 'use', []))
+    self.use.extend(self.env[ENV_PYPP_USES])
 
     if not getattr(self, 'script', None):
         self.generator.bld.fatal('script file not set')
