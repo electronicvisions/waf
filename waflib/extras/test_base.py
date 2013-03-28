@@ -18,6 +18,7 @@ from collections import defaultdict
 COLOR = 'CYAN'
 resultlock = Lock()
 
+@Utils.run_once
 def options(opt):
     """
     Provide options for gtest tests
@@ -40,6 +41,7 @@ def options(opt):
                    help='Maximal runtime in seconds per test executable')
 
 
+@Utils.run_once
 def configure(ctx):
     ctx.env.TEST_DISABLED = bool(getattr(Options.options, 'test_disabled', False))
     if ctx.tests_disabled():

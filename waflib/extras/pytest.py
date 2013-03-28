@@ -77,3 +77,9 @@ def process_pytest_use(self):
             t.set_run_after( dep_task.link_task )
         except AttributeError:
             pass
+
+def options(opt):
+    test_base.options(opt)
+
+def configure(ctx):
+    test_base.configure(ctx)
