@@ -102,7 +102,7 @@ class pyplusplus(Task.Task):
 
         self.outputs = self.output_dir.ant_glob('*.cpp', quiet=True)
         self.generator.bld.raw_deps[self.uid()] = [self.signature()] + self.outputs
-        self.add_cxx_tasks(self.outputs)
+        self.add_cxx_tasks()
 
     def __str__(self):
         "string to display to the user"
@@ -149,9 +149,9 @@ class pyplusplus(Task.Task):
         return nodes, names
 
 
-    def add_cxx_tasks(self, lst):
+    def add_cxx_tasks(self):
         self.more_tasks = getattr(self, "more_tasks", [])
-        for node in lst:
+        for node in self.outputs:
             if not node.name.endswith('.cpp'):
                 continue
             tsk = self.generator.create_compiled_task('cxx', node)
@@ -180,7 +180,7 @@ class pyplusplus(Task.Task):
 
             nodes = lst[1:]
             self.set_outputs(nodes)
-            self.add_cxx_tasks(nodes)
+            self.add_cxx_tasks()
 
         return ret
 
@@ -231,6 +231,7 @@ def create_pyplusplus(self):
     t.module = self.module
     t.output_dir = self.pypp_output_dir
     t.helper_task = self.pypp_helper_task
+    t.helper_task.set_run_after(t)
 
 
 not_found_msg = """Please use the patched pygccxml and pyplusplus provided at:
