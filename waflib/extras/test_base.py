@@ -235,25 +235,22 @@ class TestBase(Task.Task):
         """Add dependency lib pathes to PATH, PYTHON_PATH and LD_LIBRARY_PATH
         Collects all link_task output and adds the pathes to the found outputs to the pathes
         """
-        try:
-            return self.generator.bld.pytest_environ
-        except AttributeError:
-            env = self.generator.bld.pytest_environ = os.environ.copy()
-            env.update(self.test_environ)
+        env = os.environ.copy()
+        env.update(self.test_environ)
 
-            pathes = set()
-            for g in self.generator.bld.groups:
-                for tg in g:
-                    if getattr(tg, 'link_task', None):
-                        pathes.add(tg.link_task.outputs[0].parent.abspath())
+        pathes = set()
+        for use in self.generator.tmp_use_seen:
+            tg = self.bld.get_tgen_by_name(use)
+            if hasattr(tg, 'link_task'):
+                pathes.add(tg.link_task.outputs[0].parent.abspath())
 
-            # Env polution, hihi
-            envvars =  ["PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH' ]
-            for var in envvars:
-                p = list(pathes) + env.get(var, "").split(os.pathsep)
-                p = removeDuplicates(p)
-                env[var] = os.pathsep.join(p)
-            return env
+        # Env polution, hihi
+        envvars =  ["PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH' ]
+        for var in envvars:
+            p = list(pathes) + env.get(var, "").split(os.pathsep)
+            p = removeDuplicates(p)
+            env[var] = os.pathsep.join(p)
+        return env
 
     def runTest(self, name, cmd):
         bld = self.generator.bld
