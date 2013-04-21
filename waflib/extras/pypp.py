@@ -29,6 +29,7 @@ except ImportError:
     base_dir = os.environ["SYMAP2IC_PATH"]
     base_dir = os.path.join(base_dir, 'components')
 
+ENV_PYPP_MODULE_DEPENDENCIES = "PYPP_MODULE_DEPENDENCIES"
 ENV_PYPP_MODULE_PATHS = "PYPP_MODULE_PATHS"
 ENV_PYPP_USES = "PYPP_USES"
 
@@ -38,21 +39,48 @@ def pypp_add_module_path(cfg, *paths):
         [os.path.abspath(path) for path in paths])
 
 @conf
+def pypp_add_module_dependency(cfg, *modules):
+    cfg.env.append_unique(ENV_PYPP_MODULE_DEPENDENCIES, modules)
+
+@conf
 def pypp_add_use(cfg, *uses):
     cfg.env.append_unique(ENV_PYPP_USES, uses)
 
-def getEnviron(conf):
+def get_environ(conf):
     env = os.environ.copy()
 
     pp = []
     for path in conf.env[ENV_PYPP_MODULE_PATHS] + env.get('PYTHONPATH', '').split(os.pathsep):
         if path not in pp:
             pp.append(path)
-
     env["PYTHONPATH"] = os.pathsep.join(pp)
-
     return env
 
+def get_manual_module_dependencies(ctx):
+    env = get_environ(ctx)
+    if hasattr(ctx, "pypp_module_dependencies_cache"):
+        return ctx.pypp_module_dependencies_cache
+    dependencies = []
+    for module in ctx.env[ENV_PYPP_MODULE_DEPENDENCIES]:
+        code = "\n".join([
+                "import " + module,
+                "import os.path",
+                "print(os.path.dirname(" + module + ".__file__))",
+        ])
+        try:
+            path = ctx.cmd_and_log(ctx.env.PYTHON + ['-c', code], env=env,
+                    quiet=Context.BOTH)
+            path = path.strip()
+            assert os.path.isdir(path)
+        except Errors.WafError as e:
+            err = e.stdout + e.stderr
+            ctx.fatal("pypp: Manual dependency module '%s' could not be imported:" % module + err)
+        except AssertionError:
+            ctx.fatal("pypp: Could not find manual dependency module '%s'" % module)
+        module_path = ctx.root.find_node(path)
+        dependencies.extend(module_path.ant_glob("**/*.py"))
+    ctx.pypp_module_dependencies_cache = dependencies
+    return dependencies
 
 def options(opt):
     """
@@ -85,7 +113,7 @@ class pyplusplus(Task.Task):
 
         old_nodes = self.output_dir.ant_glob('*.cpp', quiet=True)
 
-        env = getEnviron(bld)
+        env = get_environ(bld)
 
         try:
             stdout, stderr = bld.cmd_and_log(args, cwd = bld.variant_dir, env=env, output=Context.BOTH, quiet=Context.BOTH)
@@ -230,11 +258,14 @@ def create_pyplusplus(self):
     t.env.DEFINES = defines
     t.module = self.module
     t.output_dir = self.pypp_output_dir
+    t.dep_nodes.extend(get_manual_module_dependencies(self.bld))
     t.helper_task = self.pypp_helper_task
     t.helper_task.set_run_after(t)
 
 
-not_found_msg = """Please use the patched pygccxml and pyplusplus provided at:
+not_found_msg = """Could not import correct module %s
+
+Please use the patched pygccxml and pyplusplus provided at:
 git@gitviz.kip.uni-heidelberg.de:pygccxml.git
 git@gitviz.kip.uni-heidelberg.de:pyplusplus.git
 
@@ -242,48 +273,43 @@ Use 'python -v waf configure' to find see where the loaded packageses are locate
 """
 
 
-exec_configure = True
 def configure(conf):
-    global exec_configure
-    if exec_configure:
-        exec_configure = False
+    conf.load('gxx')
+    conf.load('python')
+    conf.load('boost')
+    conf.check_python_version(minver=(2,5))
+    conf.check_python_headers()
 
-        conf.load('gxx')
-        conf.load('python')
-        conf.load('boost')
-        conf.check_python_version(minver=(2,5))
-        conf.check_python_headers()
+    for mod in ['pygccxml', 'pyplusplus']:
+        conf.pypp_add_module_path(os.path.join(base_dir, mod))
+        conf.pypp_add_module_dependency(mod)
 
-        conf.pypp_add_module_path(
-            os.path.join(base_dir, 'pyplusplus'),
-            os.path.join(base_dir, 'pygccxml'))
+        test = 'import {0}; {0}.symap2ic_patched'.format(mod)
+        try:
+            conf.cmd_and_log(conf.env['PYTHON'] + ['-c', test], env=get_environ(conf))
+        except Errors.WafError as e:
+            print e.stdout, e.stderr
+            conf.fatal(not_found_msg % mod)
 
-        for mod in ['pyplusplus', 'pygccxml']:
-            test = 'import {0}; {0}.symap2ic_patched'.format(mod)
-            try:
-                conf.cmd_and_log(conf.env['PYTHON'] + ['-c', test], env=getEnviron(conf))
-            except Errors.WafError:
-                conf.fatal(not_found_msg)
+    # ECM: We would have to check if compiled boost library was compiled
+    # with the current compiler. => This is not possible for non-debug builds.
+    # Workaround:
+    #  - if CXX matches system's g++, accept
+    #    (as 4.7-built boost works with 4.7, same holds for 4.6)
+    #  - if user provides PYPP_CXX, don't check (we trust the user ;))
+    #    (otherwise see first comment...)
 
-        # ECM: We would have to check if compiled boost library was compiled
-        # with the current compiler. => This is not possible for non-debug builds.
-        # Workaround:
-        #  - if CXX matches system's g++, accept
-        #    (as 4.7-built boost works with 4.7, same holds for 4.6)
-        #  - if user provides PYPP_CXX, don't check (we trust the user ;))
-        #    (otherwise see first comment...)
+    if conf.environ.get('CXX_PYPP', None) is None:
+        old_CC_VERSION = conf.env.CC_VERSION
+        conf.env.stash()
+        cc = conf.cmd_to_list(conf.find_program('g++'))
+        conf.get_cc_version(cc, gcc=True)
+        if old_CC_VERSION != conf.env.CC_VERSION:
+            msg = "System compiler (%s) doesn't match CXX (%s)." % ('.'.join(conf.env.CC_VERSION), '.'.join(old_CC_VERSION))
+            msg += "\nThis might cause problems (see gcc bugzilla #53455)."
+            msg += "\nUse CXX_PYPP=g++-4.X to specify the boost library compiler."
+            msg += "\nIf your boost library matches the rest of the OS, CXX_PYPP=g++ should suffice."
+            raise Errors.WafError, msg
+        conf.env.revert()
 
-        if conf.environ.get('CXX_PYPP', None) is None:
-            old_CC_VERSION = conf.env.CC_VERSION
-            conf.env.stash()
-            cc = conf.cmd_to_list(conf.find_program('g++'))
-            conf.get_cc_version(cc, gcc=True)
-            if old_CC_VERSION != conf.env.CC_VERSION:
-                msg = "System compiler (%s) doesn't match CXX (%s)." % ('.'.join(conf.env.CC_VERSION), '.'.join(old_CC_VERSION))
-                msg += "\nThis might cause problems (see gcc bugzilla #53455)."
-                msg += "\nUse CXX_PYPP=g++-4.X to specify the boost library compiler."
-                msg += "\nIf your boost library matches the rest of the OS, CXX_PYPP=g++ should suffice."
-                raise Errors.WafError, msg
-            conf.env.revert()
-
-        conf.env.CXX_PYPP = os.environ.get('CXX_PYPP', conf.env.CXX)
+    conf.env.CXX_PYPP = os.environ.get('CXX_PYPP', conf.env.CXX)
