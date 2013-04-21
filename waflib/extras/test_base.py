@@ -179,6 +179,13 @@ class TestBase(Task.Task):
     CRASHED = "crashed (return code: %i)"
     INTERNAL_ERROR = "waf error"
 
+    def __init__(self, *args, **kwargs):
+        super(TestBase, self).__init__(self, *args, **kwargs)
+        gen = self.generator
+        bld = self.generator.bld
+        self.test_environ = getattr(gen, "test_environ", {})
+        self.test_timeout = getattr(self, "test_timeout", int(bld.env["TEST_TIMEOUT"]))
+
     def getXmlDir(self):
         bld = self.generator.bld
         return getDir(bld, "TEST_XML_DIR")
@@ -196,8 +203,7 @@ class TestBase(Task.Task):
         return not ctx.env.get_flat("TEST_TEXT_DIR")
 
     def timeout(self):
-        bld = self.generator.bld
-        return getattr(self, "test_timeout", int(bld.env["TEST_TIMEOUT"]))
+        return self.test_timeout
 
     def storeResult(self, result):
         bld = self.generator.bld
@@ -233,8 +239,7 @@ class TestBase(Task.Task):
             return self.generator.bld.pytest_environ
         except AttributeError:
             env = self.generator.bld.pytest_environ = os.environ.copy()
-            # Env polution, hihi
-            envvars =  ["PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH' ]
+            env.update(self.test_environ)
 
             pathes = set()
             for g in self.generator.bld.groups:
@@ -242,19 +247,19 @@ class TestBase(Task.Task):
                     if getattr(tg, 'link_task', None):
                         pathes.add(tg.link_task.outputs[0].parent.abspath())
 
+            # Env polution, hihi
+            envvars =  ["PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH' ]
             for var in envvars:
-                p = list(pathes) + os.environ.get(var, "").split(os.pathsep)
+                p = list(pathes) + env.get(var, "").split(os.pathsep)
                 p = removeDuplicates(p)
                 env[var] = os.pathsep.join(p)
             return env
 
-    def runTest(self, name, cmd, environ = None):
+    def runTest(self, name, cmd):
         bld = self.generator.bld
         cwd = bld.path.abspath()
 
-        if environ is None:
-            environ = self.getEnviron()
-
+        environ = self.getEnviron()
         result = { "file" : name }
         def target():
             try:

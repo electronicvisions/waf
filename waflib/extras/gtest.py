@@ -32,7 +32,9 @@ The tests are declared by adding the **gtest** feature to programs:
             source='test.cpp', 
             target='app',
             skip_run=False,
-            use = "MYPROJECT RUNNER"
+            use = "MYPROJECT RUNNER",
+            gtest_main="test-main.cpp",
+            test_env={"DATA_PATH" : data.abspath() },
             )
 
 parameters of the feature:
@@ -125,10 +127,6 @@ def gtest_run_task(self):
     if getattr(self, 'link_task', None):
         t = self.create_task('gtest', self.link_task.outputs)
         t.skip_run = getattr(self, "skip_run", False)
-        try:
-            t.test_timeout = self.timeout
-        except AttributeError:
-            pass
 
 class gtest(test.TestBase):
     """
