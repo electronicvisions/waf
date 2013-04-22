@@ -70,7 +70,7 @@ def get_manual_module_dependencies(ctx):
         try:
             path = ctx.cmd_and_log(ctx.env.PYTHON + ['-c', code], env=env,
                     quiet=Context.BOTH)
-            path = path.strip()
+            path = os.path.abspath(path.strip())
             assert os.path.isdir(path)
         except Errors.WafError as e:
             err = e.stdout + e.stderr
