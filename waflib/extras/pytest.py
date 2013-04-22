@@ -62,8 +62,8 @@ def pytest_create_task(self):
     pythonpath = self.to_incnodes(getattr(self, "pythonpath", ""))
     self.test_environ = getattr(self, "test_environ", {})
     self.test_environ["PYTHONPATH"] = os.pathsep.join(
-            self.test_environ.get("PYTHONPATH","").split(os.pathsep) +
-            [n.abspath() for n in pythonpath]
+            [n.abspath() for n in pythonpath] +
+            self.test_environ.get("PYTHONPATH","").split(os.pathsep)
     )
 
     self.pytest_task = t = self.create_task('pytest', input_nodes)

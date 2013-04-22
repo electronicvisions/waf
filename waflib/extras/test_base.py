@@ -240,7 +240,7 @@ class TestBase(Task.Task):
 
         pathes = set()
         for use in self.generator.tmp_use_seen:
-            tg = self.bld.get_tgen_by_name(use)
+            tg = self.generator.bld.get_tgen_by_name(use)
             if hasattr(tg, 'link_task'):
                 pathes.add(tg.link_task.outputs[0].parent.abspath())
 
