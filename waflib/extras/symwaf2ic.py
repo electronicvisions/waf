@@ -9,6 +9,7 @@ import argparse
 import shutil
 
 import json
+from collections import defaultdict
 
 from waflib import Context, Errors, Logs, Options, Scripting
 from waflib.extras import mr
@@ -442,6 +443,9 @@ class DependencyContext(Symwaf2icContext):
     cmd = "dependency_resolution"
     fun = "depends"
 
+    # Flags for topological sort of projects
+    NOT_VISITED, ACTIVE, FINISHED = 0, 1, 2
+
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
@@ -463,8 +467,9 @@ class DependencyContext(Symwaf2icContext):
         if not self.toplevel.find_dir(path):
             raise Symwaf2icError("Folder '{0}' not found in project {1}".format(subfolder, project))
 
-        self._add_required_path(path)
-
+        # For topology order of deps
+        predecessor_path = self.cur_script.parent.abspath()
+        self._add_required_path(path, predecessor_path)
 
     def execute(self):
         # dont recurse into all already dependency directories again
@@ -475,14 +480,19 @@ class DependencyContext(Symwaf2icContext):
         info.extend(["directory " + s for s in  storage.directories])
         Logs.info("Required from toplevel: {0}".format( ", ".join(info)))
 
+        # Color map for topological sort
+        self.visited = defaultdict(lambda: self.NOT_VISITED)
+        # Helper to print cycles nicely
+        self.predecessors = {}
+
         # If we are running from a subfolder wie have to add this folder to
         # required scripts list
         if self.path != self.toplevel:
-            self._add_required_path(self.path.path_from(self.toplevel))
+            self._add_required_path(self.path.path_from(self.toplevel), None)
 
         # Recurse through all manually given wscripts
         for path in storage.directories:
-            self._add_required_path(path)
+            self._add_required_path(path, None)
 
         # Only recurse into the toplevel wscript because all dependencies will
         # be defined from there. Also it shall be possible to have no dependencies.
@@ -494,7 +504,7 @@ class DependencyContext(Symwaf2icContext):
         super(DependencyContext, self).pre_recurse(node)
         self.options = self.options_parser.parse_args(self.path.abspath())
 
-    def _add_required_path(self, path):
+    def _add_required_path(self, path, predecessor_path):
         path = self.toplevel.find_node(path).abspath()
         if not os.path.isdir(path):
             raise Symwaf2icError("%s is not a valid directory" % path)
@@ -503,9 +513,26 @@ class DependencyContext(Symwaf2icContext):
         if storage.saved_paths is not None and path not in storage.saved_paths and not is_help_requested():
             raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
 
-        if path not in storage.paths:
-            storage.paths.insert(0, path)
+        if self.visited[path] == self.NOT_VISITED:
+            self.visited[path] = self.ACTIVE
+            self.predecessors[path] = predecessor_path
             self.recurse([path], mandatory=False)
+            self.visited[path] = self.FINISHED
+            storage.paths.append(path)
+        elif self.visited[path] == self.ACTIVE:
+            pass # Ignore cicular dependecies
+
+            #print path, self.predecessor
+            #from pprint import pprint
+            #pprint(self.predecessors)
+            #x = [self.predecessor]
+            #n = self.predecessor
+            #while True:
+            #    n = self.predecessors[n]
+            #    if path in x:
+            #        break
+            #    x.append(n)
+            #raise Symwaf2icError("Circular dependencies: {}".format(x))
 
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
@@ -516,7 +543,8 @@ class DependencyContext(Symwaf2icContext):
         projects = storage.projects if storage.projects else []
         for project in projects:
             path = storage.repo_tool.checkout_project(project)
-            self._add_required_path(path)
+            self._add_required_path(path, None)
+
 
 
 def distclean(ctx):
