@@ -88,6 +88,8 @@ class Project(object):
     def required_branch(self, branch):
         if self._branch is None:
             self._branch = branch if branch is not None else self.default_branch
+        elif branch is None:
+            pass
         elif self._branch != branch:
             raise RuntimeError, "branch already set"
         else:
@@ -357,11 +359,8 @@ class MR(object):
         env["PATH"] = os.pathsep.join(path)
 
 
-    def checkout_project(self, name, branch = None):
-        p = self._get_or_create_project(name)
-        if branch is None:
-            branch = p.default_branch
-
+    def checkout_project(self, project, branch = None):
+        p = self._get_or_create_project(project)
         p.required_branch = branch
         if p.mr_registered and os.path.isdir(p.node.abspath()):
             return p.node.path_from(self.base)
@@ -390,6 +389,7 @@ class MR(object):
         if do_checkout:
             self.call_mr('checkout')
 
+        p.mr_registered = True
         self.mr_print('done', 'GREEN')
         return path
 

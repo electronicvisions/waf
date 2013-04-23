@@ -242,10 +242,22 @@ def options(opt):
             default="git"
             )
 
-def list_items_to_str(lst):
+def process_project_opt(lst):
     if lst is None:
         return []
-    return [str(x) for x in lst]
+    ret = []
+    for x in lst:
+        tmp = str(x).split(":") + [None]
+        ret.append({"project" : tmp[0], "branch" : tmp[1]})
+    return ret
+
+def print_project_opt(x):
+    pro, brn = x["project"], x["branch"]
+    ret = pro
+    if brn:
+        ret += " {on " + brn + "}"
+    return ret
+
 
 class Symwaf2icContext(Context.Context):
     cmd = None
@@ -288,8 +300,8 @@ class MainContext(Symwaf2icContext):
         cmdopts = OptionParserContext().parse_args()
         if SETUP_CMD in sys.argv:
             # already write projects to store
-            config = {"projects": list_items_to_str(cmdopts.projects),
-                      "directories" : list_items_to_str(cmdopts.directories) } 
+            config = {"projects": process_project_opt(cmdopts.projects),
+                      "directories" : process_project_opt(cmdopts.directories) }
             storage.lockfile.write(json.dumps(config))
             storage.set_options = {}
         else:
@@ -299,8 +311,8 @@ class MainContext(Symwaf2icContext):
             if not write_config():
                 storage.saved_paths = config.get("saved_paths", [])
 
-        storage.projects = list_items_to_str(config["projects"])
-        storage.directories = list_items_to_str(config["directories"])
+        storage.projects = config["projects"]
+        storage.directories = config["directories"]
         storage.set_options = config.get("set_options", {})
 
         self.repo_db_url = cmdopts.repo_db_url
@@ -476,8 +488,8 @@ class DependencyContext(Symwaf2icContext):
         self._first_recursion = False
 
         info = []
-        info.extend(["project " + s for s in  storage.projects])
-        info.extend(["directory " + s for s in  storage.directories])
+        info.extend(["project " + print_project_opt(s) for s in  storage.projects])
+        info.extend(["directory " + print_project_opt(s) for s in  storage.directories])
         Logs.info("Required from toplevel: {0}".format( ", ".join(info)))
 
         # Color map for topological sort
@@ -542,7 +554,7 @@ class DependencyContext(Symwaf2icContext):
 
         projects = storage.projects if storage.projects else []
         for project in projects:
-            path = storage.repo_tool.checkout_project(project)
+            path = storage.repo_tool.checkout_project(**project)
             self._add_required_path(path, None)
 
 
