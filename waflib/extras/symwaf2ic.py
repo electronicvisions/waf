@@ -517,7 +517,8 @@ class DependencyContext(Symwaf2icContext):
         self.options = self.options_parser.parse_args(self.path.abspath())
 
     def _add_required_path(self, path, predecessor_path):
-        path = self.toplevel.find_node(path).abspath()
+        # WTF: .find_node() does not work when given a unicode string (as loaded from json file)...?
+        path = self.toplevel.find_node(str(path)).abspath()
         if not os.path.isdir(path):
             raise Symwaf2icError("%s is not a valid directory" % path)
 
