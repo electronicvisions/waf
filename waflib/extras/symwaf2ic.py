@@ -301,7 +301,7 @@ class MainContext(Symwaf2icContext):
         if SETUP_CMD in sys.argv:
             # already write projects to store
             config = {"projects": process_project_opt(cmdopts.projects),
-                      "directories" : process_project_opt(cmdopts.directories) }
+                      "directories": [str(x) for x in (cmdopts.directories or [])] }
             storage.lockfile.write(json.dumps(config))
             storage.set_options = {}
         else:
@@ -489,7 +489,7 @@ class DependencyContext(Symwaf2icContext):
 
         info = []
         info.extend(["project " + print_project_opt(s) for s in  storage.projects])
-        info.extend(["directory " + print_project_opt(s) for s in  storage.directories])
+        info.extend(["directory " + s for s in storage.directories])
         Logs.info("Required from toplevel: {0}".format( ", ".join(info)))
 
         # Color map for topological sort
