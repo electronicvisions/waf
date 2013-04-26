@@ -94,7 +94,10 @@ def gtest_add_test_runner(self):
     if not "GTEST_MAIN_SRC" in  self.env: raise Errors.WafError, "env broken, please rerun configure"
     for f in self.to_list(getattr(self, "test_main", self.env.GTEST_MAIN_SRC)):
         if not f is None:
-            src.append(self.path.find_resource(f) or self.bld.bldnode.find_resource(f))
+            r = self.path.find_resource(f) or self.bld.bldnode.find_resource(f)
+            if r is None:
+                raise Errors.WafError, "Source file for testrunner missing: %s" % f
+            src.append(r)
     for f in getattr(self.env, "GTEST_GTEST_SRC", []):
         src.append(self.bld.root.find_node(f) or self.bld.bldnode.find_or_declare(f))
     cxx_env_hash = self.bld.hash_env_vars(self.env, ccroot.USELIB_VARS['cxx'])

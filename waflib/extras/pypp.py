@@ -247,8 +247,8 @@ def fix_pyplusplus_compiler(self):
 @after_method('process_use', 'apply_incpaths')
 def create_pyplusplus(self):
     headers = self.to_list(getattr(self, 'headers', []))
-
     input_nodes = self.to_nodes( [self.script] + headers )
+    dep_nodes = self.to_nodes(getattr(self, 'depends_on', []))
 
     defines = self.to_list(getattr(self, 'gen_defines', []))
     t = self.create_task('pyplusplus', input_nodes)
@@ -259,6 +259,7 @@ def create_pyplusplus(self):
     t.module = self.module
     t.output_dir = self.pypp_output_dir
     t.dep_nodes.extend(get_manual_module_dependencies(self.bld))
+    t.dep_nodes.extend(dep_nodes)
     t.helper_task = self.pypp_helper_task
     t.helper_task.set_run_after(t)
 
