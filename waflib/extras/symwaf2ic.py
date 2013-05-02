@@ -225,8 +225,9 @@ def options(opt):
     gr = opt.add_option_group("Symwaf2ic options")
     gr.add_option(
             "--project", dest="projects", action="append",
-            help="Declare the specified project as required build target "+\
-                 "(can be specified several times).")
+            help="Declare the specified project as required build target use"+\
+                 "(can be specified several times). Branches can be specified" +\
+                 "by appending (/branch), e.g. --project halbe/dev")
     gr.add_option(
             "--directory", dest="directories", action="append",
             help="Make waf to recurse into the given folders." +
@@ -247,7 +248,7 @@ def process_project_opt(lst):
         return []
     ret = []
     for x in lst:
-        tmp = str(x).split(":") + [None]
+        tmp = str(x).split("/") + [None]
         ret.append({"project" : tmp[0], "branch" : tmp[1]})
     return ret
 
