@@ -10,6 +10,19 @@ Variables passed to bld():
 * doxyfile -- the Doxyfile to use
 
 ported from waf 1.5 (incomplete)
+
+When using this tool, the wscript will look like:
+
+	def options(opt):
+		opt.load('doxygen')
+
+	def configure(conf):
+		conf.load('doxygen')
+		# check conf.env.DOXYGEN, if it is mandatory
+
+	def build(bld):
+		if bld.env.DOXYGEN:
+			bld(features="doxygen", doxyfile='Doxyfile', ...)
 """
 
 from fnmatch import fnmatchcase
@@ -92,19 +105,17 @@ class doxygen(Task.Task):
 		return Task.Task.runnable_status(self)
 
 	def scan(self):
-		if self.pars.get('RECURSIVE') == 'YES':
-			Logs.warn("Doxygen RECURSIVE dependencies are not supported")
-
-		exclude_patterns = self.pars.get('EXCLUDE_PATTERNS', '').split()
-		file_patterns = self.pars.get('FILE_PATTERNS', '').split()
+		exclude_patterns = self.pars.get('EXCLUDE_PATTERNS','').split()
+		file_patterns = self.pars.get('FILE_PATTERNS','').split()
 		if not file_patterns:
 			file_patterns = DOXY_FILE_PATTERNS
-
+		if self.pars.get('RECURSIVE') == 'YES':
+			file_patterns = ["**/%s" % pattern for pattern in file_patterns]
 		nodes = []
 		names = []
 		for node in self.doxy_inputs:
 			if os.path.isdir(node.abspath()):
-				for m in node.ant_glob(file_patterns):
+				for m in node.ant_glob(incl=file_patterns, excl=exclude_patterns):
 					nodes.append(m)
 			else:
 				nodes.append(node)
@@ -179,6 +190,13 @@ def process_doxy(self):
 			tsk.env['TAROPTS'] = ['cf']
 
 def configure(conf):
-	conf.find_program('doxygen', var='DOXYGEN')
-	conf.find_program('tar', var='TAR')
+	'''
+	Check if doxygen and tar commands are present in the system
 
+	If the commands are present, then conf.env.DOXYGEN and conf.env.TAR
+	variables will be set. Detection can be controlled by setting DOXYGEN and
+	TAR environmental variables.
+	'''
+
+	conf.find_program('doxygen', var='DOXYGEN', mandatory=False)
+	conf.find_program('tar', var='TAR', mandatory=False)
