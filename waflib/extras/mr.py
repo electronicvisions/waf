@@ -244,7 +244,7 @@ class MR(object):
             parser = self.load_config()
             self.projects[db_path] = db_repo = self.project_types[db_type](name=db_path, node=db_node)
             db_repo.required_branch = None
-            if db_path not in parser.sections() or os.path.isdir(db_repo.node.abspath()):
+            if db_path not in parser.sections() or not os.path.isdir(db_repo.node.abspath()):
                 # we need to add it manually because if project isn't found we would look in the
                 # not yet existing db
                 self.mr_checkout_project(db_repo)
