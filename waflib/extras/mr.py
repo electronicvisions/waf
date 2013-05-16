@@ -372,6 +372,11 @@ class MR(object):
         "Perform the actual mr checkout"
         path = p.node.path_from(self.base)
         do_checkout = False
+        if '-h' in sys.argv or '--help' in sys.argv:
+            Logs.warn('Not all projects were found: the help message may be incomplete')
+            ctx = Context.create_context('options')
+            ctx.parse_args()
+            sys.exit(0)
 
         # Check if the project folder exists, in this case the repo 
         # needs only to be registered
