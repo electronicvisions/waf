@@ -467,6 +467,7 @@ class MRContext(Build.BuildContext):
 
 
 class mr_up(MRContext):
+    '''update the repositories (using MR tool)'''
     cmd = 'up'
     mr_cmd = 'update'
 
@@ -474,9 +475,11 @@ class mr_update(MRContext):
     cmd = 'update'
 
 class mr_diff(MRContext):
+    '''diff all repositories (using MR tool)'''
     cmd = 'diff'
 
 class mr_status(MRContext):
+    '''check status of the repositories (using MR tool)'''
     cmd = 'st'
     mr_cmd = 'status'
 
@@ -484,9 +487,11 @@ class mr_status(MRContext):
     cmd = 'status'
 
 class mr_commit(MRContext):
+    '''commit all changes (using MR tool)'''
     cmd = 'commit'
 
 class mr_push(MRContext):
+    '''push all changes (using MR tool)'''
     cmd = 'push'
 
 #class mr_branch(MRContext):
