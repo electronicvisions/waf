@@ -362,7 +362,8 @@ class MR(object):
     def checkout_project(self, project, branch = None):
         p = self._get_or_create_project(project)
         p.required_branch = branch
-        if p.mr_registered and os.path.isdir(p.node.abspath()):
+
+        if p.mr_registered and os.path.isdir(p.node.abspath()) and os.listdir(p.node.abspath()):
             return p.node.path_from(self.base)
         else:
             return self.mr_checkout_project(p)
