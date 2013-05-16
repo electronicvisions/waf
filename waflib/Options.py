@@ -68,7 +68,8 @@ class opt_parser(optparse.OptionParser):
 				continue
 
 			s = cls.__doc__ or ''
-			cmds_str[cls.cmd] = s
+			if not cls.cmd.startswith('_'):
+				cmds_str[cls.cmd] = s
 
 		if Context.g_module:
 			for (k, v) in Context.g_module.__dict__.items():

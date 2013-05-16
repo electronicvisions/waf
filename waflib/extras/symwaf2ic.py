@@ -190,8 +190,8 @@ def entry_point():
 
     Logs.debug("Reached entry point.")
 
-    Scripting.run_command("symwaf2ic")
-    Scripting.run_command("dependency_resolution")
+    Scripting.run_command("_symwaf2ic")
+    Scripting.run_command("_dependency_resolution")
     store_config()
 
 
@@ -282,7 +282,7 @@ class SetupContext(Symwaf2icContext):
 class MainContext(Symwaf2icContext):
     __doc__ = "(Automatically executed on each invokation of waf.)"
 
-    cmd = "symwaf2ic"
+    cmd = "_symwaf2ic"
 
     def execute(self):
         Logs.info("Starting up symwaf2ic")
@@ -453,7 +453,7 @@ def store_config():
 class DependencyContext(Symwaf2icContext):
     __doc__ = "(Automatically executed on each invokation of waf.)"
 
-    cmd = "dependency_resolution"
+    cmd = "_dependency_resolution"
     fun = "depends"
 
     # Flags for topological sort of projects
