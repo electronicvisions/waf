@@ -359,11 +359,31 @@ class MR(object):
         env["PATH"] = os.pathsep.join(path)
 
 
-    def checkout_project(self, project, branch = None):
+    def checkout_project(self, project, branch = None, check_branch = False):
         p = self._get_or_create_project(project)
         p.required_branch = branch
 
         if p.mr_registered and os.path.isdir(p.node.abspath()) and os.listdir(p.node.abspath()):
+            if check_branch:
+                # check if current branch is matching the required branch
+                cmd = p.get_branch_cmd()
+                kw = { 'cwd': p.node.abspath(),
+                       'quiet': Context.BOTH,
+                       'output': Context.BOTH}
+                current_branch = None
+                try:
+                    stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
+                    current_branch = stdout.rstrip()
+                except Errors.WafError as e:
+                    stdout = getattr(e, 'stdout', "")
+                    stderr = getattr(e, 'stderr', "")
+                    Logs.warn('stdout: \n"%s"\nstderr: \n"%s"\n' % (stdout, stderr))
+                    raise e
+                if p.required_branch != current_branch:
+                    if not getattr(p, 'branch_mismatch', None):
+                        p.branch_mismatch = True
+                        Logs.warn('On-disk project "%s" on branch "%s", but requiring "%s".'\
+                                  % (p.name, current_branch, p.required_branch))
             return p.node.path_from(self.base)
         else:
             return self.mr_checkout_project(p)

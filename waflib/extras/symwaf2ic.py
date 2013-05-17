@@ -186,6 +186,7 @@ def entry_point():
     storage = Storage(None)
     storage.paths = []
     storage.projects = set()
+    storage.check_branches = False
     storage.directories = set()
 
     Logs.debug("Reached entry point.")
@@ -228,6 +229,9 @@ def options(opt):
             help="Declare the specified project as required build target use"+\
                  "(can be specified several times). Branches can be specified" +\
                  "by appending (/branch), e.g. --project halbe/dev")
+    gr.add_option(
+            "--check-branches", dest="check_branches", action="store_true",
+            help="Activate branch tracking (e.g., when updating repositories)")
     gr.add_option(
             "--directory", dest="directories", action="append",
             help="Make waf to recurse into the given folders." +
@@ -302,17 +306,20 @@ class MainContext(Symwaf2icContext):
         if SETUP_CMD in sys.argv:
             # already write projects to store
             config = {"projects": process_project_opt(cmdopts.projects),
+                      "check_branches": cmdopts.check_branches,
                       "directories": [str(x) for x in (cmdopts.directories or [])] }
             storage.lockfile.write(json.dumps(config))
             storage.set_options = {}
         else:
             config = json.load(storage.lockfile)
+
             # check if config is going to get written, if not, we require the
             # paths saved in a previous run
             if not write_config():
                 storage.saved_paths = config.get("saved_paths", [])
 
         storage.projects = config["projects"]
+        storage.check_branches = config["check_branches"]
         storage.directories = config["directories"]
         storage.set_options = config.get("set_options", {})
 
@@ -443,6 +450,7 @@ def store_config():
         return
     config = {}
     config["projects"] = storage.projects
+    config["check_branches"] = storage.check_branches
     config["directories"] = storage.directories
     config["set_options"] = dict(storage.options._get_kwargs())
     config["saved_paths"] = storage.paths
@@ -472,7 +480,8 @@ class DependencyContext(Symwaf2icContext):
                     script=self.cur_script.path_from(self.toplevel)
                 ))
 
-        path = storage.repo_tool.checkout_project(project, branch)
+        check_branch = storage.check_branches
+        path = storage.repo_tool.checkout_project(project, branch, check_branch)
 
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
@@ -556,6 +565,7 @@ class DependencyContext(Symwaf2icContext):
 
         projects = storage.projects if storage.projects else []
         for project in projects:
+            project['check_branch'] = storage.check_branches
             path = storage.repo_tool.checkout_project(**project)
             self._add_required_path(path, None)
 
