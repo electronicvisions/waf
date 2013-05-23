@@ -63,7 +63,8 @@ def pytest_create_task(self):
     self.test_environ = getattr(self, "test_environ", {})
     self.test_environ["PYTHONPATH"] = os.pathsep.join(
             [n.abspath() for n in pythonpath] +
-            self.test_environ.get("PYTHONPATH","").split(os.pathsep)
+            self.test_environ.get("PYTHONPATH","").split(os.pathsep) +
+            os.environ.get("PYTHONPATH", "").split(os.pathsep)
     )
 
     self.pytest_task = t = self.create_task('pytest', input_nodes)
