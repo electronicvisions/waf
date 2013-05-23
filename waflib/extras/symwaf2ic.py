@@ -452,7 +452,7 @@ class DependencyContext(Symwaf2icContext):
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
-        self.update_branches = storage.setup_options["update_branches"]
+        self.update_branches = SETUP_CMD in sys.argv and storage.setup_options["update_branches"]
 
     def __call__(self, project, subfolder="", branch=None):
         if Logs.verbose > 0:
