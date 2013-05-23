@@ -506,9 +506,16 @@ class DependencyContext(Symwaf2icContext):
                 and not is_help_requested()):
             raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
 
+        storage.repo_tool.clean_projects()
+        self._print_branch_missmatches()
+
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
         self.options = self.options_parser.parse_args(self.path.abspath())
+
+    def _print_branch_missmatches(self):
+        for x in storage.repo_tool.get_wrong_branches():
+            Logs.warn('On-disk project "%s" on branch "%s", but requiring "%s".' % x)
 
     def _add_required_path(self, path, predecessor_path):
         # WTF: .find_node() does not work when given a unicode string (as loaded from json file)...?
