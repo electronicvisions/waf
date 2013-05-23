@@ -256,7 +256,7 @@ def options(opt):
             help="Make waf to recurse into the given folders." +
                  "(can be specified several times).")
     gr.add_option(
-            "--check-branches", dest="check_branches", action="store_true",
+            "--update-branches", dest="update_branches", action="store_true",
             help="Activate branch tracking (e.g., when updating repositories)")
     gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
@@ -452,7 +452,7 @@ class DependencyContext(Symwaf2icContext):
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
-        self.check_branches = storage.setup_options["check_branches"]
+        self.update_branches = storage.setup_options["update_branches"]
 
     def __call__(self, project, subfolder="", branch=None):
         if Logs.verbose > 0:
@@ -463,7 +463,7 @@ class DependencyContext(Symwaf2icContext):
                     script=self.cur_script.path_from(self.toplevel)
                 ))
 
-        path = storage.repo_tool.checkout_project(project, branch, self.check_branches)
+        path = storage.repo_tool.checkout_project(project, branch, self.update_branches)
 
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
@@ -550,7 +550,7 @@ class DependencyContext(Symwaf2icContext):
                 path = storage.repo_tool.checkout_project(
                         project = project["project"],
                         branch = project["branch"],
-                        check_branch = self.check_branches)
+                        update_branch = self.update_branches)
             self._add_required_path(path, None)
 
     def _shall_store_config(self):
