@@ -29,7 +29,7 @@ LOCKFILE = FILEPREFIX + ".conf.json"
 
 SETUP_CMD = "setup"
 # upon which commands shall the config be written 
-STORE_CMDS = "setup configure".split()
+STORE_CMDS = set([SETUP_CMD, "configure"])
 
 # items to strip from command line before parsing with own parser
 HELP_CMDS = "-h --help show_repos".split()
@@ -185,16 +185,11 @@ def entry_point():
     global storage
     storage = Storage(None)
     storage.paths = []
-    storage.projects = set()
-    storage.check_branches = False
-    storage.directories = set()
 
     Logs.debug("Reached entry point.")
 
     Scripting.run_command("_symwaf2ic")
     Scripting.run_command("_dependency_resolution")
-    store_config()
-
 
 def get_toplevel_path():
     return storage.toplevel
@@ -217,25 +212,52 @@ class Storage(object):
         setattr(self, name, getattr(self, "_default"))
         return getattr(self, name)
 
-
 def get_required_paths():
     return storage.paths
 
+class Project(object):
+    def __init__(self, project, branch, directory):
+        self.project = project
+        self.directory = directory
+        self.branch = branch
+
+    def __str__(self):
+        if self.project:
+            ret = self.project
+            if self.branch:
+                ret += " {on " + self.branch + "}"
+        else:
+            ret = self.directory
+        return ret
+
+    @staticmethod
+    def from_project_opt(arg):
+        tmp = str(arg).split("/") + [None]
+        return {'project' : tmp[0], "directory" : tmp[0], 'branch' : tmp[1]}
+
+    @staticmethod
+    def from_dir_opt(arg):
+        return {'project' : None, "directory" : arg, 'branch' : None}
+
 
 def options(opt):
+    is_symwaf2ic = isinstance(opt, OptionParserContext)
+
     gr = opt.add_option_group("Symwaf2ic options")
     gr.add_option(
             "--project", dest="projects", action="append",
+            type=Project.from_project_opt if is_symwaf2ic else str,
             help="Declare the specified project as required build target use"+\
                  "(can be specified several times). Branches can be specified" +\
                  "by appending (/branch), e.g. --project halbe/dev")
     gr.add_option(
-            "--check-branches", dest="check_branches", action="store_true",
-            help="Activate branch tracking (e.g., when updating repositories)")
-    gr.add_option(
-            "--directory", dest="directories", action="append",
+            "--directory", dest="projects", action="append",
+            type=Project.from_dir_opt if is_symwaf2ic else str,
             help="Make waf to recurse into the given folders." +
                  "(can be specified several times).")
+    gr.add_option(
+            "--check-branches", dest="check_branches", action="store_true",
+            help="Activate branch tracking (e.g., when updating repositories)")
     gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
             help="URL for the repository containing the database with information about all other repositories.",
@@ -247,21 +269,6 @@ def options(opt):
             default="git"
             )
 
-def process_project_opt(lst):
-    if lst is None:
-        return []
-    ret = []
-    for x in lst:
-        tmp = str(x).split("/") + [None]
-        ret.append({"project" : tmp[0], "branch" : tmp[1]})
-    return ret
-
-def print_project_opt(x):
-    pro, brn = x["project"], x["branch"]
-    ret = pro
-    if brn:
-        ret += " {on " + brn + "}"
-    return ret
 
 
 class Symwaf2icContext(Context.Context):
@@ -305,23 +312,19 @@ class MainContext(Symwaf2icContext):
         cmdopts = OptionParserContext().parse_args()
         if SETUP_CMD in sys.argv:
             # already write projects to store
-            config = {"projects": process_project_opt(cmdopts.projects),
-                      "check_branches": cmdopts.check_branches,
-                      "directories": [str(x) for x in (cmdopts.directories or [])] }
-            storage.lockfile.write(json.dumps(config))
-            storage.set_options = {}
+            projects = cmdopts.projects if cmdopts.projects else []
+            del cmdopts.projects
+            config = { "projects" : projects,
+                       "options" : [],
+                       "setup_options" : vars(cmdopts),
+                       "saved_paths" : None }
+            storage.lockfile.write(json.dumps(config, indent=4))
         else:
             config = json.load(storage.lockfile)
 
-            # check if config is going to get written, if not, we require the
-            # paths saved in a previous run
-            if not write_config():
-                storage.saved_paths = config.get("saved_paths", [])
-
-        storage.projects = config["projects"]
-        storage.check_branches = config["check_branches"]
-        storage.directories = config["directories"]
-        storage.set_options = config.get("set_options", {})
+        storage.save = config.keys()
+        for k, v in config.iteritems():
+            setattr(storage, k, v)
 
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
@@ -394,13 +397,14 @@ class OptionParserContext(Symwaf2icContext):
     def add_option(self, *k, **kw):
         # fixes for optparse -> argparse compatability (NOTE: Might not be complete)
         if "type" in kw:
-            kw["type"] = eval(kw["type"])
-        if storage.set_options:
+            if isinstance(kw["type"], basestring):
+                kw["type"] = eval(kw["type"])
+        if storage.options:
             opt = k[0]
             while opt.startswith(self.parser.prefix_chars):
                 opt = opt[len(self.parser.prefix_chars):]
-            if opt in storage.set_options:
-                kw["default"] = storage.set_options[opt]
+            if opt in storage.options:
+                kw["default"] = storage.options[opt]
         self.parser.add_argument(*k, **kw)
 
 
@@ -436,28 +440,6 @@ class OptionParserContext(Symwaf2icContext):
         return opts
 
 
-def write_config():
-    "Determines if the config shall be written"
-    returnval = False
-    for cmd in STORE_CMDS:
-        if cmd in sys.argv:
-            returnval = True
-    return returnval
-
-
-def store_config():
-    if not write_config():
-        return
-    config = {}
-    config["projects"] = storage.projects
-    config["check_branches"] = storage.check_branches
-    config["directories"] = storage.directories
-    config["set_options"] = dict(storage.options._get_kwargs())
-    config["saved_paths"] = storage.paths
-
-    storage.lockfile.write(json.dumps(config)+"\n")
-
-
 class DependencyContext(Symwaf2icContext):
     __doc__ = "(Automatically executed on each invokation of waf.)"
 
@@ -470,6 +452,7 @@ class DependencyContext(Symwaf2icContext):
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
+        self.check_branches = storage.setup_options["check_branches"]
 
     def __call__(self, project, subfolder="", branch=None):
         if Logs.verbose > 0:
@@ -480,8 +463,7 @@ class DependencyContext(Symwaf2icContext):
                     script=self.cur_script.path_from(self.toplevel)
                 ))
 
-        check_branch = storage.check_branches
-        path = storage.repo_tool.checkout_project(project, branch, check_branch)
+        path = storage.repo_tool.checkout_project(project, branch, self.check_branches)
 
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
@@ -497,9 +479,7 @@ class DependencyContext(Symwaf2icContext):
         # dont recurse into all already dependency directories again
         self._first_recursion = False
 
-        info = []
-        info.extend(["project " + print_project_opt(s) for s in  storage.projects])
-        info.extend(["directory " + s for s in storage.directories])
+        info = [str(Project(**s)) for s in storage.projects]
         Logs.info("Required from toplevel: {0}".format( ", ".join(info)))
 
         # Color map for topological sort
@@ -512,15 +492,19 @@ class DependencyContext(Symwaf2icContext):
         if self.path != self.toplevel:
             self._add_required_path(self.path.path_from(self.toplevel), None)
 
-        # Recurse through all manually given wscripts
-        for path in storage.directories:
-            self._add_required_path(path, None)
-
         # Only recurse into the toplevel wscript because all dependencies will
         # be defined from there. Also it shall be possible to have no dependencies.
         self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
 
-        storage.options = self.options
+        if self._shall_store_config():
+            if SETUP_CMD in sys.argv:
+                storage.options = vars(self.options)
+            storage.saved_paths = storage.paths
+            self._store_config()
+        elif (storage.saved_paths is not None
+                and storage.saved_paths != storage.paths
+                and not is_help_requested()):
+            raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
@@ -531,10 +515,6 @@ class DependencyContext(Symwaf2icContext):
         path = self.toplevel.find_node(str(path)).abspath()
         if not os.path.isdir(path):
             raise Symwaf2icError("%s is not a valid directory" % path)
-
-        # check if path is in saved_paths, else throw error
-        if storage.saved_paths is not None and path not in storage.saved_paths and not is_help_requested():
-            raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
 
         if self.visited[path] == self.NOT_VISITED:
             self.visited[path] = self.ACTIVE
@@ -563,12 +543,25 @@ class DependencyContext(Symwaf2icContext):
             Logs.warn("Please specify target projects to build during 'setup' via --project or --directory.")
             return
 
-        projects = storage.projects if storage.projects else []
-        for project in projects:
-            project['check_branch'] = storage.check_branches
-            path = storage.repo_tool.checkout_project(**project)
+        for project in storage.projects:
+            if project["project"] is None:
+                self._add_required_path(project["directory"], None)
+            else:
+                path = storage.repo_tool.checkout_project(
+                        project = project["project"],
+                        branch = project["branch"],
+                        check_branch = self.check_branches)
             self._add_required_path(path, None)
 
+    def _shall_store_config(self):
+        "Determines if the config shall be written"
+        return not STORE_CMDS.isdisjoint(set(sys.argv))
+
+    def _store_config(self):
+        config = {}
+        for k in storage.save:
+            config[k] = getattr(storage, k, None)
+        storage.lockfile.write(json.dumps(config, indent=4)+"\n")
 
 
 def distclean(ctx):
