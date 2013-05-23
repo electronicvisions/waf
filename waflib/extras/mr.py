@@ -43,6 +43,8 @@ class Repo_DB(object):
         names = self.db.keys()
         return filter(lambda x: not x.startswith("_"), names)
 
+class BranchError(Exception):
+    pass
 
 class Project(object):
     def __init__(self, name, node, branch = None):
@@ -58,7 +60,7 @@ class Project(object):
     def __str__(self):
         try:
             return self.name + " {" + self.required_branch + "}"
-        except RuntimeError:
+        except BranchError:
             return self.name + " {???}"
 
     def __eq__(self, another):
@@ -82,7 +84,7 @@ class Project(object):
     @property
     def required_branch(self):
         if self._branch is None:
-            raise RuntimeError, "required branch unkown"
+            raise BranchError, "required branch unkown"
         return self._branch
 
     @required_branch.setter
@@ -92,7 +94,7 @@ class Project(object):
         elif branch is None:
             pass
         elif self._branch != branch:
-            raise RuntimeError, "branch already set"
+            raise BranchError, "branch already set"
         else:
             pass
 
@@ -103,9 +105,19 @@ class Project(object):
     @property
     def real_branch(self):
         if self._real_branch is None:
-            stdout, stderr = self.exec_cmd(self.get_branch_cmd())
+            ret, stdout, stderr = self.exec_cmd(self.get_branch_cmd())
+            if ret != 0:
+                err = "{} returned {}\n{}{}".format(' '.join(self.get_branch_cmd()),
+                        ret, stdout, stderr)
+                raise RuntimeError(err)
             self._real_branch =  stdout.strip()
         return self._real_branch
+
+    def update_branch(self):
+        ret, stdout, stderr = self.exec_cmd(self.set_branch_cmd())
+        if ret != 0:
+            raise BranchError(stdout + stderr)
+        self._real_branch = None
 
     def path_from(self, modules_dir):
         return self.node.path_from(modules_dir)
@@ -122,7 +134,8 @@ class Project(object):
             }
         defaults.update(kw)
         p = subprocess.Popen(cmd, **defaults)
-        return p.communicate()
+        stdout, stderr = p.communicate()
+        return p.returncode, stdout, stderr
 
     # TO IMPLEMENT
     def mr_checkout_cmd(self, *k, **kw):
@@ -366,14 +379,20 @@ class MR(object):
         p.required = True
         try:
             p.required_branch = branch
-        except RuntimeError:
+        except BranchError:
             self.ctx.fatal('Project "%s" is required on branch "%s" and "%s"'\
                     % ( project, p.required_branch, branch))
 
         if p.mr_registered and os.path.isdir(p.node.abspath()) and os.listdir(p.node.abspath()):
             if update_branch and p.required_branch != p.real_branch:
-                print "Switch branch on ", project
-                pass
+                self.mr_print('Switching branch of repository %s from %s to %s..' % \
+                        ( project, p.real_branch, p.required_branch), sep = '')
+                try:
+                    p.update_branch()
+                except BranchError as e:
+                    self.mr_print('')
+                    self.ctx.fatal(str(e))
+                self.mr_print('done', 'GREEN')
             return p.node.path_from(self.base)
         else:
             return self.mr_checkout_project(p)
@@ -431,7 +450,7 @@ class MR(object):
             try:
                 if p.required_branch != p.real_branch:
                     ret.append( (name, p.real_branch, p.required_branch) )
-            except RuntimeError:
+            except BranchError:
                 pass
         return ret
 
