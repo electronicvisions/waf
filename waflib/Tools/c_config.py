@@ -913,7 +913,7 @@ def have_define(self, key):
 	return (self.env.HAVE_PAT or 'HAVE_%s') % Utils.quote_define_name(key)
 
 @conf
-def write_config_header(self, configfile='', guard='', top=False, env=None, defines=True, headers=False, remove=True, define_prefix=''):
+def write_config_header(self, configfile='', guard='', top=False, defines=True, headers=False, remove=True, define_prefix=''):
 	"""
 	Write a configuration header containing defines and includes::
 
@@ -936,10 +936,6 @@ def write_config_header(self, configfile='', guard='', top=False, env=None, defi
 	:type define_prefix: string
 	:param define_prefix: prefix all the defines in the file with a particular prefix
 	"""
-	# TODO waf 1.8: the parameter env is not used
-	if env:
-		Logs.warn('Cannot pass env to write_config_header')
-
 	if not configfile: configfile = WAF_CONFIG_H
 	waf_guard = guard or 'W_%s_WAF' % Utils.quote_define_name(configfile)
 
