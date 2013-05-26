@@ -798,10 +798,6 @@ class Node(object):
 		self.cache_sig = ret = self.sig
 		return ret
 
-
-	# TODO Waf 1.8
-	search = search_node
-
 pickle_lock = Utils.threading.Lock()
 """Lock mandatory for thread-safe node serialization"""
 

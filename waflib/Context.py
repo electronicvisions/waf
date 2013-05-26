@@ -580,8 +580,6 @@ def load_tool(tool, tooldir=None):
 	"""
 	if tool == 'java':
 		tool = 'javaw' # jython
-	elif tool == 'compiler_cc':
-		tool = 'compiler_c' # TODO remove in waf 1.8
 	else:
 		tool = tool.replace('++', 'xx')
 
