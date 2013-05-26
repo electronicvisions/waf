@@ -236,11 +236,6 @@ class javac(Task.Task):
 	"""
 	color   = 'BLUE'
 
-	nocache = True
-	"""
-	The .class files cannot be put into a cache at the moment
-	"""
-
 	vars = ['CLASSPATH', 'JAVACFLAGS', 'JAVAC', 'OUTDIR']
 	"""
 	The javac task will be executed again if the variables CLASSPATH, JAVACFLAGS, JAVAC or OUTDIR change.

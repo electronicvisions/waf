@@ -141,21 +141,8 @@ for x in ['c', 'cxx']:
 		#self.executed=1
 		pass
 
-	def can_retrieve_cache(self):
-		if self.old_can_retrieve_cache():
-			for m in self.generator.allmasters:
-				try:
-					m.slaves.remove(self)
-				except ValueError:
-					pass #this task wasn't included in that master
-			return 1
-		else:
-			return None
-
 	setattr(t, 'oldrun', t.__dict__['run'])
 	setattr(t, 'run', run)
 	setattr(t, 'old_post_run', t.post_run)
 	setattr(t, 'post_run', post_run)
-	setattr(t, 'old_can_retrieve_cache', t.can_retrieve_cache)
-	setattr(t, 'can_retrieve_cache', can_retrieve_cache)
 

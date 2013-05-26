@@ -1190,8 +1190,6 @@ def multicheck(self, *k, **kw):
 	class par(object):
 		def __init__(self):
 			self.keep = False
-			self.cache_global = Options.cache_global
-			self.nocache = Options.options.nocache
 			self.returned_tasks = []
 			self.task_sigs = {}
 		def total(self):

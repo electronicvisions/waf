@@ -1,7 +1,7 @@
 NEW IN WAF 1.8.0
 ----------------
 * Do not propagate external static libraries uselib vars #1320
-* 
+* Removed the Waf cache from the task level
 
 NEW IN WAF 1.7.11
 -----------------
