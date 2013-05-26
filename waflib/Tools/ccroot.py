@@ -248,7 +248,9 @@ def use_rec(self, name, **kw):
 
 	p = self.tmp_use_prec
 	for x in self.to_list(getattr(y, 'use', [])):
-		try:
+		if self.env["STLIB_" + x]:
+			continue
+ 		try:
 			p[x].append(name)
 		except KeyError:
 			p[x] = [name]
