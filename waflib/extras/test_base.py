@@ -10,7 +10,7 @@ import os, sys
 from waflib.TaskGen import taskgen_method
 from waflib import Configure, Utils, Task, Logs, Options, Errors
 from os.path import basename, join
-from time import time
+from time import time, sleep
 from threading import Thread, Lock
 from subprocess import Popen, PIPE
 from collections import defaultdict
@@ -284,7 +284,7 @@ class TestBase(Task.Task):
             # killing processes is difficult (race conditions all over the place)...
             if hasattr(self, 'proc'):
                 self.proc.terminate()
-                sleep 0.5 # grace period
+                sleep(0.5) # grace period
                 self.proc.kill()
             thread.join()
             result["status"] = self.TIMEOUT
