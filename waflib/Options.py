@@ -134,7 +134,7 @@ class OptionsContext(Context.Context):
 				default_prefix = d[0].upper() + d[1:]
 				# win32 preserves the case, but gettempdir does not
 			else:
-				default_prefix = '/usr/local/'
+				default_prefix = '.'
 		gr.add_option('--prefix', dest='prefix', default=default_prefix, help='installation prefix [default: %r]' % default_prefix)
 		gr.add_option('--bindir', dest='bindir', help='bindir')
 		gr.add_option('--libdir', dest='libdir', help='libdir')
