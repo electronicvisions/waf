@@ -18,6 +18,8 @@ from collections import defaultdict
 COLOR = 'CYAN'
 resultlock = Lock()
 
+DEFAULT_TEST_TIMEOUT = 30
+
 @Utils.run_once
 def options(opt):
     """
@@ -36,7 +38,7 @@ def options(opt):
     grp.add_option('--test-xml-summary', action='store', default="test_results",
                    dest="test_xml_output_folder",
                    help='Store test results as junit-xml in the given path relative to the build directory')
-    grp.add_option('--test-timeout', action='store', default=30,
+    grp.add_option('--test-timeout', action='store', default=DEFAULT_TEST_TIMEOUT,
                    dest="test_timeout",
                    help='Maximal runtime in seconds per test executable')
 
@@ -59,7 +61,7 @@ def configure(ctx):
         ctx.end_msg(xml_result_path)
         ctx.env.TEST_XML_DIR = xml_result_path
 
-    timeout = int(getattr(Options.options, 'test_timeout', 30))
+    timeout = int(getattr(Options.options, 'test_timeout', DEFAULT_TEST_TIMEOUT))
     ctx.start_msg('GoogleTest maximal runtime')
     ctx.end_msg(str(timeout) + " seconds")
     ctx.env.TEST_TIMEOUT = timeout
@@ -203,7 +205,7 @@ class TestBase(Task.Task):
         return not ctx.env.get_flat("TEST_TEXT_DIR")
 
     def timeout(self):
-        return self.test_timeout
+        return int(getattr(Options.options, 'test_timeout', self.test_timeout))
 
     def storeResult(self, result):
         bld = self.generator.bld
@@ -260,6 +262,8 @@ class TestBase(Task.Task):
         result = { "file" : name }
         def target():
             try:
+                if Logs.verbose:
+                    Logs.pprint('PINK', '   spawning test:', '%s' % cmd)
                 self.proc = Popen(cmd,
                              cwd=cwd,
                              env=environ,
@@ -289,7 +293,8 @@ class TestBase(Task.Task):
                     self.proc.kill()
                 except OSError, e:
                     # ignore "process not found"
-            thread.join()
+                    pass
+            thread.join(0.5) # to avoid another hang...
             result["status"] = self.TIMEOUT
         result["time"] = time() - starttime
         self.storeResult(result)
