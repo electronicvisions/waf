@@ -285,7 +285,10 @@ class TestBase(Task.Task):
             if hasattr(self, 'proc'):
                 self.proc.terminate()
                 sleep(0.5) # grace period
-                self.proc.kill()
+                try:
+                    self.proc.kill()
+                except OSError, e:
+                    # ignore "process not found"
             thread.join()
             result["status"] = self.TIMEOUT
         result["time"] = time() - starttime
