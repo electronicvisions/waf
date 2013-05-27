@@ -282,8 +282,10 @@ class TestBase(Task.Task):
         thread.join(self.timeout())
         if thread.is_alive():
             # killing processes is difficult (race conditions all over the place)...
-            if hasattr(self.proc, 'terminate'):
+            if hasattr(self, 'proc'):
                 self.proc.terminate()
+                sleep 0.5 # grace period
+                self.proc.kill()
             thread.join()
             result["status"] = self.TIMEOUT
         result["time"] = time() - starttime
