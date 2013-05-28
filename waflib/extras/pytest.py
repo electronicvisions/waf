@@ -10,7 +10,6 @@ from waflib.TaskGen import feature, after_method, before_method
 from waflib.Tools import ccroot
 from waflib import Utils
 from os.path import basename, join, splitext
-import pytest_runner
 import test_base
 
 class pytest(test_base.TestBase):
@@ -24,14 +23,12 @@ class pytest(test_base.TestBase):
         """
         for test in self.inputs:
             xml = self.getOutputNode(test.name, self.getXmlDir(), "xml")
-            runner = pytest_runner.__file__
-            if runner[-4:] == ".pyc":
-                runner = runner[:-1]
 
             cmd = [ self.env.get_flat("PYTHON"),
-                    runner,
+                    self.env['PYNOSETESTS'],
                     test.abspath(),
-                    xml.abspath() if xml else "",
+                    '--with-xunit',
+                    '--xunit-file=%s' % xml.abspath() if xml else '',
                     ]
             result = self.runTest(test.name, cmd)
 
@@ -84,3 +81,4 @@ def options(opt):
 
 def configure(ctx):
     test_base.configure(ctx)
+    ctx.find_program('nosetests', mandatory=True, var='PYNOSETESTS')
