@@ -24,8 +24,12 @@ class pytest(test_base.TestBase):
         for test in self.inputs:
             xml = self.getOutputNode(test.name, self.getXmlDir(), "xml")
 
+            frickeling = "import sys; sys.path.append(r{0}{1}{0}); import nose; import nosepatch; nose.main()".format('"', str(os.path.dirname(os.path.abspath(__file__))))
+
+            #self.env['PYNOSETESTS'],
             cmd = [ self.env.get_flat("PYTHON"),
-                    self.env['PYNOSETESTS'],
+                    '-c',
+                    frickeling,
                     test.abspath(),
                     '--with-xunit',
                     '--xunit-file=%s' % xml.abspath() if xml else '',
