@@ -11,7 +11,10 @@ import os, re, traceback, sys
 try:
 	import threading
 except ImportError:
-	pass
+	_nocolor = 1
+	if not 'JOBS' in os.environ:
+		# no threading :-(
+		os.environ['JOBS'] = '1'
 else:
 	wlock = threading.Lock()
 
