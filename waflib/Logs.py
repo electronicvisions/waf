@@ -18,7 +18,6 @@ except ImportError:
 try:
 	import threading
 except ImportError:
-	_nocolor = 1
 	if not 'JOBS' in os.environ:
 		# no threading :-(
 		os.environ['JOBS'] = '1'
