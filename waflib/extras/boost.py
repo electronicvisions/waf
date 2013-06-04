@@ -123,23 +123,27 @@ def options(opt):
 
 
 @conf
-def __boost_get_version_file(self, dir):
-	try:
-		return self.root.find_dir(dir).find_node(BOOST_VERSION_FILE)
-	except:
-		return None
-
+def __boost_get_version_file(self, d):
+	dnode = self.root.find_dir(d)
+	if dnode:
+		return dnode.find_node(BOOST_VERSION_FILE)
+	return None
 
 @conf
-def boost_get_version(self, dir):
+def boost_get_version(self, d):
 	"""silently retrieve the boost version number"""
-	re_but = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"$', re.M)
-	try:
-		val = re_but.search(self.__boost_get_version_file(dir).read()).group(1)
-	except:
-		val = self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[dir], execute=False, define_ret=True)
-	return val
-
+	node = self.__boost_get_version_file(d)
+	if node:
+		try:
+			txt = node.read()
+		except (OSError, IOError):
+			Logs.error("Could not read the file %r" % node.abspath())
+		else:
+			re_but = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"', re.M)
+			m = re_but.search(txt)
+			if m:
+				return m.group(1)
+	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[dir], execute=True)
 
 @conf
 def boost_get_includes(self, *k, **kw):
@@ -182,17 +186,16 @@ def __boost_get_libs_path(self, *k, **kw):
 		files = path.ant_glob('*boost_*')
 	if not libs or not files:
 		for d in Utils.to_list(self.environ.get('LIB', [])) + BOOST_LIBS:
-			try:
-				path = self.root.find_dir(d)
+			path = self.root.find_dir(d)
+			if path:
 				files = path.ant_glob('*boost_*')
 				if files:
 					break
-				path = self.root.find_dir(d + '64')
+			path = self.root.find_dir(d + '64')
+			if path:
 				files = path.ant_glob('*boost_*')
 				if files:
 					break
-			except:
-				path = None
 	if not path:
 		if libs:
 			self.end_msg('libs not found in %s' % libs)
