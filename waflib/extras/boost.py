@@ -143,7 +143,7 @@ def boost_get_version(self, d):
 			m = re_but.search(txt)
 			if m:
 				return m.group(1)
-	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[dir], execute=True)
+	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[dir], execute=True, define_ret=True)
 
 @conf
 def boost_get_includes(self, *k, **kw):
