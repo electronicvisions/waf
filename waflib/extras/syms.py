@@ -25,11 +25,7 @@ class gen_sym(Task):
 		kw = {}
 		if 'msvc' in (self.env.CC_NAME, self.env.CXX_NAME):
 			re_nm = re.compile(r'External\s+\|\s+_(' + self.generator.export_symbols_regex + r')\b')
-			if 'DUMPBIN' in self.env:
-				cmd = [self.env['DUMPBIN']]
-			else:
-				cmd = ['dumpbin']
-			cmd += ['/symbols', obj.abspath()]
+			cmd = [self.env.DUMPBIN or 'dumpbin', '/symbols', obj.abspath()]
 
 			# Dumpbin requires custom environment sniffed out by msvc.py earlier
 			if self.env['PATH']:
@@ -42,11 +38,7 @@ class gen_sym(Task):
 				re_nm = re.compile(r'T\s+_(' + self.generator.export_symbols_regex + r')\b')
 			else:
 				re_nm = re.compile(r'T\s+(' + self.generator.export_symbols_regex + r')\b')
-			if 'NM' in self.env:
-				cmd = [self.env['NM']]
-			else:
-				cmd = 'nm'
-			cmd += ['-g', obj.abspath()]
+			cmd = [self.env.NM or 'nm', '-g', obj.abspath()]
 		syms = re_nm.findall(self.generator.bld.cmd_and_log(cmd, quiet=STDOUT, **kw))
 		self.outputs[0].write('%r' % syms)
 
