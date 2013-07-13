@@ -1136,6 +1136,27 @@ def get_xlc_version(conf, cc):
 	else:
 		conf.fatal('Could not determine the XLC version.')
 
+@conf
+def get_suncc_version(conf, cc):
+	"""Get the compiler version"""
+
+	cmd = cc + ['-V']
+	try:
+		out, err = conf.cmd_and_log(cmd, output=0)
+	except Errors.WafError:
+		conf.fatal('Could not find suncc %r' % cmd)
+
+	version = (out or err)
+	version = version.split('\n')[0]
+
+	version_re = re.compile(r'cc:\s+sun\s+(c\+\+|c)\s+(?P<major>\d*)\.(?P<minor>\d*)', re.I).search
+	match = version_re(version)
+	if match:
+		k = match.groupdict()
+		conf.env['CC_VERSION'] = (k['major'], k['minor'])
+	else:
+		conf.fatal('Could not determine the suncc version.')
+
 # ============ the --as-needed flag should added during the configuration, not at runtime =========
 
 @conf
