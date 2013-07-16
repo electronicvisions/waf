@@ -229,7 +229,7 @@ def wrap_compiled_task(classname):
 
                 # Pipe through the remaining stdout content (not related to /showIncludes)
                 if self.generator.bld.logger:
-                    logger.debug('out: %s' % os.linesep.join(out))
+                    self.generator.bld.logger.debug('out: %s' % os.linesep.join(out))
                 else:
                     sys.stdout.write(os.linesep.join(out) + os.linesep)
 
