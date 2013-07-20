@@ -250,7 +250,7 @@ def use_rec(self, name, **kw):
 	for x in self.to_list(getattr(y, 'use', [])):
 		if self.env["STLIB_" + x]:
 			continue
- 		try:
+		try:
 			p[x].append(name)
 		except KeyError:
 			p[x] = [name]
