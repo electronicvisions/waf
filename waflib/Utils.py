@@ -440,8 +440,8 @@ def check_dir(path):
 	"""
 	Ensure that a directory exists (similar to ``mkdir -p``).
 
-	:type  dir: string
-	:param dir: Path to directory
+	:type  path: string
+	:param path: Path to directory
 	"""
 	if not os.path.isdir(path):
 		try:
@@ -449,6 +449,28 @@ def check_dir(path):
 		except OSError as e:
 			if not os.path.isdir(path):
 				raise Errors.WafError('Cannot create the folder %r' % path, ex=e)
+
+def check_exe(name):
+	"""
+	Ensure that a program exists
+	:type name: string
+	:param name: name or path to program
+	:return: path of the program or None
+	"""
+	def is_exe(fpath):
+		return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+	fpath, fname = os.path.split(name)
+	if fpath and is_exe(name):
+		return fpath
+	else:
+		for path in os.environ["PATH"].split(os.pathsep):
+			path = path.strip('"')
+			exe_file = os.path.join(path, name)
+			if is_exe(exe_file):
+				return exe_file
+
+	return None
 
 def def_attrs(cls, **kw):
 	"""
