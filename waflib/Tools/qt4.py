@@ -262,8 +262,6 @@ class qxx(Task.classes['cxx']):
 		self.run_after.update(set(moctasks))
 		self.moc_done = 1
 
-	run = Task.classes['cxx'].__dict__['run']
-
 class trans_update(Task.Task):
 	"""Update a .ts files from a list of C++ files"""
 	run_str = '${QT_LUPDATE} ${SRC} -ts ${TGT}'
