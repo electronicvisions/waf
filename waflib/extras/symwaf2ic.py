@@ -313,9 +313,9 @@ class MainContext(Symwaf2icContext):
         if SETUP_CMD in sys.argv:
             # already write projects to store
             projects = cmdopts.projects if cmdopts.projects else []
-            del cmdopts.projects
             config = { "projects" : projects,
-                       "options" : [],
+                       "preserved_options" : [],
+                       "setup_argv" : sys.argv,
                        "setup_options" : vars(cmdopts),
                        "saved_paths" : None }
             storage.lockfile.write(json.dumps(config, indent=4))
@@ -325,6 +325,11 @@ class MainContext(Symwaf2icContext):
         storage.save = config.keys()
         for k, v in config.iteritems():
             setattr(storage, k, v)
+
+        if not SETUP_CMD in sys.argv:
+            args = [o for o in storage.preserved_options if not o in sys.argv]
+            Logs.info("Using options from setup call: " + " ".join(args))
+            sys.argv += args
 
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
@@ -419,7 +424,7 @@ class OptionParserContext(Symwaf2icContext):
         return self
 
 
-    def parse_args(self, path = None):
+    def parse_args(self, path = None, argv=None):
         """Parse args from wscript path (or command line if path is None)
 
         This is done to extract commands directed at symwaf2ic before
@@ -427,6 +432,9 @@ class OptionParserContext(Symwaf2icContext):
         affect the dependency resolution.
 
         """
+        if argv is None:
+            argv = sys.argv
+
         if path is None:
             # parse command line options specified by symwaf2ic
             options(self)
@@ -434,10 +442,14 @@ class OptionParserContext(Symwaf2icContext):
             self.recurse([path])
 
         # avoid things like -h/--help that would only confuse the parser
-        cmdline = [a for a in sys.argv[1:] if not a in STRIP_FROM_PARSER]
+        cmdline = [a for a in argv[1:] if not a in STRIP_FROM_PARSER]
 
         opts, unknown = self.parser.parse_known_args(cmdline)
+        self.used_args = [a for a in cmdline if not a in unknown]
         return opts
+
+    def get_used_args(self):
+        return self.used_args
 
 
 class DependencyContext(Symwaf2icContext):
@@ -498,7 +510,7 @@ class DependencyContext(Symwaf2icContext):
 
         if self._shall_store_config():
             if SETUP_CMD in sys.argv:
-                storage.options = vars(self.options)
+                storage.preserved_options = self.options_parser.get_used_args()
             storage.saved_paths = storage.paths
             self._store_config()
         elif (storage.saved_paths is not None
@@ -511,7 +523,7 @@ class DependencyContext(Symwaf2icContext):
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
-        self.options = self.options_parser.parse_args(self.path.abspath())
+        self.options = self.options_parser.parse_args(self.path.abspath(), argv=storage.setup_argv)
 
     def _print_branch_missmatches(self):
         for x in storage.repo_tool.get_wrong_branches():
