@@ -462,7 +462,7 @@ def check_exe(name):
 
 	fpath, fname = os.path.split(name)
 	if fpath and is_exe(name):
-		return fpath
+		return name
 	else:
 		for path in os.environ["PATH"].split(os.pathsep):
 			path = path.strip('"')
