@@ -620,13 +620,17 @@ def load_tool(tool, tooldir=None):
 				sys.path.remove(d)
 	else:
 		for x in ('waflib.extras.%s', 'waflib.Tools.%s', 'waflib.%s', '%s'):
+			full = x % tool
 			try:
-				__import__(x % tool)
+				__import__(full)
 				break
 			except ImportError as e:
-				if not e.args[0].endswith(tool):
+				if e.args[0].endswith(tool):
+					x = None
+				elif e.args[0].endswith("'%s'" % full):
+					x = None
+				else:
 					raise
-				x = None
 		if x is None: # raise an exception
 			__import__(tool)
 		ret = sys.modules[x % tool]
