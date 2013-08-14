@@ -68,7 +68,7 @@ exts_deps_tex = ['', '.ltx', '.tex', '.bib', '.pdf', '.png', '.eps', '.ps']
 exts_tex = ['.ltx', '.tex']
 """List of typical file extensions that contain latex"""
 
-re_tex = re.compile(r'\\(?P<type>include|bibliography|putbib|includegraphics|input|import|bringin|lstinputlisting)(\[[^\[\]]*\])?{(?P<file>[^{}]*)}',re.M)
+re_tex = re.compile(r'\\(?P<type>include|bibliography([^\[\]{}]*)|putbib|includegraphics|input|import|bringin|lstinputlisting)(\[[^\[\]]*\])?{(?P<file>[^{}]*)}',re.M)
 """Regexp for expressions that may include latex files"""
 
 g_bibtex_re = re.compile('bibdata', re.M)
@@ -156,6 +156,15 @@ class tex(Task.Task):
 			code = node.read()
 			global re_tex
 			for match in re_tex.finditer(code):
+
+				multibib = match.group('type')
+				if multibib and multibib.startswith('bibliography'):
+					multibib = multibib[len('bibliography'):]
+					if multibib.startswith('style'):
+						continue
+				else:
+					multibib = None
+
 				for path in match.group('file').split(','):
 					if path:
 						add_name = True
@@ -174,6 +183,14 @@ class tex(Task.Task):
 									if found.name.endswith(ext):
 										parse_node(found)
 										break
+
+							# multibib stuff
+							if found and multibib and found.name.endswith('.bib'):
+								try:
+									self.multibibs.append(found)
+								except AttributeError:
+									self.multibibs = [found]
+
 							# no break, people are crazy
 						if add_name:
 							names.append(path)
@@ -217,6 +234,13 @@ class tex(Task.Task):
 				self.env.env.update({'BIBINPUTS': self.TEXINPUTS, 'BSTINPUTS': self.TEXINPUTS})
 				self.env.SRCFILE = aux_node.name[:-4]
 				self.check_status('error when calling bibtex', self.bibtex_fun())
+
+		for node in getattr(self, 'multibibs', []):
+			self.env.env = {}
+			self.env.env.update(os.environ)
+			self.env.env.update({'BIBINPUTS': self.TEXINPUTS, 'BSTINPUTS': self.TEXINPUTS})
+			self.env.SRCFILE = node.name[:-4]
+			self.check_status('error when calling bibtex', self.bibtex_fun())
 
 	def bibunits(self):
 		"""
