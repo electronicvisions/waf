@@ -337,14 +337,24 @@ class TaskBase(evil):
 
 	def colon(self, var1, var2):
 		"""
-		private function for the moment
+		Support code for scriptlet expressions such as ${FOO_ST:FOO}
+		If the first variable (FOO_ST) is empty, then an empty list is returned
 
-		used for scriptlet expressions such as ${FOO_ST:FOO}, for example, if
-		env.FOO_ST = ['-a', '-b']
-		env.FOO    = ['1', '2']
-		then the result will be ['-a', '-b', '1', '-a', '-b', '2']
+		The results will be slightly different if FOO_ST is a list, for example::
+
+			env.FOO_ST = ['-a', '-b']
+			env.FOO_ST = '-I%s'
+			# ${FOO_ST:FOO} returns
+			['-Ip1', '-Ip2']
+
+			env.FOO    = ['p1', 'p2']
+			# ${FOO_ST:FOO} returns
+			['-a', '-b', 'p1', '-a', '-b', 'p2']
 		"""
 		tmp = self.env[var1]
+		if not tmp:
+			return []
+
 		if isinstance(var2, str):
 			it = self.env[var2]
 		else:
@@ -352,8 +362,6 @@ class TaskBase(evil):
 		if isinstance(tmp, str):
 			return [tmp % x for x in it]
 		else:
-			if Logs.verbose and not tmp and it:
-				Logs.warn('Missing env variable %r for task %r (generator %r)' % (var1, self, self.generator))
 			lst = []
 			for y in it:
 				lst.extend(tmp)
