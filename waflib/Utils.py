@@ -457,6 +457,8 @@ def check_exe(name):
 	:param name: name or path to program
 	:return: path of the program or None
 	"""
+	if not name:
+		raise ValueError('Cannot execute an empty string!')
 	def is_exe(fpath):
 		return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -469,7 +471,6 @@ def check_exe(name):
 			exe_file = os.path.join(path, name)
 			if is_exe(exe_file):
 				return exe_file
-
 	return None
 
 def def_attrs(cls, **kw):

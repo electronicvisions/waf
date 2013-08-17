@@ -327,7 +327,7 @@ class Context(ctx):
 		if 'stderr' not in kw:
 			kw['stderr'] = subprocess.PIPE
 
-		if not kw['shell'] and Utils.check_exe(cmd[0]) is None:
+		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
 			raise Errors.WafError("Program %s not found!" % cmd[0])
 
 		try:
@@ -391,7 +391,7 @@ class Context(ctx):
 		else:
 			to_ret = STDOUT
 
-		if not kw['shell'] and Utils.check_exe(cmd[0]) is None:
+		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
 			raise Errors.WafError("Program %s not found!" % cmd[0])
 
 		kw['stdout'] = kw['stderr'] = subprocess.PIPE
