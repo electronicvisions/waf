@@ -50,7 +50,7 @@ class docutils(Task.Task):
 		nodes = []
 		names = []
 		seen = []
-		
+
 		node = self.inputs[0]
 
 		if not node:
@@ -61,22 +61,24 @@ class docutils(Task.Task):
 				return
 			seen.append(node)
 			code = node.read()
-			re_rst = re.compile(r'^\s*.. (?P<type>include|image):: (?P<file>.*)$', re.M)
+			re_rst = re.compile(r'^\s*.. (?P<subst>\|\S+\|) (?P<type>include|image|figure):: (?P<file>.*)$', re.M)
 			for match in re_rst.finditer(code):
 				ipath = match.group('file')
 				itype = match.group('type')
 				Logs.debug("rst: visiting %s: %s" % (itype, ipath))
 				found = node.parent.find_resource(ipath)
-				nodes.append(found)
-				if itype == 'include':
-					parse_node(found)
-				names.append(ipath)
+				if found:
+					nodes.append(found)
+					if itype == 'include':
+						parse_node(found)
+				else:
+					names.append(ipath)
 		parse_node(node)
 
-		for x in nodes:
-			x.parent.get_bld().mkdir()
+		Logs.debug("rst: %s: found the following file deps: %s" % (repr(self), nodes))
+		if names:
+			Logs.warn("rst: %s: could not find the following file deps: %s" % (repr(self), names))
 
-		Logs.debug("rst: found the following : %s and names %s" % (nodes, names))
 		return (nodes, names)
 
 	def check_status(self, msg, retcode):
@@ -110,7 +112,7 @@ class rst2html(docutils):
 			ssnode = self.generator.to_nodes(stylesheet)[0]
 			nodes.append(ssnode)
 			Logs.debug("rst: adding dep to stylesheet %s" % stylesheet)
-	
+
 		return nodes, names
 
 	def run(self):
@@ -118,12 +120,13 @@ class rst2html(docutils):
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = [rst2x, src, dst]
+		cmd = [rst2x]
 		cmd += getattr(self.generator, 'options', [])
 		stylesheet = getattr(self.generator, 'stylesheet', None)
 		if stylesheet is not None:
 			stylesheet = self.generator.to_nodes(stylesheet)[0]
 			cmd += ['--stylesheet', stylesheet.bldpath()]
+		cmd += [src, dst]
 
 		return self.exec_command(cmd)
 
@@ -136,7 +139,7 @@ class rst2pdf(docutils):
 
 		cmd = [rst2x, src, dst]
 		cmd += getattr(self.generator, 'options', [])
-		
+
 		return self.exec_command(cmd)
 
 @feature('rst')
@@ -148,7 +151,7 @@ def apply_rst(self):
 
 	tsk_target = self.target if self.target != '' else None
 	tsk_type = getattr(self, 'type', None)
-	
+
 	if tsk_type is not None and tsk_target is None:
 		src = self.to_nodes(self.source)
 		assert len(src) == 1
