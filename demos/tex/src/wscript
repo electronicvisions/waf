@@ -12,7 +12,7 @@ def build(bld):
 	obj = bld(
 		features = 'tex',
 		type='latex', # default is pdflatex
-		source = 'document.ltx' # mandatory, the source
+		source = 'document.ltx document-glossaries.ltx' # mandatory, the source
 	)
 
 	# optional parameters
