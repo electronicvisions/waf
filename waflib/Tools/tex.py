@@ -74,6 +74,9 @@ re_tex = re.compile(r'\\(?P<type>usepackage|RequirePackage|include|bibliography(
 g_bibtex_re = re.compile('bibdata', re.M)
 """Regexp for bibtex files"""
 
+g_glossaries_re = re.compile('\\@newglossary', re.M)
+"""Regexp for expressions that create glossaries"""
+
 class tex(Task.Task):
 	"""
 	Compile a tex/latex file.
@@ -89,6 +92,11 @@ class tex(Task.Task):
 	makeindex_fun, _ = Task.compile_fun('${MAKEINDEX} ${MAKEINDEXFLAGS} ${SRCFILE}', shell=False)
 	makeindex_fun.__doc__ = """
 	Execute the program **makeindex**
+	"""
+
+	makeglossaries_fun, _ = Task.compile_fun('${MAKEGLOSSARIES} ${SRCFILE}', shell=False)
+	makeglossaries_fun.__doc__ = """
+	Execute the program **makeglossaries**
 	"""
 
 	def exec_command(self, cmd, **kw):
@@ -287,6 +295,25 @@ class tex(Task.Task):
 		if os.path.exists(os.path.join(p.abspath(), 'btaux.aux')):
 			self.aux_nodes += p.ant_glob('*[0-9].aux')
 
+	def makeglossaries(self):
+		src_file = self.inputs[0].abspath()
+		base_file = os.path.basename(src_file)
+		base, _ = os.path.splitext(base_file)
+		for aux_node in self.aux_nodes:
+			try:
+				ct = aux_node.read()
+			except (OSError, IOError):
+				Logs.error('Error reading %s: %r' % aux_node.abspath())
+				continue
+
+			if g_glossaries_re.findall(ct):
+				if not self.env['MAKEGLOSSARIES']:
+					raise Errors.WafError ("No 'makeglossaries'")
+				Logs.warn('calling makeglossaries')
+				self.env.SRCFILE = base
+				self.check_status('error when calling makeglossaries %s' % base, self.makeglossaries_fun())
+				return
+
 	def run(self):
 		"""
 		Runs the TeX build process.
@@ -330,6 +357,7 @@ class tex(Task.Task):
 		self.bibfile()
 		self.bibunits()
 		self.makeindex()
+		self.makeglossaries()
 
 		hash = ''
 		for i in range(10):
@@ -449,7 +477,7 @@ def configure(self):
 	are not found.
 	"""
 	v = self.env
-	for p in 'tex latex pdflatex xelatex bibtex dvips dvipdf ps2pdf makeindex pdf2ps'.split():
+	for p in 'tex latex pdflatex xelatex bibtex dvips dvipdf ps2pdf makeindex pdf2ps makeglossaries'.split():
 		try:
 			self.find_program(p, var=p.upper())
 		except self.errors.ConfigurationError:
