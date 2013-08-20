@@ -206,6 +206,10 @@ def apply_rst(self):
 		except KeyError:
 			self.bld.node_deps[task.uid()] = deps_lst
 
+	inst_to = getattr(self, 'install_path', None)
+	if inst_to:
+		self.install_task = self.bld.install_files(inst_to, task.outputs[:], env=self.env)
+
 	self.source = []
 
 def configure(self):
