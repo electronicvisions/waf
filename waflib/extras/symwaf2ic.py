@@ -570,7 +570,7 @@ class DependencyContext(Symwaf2icContext):
                         project = project["project"],
                         branch = project["branch"],
                         update_branch = self.update_branches)
-            self._add_required_path(path, None)
+                self._add_required_path(path, None)
 
     def _shall_store_config(self):
         "Determines if the config shall be written"
