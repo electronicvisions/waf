@@ -121,7 +121,7 @@ class rst2html(docutils):
 		dst = self.outputs[0].bldpath()
 
 		cmd = [rst2x]
-		cmd += getattr(self.generator, 'options', [])
+		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 		stylesheet = getattr(self.generator, 'stylesheet', None)
 		if stylesheet is not None:
 			stylesheet = self.generator.to_nodes(stylesheet)[0]
@@ -137,8 +137,8 @@ class rst2pdf(docutils):
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = [rst2x, src, dst]
-		cmd += getattr(self.generator, 'options', [])
+		cmd = [rst2x, src, '-o', dst]
+		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 
 		return self.exec_command(cmd)
 
