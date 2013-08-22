@@ -11,11 +11,9 @@ import shutil
 import json
 from collections import defaultdict
 
-from waflib import Build, Context, Errors, Logs, Options, Scripting
+from waflib import Build, Context, Errors, Logs
 from waflib.extras import mr
 
-# Please use:
-# --prelude=$'\tfrom waflib.extras.symwaf2ic import prelude; prelude()'
 
 #############
 # CONSTANTS #
@@ -28,7 +26,6 @@ CFGFOLDER = ".symwaf2ic"
 LOCKFILE = FILEPREFIX + ".conf.json"
 
 SETUP_CMD = "setup"
-# upon which commands shall the config be written 
 # upon which commands shall the config be written
 STORE_CMDS = set([SETUP_CMD, "configure"])
 
@@ -39,161 +36,27 @@ STRIP_FROM_PARSER = HELP_CMDS
 NO_EXECUTE_CMDS = "distclean".split()
 
 
-##############################
-# Monkey patching waf source #
-##############################
-
-def prepend_entry_point(func):
-    "Prepend our entry point to function execution."
-    def patched():
-        # from waflib.extras.symwaf2ic import entry_point
-        entry_point()
-        func()
-    return patched
-
-
-def patch_parse_args(class_=Options.OptionsContext, funcname="parse_args"):
-    func = getattr(class_,funcname)
-    def parse_args(self):
-        options(self)
-        func(self)
-    setattr(class_, funcname, parse_args)
-
-
-def patch_context():
-    """Patch Context.Context.recurse to do the recursing on first invocation,
-    since too many commands etc. tend to reimplement the execute method, but as of
-    this writing none touched the recurse function.
-
-    Furthermore, for every command executed a new Context-instance is created, it is
-    therefore assured that the depdency paths will also be recursed.
-
-    """
-    orig_init = getattr(Context.Context, "__init__")
-    orig_recurse = getattr(Context.Context, "recurse")
-
-    def init(self, *k, **kw):
-        # to find out if recurse has been run before or not
-        self._first_recursion = True
-        self.symwaf2ic_version = SYMWAF2IC_VERSION
-        orig_init(self, *k, **kw)
-    init.__name__ = "__init__"
-
-    def recurse(self, paths, *k, **kw):
-        if not self._first_recursion:
-            # if we are not in the first run, run as normal
-            orig_recurse(self, paths, *k, **kw)
-        else:
-            self._first_recursion = False
-
-            # run all required dependencies (not mandatory)
-            kw["mandatory"] = False
-            dep_paths = get_required_paths()
-            orig_recurse(self, dep_paths, *k, **kw)
-
-            # and then the desired toplevel recurse..
-            orig_recurse(self, paths, *k, **kw)
-
-    setattr(Context.Context, "__init__", init)
-    setattr(Context.Context, "recurse", recurse)
-
-
-def patch_distclean(module=Scripting, name="distclean"):
-    func = getattr(module, name)
-    def patched(*k, **kw):
-        distclean(*k, **kw)
-        func(*k,**kw)
-    # adjust name attribute (since waf operates on the .__name__ level)
-    setattr(patched, "__name__", name)
-    setattr(module, name, patched)
-
-
-def run_symwaf2ic():
-    "Return whether or not to run symwaf2ic."
-    return not set(NO_EXECUTE_CMDS) & set(sys.argv)
-
-def is_help_requested():
-    return set(sys.argv) & set(HELP_CMDS)
-
-
-def prelude():
-    "Prelude function to invoke symwaf2ic before any waf commands."
-
-    # patch default execute function of Context
-    # so that all required wscripts will be recursed into
-    # match the nameof the old function
-    # setattr(_patched_execute, "__name__", "execute")
-    # setattr(Context.Context, "execute", _patched_execute)
-    # (now done via patch_execute())
-
-    # Do not climb the directory when we set up the symwaf2ic top directory
-    Scripting.no_climb_commands.append(SETUP_CMD)
-
-    # Patch OptionsContext to include options for symwaf2ic
-    patch_parse_args()
-
-    # Patch distclean command to remove symwaf2ic files as well
-    patch_distclean()
-
-    # patch mr config to get the repo_tool
-    setattr(mr, "get_repo_tool", lambda: storage.repo_tool)
-
-    # if the user specifies the help option, our own argparser
-    # would catch that and only print the symwaf2ic help
-    # Since the normal workflow will not be executed and we can omit everything
-    if run_symwaf2ic():
-        assert_toplevel_wscript()
-        # patch run_commands-method  
-        funcname = "run_commands"
-        setattr(Scripting, funcname,
-                prepend_entry_point(getattr(Scripting, funcname)))
-
-        # patch recurse mode of Context.Context to also recurse into dependencies
-        # on first invocation
-        patch_context()
-
-    else:
-        # make sure toplevel wscript is present if --help specified
-        if is_help_requested():
-            assert_toplevel_wscript()
-
-
-def assert_toplevel_wscript():
-    # if there is no wscript and there is a setup command present, create the default wscript
-    if Context.WSCRIPT_FILE not in os.listdir(os.getcwd()):
-        if SETUP_CMD in sys.argv or is_help_requested() or len(sys.argv) == 1:
-            with open(os.path.join(os.getcwd(), Context.WSCRIPT_FILE), "w") as wf:
-                wf.write(_toplevel_wscript_contents)
-
-        else:
-            print "ERROR: No wscript present in current directory. In order to initialize"+\
-                    " the symwaf2ic toplevel (and the corresponding wscript), please issue "+\
-                    "the 'setup' command."
-            sys.exit(1)
-
-
-
-
-##################
-# Regular Script #
-##################
-
 # configuration to be shared between commands of symwaf2ic
 storage = None
 
-def entry_point():
+
+def init_storage():
     "Entry point for symwaf2ic code execution before waf workflow."
     global storage
     storage = Storage(None)
     storage.paths = []
 
-    Logs.debug("Reached entry point.")
 
-    Scripting.run_command("_symwaf2ic")
-    Scripting.run_command("_dependency_resolution")
+def get_required_paths():
+    return storage.paths
+
 
 def get_toplevel_path():
     return storage.toplevel
+
+
+def is_help_requested():
+    return set(sys.argv) & set(HELP_CMDS)
 
 
 class Symwaf2icError(Errors.WafError):
@@ -202,19 +65,17 @@ class Symwaf2icError(Errors.WafError):
 
 class Storage(object):
     def __repr__(self):
-        return "[{0}]".format(", ".join(("{0}: {1}".format(
-            name, repr(getattr(self, name))) for name in dir(self)
-                                             if not name.startswith("_"))))
+        tmp = ["{0}: {1}".format(name, repr(getattr(self, name)))
+               for name in dir(self) if not name.startswith("_")]
+        return "[{0}]".format(", ".join(tmp))
 
     def __init__(self, default):
-        setattr(self,"_default", default)
+        setattr(self, "_default", default)
 
     def __getattr__(self, name):
         setattr(self, name, getattr(self, "_default"))
         return getattr(self, name)
 
-def get_required_paths():
-    return storage.paths
 
 class Project(object):
     def __init__(self, project, branch, directory):
@@ -271,9 +132,9 @@ def options(opt):
             )
 
 
-
 class Symwaf2icContext(Context.Context):
     cmd = None
+
     def __init__(self, *k, **kw):
         super(Symwaf2icContext, self).__init__(*k, **kw)
         if storage.toplevel:
@@ -506,8 +367,10 @@ class DependencyContext(Symwaf2icContext):
             self._add_required_path(self.path.path_from(self.toplevel), None)
 
         # Only recurse into the toplevel wscript because all dependencies will
-        # be defined from there. Also it shall be possible to have no dependencies.
-        self.recurse([os.path.dirname(Context.g_module.root_path)], mandatory=False)
+        # be defined from there. Also it shall be possible to have no
+        # dependencies.
+        self.recurse([os.path.dirname(Context.g_module.root_path)],
+                     mandatory=False)
 
         if self._shall_store_config():
             if SETUP_CMD in sys.argv:
@@ -518,18 +381,21 @@ class DependencyContext(Symwaf2icContext):
         elif (storage.saved_paths is not None
                 and storage.saved_paths != storage.paths
                 and not is_help_requested()):
-            raise Symwaf2icError("Dependency information changed. Please rerun 'setup' or 'configure' before continuing!")
+            raise Symwaf2icError("Dependency information changed. Please rerun "
+                                 "'setup' or 'configure' before continuing!")
 
         storage.repo_tool.clean_projects()
         self._print_branch_missmatches()
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
-        self.options = self.options_parser.parse_args(self.path.abspath(), argv=storage.setup_argv)
+        self.options = self.options_parser.parse_args(
+            self.path.abspath(), argv=storage.setup_argv)
 
     def _print_branch_missmatches(self):
         for x in storage.repo_tool.get_wrong_branches():
-            Logs.warn('On-disk project "%s" on branch "%s", but requiring "%s".' % x)
+            Logs.warn('On-disk project "%s" on branch "%s", '
+                      'but requiring "%s".' % x)
 
     def _clear_config_cache(self):
         out_dir = self.root.find_dir(Context.out_dir)
@@ -538,7 +404,8 @@ class DependencyContext(Symwaf2icContext):
             shutil.rmtree(cache_dir.abspath())
 
     def _add_required_path(self, path, predecessor_path):
-        # WTF: .find_node() does not work when given a unicode string (as loaded from json file)...?
+        # WTF: .find_node() does not work when given a unicode string
+        # (as loaded from json file)...?
         path = self.toplevel.find_node(str(path)).abspath()
         if not os.path.isdir(path):
             raise Symwaf2icError("%s is not a valid directory" % path)
@@ -550,7 +417,7 @@ class DependencyContext(Symwaf2icContext):
             self.visited[path] = self.FINISHED
             storage.paths.append(path)
         elif self.visited[path] == self.ACTIVE:
-            pass # Ignore cicular dependecies
+            pass  # Ignore cicular dependecies
 
             #print path, self.predecessor
             #from pprint import pprint
@@ -567,7 +434,8 @@ class DependencyContext(Symwaf2icContext):
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
         if len(storage.paths) == 0 and len(storage.projects) == 0:
-            Logs.warn("Please specify target projects to build during 'setup' via --project or --directory.")
+            Logs.warn("Please specify target projects to build during"
+                      "'setup' via --project or --directory.")
             return
 
         for project in storage.projects:
@@ -575,8 +443,8 @@ class DependencyContext(Symwaf2icContext):
                 self._add_required_path(project["directory"], None)
             else:
                 path = storage.repo_tool.checkout_project(
-                        project = project["project"],
-                        branch = project["branch"],
+                        project=project["project"],
+                        branch=project["branch"],
                         update_branch = self.update_branches)
                 self._add_required_path(path, None)
 
@@ -588,40 +456,8 @@ class DependencyContext(Symwaf2icContext):
         config = {}
         for k in storage.save:
             config[k] = getattr(storage, k, None)
-        storage.lockfile.write(json.dumps(config, indent=4)+"\n")
+        storage.lockfile.write(json.dumps(config, indent=4) + "\n")
 
-
-def distclean(ctx):
-    # make sure no other commands are being run (otherwise: don't clean)
-    if not Options.commands:
-        shutil.rmtree(os.path.join(os.getcwd(), CFGFOLDER), ignore_errors=True)
-        # try:
-            # os.remove(os.path.join(os.getcwd(), LOCKFILE))
-        # except OSError:
-            # pass
-
-        for f in os.listdir(os.getcwd()):
-            if f.startswith(FILEPREFIX):
-                try:
-                    os.remove(os.path.join(os.getcwd(), f))
-                except OSError:
-                    pass
-
-
-_toplevel_wscript_contents = """
-# default wscript
-# can be modified/deleted if needed
-
-def depends(dep):
-    dep._recurse_projects()
-
-def configure(cfg):
-    pass
-
-def build(bld):
-    pass
-
-"""
 
 # Currently only kept for posterity
 # import types
