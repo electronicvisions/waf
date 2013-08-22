@@ -11,7 +11,7 @@ import shutil
 import json
 from collections import defaultdict
 
-from waflib import Context, Errors, Logs, Options, Scripting
+from waflib import Build, Context, Errors, Logs, Options, Scripting
 from waflib.extras import mr
 
 # Please use:
@@ -29,6 +29,7 @@ LOCKFILE = FILEPREFIX + ".conf.json"
 
 SETUP_CMD = "setup"
 # upon which commands shall the config be written 
+# upon which commands shall the config be written
 STORE_CMDS = set([SETUP_CMD, "configure"])
 
 # items to strip from command line before parsing with own parser
@@ -511,6 +512,7 @@ class DependencyContext(Symwaf2icContext):
         if self._shall_store_config():
             if SETUP_CMD in sys.argv:
                 storage.preserved_options = self.options_parser.get_used_args()
+                self._clear_config_cache()
             storage.saved_paths = storage.paths
             self._store_config()
         elif (storage.saved_paths is not None
@@ -528,6 +530,12 @@ class DependencyContext(Symwaf2icContext):
     def _print_branch_missmatches(self):
         for x in storage.repo_tool.get_wrong_branches():
             Logs.warn('On-disk project "%s" on branch "%s", but requiring "%s".' % x)
+
+    def _clear_config_cache(self):
+        out_dir = self.root.find_dir(Context.out_dir)
+        cache_dir = out_dir.find_dir(Build.CACHE_DIR)
+        if cache_dir:
+            shutil.rmtree(cache_dir.abspath())
 
     def _add_required_path(self, path, predecessor_path):
         # WTF: .find_node() does not work when given a unicode string (as loaded from json file)...?
