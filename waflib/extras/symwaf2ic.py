@@ -51,6 +51,15 @@ def get_required_paths():
     return storage.paths
 
 
+def get_projects():
+    for p in storage.projects:
+        yield Project(**p)
+
+
+def count_projects():
+    return len(storage.projects)
+
+
 def get_toplevel_path():
     return storage.toplevel
 
@@ -80,7 +89,7 @@ class Storage(object):
 class Project(object):
     def __init__(self, project, branch, directory):
         self.project = project
-        self.directory = directory
+        self.directory = str(directory)
         self.branch = branch
 
     def __str__(self):
@@ -353,7 +362,7 @@ class DependencyContext(Symwaf2icContext):
         # dont recurse into all already dependency directories again
         self._first_recursion = False
 
-        info = [str(Project(**s)) for s in storage.projects]
+        info = [str(p) for p in get_projects()]
         Logs.info("Required from toplevel: {0}".format( ", ".join(info)))
 
         # Color map for topological sort
@@ -406,7 +415,7 @@ class DependencyContext(Symwaf2icContext):
     def _add_required_path(self, path, predecessor_path):
         # WTF: .find_node() does not work when given a unicode string
         # (as loaded from json file)...?
-        path = self.toplevel.find_node(str(path)).abspath()
+        path = self.toplevel.find_node(path).abspath()
         if not os.path.isdir(path):
             raise Symwaf2icError("%s is not a valid directory" % path)
 
@@ -433,18 +442,18 @@ class DependencyContext(Symwaf2icContext):
 
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
-        if len(storage.paths) == 0 and len(storage.projects) == 0:
+        if len(storage.paths) == 0 and count_projects() == 0:
             Logs.warn("Please specify target projects to build during"
                       "'setup' via --project or --directory.")
             return
 
-        for project in storage.projects:
-            if project["project"] is None:
-                self._add_required_path(project["directory"], None)
+        for project in get_projects():
+            if project.project is None:
+                self._add_required_path(project.directory, None)
             else:
                 path = storage.repo_tool.checkout_project(
-                        project=project["project"],
-                        branch=project["branch"],
+                        project=project.project,
+                        branch=project.branch,
                         update_branch = self.update_branches)
                 self._add_required_path(path, None)
 

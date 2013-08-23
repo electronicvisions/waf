@@ -8,7 +8,7 @@
 import os
 import shutil
 import sys
-from waflib import Context, Logs, Options, Scripting
+from waflib import Build, Context, Logs, Options, Scripting
 from waflib.extras import symwaf2ic
 from waflib.extras import mr
 
@@ -29,6 +29,51 @@ def patch_parse_args(class_=Options.OptionsContext, funcname="parse_args"):
         symwaf2ic.options(self)
         func(self)
     setattr(class_, funcname, parse_args)
+
+
+def patch_build_context():
+    def post_group(self):
+        """
+        Post the task generators from the group indexed by self.cur, used
+        by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
+        """
+        def post_tg(tg):
+            try:
+                f = tg.post
+            except AttributeError:
+                pass
+            else:
+                f()
+
+        tg_filter = lambda tg: True
+        ln = self.launch_node()
+        if self.targets == '*':
+            pass
+        elif self.targets and self.cur >= self._min_grp:
+            for tg in self._exact_tg:
+                post_tg(tg)
+            return
+        elif ln.is_child_of(self.bldnode):
+            Logs.warn('Building from the build directory, forcing --targets=*')
+            tg_filter = lambda tg: tg.path.is_child_of(self.srcnode)
+        elif not ln.is_child_of(self.srcnode):
+            Logs.warn('CWD %s is not under %s, forcing --targets=* (run '
+                      'distclean?)' % (ln.abspath(), self.srcnode.abspath()))
+            tg_filter = lambda tg: tg.path.is_child_of(self.srcnode)
+        else:
+            toplevel = self.root.find_node(symwaf2ic.storage.toplevel)
+            paths = [toplevel.find_dir(p.directory)
+                     for p in symwaf2ic.get_projects()]
+            # If no projects are set apply waf default behavior
+            if not paths:
+                paths = [ln]
+            tg_filter = lambda tg: any(tg.path.is_child_of(p) for p in paths)
+
+        for tg in self.groups[self.cur]:
+            if tg_filter(tg):
+                post_tg(tg)
+
+    Build.BuildContext.post_group = post_group
 
 
 def patch_context():
@@ -148,6 +193,10 @@ def prelude():
 
     # Patch distclean command to remove symwaf2ic files as well
     patch_distclean()
+
+    # Patch the build context to post only nodes below the selected projects
+    # and directoris
+    patch_build_context()
 
     # patch mr config to get the repo_tool
     setattr(mr, "get_repo_tool", lambda: symwaf2ic.storage.repo_tool)
