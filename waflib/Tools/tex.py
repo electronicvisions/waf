@@ -62,13 +62,13 @@ def bibunitscan(self):
 	Logs.debug("tex: found the following bibunit files: %s" % nodes)
 	return nodes
 
-exts_deps_tex = ['', '.ltx', '.tex', '.bib', '.pdf', '.png', '.eps', '.ps']
+exts_deps_tex = ['', '.ltx', '.tex', '.bib', '.pdf', '.png', '.eps', '.ps', '.sty']
 """List of typical file extensions included in latex files"""
 
 exts_tex = ['.ltx', '.tex']
 """List of typical file extensions that contain latex"""
 
-re_tex = re.compile(r'\\(?P<type>include|bibliography([^\[\]{}]*)|putbib|includegraphics|input|import|bringin|lstinputlisting)(\[[^\[\]]*\])?{(?P<file>[^{}]*)}',re.M)
+re_tex = re.compile(r'\\(?P<type>usepackage|RequirePackage|include|bibliography([^\[\]{}]*)|putbib|includegraphics|input|import|bringin|lstinputlisting)(\[[^\[\]]*\])?{(?P<file>[^{}]*)}',re.M)
 """Regexp for expressions that may include latex files"""
 
 g_bibtex_re = re.compile('bibdata', re.M)
