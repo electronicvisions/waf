@@ -142,6 +142,18 @@ class rst2pdf(docutils):
 
 		return self.exec_command(cmd)
 
+class rst2latex(docutils):
+	color = 'BLUE'
+	def run(self):
+		rst2x = self.generator.env.RST2LATEX
+		src = self.inputs[0].bldpath()
+		dst = self.outputs[0].bldpath()
+
+		cmd = [rst2x, src, dst]
+		cmd += Utils.to_list(getattr(self.generator, 'options', []))
+
+		return self.exec_command(cmd)
+
 @feature('rst')
 @before_method('process_source')
 def apply_rst(self):
@@ -149,32 +161,35 @@ def apply_rst(self):
 	Create :py:class:`rst` or other rst-related task objects
 	"""
 
-	tsk_target = self.target if self.target != '' else None
+	if self.target:
+		if self.target.__class__ == Node.Node:
+			tgt = tsk_target
+		elif self.target.__class__ == str:
+			tgt = self.path.get_bld().make_node(self.target)
+		else:
+			raise NotImplementedError()
+	else:
+		tgt = None
+
 	tsk_type = getattr(self, 'type', None)
 
-	if tsk_type is not None and tsk_target is None:
-		src = self.to_nodes(self.source)
-		assert len(src) == 1
-		# TODO multiple source nodes ?
-		src = src[0]
+	src = self.to_nodes(self.source)
+	assert len(src) == 1
+	src = src[0]
+
+	if tsk_type is not None and tgt is None:
 		if tsk_type.startswith('rst2'):
 			ext = tsk_type[4:]
 		else:
 			raise ValueError("Feature rst could not detect the output file extension")
 		tgt = src.change_ext('.%s' % ext)
-	elif tsk_type is None and tsk_target is not None:
-		src = self.to_nodes(self.source)[0]
-		if tsk_target.__class__ == Node.Node:
-			tgt = tsk_target
-		elif tsk_target.__class__ == str:
-			tgt = src.parent.get_bld().make_node(tsk_target)
-		else:
-			raise NotImplementedError()
+	elif tsk_type is None and tgt is not None:
 		out = tgt.name
 		ext = out[out.rfind('.')+1:]
 		self.type = 'rst2' + ext
-	elif tsk_type is not None and tsk_target is not None:
-		pass # the user knows what he wants
+	elif tsk_type is not None and tgt is not None:
+		# the user knows what he wants
+		pass
 	else:
 		raise ValueError("Need to indicate task type or target name for %s" % str(self))
 
