@@ -30,4 +30,9 @@ Example 1
 
 .. include:: generated.rst
 
+.. csv-table::
+   :file: generated.csv
+
+.. raw:: html
+   :file: generated.html
 

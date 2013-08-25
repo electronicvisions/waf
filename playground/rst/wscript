@@ -22,6 +22,16 @@ def build(bld):
 	 target='generated.rst',
 	 rule=lambda tsk: Utils.writef( tsk.outputs[0].abspath(), "Generated contents in %s" % tsk.outputs[0].name),
 	)
+	
+	bld(
+	 target='generated.csv',
+	 rule=lambda tsk: Utils.writef( tsk.outputs[0].abspath(), "a,b,c\n1,2,%s" % tsk.outputs[0].name),
+	)
+	
+	bld(
+	 target='generated.html',
+	 rule=lambda tsk: Utils.writef( tsk.outputs[0].abspath(), "<p>Generated HTML data</p>"),
+	)
 
 	bld(
 	 features='rst',
