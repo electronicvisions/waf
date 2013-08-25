@@ -36,6 +36,25 @@ from waflib.TaskGen import feature, before_method
 
 rst_progs = "rst2html rst2xetex rst2latex rst2xml rst2pdf rst2s5 rst2man rst2odt rst2rtf".split()
 
+def parse_rst_node(node, nodes, names, seen):
+	# TODO add extensibility, to handle custom rst include tags...
+	if node in seen:
+		return
+	seen.append(node)
+	code = node.read()
+	re_rst = re.compile(r'^\s*.. (?P<subst>\|\S+\|) (?P<type>include|image|figure):: (?P<file>.*)$', re.M)
+	for match in re_rst.finditer(code):
+		ipath = match.group('file')
+		itype = match.group('type')
+		Logs.debug("rst: visiting %s: %s" % (itype, ipath))
+		found = node.parent.find_resource(ipath)
+		if found:
+			nodes.append(found)
+			if itype == 'include':
+				parse_rst_node(found, nodes, names, seen)
+		else:
+			names.append(ipath)
+
 class docutils(Task.Task):
 	"""
 	Compile a rst file.
@@ -45,7 +64,6 @@ class docutils(Task.Task):
 		"""
 		A recursive regex-based scanner that finds rst dependencies.
 		"""
-		# TODO add extensibility, to handle custom rst include tags...
 
 		nodes = []
 		names = []
@@ -56,24 +74,7 @@ class docutils(Task.Task):
 		if not node:
 			return (nodes, names)
 
-		def parse_node(node):
-			if node in seen:
-				return
-			seen.append(node)
-			code = node.read()
-			re_rst = re.compile(r'^\s*.. (?P<subst>\|\S+\|) (?P<type>include|image|figure):: (?P<file>.*)$', re.M)
-			for match in re_rst.finditer(code):
-				ipath = match.group('file')
-				itype = match.group('type')
-				Logs.debug("rst: visiting %s: %s" % (itype, ipath))
-				found = node.parent.find_resource(ipath)
-				if found:
-					nodes.append(found)
-					if itype == 'include':
-						parse_node(found)
-				else:
-					names.append(ipath)
-		parse_node(node)
+		parse_rst_node(node, nodes, names, seen)
 
 		Logs.debug("rst: %s: found the following file deps: %s" % (repr(self), nodes))
 		if names:
