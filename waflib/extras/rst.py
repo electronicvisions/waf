@@ -42,7 +42,7 @@ def parse_rst_node(node, nodes, names, seen):
 		return
 	seen.append(node)
 	code = node.read()
-	re_rst = re.compile(r'^\s*.. (?P<subst>\|\S+\|) (?P<type>include|image|figure):: (?P<file>.*)$', re.M)
+	re_rst = re.compile(r'^\s*.. ((?P<subst>\|\S+\|) )?(?P<type>include|image|figure):: (?P<file>.*)$', re.M)
 	for match in re_rst.finditer(code):
 		ipath = match.group('file')
 		itype = match.group('type')
