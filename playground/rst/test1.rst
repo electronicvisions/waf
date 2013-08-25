@@ -27,3 +27,7 @@ Example 1
    but I prefer not having a figure at all for the sake
    of cleanleness.
 
+
+.. include:: generated.rst
+
+
