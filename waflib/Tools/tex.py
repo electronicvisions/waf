@@ -28,7 +28,7 @@ To configure with a special program use::
 """
 
 import os, re
-from waflib import Utils, Task, Errors, Logs
+from waflib import Utils, Task, Errors, Logs, Node
 from waflib.TaskGen import feature, before_method
 
 re_bibunit = re.compile(r'\\(?P<type>putbib)\[(?P<file>[^\[\]]*)\]',re.M)
@@ -396,12 +396,15 @@ def apply_tex(self):
 
 	if getattr(self, 'deps', None):
 		deps = self.to_list(self.deps)
-		for filename in deps:
-			n = self.path.find_resource(filename)
-			if not n:
-				self.bld.fatal('Could not find %r for %r' % (filename, self))
-			if not n in deps_lst:
-				deps_lst.append(n)
+		for dep in deps:
+			if isinstance(dep, str):
+				n = self.path.find_resource(dep)
+				if not n:
+					self.bld.fatal('Could not find %r for %r' % (filename, self))
+				if not n in deps_lst:
+					deps_lst.append(n)
+			elif isinstance(dep, Node.Node):
+				deps_lst.append(dep)
 
 	for node in self.to_nodes(self.source):
 
