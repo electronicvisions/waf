@@ -58,6 +58,11 @@ def build(bld):
 		)
 
 	bld(
+	 target='generated.tex',
+	 rule=lambda tsk: Utils.writef( tsk.outputs[0].abspath(), "Generated contents in %s" % tsk.outputs[0].name),
+	)
+
+	bld(
 	 features='rst',
 	 type='rst2latex',
 	 target='test2.tex',
