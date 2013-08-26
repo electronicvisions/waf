@@ -507,10 +507,14 @@ def apply_vnum(self):
 		self.install_task.hasrun = Task.SKIP_ME
 		bld = self.bld
 		path = self.install_task.dest
-		t1 = bld.install_as(path + os.sep + name3, node, env=self.env, chmod=self.link_task.chmod)
-		t2 = bld.symlink_as(path + os.sep + name2, name3)
-		t3 = bld.symlink_as(path + os.sep + libname, name3)
-		self.vnum_install_task = (t1, t2, t3)
+		if self.env.DEST_OS == 'openbsd':
+			t1 = bld.install_as(path + os.sep + name2, node, env=self.env, chmod=self.link_task.chmod)
+			self.vnum_install_task = (t1,)
+		else:
+			t1 = bld.install_as(path + os.sep + name3, node, env=self.env, chmod=self.link_task.chmod)
+			t2 = bld.symlink_as(path + os.sep + name2, name3)
+			t3 = bld.symlink_as(path + os.sep + libname, name3)
+			self.vnum_install_task = (t1, t2, t3)
 
 	if '-dynamiclib' in self.env['LINKFLAGS']:
 		# this requires after(propagate_uselib_vars)
