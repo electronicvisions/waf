@@ -227,7 +227,7 @@ class tex(Task.Task):
 				continue
 
 			if g_bibtex_re.findall(ct):
-				Logs.warn('calling bibtex')
+				Logs.info('calling bibtex')
 
 				self.env.env = {}
 				self.env.env.update(os.environ)
@@ -255,7 +255,7 @@ class tex(Task.Task):
 			if bibunits:
 				fn  = ['bu' + str(i) for i in xrange(1, len(bibunits) + 1)]
 				if fn:
-					Logs.warn('calling bibtex on bibunits')
+					Logs.info('calling bibtex on bibunits')
 
 				for f in fn:
 					self.env.env = {'BIBINPUTS': self.TEXINPUTS, 'BSTINPUTS': self.TEXINPUTS}
@@ -271,9 +271,9 @@ class tex(Task.Task):
 			idx_path = self.idx_node.abspath()
 			os.stat(idx_path)
 		except OSError:
-			Logs.warn('index file %s absent, not calling makeindex' % idx_path)
+			Logs.info('index file %s absent, not calling makeindex' % idx_path)
 		else:
-			Logs.warn('calling makeindex')
+			Logs.info('calling makeindex')
 
 			self.env.SRCFILE = self.idx_node.name
 			self.env.env = {}
@@ -315,7 +315,7 @@ class tex(Task.Task):
 		# important, set the cwd for everybody
 		self.cwd = self.inputs[0].parent.get_bld().abspath()
 
-		Logs.warn('first pass on %s' % self.__class__.__name__)
+		Logs.info('first pass on %s' % self.__class__.__name__)
 
 		self.env.env = {}
 		self.env.env.update(os.environ)
@@ -347,7 +347,7 @@ class tex(Task.Task):
 				break
 
 			# run the command
-			Logs.warn('calling %s' % self.__class__.__name__)
+			Logs.info('calling %s' % self.__class__.__name__)
 
 			self.env.env = {}
 			self.env.env.update(os.environ)
