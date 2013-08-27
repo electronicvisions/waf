@@ -307,8 +307,8 @@ class tex(Task.Task):
 				continue
 
 			if g_glossaries_re.findall(ct):
-				if not self.env['MAKEGLOSSARIES']:
-					raise Errors.WafError ("No 'makeglossaries'")
+				if not self.env.MAKEGLOSSARIES:
+					raise Errors.WafError("The program 'makeglossaries' is missing!")
 				Logs.warn('calling makeglossaries')
 				self.env.SRCFILE = base
 				self.check_status('error when calling makeglossaries %s' % base, self.makeglossaries_fun())
