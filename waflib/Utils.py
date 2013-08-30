@@ -628,10 +628,10 @@ class Timer(object):
 
 	def __str__(self):
 		delta = datetime.datetime.utcnow() - self.start_time
-		days = int(delta.days)
-		hours = delta.seconds // 3600
-		minutes = (delta.seconds - hours * 3600) // 60
-		seconds = delta.seconds - hours * 3600 - minutes * 60 + float(delta.microseconds) / 1000 / 1000
+		days = delta.days
+		hours, rem = divmod(delta.seconds, 3600)
+		minutes, seconds = divmod(rem, 60)
+		seconds += delta.microseconds * 1e-6
 		result = ''
 		if days:
 			result += '%dd' % days
