@@ -29,7 +29,7 @@ def configure(conf):
 
 
 	# gotcha - the config.h must be written for each variant
-	txt = conf.bldnode.search('config.h').read()
+	txt = conf.bldnode.search_node('config.h').read()
 	for x in lst:
 		node = conf.bldnode.make_node(x + '/config.h')
 		node.parent.mkdir()
