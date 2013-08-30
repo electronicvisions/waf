@@ -2,7 +2,6 @@
 # encoding: utf-8
 # Thomas Nagy, 2006-2010 (ita)
 
-# the following two variables are used by the target "waf dist"
 VERSION='0.0.1'
 APPNAME='cc_test'
 
@@ -81,7 +80,7 @@ def locked_progress_line(self, state, total, col1, col2):
 		for x in self.siblings:
 			try:
 				p = x.bld.producer
-			except:
+			except AttributeError:
 				pass
 			else:
 				total += p.total
@@ -89,8 +88,6 @@ def locked_progress_line(self, state, total, col1, col2):
 		return Build.BuildContext.progress_line(self, self.count[0], total, col1, col2)
 	finally:
 		self.line_lock.release()
-
-
 
 class cleanall_ctx(Build.CleanContext):
 	cmd = fun = 'cleanall'
@@ -164,5 +161,4 @@ def check_features(self):
 
 from waflib import Configure
 Configure.conf(check_features) # bind the method
-
 
