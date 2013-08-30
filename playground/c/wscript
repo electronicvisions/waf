@@ -108,8 +108,8 @@ def cleanall(ctx):
 			bld.save()
 
 
-
-features_str = '''
+# produces dict/json compatible output
+features_str = r'''
 #include <stdio.h>
 int is_big_endian()
 {
@@ -118,12 +118,14 @@ int is_big_endian()
 }
 int main()
 {
-	if (is_big_endian()) printf("bigendian=1\\n");
-	else printf("bigendian=0\\n");
-	printf("int_size=%d\\n", sizeof(int));
-	printf("long_int_size=%d\\n", sizeof(long int));
-	printf("long_long_int_size=%d\\n", sizeof(long long int));
-	printf("double_size=%d\\n", sizeof(double));
+	printf("{");
+	if (is_big_endian()) printf("\"bigendian\":1,");
+	else printf("\"bigendian\":0,");
+	printf("\"int_size\":%lu,", sizeof(int));
+	printf("\"long_int_size\":%lu,", sizeof(long int));
+	printf("\"long_long_int_size\":%lu,", sizeof(long long int));
+	printf("\"double_size\":%lu", sizeof(double));
+	printf("}");
 	return 0;
 }
 '''
@@ -136,7 +138,8 @@ def check_features(self):
 	except:
 		pass
 
-	t = Utils.str_to_dict(mp)
+
+	t = eval(mp)
 	try:
 		is_big = int(t['bigendian'])
 	except KeyError:
