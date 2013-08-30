@@ -378,33 +378,6 @@ def to_list(sth):
 	else:
 		return sth
 
-re_nl = re.compile('\r*\n', re.M)
-def str_to_dict(txt):
-	"""
-	Parse a string with key = value pairs into a dictionary::
-
-		from waflib import Utils
-		x = Utils.str_to_dict('''
-			a = 1
-			b = test
-		''')
-
-	:type  s: string
-	:param s: String to parse
-	:rtype: dict
-	:return: Dictionary containing parsed key-value pairs
-	"""
-	tbl = {}
-
-	lines = re_nl.split(txt)
-	for x in lines:
-		x = x.strip()
-		if not x or x.startswith('#') or x.find('=') < 0:
-			continue
-		tmp = x.split('=')
-		tbl[tmp[0].strip()] = '='.join(tmp[1:]).strip()
-	return tbl
-
 def split_path(path):
 	return path.split('/')
 
