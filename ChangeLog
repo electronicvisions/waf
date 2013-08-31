@@ -3,6 +3,10 @@ NEW IN WAF 1.8.0
 * Do not propagate external static libraries uselib vars #1320
 * Removed the Waf cache from the task level
 * Fix for systems without threading #1323
+* LaTeX glossaries #1342
+* LaTeX multibib #1345
+* Various improvements in the Python detection and processing
+* Rst document processing
 
 NEW IN WAF 1.7.11
 -----------------
