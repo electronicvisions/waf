@@ -370,8 +370,11 @@ class rcc(Task.Task):
 	Process *.qrc* files
 	"""
 	color   = 'BLUE'
-	run_str = '${QT_RCC} -name ${SRC[0].name} ${SRC[0].abspath()} ${RCC_ST} -o ${TGT}'
+	run_str = '${QT_RCC} -name ${tsk.rcname()} ${SRC[0].abspath()} ${RCC_ST} -o ${TGT}'
 	ext_out = ['.h']
+
+	def rcname(self):
+		return os.path.splitext(self.inputs[0].name)[0]
 
 	def scan(self):
 		"""Parse the *.qrc* files"""
