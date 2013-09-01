@@ -5,7 +5,7 @@
 "ocaml support"
 
 import os, re
-from waflib import TaskGen, Utils, Task, Build
+from waflib import Utils, Task
 from waflib.Logs import error
 from waflib.TaskGen import feature, before_method, after_method, extension
 
@@ -212,7 +212,6 @@ def compile_may_start(self):
 
 		self.signature() # ensure that files are scanned - unfortunately
 		tree = self.generator.bld
-		env = self.env
 		for node in self.inputs:
 			lst = tree.node_deps[self.uid()]
 			for depnode in lst:
@@ -261,8 +260,13 @@ class ocamllex(Task.Task):
 class ocamlyacc(Task.Task):
 	"""parser generator"""
 	color   = 'BLUE'
-	run_str = '${OCAMLYACC} -b ${TGT[0].bld_base(env)} ${SRC}'
+	run_str = '${OCAMLYACC} -b ${tsk.base()} ${SRC}'
 	before  = ['ocamlcmi', 'ocaml', 'ocamlcc']
+
+	def base(self):
+		node = self.outputs[0]
+		s = os.path.splitext(node.name)[0]
+		return node.bld_dir() + os.sep + s
 
 def link_may_start(self):
 

@@ -779,11 +779,6 @@ class Node(object):
 		"Build path without the file name"
 		return self.parent.bldpath()
 
-	def bld_base(self):
-		"Build path without the extension: src/dir/foo(.cpp)"
-		s = os.path.splitext(self.name)[0]
-		return self.bld_dir() + os.sep + s
-
 	def get_bld_sig(self):
 		"""
 		Node signature, assuming the file is in the build directory
