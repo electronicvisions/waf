@@ -8,7 +8,7 @@
 import os
 import shutil
 import sys
-from waflib import Build, Context, Logs, Options, Scripting
+from waflib import Build, Context, Logs, Options, Scripting, TaskGen
 from waflib.extras import symwaf2ic
 from waflib.extras import mr
 
@@ -73,7 +73,19 @@ def patch_build_context():
             if tg_filter(tg):
                 post_tg(tg)
 
+    old_create_task = TaskGen.task_gen.create_task
+
+    def create_task(self, name, src=None, tgt=None):
+        """New create task"""
+        task = old_create_task(self, name, src, tgt)
+        task_list = self.to_list(getattr(self, "run_after", []))
+        for task_name in task_list:
+            for t in self.bld.get_tgen_by_name(task_name).tasks:
+                task.set_run_after(t)
+        return task
+
     Build.BuildContext.post_group = post_group
+    TaskGen.task_gen.create_task = create_task
 
 
 def patch_context():
