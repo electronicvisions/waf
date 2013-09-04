@@ -315,7 +315,7 @@ def check_python_headers(conf):
 
 	includes = []
 	if conf.env.PYTHON_CONFIG:
-		for incstr in conf.cmd_and_log([ conf.env.PYTHON_CONFIG, '--includes']).strip().split():
+		for incstr in conf.cmd_and_log(conf.env.PYTHON_CONFIG + ['--includes']).strip().split():
 			# strip the -I or /I
 			if (incstr.startswith('-I') or incstr.startswith('/I')):
 				incstr = incstr[2:]
@@ -522,7 +522,6 @@ def configure(conf):
 		v['PYTHONARCHDIR'] = Options.options.pythonarchdir
 
 	conf.find_program('python', var='PYTHON')
-	conf.env.PYTHON = conf.cmd_to_list(conf.env.PYTHON)
 
 	v['PYCMD'] = '"import sys, py_compile;py_compile.compile(sys.argv[1], sys.argv[2])"'
 	v['PYFLAGS'] = ''

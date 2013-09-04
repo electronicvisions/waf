@@ -117,11 +117,10 @@ class rst2html(docutils):
 		return nodes, names
 
 	def run(self):
-		rst2x = self.generator.env.RST2HTML
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = [rst2x]
+		cmd = self.generator.env.RST2HTML
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 		stylesheet = getattr(self.generator, 'stylesheet', None)
 		if stylesheet is not None:
@@ -134,11 +133,10 @@ class rst2html(docutils):
 class rst2pdf(docutils):
 	color = 'BLUE'
 	def run(self):
-		rst2x = self.generator.env.RST2PDF
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = [rst2x, src, '-o', dst]
+		cmd = self.generator.env.RST2PDF + [src, '-o', dst]
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 
 		return self.exec_command(cmd)
@@ -146,11 +144,10 @@ class rst2pdf(docutils):
 class rst2latex(docutils):
 	color = 'BLUE'
 	def run(self):
-		rst2x = self.generator.env.RST2LATEX
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = [rst2x, src, dst]
+		cmd = self.generator.env.RST2LATEX + [rst2x, src, dst]
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 
 		return self.exec_command(cmd)

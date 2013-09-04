@@ -368,7 +368,6 @@ def configure(self):
 
 	for x in 'javac java jar javadoc'.split():
 		self.find_program(x, var=x.upper(), path_list=java_path)
-		self.env[x.upper()] = self.cmd_to_list(self.env[x.upper()])
 
 	if 'CLASSPATH' in self.environ:
 		v['CLASSPATH'] = self.environ['CLASSPATH']
