@@ -515,17 +515,13 @@ def configure(conf):
 	Detect the python interpreter
 	"""
 	v = conf.env
-	v['PYTHON']=Options.options.python or sys.executable
+	v['PYTHON'] = Options.options.python or os.environ.get('PYTHON', sys.executable)
 	if Options.options.pythondir:
 		v['PYTHONDIR'] = Options.options.pythondir
 	if Options.options.pythonarchdir:
 		v['PYTHONARCHDIR'] = Options.options.pythonarchdir
-	try:
-		conf.find_program('python', var='PYTHON')
-	except conf.errors.ConfigurationError:
-		Logs.warn("could not find a python executable, setting to sys.executable '%s'" % sys.executable)
-		conf.env.PYTHON = sys.executable
 
+	conf.find_program('python', var='PYTHON')
 	conf.env.PYTHON = conf.cmd_to_list(conf.env.PYTHON)
 
 	v['PYCMD'] = '"import sys, py_compile;py_compile.compile(sys.argv[1], sys.argv[2])"'
