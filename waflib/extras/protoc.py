@@ -3,6 +3,7 @@
 # Philipp Bender, 2012
 # Matt Clarkson, 2012
 
+import re
 from waflib.Task import Task
 from waflib.TaskGen import extension 
 
@@ -25,6 +26,39 @@ class protoc(Task):
 	run_str = '${PROTOC} ${PROTOC_FLAGS} ${PROTOC_ST:INCPATHS} ${SRC[0].abspath()}'
 	color   = 'BLUE'
 	ext_out = ['.h', 'pb.cc']
+	def scan(self):
+		"""
+		Scan .proto dependencies
+		"""
+		node = self.inputs[0]
+
+		nodes = []
+		names = []
+		seen = []
+
+		if not node: return (nodes, names)
+
+		search_paths = [self.generator.path.find_node(x) for x in self.generator.includes]
+
+		def parse_node(node):
+			if node in seen:
+				return
+			seen.append(node)
+			code = node.read().split("\n")
+			for line in code:
+				m = re.search(r'^import\s+"(.*)";.*(//)?.*', line)
+				if m:
+					dep = m.groups()[0]
+					for incpath in search_paths:
+						found = incpath.find_resource(dep)
+						if found:
+							nodes.append(found)
+							parse_node(found)
+						else:
+							names.append(dep)
+
+		parse_node(node)
+		return (nodes, names)
 
 @extension('.proto')
 def process_protoc(self, node):
