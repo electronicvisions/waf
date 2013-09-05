@@ -74,7 +74,7 @@ else:
 
 import os, sys
 from waflib.Tools import c_preproc, cxx
-from waflib import Task, Utils, Options, Errors
+from waflib import Task, Utils, Options, Errors, Context
 from waflib.TaskGen import feature, after_method, extension
 from waflib.Configure import conf
 from waflib import Logs
@@ -501,7 +501,7 @@ def find_qt4_binaries(self):
 			pass
 		else:
 			try:
-				version = self.cmd_and_log([qmake, '-query', 'QT_VERSION']).strip()
+				version = self.cmd_and_log(qmake + ['-query', 'QT_VERSION']).strip()
 			except self.errors.WafError:
 				pass
 			else:
@@ -515,7 +515,7 @@ def find_qt4_binaries(self):
 	else:
 		self.fatal('Could not find qmake for qt4')
 
-	qtbin = self.cmd_and_log([self.env.QMAKE, '-query', 'QT_INSTALL_BINS']).strip() + os.sep
+	qtbin = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_BINS']).strip() + os.sep
 
 	def find_bin(lst, var):
 		if var in env:
@@ -531,15 +531,14 @@ def find_qt4_binaries(self):
 
 	find_bin(['uic-qt3', 'uic3'], 'QT_UIC3')
 	find_bin(['uic-qt4', 'uic'], 'QT_UIC')
-	if not env['QT_UIC']:
+	if not env.QT_UIC:
 		self.fatal('cannot find the uic compiler for qt4')
 
-	try:
-		uicver = self.cmd_and_log(env['QT_UIC'] + " -version 2>&1").strip()
-	except self.errors.ConfigurationError:
-		self.fatal('this uic compiler is for qt3, add uic for qt4 to your path')
+	self.start_msg('Checking for uic version')
+	uicver = self.cmd_and_log(env.QT_UIC + ["-version"], output=Context.BOTH)
+	uicver = ''.join(uicver).strip()
 	uicver = uicver.replace('Qt User Interface Compiler ','').replace('User Interface Compiler for Qt', '')
-	self.msg('Checking for uic version', '%s' % uicver)
+	self.end_msg(uicver)
 	if uicver.find(' 3.') != -1:
 		self.fatal('this uic compiler is for qt3, add uic for qt4 to your path')
 
@@ -561,13 +560,13 @@ def find_qt4_libraries(self):
 	qtlibs = getattr(Options.options, 'qtlibs', None) or os.environ.get("QT4_LIBDIR", None)
 	if not qtlibs:
 		try:
-			qtlibs = self.cmd_and_log([self.env.QMAKE, '-query', 'QT_INSTALL_LIBS']).strip()
+			qtlibs = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_LIBS']).strip()
 		except Errors.WafError:
-			qtdir = self.cmd_and_log([self.env.QMAKE, '-query', 'QT_INSTALL_PREFIX']).strip() + os.sep
+			qtdir = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_PREFIX']).strip() + os.sep
 			qtlibs = os.path.join(qtdir, 'lib')
 	self.msg('Found the Qt4 libraries in', qtlibs)
 
-	qtincludes =  os.environ.get("QT4_INCLUDES", None) or self.cmd_and_log([self.env.QMAKE, '-query', 'QT_INSTALL_HEADERS']).strip()
+	qtincludes =  os.environ.get("QT4_INCLUDES", None) or self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_HEADERS']).strip()
 	env = self.env
 	if not 'PKG_CONFIG_PATH' in os.environ:
 		os.environ['PKG_CONFIG_PATH'] = '%s:%s/pkgconfig:/usr/lib/qt4/lib/pkgconfig:/opt/qt4/lib/pkgconfig:/usr/lib/qt4/lib:/opt/qt4/lib' % (qtlibs, qtlibs)
