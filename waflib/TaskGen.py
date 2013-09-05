@@ -243,7 +243,7 @@ class task_gen(object):
 				return task_gen.mappings[k]
 		raise Errors.WafError("File %r has no mapping in %r (did you forget to load a waf tool?)" % (node, task_gen.mappings.keys()))
 
-	def create_task(self, name, src=None, tgt=None):
+	def create_task(self, name, src=None, tgt=None, **kw):
 		"""
 		Wrapper for creating task instances. The classes are retrieved from the
 		context class if possible, then from the global dict Task.classes.
@@ -262,6 +262,7 @@ class task_gen(object):
 			task.set_inputs(src)
 		if tgt:
 			task.set_outputs(tgt)
+		task.__dict__.update(kw)
 		self.tasks.append(task)
 		return task
 
