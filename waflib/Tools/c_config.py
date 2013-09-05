@@ -295,7 +295,7 @@ def exec_cfg(self, kw):
 		self.define('%s_VERSION' % Utils.quote_define_name(kw.get('uselib_store', kw['modversion'])), version)
 		return version
 
-	lst = kw['path']
+	lst = [] + kw['path']
 
 	defi = kw.get('define_variable', None)
 	if not defi:
