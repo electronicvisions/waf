@@ -64,7 +64,7 @@ def check_ruby_version(self, minver=()):
 	ruby = self.env.RUBY
 
 	try:
-		version = self.cmd_and_log([ruby, '-e', 'puts defined?(VERSION) ? VERSION : RUBY_VERSION']).strip()
+		version = self.cmd_and_log(ruby + ['-e', 'puts defined?(VERSION) ? VERSION : RUBY_VERSION']).strip()
 	except Exception:
 		self.fatal('could not determine ruby version')
 	self.env.RUBY_VERSION = version
@@ -98,7 +98,7 @@ def check_ruby_ext_devel(self):
 	version = tuple(map(int, self.env.RUBY_VERSION.split(".")))
 
 	def read_out(cmd):
-		return Utils.to_list(self.cmd_and_log([self.env.RUBY, '-rrbconfig', '-e', cmd]))
+		return Utils.to_list(self.cmd_and_log(self.env.RUBY + ['-rrbconfig', '-e', cmd]))
 
 	def read_config(key):
 		return read_out('puts Config::CONFIG[%r]' % key)
