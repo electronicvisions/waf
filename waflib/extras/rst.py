@@ -147,7 +147,7 @@ class rst2latex(docutils):
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = self.generator.env.RST2LATEX + [rst2x, src, dst]
+		cmd = self.generator.env.RST2LATEX + [src, dst]
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 
 		return self.exec_command(cmd)
