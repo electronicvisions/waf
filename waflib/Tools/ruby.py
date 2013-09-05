@@ -157,7 +157,7 @@ def check_ruby_module(self, module_name):
 	"""
 	self.start_msg('Ruby module %s' % module_name)
 	try:
-		self.cmd_and_log([self.env['RUBY'], '-e', 'require \'%s\';puts 1' % module_name])
+		self.cmd_and_log(self.env.RUBY + ['-e', 'require \'%s\';puts 1' % module_name])
 	except Exception:
 		self.end_msg(False)
 		self.fatal('Could not find the ruby module %r' % module_name)
