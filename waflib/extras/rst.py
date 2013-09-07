@@ -109,7 +109,6 @@ class rst2html(docutils):
 
 		stylesheet = getattr(self.generator, 'stylesheet', None)
 		if stylesheet is not None:
-			names.append(stylesheet)
 			ssnode = self.generator.to_nodes(stylesheet)[0]
 			nodes.append(ssnode)
 			Logs.debug("rst: adding dep to stylesheet %s" % stylesheet)
@@ -120,13 +119,12 @@ class rst2html(docutils):
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = self.generator.env.RST2HTML
+		cmd = self.generator.env.RST2HTML + [src, dst]
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 		stylesheet = getattr(self.generator, 'stylesheet', None)
 		if stylesheet is not None:
 			stylesheet = self.generator.to_nodes(stylesheet)[0]
 			cmd += ['--stylesheet', stylesheet.bldpath()]
-		cmd += [src, dst]
 
 		return self.exec_command(cmd)
 
@@ -165,7 +163,7 @@ def apply_rst(self):
 		elif self.target.__class__ == str:
 			tgt = self.path.get_bld().make_node(self.target)
 		else:
-			raise NotImplementedError()
+			self.bld.fatal("rst: Don't know how to build target name %s which is not a string or Node for %s" % self)
 	else:
 		tgt = None
 
@@ -179,7 +177,7 @@ def apply_rst(self):
 		if tsk_type.startswith('rst2'):
 			ext = tsk_type[4:]
 		else:
-			raise ValueError("Feature rst could not detect the output file extension")
+			self.bld.fatal("rst: Could not detect the output file extension for %s" % self)
 		tgt = src.change_ext('.%s' % ext)
 	elif tsk_type is None and tgt is not None:
 		out = tgt.name
@@ -189,7 +187,7 @@ def apply_rst(self):
 		# the user knows what he wants
 		pass
 	else:
-		raise ValueError("Need to indicate task type or target name for %s" % str(self))
+		self.bld.fatal("rst: Need to indicate task type or target name for %s" % self)
 
 	deps_lst = []
 
@@ -202,10 +200,10 @@ def apply_rst(self):
 			if not n in deps_lst:
 				deps_lst.append(n)
 
-	if self.type.startswith('rst2'):
+	try:
 		task = self.create_task(self.type, src, tgt)
-	else:
-		raise NotImplementedError()
+	except KeyError:
+		self.bld.fatal("rst: Task of type %s not implemanted (created by %s)" % (self.type, self))
 
 	task.env = self.env
 
