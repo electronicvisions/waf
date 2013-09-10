@@ -1343,6 +1343,3 @@ class StepContext(BuildContext):
 				return pattern.match(node.abspath())
 		return match
 
-BuildContext.store = Utils.nogc(BuildContext.store)
-BuildContext.restore = Utils.nogc(BuildContext.restore)
-
