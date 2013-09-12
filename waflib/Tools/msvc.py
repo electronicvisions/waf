@@ -926,14 +926,12 @@ def exec_mf(self):
 
 	debug('msvc: embedding manifest in mode %r' % mode)
 
-	lst = []
-	lst.append(env['MT'])
+	lst = [] + mtool
 	lst.extend(Utils.to_list(env['MTFLAGS']))
 	lst.extend(['-manifest', manifest])
 	lst.append('-outputresource:%s;%s' % (outfile, mode))
 
-	lst = [lst]
-	return self.exec_command(*lst)
+	return self.exec_command(lst)
 
 def quote_response_command(self, flag):
 	if flag.find(' ') > -1:
