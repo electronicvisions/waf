@@ -22,9 +22,16 @@ Example::
 			prompt   = 1, # 0 for the batch mode
 			)
 
-To configure with a special program use::
+Notes:
 
-	$ PDFLATEX=luatex waf configure
+- To configure with a special program, use::
+
+     $ PDFLATEX=luatex waf configure
+
+- This tool doesn't use the target attribute of the task generator
+  (``bld(target=...)``); the target file name is built from the source
+  base name and the out type(s)
+
 """
 
 import os, re
