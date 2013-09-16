@@ -128,6 +128,10 @@ def gxx_modifier_hpux(conf):
 	v['cxxshlib_PATTERN']    = 'lib%s.sl'
 
 @conf
+def gxx_modifier_openbsd(conf):
+	conf.env.SONAME_ST = []
+
+@conf
 def gxx_modifier_platform(conf):
 	"""Execute platform-specific functions based on *gxx_modifier_+NAME*"""
 	# * set configurations specific for a platform.

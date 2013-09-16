@@ -126,6 +126,10 @@ def gcc_modifier_hpux(conf):
 	v['cshlib_PATTERN']      = 'lib%s.sl'
 
 @conf
+def gcc_modifier_openbsd(conf):
+	conf.env.SONAME_ST = []
+
+@conf
 def gcc_modifier_platform(conf):
 	"""Execute platform-specific functions based on *gcc_modifier_+NAME*"""
 	# * set configurations specific for a platform.
