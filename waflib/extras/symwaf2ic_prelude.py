@@ -115,9 +115,10 @@ def patch_context():
             self._first_recursion = False
 
             # run all required dependencies (not mandatory)
-            kw["mandatory"] = False
+            kwdep = kw.copy() # KHS: but don't overwrite default behaviour (./waf non-existing-command should fail)
+            kwdep.update({'mandatory':False})
             dep_paths = symwaf2ic.get_required_paths()
-            orig_recurse(self, dep_paths, *k, **kw)
+            orig_recurse(self, dep_paths, *k, **kwdep)
 
             # and then the desired toplevel recurse..
             orig_recurse(self, paths, *k, **kw)
