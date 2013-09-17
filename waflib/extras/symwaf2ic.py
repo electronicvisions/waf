@@ -408,9 +408,10 @@ class DependencyContext(Symwaf2icContext):
 
     def _clear_config_cache(self):
         out_dir = self.root.find_dir(Context.out_dir)
-        cache_dir = out_dir.find_dir(Build.CACHE_DIR)
-        if cache_dir:
-            shutil.rmtree(cache_dir.abspath())
+        if out_dir:
+            cache_dir = out_dir.find_dir(Build.CACHE_DIR)
+            if cache_dir:
+                shutil.rmtree(cache_dir.abspath())
 
     def _add_required_path(self, path, predecessor_path):
         # WTF: .find_node() does not work when given a unicode string
