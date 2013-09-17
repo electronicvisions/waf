@@ -502,8 +502,8 @@ class MR(object):
 # and serves better my purpose
 
 class MRContext(Configure.ConfigurationContext):
-    '''lists the targets to execute'''
-    cmd = 'status'
+    '''check status of the repositories (using MR tool)'''
+    cmd = 'repos-status'
 
     # KHS: this is a noop
     #def __init__(self, **kw):
@@ -519,26 +519,26 @@ class MRContext(Configure.ConfigurationContext):
         subprocess.call(cmd, **kw)
 
     def get_args(self):
-        return Utils.to_list(getattr(self, 'mr_cmd', self.cmd))
+        return Utils.to_list(getattr(self, 'mr_cmd', self.cmd.replace('repos-','')))
 
 class mr_run(MRContext):
-    '''runs rargs in all repositories (./waf mrrun <your commands>)'''
-    cmd = 'mrrun'
-    mr_cmd = None # read from Options.commands
+    '''runs rargs in all repositories (./waf mr-run <your commands>)'''
+    cmd = 'mr-run'
+    mr_cmd = 'run'      # + Options.commands
 
     def get_args(self):
         #if not Options.commands:
         #    self.fatal("expecting further commands for mr run: ./waf mrrun <your commands>")
         ret = [ 'run' ] + Options.commands
-        Options.commands=[]
+        Options.commands = []
         self.mr_cmd = ' '.join(ret)
         return ret
 
 class mr_xrun(MRContext):
-    '''create shell script from rargs and run this in every repository (./waf mrxrun "line1" "line2" ...)'''
-    cmd = 'mrxrun'
-    mr_cmd = None   # run <path_to_mrcmd_node>
-    mr_cmds = []    # ie. read from Options.commands, override this in subclasses
+    '''create shell script from rargs and run this in every repository (./waf mr-xrun "line1" "line2" ...)'''
+    cmd = 'mr-xrun'
+    mr_cmd = 'run'      # run <path_to_mrcmd_node>
+    mr_cmds = []        # ie. read from Options.commands, override this in subclasses
 
     def __init__(self, **kw):
         super(mr_xrun, self).__init__(**kw)
@@ -578,39 +578,76 @@ class mr_xrun(MRContext):
 
 class mr_up(MRContext):
     '''update the repositories (using MR tool)'''
-    cmd = 'up'
-    mr_cmd = 'update'
-
-# FIXME, conflicts, @see ./waf --help | grep update (KHS)
-class mr_update(MRContext):
-    '''KHS: we never see this doc'''
-    cmd = 'update'
+    cmd = 'repos-update'
 
 class mr_diff(MRContext):
     '''diff all repositories (using MR tool)'''
-    cmd = 'diff'
-
-class mr_status(MRContext):
-    '''check status of the repositories (using MR tool)'''
-    cmd = 'st'
-    mr_cmd = 'status'
-
-class mr_status(MRContext):
-    cmd = 'status'
+    cmd = 'repos-diff'
 
 class mr_commit(MRContext):
     '''commit all changes (using MR tool)'''
-    cmd = 'commit'
+    cmd = 'repos-commit'
 
 class mr_push(MRContext):
     '''push all changes (using MR tool)'''
+    cmd = 'repos-push'
+
+
+#### DEPRECATED code startsnip
+# TODO [2013-09-17 15:08:56] old deprecated mr interface, will be deleted
+# repos-mrcmd for standard mr commands
+# mr-(x)run for special commands that expect mr understanding
+# the old commands are marked as deprecated and will be removed anytime soon
+# under discussion: leave some shortcut commands like up/st/diff
+# rationale: better organized output of waf --help (its alphabetic sorting)
+
+class mr_deprecated(MRContext):
+    cmd=None
+    newcmd=None
+    def __init__(self, **kw):
+        super(mr_deprecated, self).__init__(**kw)
+        Logs.warn("This mr/repo-command interface is deprecated use ./waf repos-{command} instead.".format(command = self.newcmd or self.cmd))
+
+class deprecated_mr_up(mr_deprecated):
+    '''update the repositories (using MR tool)'''
+    cmd = 'up'
+    mr_cmd = 'update'
+    newcmd = 'update'
+
+# FIXME, conflicts, @see ./waf --help | grep update (KHS)
+class deprecated_mr_update(mr_deprecated):
+    '''KHS: we never see this doc'''
+    cmd = 'update'
+
+class deprecated_mr_diff(mr_deprecated):
+    '''diff all repositories (using MR tool)'''
+    cmd = 'diff'
+
+class deprecated_mr_status(mr_deprecated):
+    '''check status of the repositories (using MR tool)'''
+    cmd = 'st'
+    mr_cmd = 'status'
+    newcmd = 'status'
+
+class deprecated_mr_status(mr_deprecated):
+    '''check status of the repositories (using MR tool)'''
+    cmd = 'status'
+
+class deprecated_mr_commit(mr_deprecated):
+    '''commit all changes (using MR tool)'''
+    cmd = 'commit'
+
+class deprecated_mr_push(mr_deprecated):
+    '''push all changes (using MR tool)'''
     cmd = 'push'
 
-#class mr_branch(MRContext):
+#class deprecated_mr_branch(mr_deprecated):
 #    cmd = 'branch'
 #
-#class mr_checkout(MRContext):
+#class deprecated_mr_checkout(mr_deprecated):
 #    cmd = 'checkout'
+#### endsnip
+
 
 # KHS: as above BuildContext not necessary...
 class show_repos_context(Context.Context):
