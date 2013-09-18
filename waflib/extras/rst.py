@@ -150,6 +150,17 @@ class rst2latex(docutils):
 
 		return self.exec_command(cmd)
 
+class rst2xetex(docutils):
+	color = 'BLUE'
+	def run(self):
+		src = self.inputs[0].bldpath()
+		dst = self.outputs[0].bldpath()
+
+		cmd = self.generator.env.RST2XETEX + [src, dst]
+		cmd += Utils.to_list(getattr(self.generator, 'options', []))
+
+		return self.exec_command(cmd)
+
 @feature('rst')
 @before_method('process_source')
 def apply_rst(self):
@@ -203,7 +214,7 @@ def apply_rst(self):
 	try:
 		task = self.create_task(self.type, src, tgt)
 	except KeyError:
-		self.bld.fatal("rst: Task of type %s not implemanted (created by %s)" % (self.type, self))
+		self.bld.fatal("rst: Task of type %s not implemented (created by %s)" % (self.type, self))
 
 	task.env = self.env
 
