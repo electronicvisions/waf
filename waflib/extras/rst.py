@@ -131,13 +131,14 @@ class rst2html(docutils):
 class rst2pdf(docutils):
 	color = 'BLUE'
 	def run(self):
-		src = self.inputs[0].bldpath()
-		dst = self.outputs[0].bldpath()
+		cwdn = self.outputs[0].parent
+		src = self.inputs[0].path_from(cwdn)
+		dst = self.outputs[0].path_from(cwdn)
 
 		cmd = self.generator.env.RST2PDF + [src, '-o', dst]
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
 
-		return self.exec_command(cmd)
+		return self.exec_command(cmd, cwd=cwdn.abspath())
 
 class rst2latex(docutils):
 	color = 'BLUE'
