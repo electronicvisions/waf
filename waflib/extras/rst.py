@@ -158,9 +158,9 @@ def apply_rst(self):
 	"""
 
 	if self.target:
-		if self.target.__class__ == Node.Node:
-			tgt = tsk_target
-		elif self.target.__class__ == str:
+		if isinstance(self.target, Node.Node):
+			tgt = self.target
+		elif isinstance(self.target, str):
 			tgt = self.path.get_bld().make_node(self.target)
 		else:
 			self.bld.fatal("rst: Don't know how to build target name %s which is not a string or Node for %s" % self)
