@@ -140,6 +140,18 @@ class rst2s5(rst2html):
 		self.command = self.generator.env.RST2S5
 		self.attributes = ['stylesheet']
 
+class rst2latex(rst2html):
+	def __init__(self, *args, **kw):
+		rst2html.__init__(self, *args, **kw)
+		self.command = self.generator.env.RST2LATEX
+		self.attributes = ['stylesheet']
+
+class rst2xetex(rst2html):
+	def __init__(self, *args, **kw):
+		rst2html.__init__(self, *args, **kw)
+		self.command = self.generator.env.RST2XETEX
+		self.attributes = ['stylesheet']
+
 class rst2pdf(docutils):
 	color = 'BLUE'
 	def run(self):
@@ -152,27 +164,6 @@ class rst2pdf(docutils):
 
 		return self.exec_command(cmd, cwd=cwdn.abspath())
 
-class rst2latex(docutils):
-	color = 'BLUE'
-	def run(self):
-		src = self.inputs[0].bldpath()
-		dst = self.outputs[0].bldpath()
-
-		cmd = self.generator.env.RST2LATEX + [src, dst]
-		cmd += Utils.to_list(getattr(self.generator, 'options', []))
-
-		return self.exec_command(cmd)
-
-class rst2xetex(docutils):
-	color = 'BLUE'
-	def run(self):
-		src = self.inputs[0].bldpath()
-		dst = self.outputs[0].bldpath()
-
-		cmd = self.generator.env.RST2XETEX + [src, dst]
-		cmd += Utils.to_list(getattr(self.generator, 'options', []))
-
-		return self.exec_command(cmd)
 
 @feature('rst')
 @before_method('process_source')
