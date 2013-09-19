@@ -100,18 +100,23 @@ class docutils(Task.Task):
 		"""
 		raise NotImplementedError()
 
-
 class rst2html(docutils):
 	color = 'BLUE'
+
+	def __init__(self, *args, **kw):
+		docutils.__init__(self, *args, **kw)
+		self.command = self.generator.env.RST2HTML
+		self.attributes = ['stylesheet']
 
 	def scan(self):
 		nodes, names = docutils.scan(self)
 
-		stylesheet = getattr(self.generator, 'stylesheet', None)
-		if stylesheet is not None:
-			ssnode = self.generator.to_nodes(stylesheet)[0]
-			nodes.append(ssnode)
-			Logs.debug("rst: adding dep to stylesheet %s" % stylesheet)
+		for attribute in self.attributes:
+			stylesheet = getattr(self.generator, attribute, None)
+			if stylesheet is not None:
+				ssnode = self.generator.to_nodes(stylesheet)[0]
+				nodes.append(ssnode)
+				Logs.debug("rst: adding dep to %s %s" % (attribute, stylesheet))
 
 		return nodes, names
 
@@ -119,14 +124,21 @@ class rst2html(docutils):
 		src = self.inputs[0].bldpath()
 		dst = self.outputs[0].bldpath()
 
-		cmd = self.generator.env.RST2HTML + [src, dst]
+		cmd = self.command + [src, dst]
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
-		stylesheet = getattr(self.generator, 'stylesheet', None)
-		if stylesheet is not None:
-			stylesheet = self.generator.to_nodes(stylesheet)[0]
-			cmd += ['--stylesheet', stylesheet.bldpath()]
+		for attribute in self.attributes:
+			stylesheet = getattr(self.generator, attribute, None)
+			if stylesheet is not None:
+				stylesheet = self.generator.to_nodes(stylesheet)[0]
+				cmd += ['--%s' % attribute, stylesheet.bldpath()]
 
 		return self.exec_command(cmd)
+
+class rst2s5(rst2html):
+	def __init__(self, *args, **kw):
+		rst2html.__init__(self, *args, **kw)
+		self.command = self.generator.env.RST2S5
+		self.attributes = ['stylesheet']
 
 class rst2pdf(docutils):
 	color = 'BLUE'
