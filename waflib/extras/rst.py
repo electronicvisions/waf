@@ -121,8 +121,9 @@ class rst2html(docutils):
 		return nodes, names
 
 	def run(self):
-		src = self.inputs[0].bldpath()
-		dst = self.outputs[0].bldpath()
+		cwdn = self.outputs[0].parent
+		src = self.inputs[0].path_from(cwdn)
+		dst = self.outputs[0].path_from(cwdn)
 
 		cmd = self.command + [src, dst]
 		cmd += Utils.to_list(getattr(self.generator, 'options', []))
@@ -130,9 +131,9 @@ class rst2html(docutils):
 			stylesheet = getattr(self.generator, attribute, None)
 			if stylesheet is not None:
 				stylesheet = self.generator.to_nodes(stylesheet)[0]
-				cmd += ['--%s' % attribute, stylesheet.bldpath()]
+				cmd += ['--%s' % attribute, stylesheet.path_from(cwdn)]
 
-		return self.exec_command(cmd)
+		return self.exec_command(cmd, cwd=cwdn.abspath())
 
 class rst2s5(rst2html):
 	def __init__(self, *args, **kw):
