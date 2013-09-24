@@ -179,7 +179,7 @@ def apply_rst(self):
 		elif isinstance(self.target, str):
 			tgt = self.path.get_bld().make_node(self.target)
 		else:
-			self.bld.fatal("rst: Don't know how to build target name %s which is not a string or Node for %s" % self)
+			self.bld.fatal("rst: Don't know how to build target name %s which is not a string or Node for %s" % (self.target, self))
 	else:
 		tgt = None
 
