@@ -10,17 +10,17 @@ Variables passed to bld():
 * headers -- headers to process
 * script -- script to run
 * outdir -- folder to place generated files
+* depends_on_files -- add files to manual dependencies
 
-ported from waf 1.5 (incomplete)
 """
 
-import os, sys
-from waflib import Task, Utils, Node, Logs, Context, Errors, Options
+import os
+from waflib import Task, Utils, Logs, Context, Errors, Options
 from waflib.TaskGen import feature, after_method, before_method
 from waflib.Tools import c_preproc
 from waflib.Configure import conf
-from pprint import pprint
-from waflib.Tools.ccroot import to_incnodes, link_task
+from waflib.Tools.ccroot import link_task
+
 
 try:
     from waflib.extras import symwaf2ic
@@ -28,10 +28,10 @@ try:
 except ImportError:
     base_dir = os.environ["SYMAP2IC_PATH"]
     base_dir = os.path.join(base_dir, 'components')
-
 ENV_PYPP_MODULE_DEPENDENCIES = "PYPP_MODULE_DEPENDENCIES"
 ENV_PYPP_MODULE_PATHS = "PYPP_MODULE_PATHS"
 ENV_PYPP_USES = "PYPP_USES"
+
 
 @conf
 def pypp_add_module_path(cfg, *paths):
@@ -248,7 +248,7 @@ def fix_pyplusplus_compiler(self):
 def create_pyplusplus(self):
     headers = self.to_list(getattr(self, 'headers', []))
     input_nodes = self.to_nodes( [self.script] + headers )
-    dep_nodes = self.to_nodes(getattr(self, 'depends_on', []))
+    dep_nodes = self.to_nodes(getattr(self, 'depends_on_files', []))
 
     defines = self.to_list(getattr(self, 'gen_defines', []))
     t = self.create_task('pyplusplus', input_nodes)
