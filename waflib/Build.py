@@ -802,13 +802,6 @@ class BuildContext(Context.Context):
 		while 1:
 			yield []
 
-
-	#def install_dir(self, path, env=None):
-	#	"""
-	#	Create empty folders for the installation (very rarely used) TODO
-	#	"""
-	#	return
-
 class inst(Task.Task):
 	"""
 	Special task used for installing files and symlinks, it behaves both like a task
@@ -1125,6 +1118,14 @@ class UninstallContext(InstallContext):
 		super(UninstallContext, self).__init__(**kw)
 		self.is_install = UNINSTALL
 
+	def rm_empty_dirs(self, tgt):
+		while tgt:
+			tgt = os.path.dirname(tgt)
+			try:
+				os.rmdir(tgt)
+			except OSError:
+				break
+
 	def do_install(self, src, tgt, chmod=Utils.O644):
 		"""See :py:meth:`waflib.Build.InstallContext.do_install`"""
 		if not self.progress_bar:
@@ -1141,13 +1142,7 @@ class UninstallContext(InstallContext):
 				if Logs.verbose > 1:
 					Logs.warn('Could not remove %s (error code %r)' % (e.filename, e.errno))
 
-		# TODO ita refactor this into a post build action to uninstall the folders (optimization)
-		while tgt:
-			tgt = os.path.dirname(tgt)
-			try:
-				os.rmdir(tgt)
-			except OSError:
-				break
+		self.rm_empty_dirs(tgt)
 
 	def do_link(self, src, tgt):
 		"""See :py:meth:`waflib.Build.InstallContext.do_link`"""
@@ -1158,13 +1153,7 @@ class UninstallContext(InstallContext):
 		except OSError:
 			pass
 
-		# TODO ita refactor this into a post build action to uninstall the folders (optimization)?
-		while tgt:
-			tgt = os.path.dirname(tgt)
-			try:
-				os.rmdir(tgt)
-			except OSError:
-				break
+		self.rm_empty_dirs(tgt)
 
 	def execute(self):
 		"""
