@@ -305,6 +305,16 @@ def exec_cfg(self, kw):
 	for key, val in defi.items():
 		lst.append('--define-variable=%s=%s' % (key, val))
 
+	static = False
+	if 'args' in kw:
+		args = Utils.to_list(kw['args'])
+		if '--static' in args or '--static-libs' in args:
+			static = True
+		lst += args
+
+	# tools like pkgconf expect the package argument after the -- ones -_-
+	lst.extend(Utils.to_list(kw['package']))
+
 	# retrieving variables of a module
 	if 'variables' in kw:
 		env = kw.get('env', self.env)
@@ -317,16 +327,6 @@ def exec_cfg(self, kw):
 		if not 'okmsg' in kw:
 			kw['okmsg'] = 'yes'
 		return
-
-	static = False
-	if 'args' in kw:
-		args = Utils.to_list(kw['args'])
-		if '--static' in args or '--static-libs' in args:
-			static = True
-		lst += args
-
-	# tools like pkgconf expect the package argument after the -- ones -_-
-	lst.extend(Utils.to_list(kw['package']))
 
 	# so we assume the command-line will output flags to be parsed afterwards
 	ret = self.cmd_and_log(lst)
