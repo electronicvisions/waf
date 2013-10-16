@@ -391,7 +391,7 @@ class DoxygenTask(Task.Task):
         # setup INPUT and OUTPUT_DIRECTORY
         inputlist = []
         for node in self.getInputNodes():
-            inputlist.append(node.abspath())
+            inputlist.append(node.get_src().abspath())
         pars['INPUT'] = ' '.join(inputlist)
 
         pars['OUTPUT_DIRECTORY'] = self.outputnode.abspath()

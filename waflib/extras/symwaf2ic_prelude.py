@@ -246,4 +246,6 @@ def configure(cfg):
 def build(bld):
     pass
 
+def doc(dox):
+    pass
 """
