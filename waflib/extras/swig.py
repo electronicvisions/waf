@@ -25,7 +25,7 @@ re_3 = re.compile('#include "(.*)"', re.M)
 
 class swig(Task.Task):
 	color   = 'BLUE'
-	run_str = '${SWIG} ${SWIGFLAGS} ${SWIGPATH_ST:INCPATHS} ${DEFINES_ST:DEFINES} ${SRC}'
+	run_str = '${SWIG} ${SWIGFLAGS} ${SWIGPATH_ST:INCPATHS} ${SWIGDEF_ST:DEFINES} ${SRC}'
 	ext_out = ['.h'] # might produce .h files although it is not mandatory
 
 	def runnable_status(self):
@@ -169,4 +169,5 @@ def check_swig_version(self):
 def configure(conf):
 	swig = conf.find_program('swig', var='SWIG')
 	conf.env.SWIGPATH_ST = '-I%s'
+	conf.env.SWIGDEF_ST = '-D%s'
 
