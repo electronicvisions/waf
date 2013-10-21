@@ -240,6 +240,9 @@ _toplevel_wscript_contents = """
 def depends(dep):
     dep._recurse_projects()
 
+def options(opt):
+    opt.load('jenkins')
+
 def configure(cfg):
     pass
 
