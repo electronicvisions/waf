@@ -109,6 +109,8 @@ class pyplusplus(Task.Task):
         args += ["-M", self.module ]
         args += self.colon("INC_ST", "INCPATHS" )
         args += self.colon("DEF_ST", "DEFINES" )
+        for dep in self.dep_modules:
+            args += ['--exposed_decl_db', dep.abspath()]
         args += [ x.abspath() for x in self.inputs[1:] ]
 
         old_nodes = self.output_dir.ant_glob('*.cpp', quiet=True)
@@ -128,7 +130,7 @@ class pyplusplus(Task.Task):
         Logs.debug("pypp: " + stdout)
         Logs.debug("pypp: " + stderr)
 
-        self.outputs = self.output_dir.ant_glob('*.cpp', quiet=True)
+        self.set_outputs(self.find_output_nodes())
         self.generator.bld.raw_deps[self.uid()] = [self.signature()] + self.outputs
         self.add_cxx_tasks()
 
@@ -139,6 +141,24 @@ class pyplusplus(Task.Task):
         mod = self.module
         return '%s: %s -> module %s\n' % (self.__class__.__name__.replace('_task', ''), src_str, mod)
 
+    def find_output_nodes(self):
+        outputs = []
+        md5db = self.output_dir.find_node(self.module + ".md5.sum")
+        if (md5db):
+            data = md5db.read().split('\n')
+            for line in data:
+                try:
+                    f = line.split()[1]
+                    if f.endswith(".cpp"):
+                        node = self.output_dir.find_node(f)
+                        if node:
+                            outputs.append(node)
+                except IndexError:
+                    pass
+        else:
+            node = self.output_dir.find_node(self.module + ".cpp")
+            outputs.append(node)
+        return outputs
 
     def uid(self):
         try:
@@ -233,8 +253,8 @@ def fix_pyplusplus_compiler(self):
 
     if not getattr(self, 'script', None):
         self.generator.bld.fatal('script file not set')
-    self.module = getattr(self, 'module', self.target)
-    out_dir = getattr(self, 'output_dir', self.module)
+    self.pypp_module = getattr(self, 'module', self.target)
+    out_dir = getattr(self, 'output_dir', self.pypp_module)
     out_dir = self.path.get_bld().make_node(out_dir)
     out_dir.mkdir()
     self.pypp_output_dir = out_dir
@@ -244,22 +264,39 @@ def fix_pyplusplus_compiler(self):
     self.pypp_helper_task.inputs = []
 
 @feature('pypp')
-@after_method('process_use', 'apply_incpaths')
+@after_method('fix_pyplusplus_compiler')
+@before_method('process_use')
 def create_pyplusplus(self):
+    self.pypp_decl_db = self.pypp_output_dir.find_or_declare(
+            self.pypp_module + '.exposed_decl.pypp.txt')
+
     headers = self.to_list(getattr(self, 'headers', []))
-    input_nodes = self.to_nodes( [self.script] + headers )
+    inputs = self.to_nodes( [self.script] + headers )
+    outputs = [self.pypp_decl_db]
     dep_nodes = self.to_nodes(getattr(self, 'depends_on_files', []))
 
+    dep_modules = []
+    for name in self.to_list(getattr(self, 'dep_modules', [])):
+        task_gen = self.bld.get_tgen_by_name(name)
+        try:
+            dep_task = task_gen.pypp_task
+        except AttributeError:
+            Logs.warn("In %s: '%s' does not create a pypp task" % (str(task_gen), name))
+        else:
+            dep_nodes.extend(dep_task.outputs)
+            dep_modules.append(dep_task.outputs[0])
+
     defines = self.to_list(getattr(self, 'gen_defines', []))
-    t = self.create_task('pyplusplus', input_nodes)
+    t = self.pypp_task = self.create_task('pyplusplus', inputs, outputs)
     t.env.OUTPUT_DIR = self.pypp_output_dir.abspath()
     t.env.DEF_ST = ["-D"]
     t.env.INC_ST = ["-I"]
     t.env.DEFINES = defines
-    t.module = self.module
+    t.module = self.pypp_module
     t.output_dir = self.pypp_output_dir
     t.dep_nodes.extend(get_manual_module_dependencies(self.bld))
     t.dep_nodes.extend(dep_nodes)
+    t.dep_modules = dep_modules
     t.helper_task = self.pypp_helper_task
     t.helper_task.set_run_after(t)
 
