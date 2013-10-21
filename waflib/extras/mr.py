@@ -575,6 +575,30 @@ class mr_xrun(MRContext):
     def get_args(self):
         return ['run', self.getMrCmdFile()]
 
+class mr_origin_log(mr_xrun):
+    """Get log messages from correspondant origin branch (does not fetch, ./waf repos-origin-log [-- <log-format-options>])"""
+
+    cmd = "repos-origin-log"
+    mr_cmds = [ "ref=`git symbolic-ref -q HEAD` # refs/heads/<branchname>",
+                #"# upstream: The name of a local ref which can be considered “upstream” from the displayed ref (KHS: ie, origin)",
+                "branch=`git for-each-ref --format='%(upstream:short)' $ref` # origin/<branchname>",
+                "git log $@ $branch" # $@: commandline argument (logformat)
+    ]
+
+    def get_args(self):
+        if Options.commands:
+            logformat = ' '.join(Options.commands)
+            Options.commands=[]
+        else:
+            logformat = "-n1 --pretty=oneline"
+
+        return ['run', self.getMrCmdFile(), logformat]
+
+
+class mr_fetch(MRContext):
+    '''updates origin in all repositories (git fetch --no-progress)'''
+    cmd = 'repos-fetch'
+    mr_cmd = 'run git fetch --no-progress'
 
 class mr_up(MRContext):
     '''update the repositories (using MR tool)'''
