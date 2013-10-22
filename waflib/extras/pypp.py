@@ -109,8 +109,10 @@ class pyplusplus(Task.Task):
         args += ["-M", self.module ]
         args += self.colon("INC_ST", "INCPATHS" )
         args += self.colon("DEF_ST", "DEFINES" )
+        for dep in self.decl_dbs:
+            args += ['--decl_db', dep.abspath()]
         for dep in self.dep_modules:
-            args += ['--exposed_decl_db', dep.abspath()]
+            args += ['--dep_module', dep]
         args += [ x.abspath() for x in self.inputs[1:] ]
 
         old_nodes = self.output_dir.ant_glob('*.cpp', quiet=True)
@@ -242,6 +244,26 @@ class merge_cxx_objects(Task.Task):
     run_str = 'ld -r ${CXXLNK_SRC_F}${SRC} ${CXXLNK_TGT_F}${TGT[0].abspath()}'
 #    run_str = '${LINK_CXX} -Wl,-r -o ${TGT[0].abspath()} ${SRC}'
 
+@feature('pyext')
+@after_method('apply_link')
+@before_method('process_use')
+def add_pyext_pypp(self):
+    self.pyext_task = self.link_task
+
+@feature('c', 'cxx', 'd', 'fc', 'asm')
+@after_method('process_use')
+def fix_pyplusplus_linkage(self):
+    """This methods allows python modules to be used in use of other libs"""
+    clear = set()
+    for name in self.tmp_use_seen:
+        task_gen = self.bld.get_tgen_by_name(name)
+        pyext_task = getattr(task_gen, 'pyext_task', None)
+        if pyext_task:
+            tgt = task_gen.target
+            libname = tgt[tgt.rfind(os.sep) + 1:] # from ccroot.py
+            clear.add(libname)
+
+    self.env["LIB"] = [ x for x in self.env["LIB"] if not x in clear]
 
 @feature('pypp')
 @before_method('process_source')
@@ -275,17 +297,6 @@ def create_pyplusplus(self):
     outputs = [self.pypp_decl_db]
     dep_nodes = self.to_nodes(getattr(self, 'depends_on_files', []))
 
-    dep_modules = []
-    for name in self.to_list(getattr(self, 'dep_modules', [])):
-        task_gen = self.bld.get_tgen_by_name(name)
-        try:
-            dep_task = task_gen.pypp_task
-        except AttributeError:
-            Logs.warn("In %s: '%s' does not create a pypp task" % (str(task_gen), name))
-        else:
-            dep_nodes.extend(dep_task.outputs)
-            dep_modules.append(dep_task.outputs[0])
-
     defines = self.to_list(getattr(self, 'gen_defines', []))
     t = self.pypp_task = self.create_task('pyplusplus', inputs, outputs)
     t.env.OUTPUT_DIR = self.pypp_output_dir.abspath()
@@ -296,9 +307,31 @@ def create_pyplusplus(self):
     t.output_dir = self.pypp_output_dir
     t.dep_nodes.extend(get_manual_module_dependencies(self.bld))
     t.dep_nodes.extend(dep_nodes)
-    t.dep_modules = dep_modules
     t.helper_task = self.pypp_helper_task
     t.helper_task.set_run_after(t)
+
+@feature('pypp')
+@after_method('process_use')
+def add_module_dependencies(self):
+    t = self.pypp_task
+    t.dep_modules = []
+    t.decl_dbs = []
+    for name in self.tmp_use_seen:
+        task_gen = self.bld.get_tgen_by_name(name)
+        try:
+            dep_task = task_gen.pyext_task
+        except AttributeError:
+            pass
+        else:
+            t.dep_modules.append(task_gen.target)
+
+        try:
+            dep_task = task_gen.pypp_task
+        except AttributeError:
+            pass
+        else:
+            t.dep_nodes.extend(dep_task.outputs)
+            t.decl_dbs.append(dep_task.outputs[0])
 
 
 not_found_msg = """Could not import correct module %s
