@@ -2,7 +2,7 @@
 # encoding: utf-8
 # Christoph Koke, 2013
 
-from waflib.TaskGen import task_gen, feature
+from waflib.TaskGen import task_gen, feature, after_method
 
 
 def _patch_task_gen_post():
@@ -23,8 +23,10 @@ _patch_task_gen_post()
 
 
 @feature('post_task')
+@after_method('process_use')
 def add_manual_depencies(self):
     self.post_on_post = getattr(self, 'post_on_post', [])
-    for dep in self.to_list(getattr(self, 'post_task', [])):
+    post_tasks = set(self.to_list(getattr(self, 'post_task', [])))
+    for dep in post_tasks:
         dep_task_gen = self.bld.get_tgen_by_name(dep)
         self.post_on_post.append(dep_task_gen)
