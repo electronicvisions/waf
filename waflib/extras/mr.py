@@ -504,6 +504,7 @@ class MR(object):
 class MRContext(Configure.ConfigurationContext):
     '''check status of the repositories (using MR tool)'''
     cmd = 'repos-status'
+    debug=False # set to True to print the command prior execution.
 
     # KHS: this is a noop
     #def __init__(self, **kw):
@@ -516,6 +517,7 @@ class MRContext(Configure.ConfigurationContext):
         self.mr = get_repo_tool()
 
         cmd, kw = self.mr.format_cmd(*self.get_args())
+        if self.debug: Logs.info(cmd)
         subprocess.call(cmd, **kw)
 
     def get_args(self):
@@ -528,7 +530,7 @@ class mr_run(MRContext):
 
     def get_args(self):
         #if not Options.commands:
-        #    self.fatal("expecting further commands for mr run: ./waf mrrun <your commands>")
+        #    self.fatal("expecting further commands for mr run: ./waf mr-run -- <your commands>")
         ret = [ 'run' ] + Options.commands
         Options.commands = []
         self.mr_cmd = ' '.join(ret)
