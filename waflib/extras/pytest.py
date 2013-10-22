@@ -43,8 +43,9 @@ class pytest(test_base.TestBase):
         return result_file
 
 @feature('pyext')
-@after_method("apply_link")
-def add_pyext(self):
+@after_method('apply_link')
+@before_method('process_use')
+def add_pyext_pytest(self):
     self.pyext_task = self.link_task
 
 @feature("pytest")
