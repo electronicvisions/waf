@@ -254,7 +254,7 @@ The jenkins command is a sub-command structure, ie., jenkins commands are
 executed as such: ./waf jenkins [<subcommand> <parameters>]*
 
 Jenkins build trigger usage example:
-    bash -ce "cd -P \"$WORKSPACE\";pwd;./waf jenkins trigger|mailtrigger" || exit 0; exit 42
+    bash -ce "cd -P \\"$WORKSPACE\\";pwd;./waf jenkins trigger|mailtrigger" || exit 0; exit 42
 
 And as first statements in the build execution please run:
     test -f wscript || git clone git@gitviz.kip.uni-heidelberg.de:symap2ic.git .
