@@ -68,7 +68,7 @@ def do_the_symbol_stuff(self):
 			       [x.outputs[0] for x in self.gen_sym_tasks],
 			       self.path.find_or_declare(getattr(self, 'sym_filename', self.target + '.def')))
 	self.link_task.set_run_after(tsk)
-	self.link_task.dep_nodes = [tsk.outputs[0]]
+	self.link_task.dep_nodes.append(tsk.outputs[0])
 	if 'msvc' in (self.env.CC_NAME, self.env.CXX_NAME):
 		self.link_task.env.append_value('LINKFLAGS', ['/def:' + tsk.outputs[0].bldpath()])
 	elif self.env.DEST_BINFMT == 'pe': #gcc on windows takes *.def as an additional input
