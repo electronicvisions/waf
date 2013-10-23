@@ -109,10 +109,8 @@ class pyplusplus(Task.Task):
         args += ["-M", self.module ]
         args += self.colon("INC_ST", "INCPATHS" )
         args += self.colon("DEF_ST", "DEFINES" )
-        for dep in self.decl_dbs:
-            args += ['--decl_db', dep.abspath()]
-        for dep in self.dep_modules:
-            args += ['--dep_module', dep]
+        args += self.colon('DEP_MODULE_ST', 'DEP_MODULES')
+        args += self.colon('DECL_DB_ST', 'DECL_DBS')
         args += [ x.abspath() for x in self.inputs[1:] ]
 
         old_nodes = self.output_dir.ant_glob('*.cpp', quiet=True)
@@ -302,7 +300,11 @@ def create_pyplusplus(self):
     t.env.OUTPUT_DIR = self.pypp_output_dir.abspath()
     t.env.DEF_ST = ["-D"]
     t.env.INC_ST = ["-I"]
+    t.env.DECL_DB_ST = ["--decl_db"]
+    t.env.DEP_MODULE_ST = ["--dep_module"]
     t.env.DEFINES = defines
+    t.env.DEP_MODULES = []
+    t.env.DECL_DBS = []
     t.module = self.pypp_module
     t.output_dir = self.pypp_output_dir
     t.dep_nodes.extend(get_manual_module_dependencies(self.bld))
@@ -314,24 +316,19 @@ def create_pyplusplus(self):
 @after_method('process_use')
 def add_module_dependencies(self):
     t = self.pypp_task
-    t.dep_modules = []
-    t.decl_dbs = []
+    dep_modules = []
+    decl_dbs = []
     for name in self.tmp_use_seen:
         task_gen = self.bld.get_tgen_by_name(name)
-        try:
-            dep_task = task_gen.pyext_task
-        except AttributeError:
-            pass
-        else:
-            t.dep_modules.append(task_gen.target)
-
-        try:
-            dep_task = task_gen.pypp_task
-        except AttributeError:
-            pass
-        else:
-            t.dep_nodes.extend(dep_task.outputs)
-            t.decl_dbs.append(dep_task.outputs[0])
+        pyext_task = getattr(task_gen, 'pyext_task', None)
+        pypp_task  = getattr(task_gen, 'pypp_task', None)
+        if pyext_task:
+            dep_modules.append(task_gen.target)
+        if pypp_task:
+            t.dep_nodes.extend(pypp_task.outputs)
+            decl_dbs.append(pypp_task.outputs[0].abspath())
+    t.env.DEP_MODULES = dep_modules
+    t.env.DECL_DBS = decl_dbs
 
 
 not_found_msg = """Could not import correct module %s
