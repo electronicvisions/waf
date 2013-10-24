@@ -614,14 +614,17 @@ class DoxygenTask(Task.Task):
             if inc: subpos[1] += 1
             return "[%s-(%s/%s)] " % tuple(subpos) + self.getInstanceName() + ": "
         def logret():
-            # if logret(ret): return ret
-            if ret != 0:
-                lg.debug(out)
+            # usage: if logret(ret): return ret
+            # checks if the last command issued an error and prints its output in that case,
+            # otherwise the output is printed depending on the "quiet" setting
+            if ret != 0: # ie. error
+                print out # simply print the programs output unchanged!
                 lg.error(err)
                 return True
+            # and program did not fail:
             elif not getattr(self.generator, 'quiet', None):
                 lg.warn(err)
-            else:
+            else: # quiet mode:
                 lg.debug(err)
             return False # ret==0
 
@@ -662,8 +665,19 @@ class DoxygenTask(Task.Task):
             if not refman_makefile:
                 self.generator.bld.fatal(subminor(inc=False) + 'No latex Makefile found check latex source: "%s"' % latexnode.nice_path())
 
-            # run make
-            cmd = ['make', '--directory', latexnode.abspath() , 'pdf']
+            # Fix to prevent waf to hang on a pdflatex-error (hidden user input request)
+            # we use pdflatex modifier '-interaction nonstopmode' -> exit on error instead of issuing a user request
+            refman_makefile2 = latexnode.find_node('Makefile-noninteractive')
+            if not refman_makefile2:
+                refman_makefile2 = latexnode.make_node('Makefile-noninteractive')
+                cmd = 'cat {origMakeFile} | sed "s/pdflatex refman/pdflatex -interaction nonstopmode refman/" > {otherMakeFile}'.format(
+                        origMakeFile=refman_makefile.abspath(),
+                        otherMakeFile=refman_makefile2.abspath()
+                )
+                lg.info("Create non-interactive Makefile:\n{}".format(cmd))
+                Utils.subprocess.check_call(cmd, shell=True)
+
+            cmd = ['make', '--directory', latexnode.abspath(), '-f', refman_makefile2.abspath(), 'pdf']
             lg.info(subminor() + str(cmd))
 
             proc = Utils.subprocess.Popen(
