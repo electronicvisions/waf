@@ -301,7 +301,7 @@ def distclean(ctx):
 						Logs.warn('file %r cannot be removed' % f)
 
 		# remove the local waf cache
-		if f.startswith('.waf') and not Options.commands:
+		if (f.startswith('.waf-1.') or f.startswith('waf-1.')) and not Options.commands:
 			shutil.rmtree(f, ignore_errors=True)
 
 class Dist(Context.Context):
