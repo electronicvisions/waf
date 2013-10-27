@@ -102,6 +102,34 @@ except ImportError:
 				value = self.default_factory()
 				self[key] = value
 				return value
+try:
+	from collections import OrderedDico as ordered_iter_dict
+except ImportError:
+	class ordered_iter_dict(dict):
+		def __init__(self, *k, **kw):
+			self.lst = []
+			dict.__init__(self, *k, **kw)
+		def clear(self):
+			dict.clear(self)
+			self.lst = []
+		def __setitem__(self, key, value):
+			dict.__setitem__(self, key, value)
+			try:
+				self.lst.remove(key)
+			except ValueError:
+				pass
+			self.lst.append(key)
+		def __delitem__(self, key):
+			dict.__delitem__(self, key)
+			try:
+				self.lst.remove(key)
+			except ValueError:
+				pass
+		def __iter__(self):
+			for x in self.lst:
+				yield x
+		def keys(self):
+			return self.lst
 
 is_win32 = sys.platform in ('win32', 'cli')
 

@@ -31,8 +31,11 @@ class task_gen(object):
 	* The attribute 'idx' is a counter of task generators in the same path
 	"""
 
-	mappings = {}
+	mappings = Utils.ordered_iter_dict()
+	"""Mappings are global file extension mappings, they are retrieved in the order of definition"""
+
 	prec = Utils.defaultdict(list)
+	"""Dict holding the precedence rules for task generator methods"""
 
 	def __init__(self, *k, **kw):
 		"""
@@ -64,6 +67,7 @@ class task_gen(object):
 		self.mappings = {}
 		"""
 		List of mappings {extension -> function} for processing files by extension
+		This is very rarely used, so we do not use an ordered dict here
 		"""
 
 		self.features = []
@@ -235,9 +239,10 @@ class task_gen(object):
 		:rtype: function
 		"""
 		name = node.name
-		for k in self.mappings:
-			if name.endswith(k):
-				return self.mappings[k]
+		if self.mappings:
+			for k in self.mappings:
+				if name.endswith(k):
+					return self.mappings[k]
 		for k in task_gen.mappings:
 			if name.endswith(k):
 				return task_gen.mappings[k]
@@ -337,7 +342,7 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 		tsk = self.create_task(name, node)
 		cnt = 0
 
-		keys = list(self.mappings.keys()) + list(self.__class__.mappings.keys())
+		keys = set(self.mappings.keys()) | set(self.__class__.mappings.keys())
 		for x in ext:
 			k = node.change_ext(x, ext_in=_ext_in)
 			tsk.outputs.append(k)
@@ -346,6 +351,7 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 				if cnt < int(reentrant):
 					self.source.append(k)
 			else:
+				# reinject downstream files into the build
 				for y in keys: # ~ nfile * nextensions :-/
 					if k.name.endswith(y):
 						self.source.append(k)

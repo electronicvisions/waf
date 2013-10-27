@@ -299,7 +299,7 @@ def create_waf(*k, **kw):
 			tarinfo.name = 'waflib/extras/' + os.path.split(x)[1]
 
 		print("   adding %s as %s" % (x, tarinfo.name))
-		
+
 		def dest(x):
 			if os.path.isabs(x):
 				return os.path.join("extras", os.path.basename(x))
