@@ -27,6 +27,7 @@ class swig(Task.Task):
 	color   = 'BLUE'
 	run_str = '${SWIG} ${SWIGFLAGS} ${SWIGPATH_ST:INCPATHS} ${SWIGDEF_ST:DEFINES} ${SRC}'
 	ext_out = ['.h'] # might produce .h files although it is not mandatory
+	vars = ['SWIG_VERSION', 'SWIGDEPS']
 
 	def runnable_status(self):
 		for t in self.run_after:
