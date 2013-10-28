@@ -103,7 +103,7 @@ except ImportError:
 				self[key] = value
 				return value
 try:
-	from collections import OrderedDico as ordered_iter_dict
+	from collections import OrderedDict as ordered_iter_dict
 except ImportError:
 	class ordered_iter_dict(dict):
 		def __init__(self, *k, **kw):
