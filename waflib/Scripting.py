@@ -300,9 +300,11 @@ def distclean(ctx):
 					if e.errno != errno.ENOENT:
 						Logs.warn('file %r cannot be removed' % f)
 
-		# remove the local waf cache
-		if (f.startswith('.waf-1.') or f.startswith('waf-1.')) and not Options.commands:
-			shutil.rmtree(f, ignore_errors=True)
+		# remove local waf cache folders
+		if not Options.commands:
+			for x in '.waf-1. waf-1. .waf3-1. waf3-1.'.split():
+				if f.startswith(x):
+					shutil.rmtree(f, ignore_errors=True)
 
 class Dist(Context.Context):
 	'''creates an archive containing the project source code'''
