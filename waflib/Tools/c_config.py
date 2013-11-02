@@ -103,7 +103,7 @@ MACRO_TO_DEST_CPU = {
 }
 
 @conf
-def parse_flags(self, line, uselib_store, env=None, force_static=False):
+def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=None):
 	"""
 	Parse the flags from the input lines, and add them to the relevant use variables::
 
@@ -124,18 +124,21 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False):
 
 	env = env or self.env
 
-	# append_unique is not always possible
-	# for example, apple flags may require both -arch i386 and -arch ppc
+	# Issue 811 and 1371
+	if posix is None:
+		posix = True
+		if '\\' in line:
+			posix = ('\\ ' in line) or ('\\\\' in line)
 
-	app = env.append_value
-	appu = env.append_unique
-	#lst = shlex.split(line)
-	# issue #811
-	lex = shlex.shlex(line, posix=False)
+	lex = shlex.shlex(line, posix=posix)
 	lex.whitespace_split = True
 	lex.commenters = ''
 	lst = list(lex)
 
+	# append_unique is not always possible
+	# for example, apple flags may require both -arch i386 and -arch ppc
+	app = env.append_value
+	appu = env.append_unique
 	uselib = uselib_store
 	while lst:
 		x = lst.pop(0)
@@ -338,7 +341,7 @@ def exec_cfg(self, kw):
 		kw['okmsg'] = 'yes'
 
 	define_it()
-	self.parse_flags(ret, kw.get('uselib_store', kw['package'].upper()), kw.get('env', self.env), force_static=static)
+	self.parse_flags(ret, kw.get('uselib_store', kw['package'].upper()), kw.get('env', self.env), force_static=static, posix=kw.get('posix', None))
 	return ret
 
 @conf
