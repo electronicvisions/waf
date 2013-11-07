@@ -9,8 +9,6 @@ Doxygen support
 Variables passed to bld():
 * doxyfile -- the Doxyfile to use
 
-ported from waf 1.5 (incomplete)
-
 When using this tool, the wscript will look like:
 
 	def options(opt):
@@ -27,10 +25,10 @@ When using this tool, the wscript will look like:
 
 from fnmatch import fnmatchcase
 import os, os.path, re, stat
-from waflib import Task, Utils, Node, Logs
+from waflib import Task, Utils, Node, Logs, Errors
 from waflib.TaskGen import feature
 
-DOXY_STR = '${DOXYGEN} - '
+DOXY_STR = '"${DOXYGEN}" - '
 DOXY_FMTS = 'html latex man rft xml'.split()
 DOXY_FILE_PATTERNS = '*.' + ' *.'.join('''
 c cc cxx cpp c++ java ii ixx ipp i++ inl h hh hxx hpp h++ idl odl cs php php3
@@ -128,8 +126,7 @@ class doxygen(Task.Task):
 
 	def run(self):
 		dct = self.pars.copy()
-		# TODO will break if paths have spaces
-		dct['INPUT'] = ' '.join([x.abspath() for x in self.doxy_inputs])
+		dct['INPUT'] = ' '.join(['"%s"' % x.abspath() for x in self.doxy_inputs])
 		code = '\n'.join(['%s = %s' % (x, dct[x]) for x in self.pars])
 		code = code.encode() # for python 3
 		#fmt = DOXY_STR % (self.inputs[0].parent.abspath())
