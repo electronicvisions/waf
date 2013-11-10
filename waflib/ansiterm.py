@@ -3,7 +3,7 @@ try:
 	if not (sys.stderr.isatty() and sys.stdout.isatty()):
 		raise ValueError('not a tty')
 
-	from ctypes import *
+	from ctypes import Structure, windll, c_short, c_ulong, c_int, byref, c_wchar
 
 	class COORD(Structure):
 		_fields_ = [("X", c_short), ("Y", c_short)]
