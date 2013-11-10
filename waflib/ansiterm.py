@@ -1,4 +1,18 @@
-import sys, os
+#!/usr/bin/env python
+# encoding: utf-8
+
+"""
+Emulate a vt100 terminal in cmd.exe
+
+By wrapping sys.stdout / sys.stderr with Ansiterm,
+the vt100 escape characters will be interpreted and
+the equivalent actions will be performed with Win32
+console commands.
+
+"""
+
+import sys, os, re, threading
+
 try:
 	if not (sys.stderr.isatty() and sys.stdout.isatty()):
 		raise ValueError('not a tty')
@@ -26,8 +40,6 @@ try:
 except Exception:
 	pass
 else:
-	import re, threading
-
 	is_vista = getattr(sys, "getwindowsversion", None) and sys.getwindowsversion()[0] >= 6
 
 	try:
