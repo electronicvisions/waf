@@ -457,10 +457,52 @@ blame mails to the vandals (i.e. those who probably broke the build).
         p.add( 'tee', fn_authors)
         p = p.execute()
 
-        Logs.info("The //potential// vandals:")
-        for line in p.stdout: print line,
-        print
+        #Logs.info("The //potential// vandals:")
+        #for line in p.stdout: print line,
+        #print
         p.wait()
+
+
+        ### give some status...
+        print "The //potential// vandals:"
+
+        ### filter authors that are not internal ones
+        # specify regex patterns to be matched against the authors email addresses
+        our_authors = [
+            '^.*\.tu-dresden\.de$',
+            '^.*@kip\.uni-heidelberg\.de$'
+        ]
+        
+        # to extract the mail addy from the "To: somebody <mail@provider.cc>"
+        mailmatcher=re.compile('^To: .*<(?P<mail>.*)>$')
+        
+        # precompile the author-mailaddress patterns
+        for idx, val in enumerate(our_authors):
+            our_authors[idx] = re.compile(val)
+
+        with open(fn_authors) as f:
+            lines = f.readlines()
+
+
+        with open(fn_authors, 'w') as f:
+            for l in lines:
+                mail = mailmatcher.match(l)
+                if not mail:
+                    print "WARNING: '{}' does not contain a <mail@provider.cc>".format(l)
+                    continue
+                #else
+                mail = mail.group('mail')
+
+                mail_known = False
+                for r in our_authors:
+                    if r.match(mail):
+                        mail_known = True
+                        break
+                if mail_known:
+                    print l,        # l contains a newline
+                    f.write(l)      # override fn_authors
+                else:
+                    print "INFO: Mail filtered: {}".format(l)
 
 
         # say goodby
