@@ -98,7 +98,7 @@ class opt_parser(optparse.OptionParser):
 		"""
 		cmds_str = {}
 		for cls in Context.classes:
-			if not cls.cmd or cls.cmd == 'options':
+			if not cls.cmd or cls.cmd == 'options' or cls.cmd.startswith( '_' ):
 				continue
 
 			s = cls.__doc__ or ''
