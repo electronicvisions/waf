@@ -28,6 +28,7 @@ def patch_parse_args(class_=Options.OptionsContext, funcname="parse_args"):
 
     def parse_args(self):
         symwaf2ic.options(self)
+        mr.options(self)
         jenkins.options(self)
         func(self)
     setattr(class_, funcname, parse_args)

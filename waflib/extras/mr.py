@@ -36,8 +36,10 @@ class Repo_DB(object):
         return self.db[name]["url"]
 
     def get_description(self, name):
-        return self.db[name].get("description",
-                "- No description available -")
+        return self.db[name].get("description") or "- n/a -"
+
+    def get_manager(self, name):
+        return self.db[name].get("manager")
 
     def list_repos(self):
         names = self.db.keys()
@@ -674,6 +676,23 @@ class deprecated_mr_push(mr_deprecated):
 #    cmd = 'checkout'
 #### endsnip
 
+def options(opt):
+    gr = opt.add_option_group("show_repos")
+    gr.add_option(
+        "--manager", dest="show_repos_manager", action="store_true",
+        help="Also list the managers of the repositories.",
+        default=False
+    )
+    gr.add_option(
+        "--url", dest="show_repos_url", action="store_true",
+        help="Also list the urls of the repositories.",
+        default=False
+    )
+    gr.add_option(
+        "--full-description", dest="show_repos_fdesc", action="store_true",
+        help="List the full description of the repositories, no matter what.",
+        default=False
+    )
 
 class show_repos_context(Context.Context):
     __doc__ = '''lists all available repositories'''
@@ -681,11 +700,13 @@ class show_repos_context(Context.Context):
     def __init__(self, **kw):
         super(show_repos_context, self).__init__(**kw)
 
+
     def build_repo_info(self, r):
         info = {"name" : r,
                 "used" : '*' if (r in self.used) else ' ', #str(r  in self.used),
                 "desc" : self.db.get_description(r),
                 "url"  : self.db.get_url(r),
+                "man"  : self.db.get_manager(r) or '- n/a -',
         }
         return info
 
@@ -703,6 +724,22 @@ class show_repos_context(Context.Context):
             if len(f) > length:
                 k[field] = f[:cut] + "..."
 
+    def truncate_statistical(self, data, field, sd_factor=1.3, length = None):
+        """truncate field on one sd from mean"""
+        # KHS: naja... hab mich ein bischen verkünstelt...
+        sm = 0
+        for k in data: sm += len(k[field])
+        mv = sm / float(len(data))
+        sd = 0
+        for k in data: sd+=(mv - len(k[field]))**2
+        sd = (sd/len(data))**0.5
+        l = int( mv + sd_factor * sd )
+        if length:
+            length=min(l, length)
+        else:
+            length=l
+        return self.truncate_field(data, field, length)
+
     def execute(self):
         """
         See :py:func:`waflib.Context.Context.execute`.
@@ -713,21 +750,44 @@ class show_repos_context(Context.Context):
         self.repos = sorted(self.db.list_repos())
         self.used = set(self.mr.get_projects().keys())
 
+        try:
+            columns = int(os.popen('stty size', 'r').read().split()[1]) # 0 are the rows.
+        except:
+            Logs.warn("Could not determine console width ('stty size' failed), defaulting to 80.")
+            columns = 80 # very basic size uh...
+
         data = [ self.build_repo_info(r) for r in self.repos ]
 
-        self.truncate_field(data, "desc", 42)
+        strip = Options.options.show_repos_url + Options.options.show_repos_manager # 0,1,2
+        if (not Options.options.show_repos_fdesc) and strip:
+            self.truncate_statistical(data, "desc", 2.7-strip, 57-(10*strip))
 
         field = "{{{name}: <{len}}}"
         fields = [ ("name", self.get_longest_field(data, "name")),
                  #  ("used", 6),
                    ("desc", self.get_longest_field(data, "desc")),
-                   ("url", self.get_longest_field(data, "url")),
+        #           ("url", self.get_longest_field(data, "url")),
+        #           ("man", self.get_longest_field(data, "man")),
         ]
+
+        if Options.options.show_repos_url:
+            fields.append( ("url", self.get_longest_field(data, "url")) )
+        if Options.options.show_repos_manager:
+            fields.append( ("man", self.get_longest_field(data, "man")) )
+
         line = "| {used} " + " | ".join([field.format(name = n, len = l) for n, l in fields]) + " |"
 
-        header = line.format(name = "repo", used = " ", desc = "description", url = "url")
+        header = line.format(name = "Repository", used = " ", desc = "Description", url = "url", man = "Manager")
+
+        if len(header)>columns:
+            Logs.info("Your console width is not wide enough for a beautiful output or 'stty size' failed...")
+            line = " {used} " + "\n   ".join([field.format(name = n, len = l) for n, l in fields]) + "\n"
+            header = line.format(name = "Repository", used = " ", desc = "Description", url = "url", man = "Manager")
+            header += "-" * columns
+        else:
+            header += '\n' + "-" * len(header)
+
         print header
-        print "-" * len(header)
         for d in data:
             print line.format(**d)
 
