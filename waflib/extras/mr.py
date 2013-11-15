@@ -675,7 +675,6 @@ class deprecated_mr_push(mr_deprecated):
 #### endsnip
 
 
-# KHS: as above BuildContext not necessary...
 class show_repos_context(Context.Context):
     __doc__ = '''lists all available repositories'''
     cmd = 'show_repos'
@@ -684,7 +683,7 @@ class show_repos_context(Context.Context):
 
     def build_repo_info(self, r):
         info = {"name" : r,
-                "used" : str(r  in self.used),
+                "used" : '*' if (r in self.used) else ' ', #str(r  in self.used),
                 "desc" : self.db.get_description(r),
                 "url"  : self.db.get_url(r),
         }
@@ -716,17 +715,17 @@ class show_repos_context(Context.Context):
 
         data = [ self.build_repo_info(r) for r in self.repos ]
 
-        self.truncate_field(data, "desc", 50)
+        self.truncate_field(data, "desc", 42)
 
         field = "{{{name}: <{len}}}"
         fields = [ ("name", self.get_longest_field(data, "name")),
-                   ("used", 6),
+                 #  ("used", 6),
                    ("desc", self.get_longest_field(data, "desc")),
                    ("url", self.get_longest_field(data, "url")),
         ]
-        line = "| " + " | ".join([field.format(name = n, len = l) for n, l in fields]) + " |"
+        line = "| {used} " + " | ".join([field.format(name = n, len = l) for n, l in fields]) + " |"
 
-        header = line.format(name = "repo", used = "used", desc = "description", url = "url")
+        header = line.format(name = "repo", used = " ", desc = "description", url = "url")
         print header
         print "-" * len(header)
         for d in data:
