@@ -635,7 +635,7 @@ class mr_deprecated(MRContext):
         Logs.warn("This mr/repo-command interface is deprecated use ./waf repos-{command} instead.".format(command = self.newcmd or self.cmd))
 
 class deprecated_mr_up(mr_deprecated):
-    '''update the repositories (using MR tool)'''
+    '''DEPRECATED update the repositories (using MR tool)'''
     cmd = 'up'
     mr_cmd = 'update'
     newcmd = 'update'
@@ -646,25 +646,25 @@ class deprecated_mr_update(mr_deprecated):
     cmd = 'update'
 
 class deprecated_mr_diff(mr_deprecated):
-    '''diff all repositories (using MR tool)'''
+    '''DEPRECATED diff all repositories (using MR tool)'''
     cmd = 'diff'
 
 class deprecated_mr_status(mr_deprecated):
-    '''check status of the repositories (using MR tool)'''
+    '''DEPRECATED check status of the repositories (using MR tool)'''
     cmd = 'st'
     mr_cmd = 'status'
     newcmd = 'status'
 
 class deprecated_mr_status(mr_deprecated):
-    '''check status of the repositories (using MR tool)'''
+    '''DEPRECATED check status of the repositories (using MR tool)'''
     cmd = 'status'
 
 class deprecated_mr_commit(mr_deprecated):
-    '''commit all changes (using MR tool)'''
+    '''DEPRECATED commit all changes (using MR tool)'''
     cmd = 'commit'
 
 class deprecated_mr_push(mr_deprecated):
-    '''push all changes (using MR tool)'''
+    '''DEPRECATED push all changes (using MR tool)'''
     cmd = 'push'
 
 #class deprecated_mr_branch(mr_deprecated):
