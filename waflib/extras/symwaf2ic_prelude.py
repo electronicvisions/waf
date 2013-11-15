@@ -11,6 +11,7 @@ import sys
 from waflib import Build, Context, Logs, Options, Scripting, TaskGen
 from waflib.extras import symwaf2ic
 from waflib.extras import mr
+from waflib.extras import jenkins
 
 
 def prepend_entry_point(func):
@@ -27,6 +28,7 @@ def patch_parse_args(class_=Options.OptionsContext, funcname="parse_args"):
 
     def parse_args(self):
         symwaf2ic.options(self)
+        jenkins.options(self)
         func(self)
     setattr(class_, funcname, parse_args)
 
@@ -241,7 +243,7 @@ def depends(dep):
     dep._recurse_projects()
 
 def options(opt):
-    opt.load('jenkins')
+    pass
 
 def configure(cfg):
     pass
