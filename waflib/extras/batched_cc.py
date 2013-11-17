@@ -3,8 +3,9 @@
 # Thomas Nagy, 2006-2010 (ita)
 
 """
-Batched builds - compile faster
-instead of compiling object files one by one, c/c++ compilers are often able to compile at once:
+Build as batches.
+
+Instead of compiling object files one by one, c/c++ compilers are often able to compile at once:
 cc -c ../file1.c ../file2.c ../file3.c
 
 Files are output on the directory where the compiler is called, and dependencies are more difficult
@@ -14,7 +15,8 @@ As such, we do as if the files were compiled one by one, but no command is actua
 replace each cc/cpp Task by a TaskSlave. A new task called TaskMaster collects the
 signatures from each slave and finds out the command-line to run.
 
-It is only necessary to import this module in the configuration (no other change required)
+Just import this module in the configuration (no other change required).
+This is provided as an example, for performance unity builds are recommended (fewer tasks and fewer jobs to execute).
 """
 
 import os
