@@ -472,13 +472,24 @@ blame mails to the vandals (i.e. those who probably broke the build).
             '^.*\.tu-dresden\.de$',
             '^.*@kip\.uni-heidelberg\.de$'
         ]
-        
+
+        exclude_anyway = [
+            '^root@kip\.uni-heidelberg\.de$',
+            '^postmaster@kip\.uni-heidelberg\.de$',
+            '^none@kip\.uni-heidelberg\.de$',
+            '.*\$.*'
+        ]
+
+
         # to extract the mail addy from the "To: somebody <mail@provider.cc>"
         mailmatcher=re.compile('^To: .*<(?P<mail>.*)>$')
         
         # precompile the author-mailaddress patterns
         for idx, val in enumerate(our_authors):
             our_authors[idx] = re.compile(val)
+
+        for idx, val in enumerate(exclude_anyway):
+            exclude_anyway[idx] = re.compile(val)
 
         with open(fn_authors) as f:
             lines = f.readlines()
@@ -496,7 +507,7 @@ blame mails to the vandals (i.e. those who probably broke the build).
                 mail_known = False
                 for r in our_authors:
                     if r.match(mail):
-                        mail_known = True
+                        mail_known = not any([e.match(mail) for e in exclude_anyway])
                         break
                 if mail_known:
                     print l,        # l contains a newline
