@@ -1,11 +1,12 @@
 #! /usr/bin/env python
 # encoding: UTF-8
+
 # Kai Husmann 2013
 
 # Integrates jenkins commands into symap2ic waf (symap2ic/src/jenkins)
 
 from waflib import Logs, Context, Options
-import os, re, subprocess
+import os, re, subprocess, platform
 
 TOOL            = "Jenkins Integration"
 
@@ -73,7 +74,6 @@ def subcommand_class(klass):
     subcommands = {}    # command to function dict
     longest=5           # for formatting help (at least more than 'help' itself)
 
-    import re
     p = getattr(klass, 'subcommand_pattern', None) or re.compile(r'^((sb|subcommand)_)(?P<command>.*)$')
 
     for attr in dir(klass):
@@ -240,10 +240,16 @@ class JenkinsContext(Context.Context):
 
     jenkins_workspace   = None # options changes this value if WORKSPACE and JOB_NAME is available
     jenkins_job_name    = None
+    jenkins_log_dir     = "jenkins.log"
 
     exitcode_doNotBuild         = 0     # normal execution -> no build, we need to turn around the exitcode in the jenkins build trigger script
-    exitcode_build              = 1     # crash also leads to build, thats why we use non-zero to indicate a build
+    exitcode_build              = 42    # crash also leads to build, thats why we use non-zero to indicate a build
     exitcode_buildDueFailure    = 101   # something unexpected, trigger a build in the hope of a jenkins admin registering it...
+    exitcode_buildDueOldFlow    = 102   # components directory in workspace found
+
+    # exitcodes outside a build trigger...
+    exitcode_OK                 = 0
+    exitcode_Failure            = 11    # failure
 
     detailed_doc ="""\
 The ./waf jenkins command only works in a Jenkins environment. The environment
@@ -286,6 +292,18 @@ Finally add an "Editable Email Notification" to the job (if mailtrigger was used
             return True # continue normal execution...
 
 
+    def old_flow_check(self):
+        """returns True if a directory named "components" is found in the workspace, i.e. old flow!"""
+
+        # TODO this is just a hack for now... someday it should be removed, at least when a components folder is added to the new flow!
+        oldflow = self.jenkins_workspace.find_dir('components')
+
+        if oldflow:
+            Logs.warn("Old flow found (directory 'components' in workspace.")
+            return True
+        else:
+            return False
+
     def minimal_symwaf2ic_test(self):
         """returns False if no symwaf2ic checkout was found"""
 
@@ -307,11 +325,308 @@ Finally add an "Editable Email Notification" to the job (if mailtrigger was used
         # else:
         return True
 
+
+
+    ############################
+    ### new flow trigger system
+
+
+    def sb_BuildTrigger(self, rargs):
+        """\
+Jenkins build trigger that checks for new commits in the upstream branches
+
+I.e. it checks if the last commit of the upstream branch resp. to the local
+checkout differs from the last local commit. Also triggers on local changes,
+but such should not occur in a Jenkins environment, anyways.
+        """
+        print
+        Logs.info("Executing Symwaf2ic Jenkins: BuildTrigger")
+
+        if self.old_flow_check():
+            Logs.warn("Old flow detected!")
+            return self.exitcode_buildDueOldFlow
+
+        ### Acquiring data: check symwaf2ic and
+        print # make output a bit human readable..
+        Logs.info("Acquiring data...")
+        if not self.minimal_symwaf2ic_test():
+            return self.exitcode_buildDueFailure
+        if not self.fetch_upstream():
+            return self.exitcode_buildDueFailure
+
+        local_commits, origin_commits = self.getLatestCommits()
+
+
+        ### Comparing latest commits, search for differing ones...
+        Logs.info("Looking for changes...")
+        build_required = False
+        for repo in origin_commits:
+            local = local_commits[repo]
+            origin = origin_commits[repo]
+
+            if local == origin:
+                print "Unchanged:", origin.shortstring()
+                continue
+
+            # else:
+            build_required=True # we could break here, but we want a nice and complete output...
+            print "Changed:  ", local.getCommitRange(origin, nice=True)
+        print # make output a bit human readable..
+
+
+        ### Conclusion
+        hostname = platform.node()
+
+        print "The test was performed on host '{}' (workspace: '{}')".format(hostname, self.jenkins_workspace.abspath())
+        if build_required:
+            Logs.info("Changes have been found (exitcode: {})!".format(self.exitcode_build))
+            return self.exitcode_build
+        else:
+            Logs.info("No changes found (exitcode: {})!".format(self.exitcode_doNotBuild))
+            return self.exitcode_doNotBuild
+
+        assert False, "unreachable code"
+
+
+
+    def sb_BuildPreamble(self, rargs):
+        """\
+Simple tests to check if the workspace is in a good mood today.
+
+Failes if there is a bad wscript (e.g. old flow) in the workspace, or in general if a clean up of the workspace is necessary =>
+
+Usage: ./waf jenkins BuildPreamble || rm -rf *; exit 1 # to delete the bad workspace and fail the build
+"""
+        build_number = os.getenv("BUILD_NUMBER")
+        if not build_number:
+            Logs.error("Could not load BUILD_NUMBER from the environment - are we run by a Jenkins build script?!")
+            return self.exitcode_Failure
+
+        if self.old_flow_check():
+            Logs.error("Old flow directory 'components' found!")
+            return self.exitcode_Failure
+
+        return self.exitcode_OK
+
+
+    def sb_getAuthors(self, rargs):
+        """
+Creates authors and changelog file in jenkins.log/BUILD_NUMBER
+
+The authors and the changelog are deduced from the "diff" of the upstream and the local "git log", i.e. from the recent commits.
+"""
+        print
+        Logs.info("Executing Symwaf2ic Jenkins: getAuthors")
+        build_number = os.getenv("BUILD_NUMBER")
+
+        if not build_number:
+            Logs.error("Could not load BUILD_NUMBER from the environment - are we run by a Jenkins build script?!")
+            return self.exitcode_Failure
+
+        if self.old_flow_check():
+            Logs.error("Old flow detected!")
+            return self.exitcode_Failure
+        print # make output a bit human readable..
+
+
+        ### Acquiring data: check symwaf2ic and fetch upstream TODO load manager
+        Logs.info("Acquiring data...")
+        if not self.minimal_symwaf2ic_test():
+            return self.exitcode_Failure
+        if not self.fetch_upstream():
+            return self.exitcode_Failure
+
+        local_commits, origin_commits = self.getLatestCommits()
+
+        # preparing the file system
+        jenkins_log = self.jenkins_workspace.make_node(self.jenkins_log_dir)
+        jenkins_log = jenkins_log.make_node(build_number)
+        jenkins_log.mkdir()
+
+        fn_authors      = jenkins_log.make_node("authors").abspath()
+        fn_changelog    = jenkins_log.make_node("changelog").abspath()
+        assert not ( os.path.exists(fn_authors) or os.path.exists(fn_changelog) ), "Old authors or changelog file found in recent build number WHAT!!!"
+        workspace_path  = self.jenkins_workspace.abspath()
+
+
+        ### Calculating changes (commit-diff, authors, chlog...)
+        Logs.info("Retrieving authors and changelog...")
+        authors=set()
+
+        for repo in origin_commits:
+            local = local_commits[repo]
+            origin = origin_commits[repo]
+
+            if local == origin:
+                print "Unchanged:", origin.shortstring()
+                continue
+
+            # else:
+            print "Changed:  ", local.getCommitRange(origin, nice=True)
+
+            with open(fn_changelog, "a") as f:
+                f.write('# {} #\n'.format('#'*62))
+                f.write("# {:>62} #\n\n".format(local.getCommitRange(origin, nice=True)))
+
+            # retrieve authors and remove redundant entries (multiple commits)
+            os.chdir(os.path.join(workspace_path, repo))
+            p = ProcessPipe('git', 'log', local.getCommitRange(origin))
+            p.add( 'tee', '-a', fn_changelog )
+            p.add( 'grep', '^Author:' )
+            p.add( 'sed', 's/^Author: //' ) # remove author
+            #p.add( 'sort' )
+            #p.add( 'uniq' )
+            #p.add( 'tee', '-a', fn_authors ) # we append from each repo
+            # print p # the pipe...
+            p = p.execute() # returns the final process (Popen)
+
+            for line in p.stdout:
+                authors.add(line) # newline at the end of each author is kept...
+            p.wait()
+
+            # end changelog with a newline to separate it from the following one.
+            with open(fn_changelog, "a") as f:
+                f.write('\n')
+        # done: for repo in origin_commits
+        print # make output a bit human readable..
+
+        if not authors:
+            Logs.info("No authors found.")
+            return self.exitcode_OK
+
+        # else: CHANGES HAVE BEEN FOUND
+
+
+        ### Filter out external mails and stuff
+        authors = self.filterAuthors(authors) #  returns a list
+        if not authors:
+            Logs.info("All authors have been filtered!")
+            return self.exitcode_OK
+
+
+        ### Conclusion
+        print "The //potential// vandals:"
+        with open(fn_authors, 'w') as f:
+            for a in authors:
+                print a,
+                f.write(a)
+
+        assert( os.path.isfile(fn_authors) )    # must have been created at this point!
+        assert( os.path.isfile(fn_changelog) )  # like above
+
+        # say goodby
+        Logs.info("""
+            Beware, the vandals responsible for this build are known.
+            Pray that you did not introduce a regression!
+
+            Let the build commence!
+            """
+        )
+        return self.exitcode_OK
+
+
+    ###################
+    ### Helper methods
+
+    ### returns latest local and origin commit of the current checked out branch for every mr-managed repo.
+    def getLatestCommits(self):
+        # git log format, latest and a format thats understood by parseLog
+        logformat='-n1 --pretty=oneline'
+
+        # find latest local commits
+        cmd = "./waf mr-run -- git log {logformat}".format(logformat=logformat).split()
+        local_commits,fi = parseLog(cmd, self.jenkins_workspace.abspath())
+
+        # find according (same branch) upstream (last fetch) commits
+        cmd = (
+                "./waf",
+                "mr-xrun",
+                "--",
+                "ref=`git symbolic-ref -q HEAD` # refs/heads/<branchname>",
+                #"# upstream: The name of a local ref which can be considered “upstream” from the displayed ref (KHS: ie, origin)",
+                "branch=`git for-each-ref --format='%(upstream:short)' $ref` # origin/<branchname>",
+                "git log {logformat} $branch".format(logformat=logformat)
+        )
+        origin_commits,fi = parseLog(cmd, self.jenkins_workspace.abspath())
+
+        # assert dependencies (both commands should return the same set of repositories)
+        okeys = set(origin_commits.keys())
+        lkeys = set(local_commits.keys())
+        assert okeys == lkeys
+        del okeys, lkeys
+
+        return ( local_commits, origin_commits )
+
+
+    ### recieves a list/set of unique author lines and filteres them according to the rules below
+    def filterAuthors(self, authors):
+        Logs.info("Filtering the emails")
+
+        ### filter authors that are not internal ones
+        # specify regex patterns to be matched against the authors email addresses
+        our_authors = [
+            '^.*@(.*\.)*tu-dresden\.de$',
+            '^.*@kip\.uni-heidelberg\.de$'
+        ]
+
+        exclude_anyway = [
+            '^root@kip\.uni-heidelberg\.de$',
+            '^postmaster@kip\.uni-heidelberg\.de$',
+            '^none@kip\.uni-heidelberg\.de$',
+            '.*\$.*'
+        ]
+
+
+        # to extract the mail address from the "My name is somebody <mail@provider.cc>\n"
+        mailmatcher=re.compile('^.*<(?P<mail>.*)>$')
+
+        # precompile the author-mailaddress patterns
+        for idx, val in enumerate(our_authors):
+            our_authors[idx] = re.compile(val)
+
+        for idx, val in enumerate(exclude_anyway):
+            exclude_anyway[idx] = re.compile(val)
+
+
+        ### apply the filter
+        remaining_authors=[]
+        anymailfiltered=False
+        for a in authors:
+            mail = mailmatcher.match(a)
+            if not mail:
+                Logs.warn("WARN: Wierd mail filtered:    '{}'".format(a[:-1]))
+                anymailfiltered = True
+                continue
+            #else
+            mail = mail.group('mail')
+            #print "--{}--".format(mail)
+
+            mail_known = False
+            for r in our_authors:
+                if r.match(mail):
+                    mail_known = not any([e.match(mail) for e in exclude_anyway])
+                    break
+            if mail_known:
+                remaining_authors.append(a)
+            else:
+                print "INFO: External mail filtered: '{}".format(a), # there is a newline in the author string
+                anymailfiltered= True
+
+        if not anymailfiltered:
+            print "No mails have been filtered."
+        print # beautiful output
+        return remaining_authors
+
+
+
+################################
+### Older and obsolete code
+
     def sb_trigger(self, rargs):
         """\
 Simple build trigger
 
-This trigger just checks for upstream changes in the active project (head -1 repo.conf).
+This trigger just checks for upstream changes in the active project (head -1 repo.conf). Triggers also on changes on other branches, use the jenkins trigger for better logic.
         """
 
         if not self.minimal_symwaf2ic_test():
@@ -330,9 +645,13 @@ This trigger just checks for upstream changes in the active project (head -1 rep
 
         assert False # unreachable code
 
+
+
     def sb_mailtrigger(self, rargs):
         """
-Build trigger with blame-mail support
+OBSOLETE: Build trigger with blame-mail support
+
+OBSOLETE: use 'BuildTrigger' and 'getAuthors' instead.
 
 This trigger fetches all upstream changes and compares the commits with the
 local state. The authors of the upstream changes are saved to a file named authors.
@@ -357,20 +676,7 @@ blame mails to the vandals (i.e. those who probably broke the build).
         #origin_commits,fi = parseLog(cmd_fetch_log)
         #checkout_commits,fi = parseLog(cmd_checkout_log)
 
-        logformat='-n1 --pretty=oneline'
-        cmd = (
-                "./waf",
-                "mr-xrun",
-                "--",
-                "ref=`git symbolic-ref -q HEAD` # refs/heads/<branchname>",
-                #"# upstream: The name of a local ref which can be considered “upstream” from the displayed ref (KHS: ie, origin)",
-                "branch=`git for-each-ref --format='%(upstream:short)' $ref` # origin/<branchname>",
-                "git log {logformat} $branch".format(logformat=logformat)
-        )
-        origin_commits,fi = parseLog(cmd,curdir)
-
-        cmd = "./waf mr-run -- git log {logformat}".format(logformat=logformat).split()
-        local_commits,fi = parseLog(cmd,curdir)
+        local_commits, origin_commits = self.getLatestCommits()
 
         # assert dependencies (both commands should return the same set of repositories)
         okeys = set(origin_commits.keys())
@@ -483,7 +789,7 @@ blame mails to the vandals (i.e. those who probably broke the build).
 
         # to extract the mail addy from the "To: somebody <mail@provider.cc>"
         mailmatcher=re.compile('^To: .*<(?P<mail>.*)>$')
-        
+
         # precompile the author-mailaddress patterns
         for idx, val in enumerate(our_authors):
             our_authors[idx] = re.compile(val)
@@ -529,8 +835,16 @@ blame mails to the vandals (i.e. those who probably broke the build).
         )
         return self.exitcode_build
 
-### A CommitSpecifier instance holds a specific commit, ie. a repo name
-# (directory) and a commit id (hash) as well as the commit text class
+
+
+#####################
+### Helper classes
+
+
+### A CommitSpecifier instance holds a specific commit, ie.
+# a repo name (workspace directory)
+# a commit id (hash)
+# and the title of that commit
 class CommitSpecifier():
     def __init__(self, repo, commitId, commitText ):
         assert( repo.startswith('./') ) # WORKSPACE relative path TODO: test -d check?
@@ -626,5 +940,7 @@ def parseLog(command, toplevel):
     assert( len(triple) == 1 )          # ~ "mr run: finished (N ok)"
     assert( triple[0].startswith("mr run: finished (") )    # failures not jet handled..
     final = triple[0]
+
+    print "{}".format(final)
 
     return ret, final
