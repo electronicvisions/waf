@@ -118,6 +118,10 @@ def summary(ctx):
             bld(features='cxx cxxprogram gtest', source='main.c', target='app')
             bld.add_post_fun(summary)
     """
+
+    if ctx.tests_disabled():
+        return
+
     results = getattr(ctx, 'test_results', [])
 
     len_file = getLongestField(results, "file") + 3
