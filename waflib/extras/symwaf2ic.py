@@ -382,7 +382,7 @@ class DependencyContext(Symwaf2icContext):
         # Helper to print cycles nicely
         self.predecessors = {}
 
-        # If we are running from a subfolder wie have to add this folder to
+        # If we are running from a subfolder we have to add this folder to
         # required scripts list
         if self.path != self.toplevel:
             self._add_required_path(self.path.path_from(self.toplevel), None)
@@ -464,11 +464,14 @@ class DependencyContext(Symwaf2icContext):
             if project.project is None:
                 self._add_required_path(project.directory, None)
             else:
-                path = storage.repo_tool.checkout_project(
-                        project=project.project,
-                        branch=project.branch,
-                        update_branch = self.update_branches)
-                self._add_required_path(path, None)
+                try:
+                    path = storage.repo_tool.checkout_project(
+                            project=project.project,
+                            branch=project.branch,
+                            update_branch = self.update_branches)
+                    self._add_required_path(path, None)
+                except KeyError:
+                    Logs.warn("Project '{!s}' not found and will be ignored".format(project))
 
     def _shall_store_config(self):
         "Determines if the config shall be written"
