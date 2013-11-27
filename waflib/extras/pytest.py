@@ -57,6 +57,8 @@ def pytest_process_use(self):
 @feature("pytest")
 @after_method("pytest_process_use")
 def pytest_create_task(self):
+    if self.testsDisabled():
+        return
     """Create the unit test task. There can be only one unit test task by task generator."""
     input_nodes = self.to_nodes(self.tests)
 
