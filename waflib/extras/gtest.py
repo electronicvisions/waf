@@ -71,6 +71,13 @@ USE_GTEST = "GTEST"
 _gtest_bundled_src = 'gtest-all.cc'
 
 @feature('gtest')
+@before_method('process_rule')
+def gtest_disable(self):
+    """Disable the task comptly"""
+    if self.testsDisabled():
+        self.meths[1:] = []
+
+@feature('gtest')
 @before_method('process_use')
 def gtest_add_use(self):
     """Add GTEST to use of the task"""
