@@ -11,7 +11,7 @@ import shutil
 import json
 from collections import defaultdict
 
-from waflib import Build, Context, Errors, Logs
+from waflib import Build, Context, Errors, Logs, Utils
 from waflib.extras import mr
 
 
@@ -253,13 +253,22 @@ class OptionParserContext(Symwaf2icContext):
         super(OptionParserContext, self).__init__(*k, **kw)
         self.parser = argparse.ArgumentParser()
         self._first_recursion = False # disable symwaf2ic recursion
+        self.loaded = set()
 
-
-    def load(self, *k, **kw):
-        """ Tools are of no use during dependency step -> ignore.
-
+    def load(self, tool_list, *k, **kw):
         """
-        pass
+        Load a Waf tool as a module, and try calling the function named :py:const:`waflib.Context.Context.fun` from it.
+        A ``tooldir`` value may be provided as a list of module paths.
+
+        :type tool_list: list of string or space-separated string
+        :param tool_list: list of Waf tools to use
+        """
+        tools = Utils.to_list(tool_list)
+        for tool in tools:
+            if tool in self.loaded:
+                continue
+            super(Symwaf2icContext, self).load(tool, *k, **kw)
+            self.loaded.add(tool)
 
     def _parse_type(self, type_):
         try:
@@ -274,7 +283,10 @@ class OptionParserContext(Symwaf2icContext):
         # fixes for optparse -> argparse compatability (NOTE: Might not be complete)
         if "type" in kw:
             if isinstance(kw["type"], basestring):
-                kw["type"] = eval(kw["type"])
+                kw["type"] = self._parse_type(kw["type"])
+        if "callback" in kw:
+            Logs.warn("Option '{}' was ignored during setup call, because it used callbacke keyword".format(k[0]))
+            return
         if storage.options:
             opt = k[0]
             while opt.startswith(self.parser.prefix_chars):
