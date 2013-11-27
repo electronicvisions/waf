@@ -285,7 +285,7 @@ class OptionParserContext(Symwaf2icContext):
             if isinstance(kw["type"], basestring):
                 kw["type"] = self._parse_type(kw["type"])
         if "callback" in kw:
-            Logs.warn("Option '{}' was ignored during setup call, because it used callbacke keyword".format(k[0]))
+            Logs.warn("Option '{}' was ignored during setup call, because it used callback keyword".format(k[0]))
             return
         if storage.options:
             opt = k[0]
