@@ -9,7 +9,7 @@ import argparse
 import shutil
 
 import json
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from waflib import Build, Context, Errors, Logs, Utils
 from waflib.extras import mr
@@ -49,7 +49,6 @@ def init_storage():
 
 def get_required_paths():
     return storage.paths
-
 
 def get_projects():
     for p in storage.projects:
@@ -144,6 +143,10 @@ def options(opt):
             help="Stores graph in a dot file",
             default=None
             )
+    gr.add_option(
+            '-v', '--verbose',  dest='verbose',
+            default=0, action='count',
+            help='verbosity level -v -vv or -vvv [default: 0]')
 
 
 class Symwaf2icContext(Context.Context):
@@ -186,6 +189,7 @@ class MainContext(Symwaf2icContext):
 
         # projects are only set during setup phase
         cmdopts = OptionParserContext().parse_args()
+        Logs.verbose = cmdopts.verbose
         if SETUP_CMD in sys.argv:
             # already write projects to store
             projects = cmdopts.projects if cmdopts.projects else []
@@ -261,6 +265,7 @@ class OptionParserContext(Symwaf2icContext):
         self.parser = argparse.ArgumentParser()
         self._first_recursion = False # disable symwaf2ic recursion
         self.loaded = set()
+        self.used_args = []
 
     def load(self, tool_list, *k, **kw):
         """
@@ -341,6 +346,41 @@ class OptionParserContext(Symwaf2icContext):
     def get_used_args(self):
         return self.used_args
 
+def topological_sort(dependencies):
+    """Pseudo topological sort of dependencies, that allows cycles"""
+    # Flags for topological sort of projects
+    NOT_VISITED, ACTIVE, CYCLE, FINISHED = 0, 1, 2, 3
+
+    result = []
+    predecessor = dict()
+    color = dict(((node, NOT_VISITED) for node in dependencies))
+
+    def visit(node):
+        color[node] = ACTIVE
+        for dependency in dependencies[node]:
+            c = color[dependency]
+            if c == NOT_VISITED:
+                predecessor[dependency] = node
+                visit(dependency)
+            elif c == ACTIVE:
+                tmp = predecessor[node]
+                cycle = [node, tmp]
+                while tmp != dependency:
+                    tmp = predecessor[tmp]
+                    cycle.append(tmp)
+                if Logs.verbose > 1:
+                    Logs.info("Cyclic dependency between wscripts: " + ", ".join(cycle))
+
+        color[node] = FINISHED
+        result.append(node)
+
+    for node in dependencies:
+        if color[node] == NOT_VISITED:
+            visit(node)
+
+    assert len(result) == len(dependencies)
+    return result
+
 
 class DependencyContext(Symwaf2icContext):
     __doc__ = "(Automatically executed on each invokation of waf.)"
@@ -348,14 +388,15 @@ class DependencyContext(Symwaf2icContext):
     cmd = "_dependency_resolution"
     fun = "depends"
 
-    # Flags for topological sort of projects
-    NOT_VISITED, ACTIVE, FINISHED = 0, 1, 2
-
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
         self.update_branches = SETUP_CMD in sys.argv and storage.setup_options["update_branches"]
         self.write_dot_file  = storage.current_options["write_dot_file"]
+        # Dependency graph
+        self.dependencies = defaultdict(list)
+        # Queue for breadth-first search
+        self.to_recurse = deque()
 
     def __call__(self, project, subfolder="", branch=None):
         if Logs.verbose > 0:
@@ -366,7 +407,8 @@ class DependencyContext(Symwaf2icContext):
                     script=self.cur_script.path_from(self.toplevel)
                 ))
 
-        path = storage.repo_tool.checkout_project(project, branch, self.update_branches)
+        required_from = self.cur_script.parent.path_from(self.toplevel)
+        path = storage.repo_tool.checkout_project(project, required_from, branch, self.update_branches)
 
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
@@ -375,8 +417,7 @@ class DependencyContext(Symwaf2icContext):
             raise Symwaf2icError("Folder '{0}' not found in project {1}".format(subfolder, project))
 
         # For topology order of deps
-        predecessor_path = self.cur_script.parent.abspath()
-        self._add_required_path(path, predecessor_path)
+        self._add_required_path(path, required_from)
 
     def execute(self):
         # dont recurse into all already dependency directories again
@@ -392,14 +433,15 @@ class DependencyContext(Symwaf2icContext):
 
         # If we are running from a subfolder we have to add this folder to
         # required scripts list
-        if self.path != self.toplevel:
-            self._add_required_path(self.path.path_from(self.toplevel), None)
+        self._add_required_path(self.path.path_from(self.toplevel))
 
-        # Only recurse into the toplevel wscript because all dependencies will
-        # be defined from there. Also it shall be possible to have no
-        # dependencies.
-        self.recurse([os.path.dirname(Context.g_module.root_path)],
-                     mandatory=False)
+        self._recurse_projects()
+
+        while self.to_recurse:
+            path = self.to_recurse.popleft()
+            self.recurse([path], mandatory=False)
+
+        storage.paths = topological_sort(self.dependencies)
 
         if self._shall_store_config():
             if SETUP_CMD in sys.argv:
@@ -422,7 +464,10 @@ class DependencyContext(Symwaf2icContext):
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
         self.options = self.options_parser.parse_args(
-            self.path.abspath(), argv=storage.setup_argv)
+                self.path.abspath(), argv=storage.setup_argv)
+
+    def post_recurse(self, node):
+        super(DependencyContext, self).post_recurse(node)
 
     def _print_branch_missmatches(self):
         for x in storage.repo_tool.get_wrong_branches():
@@ -436,33 +481,13 @@ class DependencyContext(Symwaf2icContext):
             if cache_dir:
                 shutil.rmtree(cache_dir.abspath())
 
-    def _add_required_path(self, path, predecessor_path):
-        # WTF: .find_node() does not work when given a unicode string
-        # (as loaded from json file)...?
+    def _add_required_path(self, path, predecessor=None):
         path = self.toplevel.find_node(path).abspath()
-        if not os.path.isdir(path):
-            raise Symwaf2icError("%s is not a valid directory" % path)
-
-        if self.visited[path] == self.NOT_VISITED:
-            self.visited[path] = self.ACTIVE
-            self.predecessors[path] = predecessor_path
-            self.recurse([path], mandatory=False)
-            self.visited[path] = self.FINISHED
-            storage.paths.append(path)
-        elif self.visited[path] == self.ACTIVE:
-            pass  # Ignore cicular dependecies
-
-            #print path, self.predecessor
-            #from pprint import pprint
-            #pprint(self.predecessors)
-            #x = [self.predecessor]
-            #n = self.predecessor
-            #while True:
-            #    n = self.predecessors[n]
-            #    if path in x:
-            #        break
-            #    x.append(n)
-            #raise Symwaf2icError("Circular dependencies: {}".format(x))
+        self.dependencies[path]
+        if not predecessor is None:
+            predecessor = self.toplevel.find_node(predecessor).abspath()
+            self.dependencies[predecessor].append(path)
+        self.to_recurse.append(path)
 
     def _recurse_projects(self):
         "Recurse all currently targetted projects."
@@ -473,14 +498,15 @@ class DependencyContext(Symwaf2icContext):
 
         for project in get_projects():
             if project.project is None:
-                self._add_required_path(project.directory, None)
+                self._add_required_path(project.directory)
             else:
                 try:
                     path = storage.repo_tool.checkout_project(
                             project=project.project,
+                            parent_path="project option",
                             branch=project.branch,
                             update_branch = self.update_branches)
-                    self._add_required_path(path, None)
+                    self._add_required_path(path)
                 except KeyError:
                     Logs.warn("Project '{!s}' not found and will be ignored".format(project))
 

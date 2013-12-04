@@ -241,7 +241,7 @@ _toplevel_wscript_contents = """
 # can be modified/deleted if needed
 
 def depends(dep):
-    dep._recurse_projects()
+    pass
 
 def options(opt):
     pass

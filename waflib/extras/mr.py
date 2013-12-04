@@ -390,14 +390,14 @@ class MR(object):
         env["PATH"] = os.pathsep.join(path)
 
 
-    def checkout_project(self, project, branch = None, update_branch = False):
+    def checkout_project(self, project, parent_path, branch = None, update_branch = False):
         p = self._get_or_create_project(project)
         p.required = True
         try:
             p.required_branch = branch
         except BranchError:
-            self.ctx.fatal('Project "%s" is required on branch "%s" and "%s"'\
-                    % ( project, p.required_branch, branch))
+            self.mr_print('Project "%s" is already required on branch "%s", but "%s" requires branch "%s"'\
+                    % ( project, p.required_branch, parent_path, branch), 'YELLOW')
 
         if p.mr_registered and os.path.isdir(p.node.abspath()) and os.listdir(p.node.abspath()):
             if update_branch and p.required_branch != p.real_branch:
