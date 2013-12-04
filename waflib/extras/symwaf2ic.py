@@ -139,6 +139,11 @@ def options(opt):
             help="Type of the repository containting the repo DB (default: git). Can also be 'wget'.",
             default="git"
             )
+    gr.add_option(
+            "--write-dot-file", dest="write_dot_file", action="store",
+            help="Stores graph in a dot file",
+            default=None
+            )
 
 
 class Symwaf2icContext(Context.Context):
@@ -201,6 +206,8 @@ class MainContext(Symwaf2icContext):
             args = [o for o in storage.preserved_options if not o in sys.argv]
             Logs.info("Using options from setup call: " + " ".join(args))
             sys.argv += args
+
+        storage.current_options = vars(cmdopts)
 
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
@@ -348,6 +355,7 @@ class DependencyContext(Symwaf2icContext):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext()
         self.update_branches = SETUP_CMD in sys.argv and storage.setup_options["update_branches"]
+        self.write_dot_file  = storage.current_options["write_dot_file"]
 
     def __call__(self, project, subfolder="", branch=None):
         if Logs.verbose > 0:
@@ -407,6 +415,9 @@ class DependencyContext(Symwaf2icContext):
 
         storage.repo_tool.clean_projects()
         self._print_branch_missmatches()
+
+        if self.write_dot_file:
+            self._dump_dot_file(self.write_dot_file)
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
@@ -482,6 +493,18 @@ class DependencyContext(Symwaf2icContext):
         for k in storage.save:
             config[k] = getattr(storage, k, None)
         storage.lockfile.write(json.dumps(config, indent=4) + "\n")
+
+
+    def _dump_dot_file(self, filename):
+        prefix = len(os.path.commonprefix(self.dependencies.keys()))
+        with open(filename, 'w') as outfile:
+            outfile.write("digraph {\n")
+            for source, targets in self.dependencies.iteritems():
+                s = source[prefix:]
+                for target in targets:
+                    t = target[prefix:]
+                    outfile.write('"{}" -> "{}";\n'.format(s, t))
+            outfile.write("}")
 
 
 # Currently only kept for posterity
