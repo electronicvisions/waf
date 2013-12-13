@@ -14,6 +14,8 @@ from collections import defaultdict, deque
 from waflib import Build, Context, Errors, Logs, Utils
 from waflib.extras import mr
 
+import symwaf2ic_misc as misc
+
 
 #############
 # CONSTANTS #
@@ -307,6 +309,9 @@ class OptionParserContext(Symwaf2icContext):
                 kw["default"] = storage.options[opt]
         self.parser.add_argument(*k, **kw)
 
+    def add_withoption(self, *k, **kw):
+        # just pass on
+        self.parser.add_withargument(*k, **kw)
 
     # Since we are only interested in the arguments themselves and provide no output
     # in the depdency system, optparse's OptionGropus are irrelevent, since they only

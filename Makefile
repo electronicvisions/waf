@@ -1,4 +1,4 @@
-TOOLS=boost,clang_compilation_database,documentation,gtest,jenkins,mr,nosepatch,openmp,post_task,pypp,pypp,pytest,symap2ic_doxygen,symwaf2ic,symwaf2ic_prelude,test_base
+TOOLS=boost,clang_compilation_database,documentation,gtest,jenkins,mr,nosepatch,openmp,post_task,pypp,pypp,pytest,symap2ic_doxygen,symwaf2ic,symwaf2ic_prelude,symwaf2ic_misc,test_base
 # Note take care to preseve the leading tab character in the following line!
 PRELUDE=from waflib.extras.symwaf2ic_prelude import prelude; prelude()
 TOP=$(CURDIR)/$(dir $(lastword $(MAKEFILE_LIST)))
