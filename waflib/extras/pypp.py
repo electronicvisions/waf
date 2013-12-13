@@ -145,6 +145,7 @@ class pyplusplus(Task.Task):
         outputs = []
         md5db = self.output_dir.find_node(self.module + ".md5.sum")
         if (md5db):
+            outputs.append(md5db)
             data = md5db.read().split('\n')
             for line in data:
                 try:
@@ -206,8 +207,10 @@ class pyplusplus(Task.Task):
             tsk.env.append_value('INCPATHS', [node.parent.abspath()])
             self.more_tasks.append(tsk)
 
-            self.helper_task.set_run_after(tsk)
-            self.helper_task.inputs.extend(tsk.outputs)
+            self.pyext_task.set_run_after(tsk)
+            self.pyext_task.inputs.extend(tsk.outputs)
+
+            bld = self.generator.bld
 
     def runnable_status(self):
         ret = super(pyplusplus, self).runnable_status()
@@ -229,88 +232,55 @@ class pyplusplus(Task.Task):
             nodes = lst[1:]
             self.set_outputs(nodes)
             self.add_cxx_tasks()
-
         return ret
 
-class merge_cxx_objects(Task.Task):
-    vars  = ['CXX']
-    quiet = True
-    color = 'PINK'
-    ext_out = ['.o']
-    after = ["cxx", "pyplusplus"]
-    before = ["cxxshlib", "cxxstlib"]
-    run_str = 'ld -r ${CXXLNK_SRC_F}${SRC} ${CXXLNK_TGT_F}${TGT[0].abspath()}'
-#    run_str = '${LINK_CXX} -Wl,-r -o ${TGT[0].abspath()} ${SRC}'
-
-@feature('pyext')
+@feature('pypp')
 @after_method('apply_link')
 @before_method('process_use')
-def add_pyext_pypp(self):
-    self.pyext_task = self.link_task
-
-@feature('c', 'cxx', 'd', 'fc', 'asm')
-@after_method('process_use')
-def fix_pyplusplus_linkage(self):
-    """This methods allows python modules to be used in use of other libs"""
-    clear = set()
-    for name in self.tmp_use_seen:
-        task_gen = self.bld.get_tgen_by_name(name)
-        pyext_task = getattr(task_gen, 'pyext_task', None)
-        if pyext_task:
-            tgt = task_gen.target
-            libname = tgt[tgt.rfind(os.sep) + 1:] # from ccroot.py
-            clear.add(libname)
-
-    self.env["LIB"] = [ x for x in self.env["LIB"] if not x in clear]
-
-@feature('pypp')
-@before_method('process_source')
-def fix_pyplusplus_compiler(self):
+def create_pyplusplus(self):
+    # Fixup pyplus plus compiler
     self.env.detach()
     self.env.CXX = self.env.CXX_PYPP
     self.use = self.to_list(getattr(self, 'use', []))
     self.use.extend(self.env[ENV_PYPP_USES])
 
+    # Fetch link task
+    try:
+        link_task = self.pyext_task = self.link_task
+    except AttributeError:
+        self.bld.fatal('You have to use pypp with cxxshlib feature in %s' % str(self))
+
+    # collect attributes
     if not getattr(self, 'script', None):
-        self.generator.bld.fatal('script file not set')
-    self.pypp_module = getattr(self, 'module', self.target)
-    out_dir = getattr(self, 'output_dir', self.pypp_module)
+        self.bld.fatal('script file not set')
+    module = getattr(self, 'module', self.target)
+    out_dir = getattr(self, 'output_dir', module)
     out_dir = self.path.get_bld().make_node(out_dir)
     out_dir.mkdir()
-    self.pypp_output_dir = out_dir
 
-    self.pypp_helper_task = self.create_compiled_task(
-            'merge_cxx_objects', self.pypp_output_dir)
-    self.pypp_helper_task.inputs = []
-
-@feature('pypp')
-@after_method('fix_pyplusplus_compiler')
-@before_method('process_use')
-def create_pyplusplus(self):
-    self.pypp_decl_db = self.pypp_output_dir.find_or_declare(
-            self.pypp_module + '.exposed_decl.pypp.txt')
+    decl_db = out_dir.find_or_declare(module + '.exposed_decl.pypp.txt')
 
     headers = self.to_list(getattr(self, 'headers', []))
     inputs = self.to_nodes( [self.script] + headers )
-    outputs = [self.pypp_decl_db]
+    outputs = [decl_db]
     dep_nodes = self.to_nodes(getattr(self, 'depends_on_files', []))
 
-    defines = self.to_list(getattr(self, 'gen_defines', []))
+    # create task
     t = self.pypp_task = self.create_task('pyplusplus', inputs, outputs)
-    t.env.OUTPUT_DIR = self.pypp_output_dir.abspath()
+    t.env.OUTPUT_DIR = out_dir.abspath()
     t.env.DEF_ST = ["-D"]
     t.env.INC_ST = ["-I"]
     t.env.DECL_DB_ST = ["--decl_db"]
     t.env.DEP_MODULE_ST = ["--dep_module"]
-    t.env.DEFINES = defines
     t.env.DEP_MODULES = []
     t.env.DECL_DBS = []
-    t.module = self.pypp_module
-    t.output_dir = self.pypp_output_dir
+    t.module = module
+    t.output_dir = out_dir
     t.dep_nodes.extend(get_manual_module_dependencies(self.bld))
     t.dep_nodes.extend(dep_nodes)
-    t.helper_task = self.pypp_helper_task
-    t.helper_task.set_run_after(t)
+    t.pyext_task = link_task
+
+    link_task.set_run_after(self.pypp_task)
 
 @feature('pypp')
 @after_method('process_use')
@@ -329,6 +299,28 @@ def add_module_dependencies(self):
             decl_dbs.append(pypp_task.outputs[0].abspath())
     t.env.DEP_MODULES = dep_modules
     t.env.DECL_DBS = decl_dbs
+
+    defines = self.to_list(getattr(self, 'gen_defines', []))
+    t.env.append_value('DEFINES', defines)
+
+
+@feature('c', 'cxx', 'd', 'fc', 'asm')
+@after_method('process_use')
+def fix_pyplusplus_linkage(self):
+    """This methods allows python modules to be used in use of other libs"""
+    clear = set()
+    for name in self.tmp_use_seen:
+        task_gen = self.bld.get_tgen_by_name(name)
+        pyext_task = getattr(task_gen, 'pyext_task', None)
+        if pyext_task:
+            tgt = task_gen.target
+            libname = tgt[tgt.rfind(os.sep) + 1:] # from ccroot.py
+            clear.add(libname)
+
+    self.env["LIB"] = [ x for x in self.env["LIB"] if not x in clear]
+
+
+
 
 
 not_found_msg = """Could not import correct module %s
