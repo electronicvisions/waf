@@ -21,10 +21,10 @@ class SetOfTasks(object):
 		self._owner = owner
 
 	def __iter__(self):
-		tasks = set(self._set) # make a copy
 		for g in self._owner.run_after_groups:
-			tasks.update(g)
-		for task in tasks:
+			for task in g:
+				yield task
+		for task in self._set:
 			yield task
 
 	def add(self, obj):
