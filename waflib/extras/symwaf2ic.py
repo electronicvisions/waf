@@ -104,8 +104,19 @@ class Project(object):
 
     @staticmethod
     def from_project_opt(arg):
-        tmp = str(arg).split("/") + [None]
-        return {'project' : tmp[0], "directory" : tmp[0], 'branch' : tmp[1]}
+        if '/' in arg:
+            Logs.warn("The project specification 'repo/branch' is deprecated, please use 'repo@branch' instead. I.e. no more slashes!") # \nYou can now even use repo@branch@subdir") Does not work
+            arg=arg.replace('/','@')
+        def splitprj(arg):
+            r = arg.split('@') # prj, branch, dir
+            if not r[0]: raise # default opt parse message
+            if len(r) == 1: return r[0], None, r[0]
+            if len(r) == 2: return r[0], r[1] or None , r[0]
+            #if len(r) == 3: return r[0], r[1] or None, os.path.join(r[0], r[2]) # UNTESTED: specifying project and directory in one step is not jet implemented (dir option is ignored if project is set)
+            raise Symwaf2icError("Bad argument to project: '{}', use repository@branch instead.".format(arg))
+
+        p, b, d = splitprj(arg)
+        return {'project' : p, "directory" : d, 'branch' : b}
 
     @staticmethod
     def from_dir_opt(arg):
@@ -119,14 +130,14 @@ def options(opt):
     gr.add_option(
             "--project", dest="projects", action="append",
             type=Project.from_project_opt if is_symwaf2ic else str,
-            help="Declare the specified project as required build target use"+\
-                 "(can be specified several times). Branches can be specified" +\
-                 "by appending (/branch), e.g. --project halbe/dev")
+            metavar="REPOSITORY[@BRANCH]",
+            help="Declare the specified project (repository) as required build target . Branches can be specified by appending '@branch', e.g. --project halbe@dev. (Can be specified several times.)"
+    )
     gr.add_option(
             "--directory", dest="projects", action="append",
             type=Project.from_dir_opt if is_symwaf2ic else str,
-            help="Make waf to recurse into the given folders." +
-                 "(can be specified several times).")
+            metavar="PATH",
+            help="Make waf to recurse into the given folders. (Can be specified several times.)")
     gr.add_option(
             "--update-branches", dest="update_branches", action="store_true",
             help="Activate branch tracking (e.g., when updating repositories)")
@@ -137,7 +148,7 @@ def options(opt):
             )
     gr.add_option(
             "--repo-db-type", dest="repo_db_type", action="store",
-            help="Type of the repository containting the repo DB (default: git). Can also be 'wget'.",
+            help="Type of the repository containting the repo DB (default: 'git'). Can also be 'wget'.",
             default="git"
             )
     gr.add_option(
