@@ -534,7 +534,12 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
         logformat='-n1 --pretty=oneline'
 
         # find latest local commits
-        cmd = "./waf mr-run -- git log {logformat}".format(logformat=logformat).split()
+        cmd = (
+                './waf',
+                'mr-xrun',
+                '--',
+                'git log {logformat}'.format(logformat=logformat)
+        )
         local_commits,fi = parseLog(cmd, self.jenkins_workspace.abspath())
 
         # find according (same branch) upstream (last fetch) commits
@@ -907,6 +912,7 @@ def parseLog(command, toplevel):
     # mr title line has been removed (was available in the old flow)
     triple=[]   # 3 lines log output
     ret={}      # ret['<repo>'] = CommitSpecifier(...)
+    #i = 0      # for debugging...
     for line in proc.stdout:
         #print i, line,
         #i+=1
