@@ -23,23 +23,10 @@ TOOL            = "Jenkins Integration"
 
 
 def options(opt):
-    ws = os.getenv('WORKSPACE')
-    jn = os.getenv('JOB_NAME')
+    pass
 
-    if not (ws and jn):
-        return
 
-    ws = opt.root.find_node(ws)
-    if not ws == opt.path:
-        Logs.debug("%s: WORKSPACE does not equal current dir" % TOOL)
-        #opt.fatal
-        return
-
-    # Jenkins environment available
-    JenkinsContext.jenkins_workspace    = ws
-    JenkinsContext.jenkins_job_name     = jn
 # TODO The subcommand class decorator should move into its own file
-
 # decorator for classes which offer subcommands (methods named "^sb_.*$")
 def subcommand_class(klass):
     """
@@ -212,6 +199,7 @@ def subcommand_class(klass):
             """auto generated execute function for subcommand waf Contexts"""
             pre = getattr(self, 'pre_execute', None)
             if pre and (not pre() is True):
+                Logs.debug("env: pre_execute did not return true, stopping execution of {}".format(klass.cmd))
                 return # if self.pre_execute() did not return True
 
             global g_module
@@ -227,6 +215,7 @@ def subcommand_class(klass):
 
     return klass
 
+
 @subcommand_class
 class JenkinsContext(Context.Context):
     """For easy Jenkins integration: run ./waf jenkins help for details"""
@@ -240,6 +229,7 @@ class JenkinsContext(Context.Context):
 
     jenkins_workspace   = None # options changes this value if WORKSPACE and JOB_NAME is available
     jenkins_job_name    = None
+    jenkins_build_number= None
     jenkins_log_dir     = "jenkins.log"
 
     exitcode_doNotBuild         = 0     # normal execution -> no build, we need to turn around the exitcode in the jenkins build trigger script
@@ -274,23 +264,38 @@ Finally add an "Editable Email Notification" to the job (if mailtrigger was used
 """
 
     def pre_execute(self):
-        if not JenkinsContext.jenkins_workspace:
-            try:
-                self.subcmdhandler(["help"])
-            except SystemExit:
-                pass
+        if (len(Options.commands) < 1 or Options.commands[0]=="help"):
+            return True
 
-            self.fatal( """The 'jenkins' command only works in a Jenkins environment, ie. WORKSPACE and JOB_NAME must be set.
-    A valid Jenkins environment is detected if the environment variables
-    WORKSPACE and JOB_NAME are set, and the working directory must equal
-    $WORKSPACE. To simulate a valid Jenkins environment run:
+        ws = os.getenv('WORKSPACE')
+        jn = os.getenv('JOB_NAME') or "test"
+        bn = os.getenv('BUILD_NUMBER') or "1"
 
-    WORKSPACE=$PWD JOB_NAME=test ./waf jenkins # or whatever your command(s)
-            """)
-            assert False # non-reachable code
-        else:
-            return True # continue normal execution...
+        if not (ws and jn and bn):
+            print "Could not load jenkins environment..."
+            print "WS: {}, JN: {}, BN: {}".format(ws, jn, bn)
+            self.fatal("""\
+The 'jenkins' command only works in a Jenkins environment, ie. the environment variable WORKSPACE must be set.
+For testing purposes JOB_NAME and BUILD_NUMBER default to "test" and "1".
 
+To simulate a valid Jenkins environment run:
+
+    WORKSPACE=$PWD ./waf jenkins {opts} # or whatever your command(s)
+    or
+    export WORKSPACE="$PWD"
+    ./waf jenkins {opts}
+""".format(opts=" ".join(Options.commands)))
+            assert False
+
+        ws = self.root.find_node(ws)
+        if not ws == self.path:
+            self.fatal("env: %s: WORKSPACE does not equal current dir" % TOOL)
+
+        # Jenkins environment available
+        JenkinsContext.jenkins_workspace    = ws # is a waf node!
+        JenkinsContext.jenkins_job_name     = jn
+        JenkinsContext.jenkins_build_number = bn
+        return True
 
     def old_flow_check(self):
         """returns True if a directory named "components" is found in the workspace, i.e. old flow!"""
@@ -397,7 +402,7 @@ Failes if there is a bad wscript (e.g. old flow) in the workspace, or in general
 
 Usage: ./waf jenkins BuildPreamble || rm -rf *; exit 1 # to delete the bad workspace and fail the build
 """
-        build_number = os.getenv("BUILD_NUMBER")
+        build_number = JenkinsContext.jenkins_build_number
         if not build_number:
             Logs.error("Could not load BUILD_NUMBER from the environment - are we run by a Jenkins build script?!")
             return self.exitcode_Failure
@@ -417,7 +422,7 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
 """
         print
         Logs.info("Executing Symwaf2ic Jenkins: getAuthors")
-        build_number = os.getenv("BUILD_NUMBER")
+        build_number = JenkinsContext.jenkins_build_number
 
         if not build_number:
             Logs.error("Could not load BUILD_NUMBER from the environment - are we run by a Jenkins build script?!")
