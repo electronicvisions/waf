@@ -172,6 +172,7 @@ def subcommand_class(klass):
         elif isinstance(r, int):    # an int denotes a (controlled) system exit
             raise SystemExit(r)
 
+
         assert isinstance(r, dict), "function " + f + " did not return a valid remaining commands indicator (bool, int or dict)"
         return self.subcmdhandler(rargs, allowed_commands=r, default_command=None)
 
@@ -264,6 +265,7 @@ Finally add an "Editable Email Notification" to the job (if mailtrigger was used
 """
 
     def pre_execute(self):
+        print # separate jenkins from waf "default" output.
         if (len(Options.commands) < 1 or Options.commands[0]=="help"):
             return True
 
@@ -295,6 +297,7 @@ To simulate a valid Jenkins environment run:
         JenkinsContext.jenkins_workspace    = ws # is a waf node!
         JenkinsContext.jenkins_job_name     = jn
         JenkinsContext.jenkins_build_number = bn
+
         return True
 
     def old_flow_check(self):
@@ -344,7 +347,6 @@ I.e. it checks if the last commit of the upstream branch resp. to the local
 checkout differs from the last local commit. Also triggers on local changes,
 but such should not occur in a Jenkins environment, anyways.
         """
-        print
         Logs.info("Executing Symwaf2ic Jenkins: BuildTrigger")
 
         if self.old_flow_check():
@@ -420,7 +422,6 @@ Creates authors and changelog file in jenkins.log/BUILD_NUMBER
 
 The authors and the changelog are deduced from the "diff" of the upstream and the local "git log", i.e. from the recent commits.
 """
-        print
         Logs.info("Executing Symwaf2ic Jenkins: getAuthors")
         build_number = JenkinsContext.jenkins_build_number
 
@@ -627,6 +628,52 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
         print # beautiful output
         return remaining_authors
 
+
+    def sb_createArtifact(self, rargs):
+        """\
+Creates a tar archive named artifact.tgz containing directories and files specified as rargs.
+
+Usage ./waf jenkins createArtifact path/to/somedir path/to/somefile, rel. to cwd.
+NB.; Excludes are momentarily not available.
+"""
+        cwdn = self.path # current working dir node
+        assert cwdn.abspath() == os.getcwd(), "current working dir does not equal waf context path" # that's wierd and not handled
+
+        Logs.info("Creating artifacts in '{}': {}".format(cwdn, rargs)) # TODO: project, not path (or also show project @see show_repos!
+
+        if len(rargs) < 1:
+            self.fatal("Cannot create an artifact-archive if you do not specify any artifacts:\n\tUsage: ./waf jenkins createArtifact path/to/artfact1 ...")
+
+        tarnode = cwdn.make_node("artifact.tgz")
+        tarnode.delete()
+        cmd = [
+                'tar',
+                # TODO default excludes: .git .waf-*
+                '-c{v}zf'.format(v="v"*Logs.verbose), # create [verbose] zip file
+                tarnode.abspath()
+        ]
+
+        noartifactfound = True
+        for r in rargs:
+            n = self.path.find_node(r)
+            if n:
+                cmd.append(n.path_from(cwdn))
+                noartifactfound = False
+            else:
+                Logs.warn("Could not find artifact '{}'".format(r))
+
+        if noartifactfound:
+            self.fatal("Could not find any artifact! This is considered an error. You specified these artifacts:\n{}".format(rargs))
+
+        try:
+            self.cmd_and_log(cmd, quiet=Context.BOTH)
+        except Exception as e:
+            Logs.error("Creation of '{}' failed".format(tarnode))
+            print(e.stdout, e.stderr)
+            return self.exitcode_Failure
+
+        # else:
+        return self.exitcode_OK
 
 
 ################################
