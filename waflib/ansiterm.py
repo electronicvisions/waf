@@ -57,9 +57,11 @@ else:
 		"""
 		emulate a vt100 terminal in cmd.exe
 		"""
-		def __init__(self):
-			self.encoding = sys.stdout.encoding
-			self.hconsole = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+		def __init__(self, stream):
+			self.stream = stream
+			self.encoding = self.stream.encoding
+			handle = (stream.fileno() == 2) and STD_ERROR_HANDLE or STD_OUTPUT_HANDLE
+			self.hconsole = windll.kernel32.GetStdHandle(handle)
 			self.cursor_history = []
 			self.orig_sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
 			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self.orig_sbinfo))
@@ -245,12 +247,16 @@ else:
 				tiny = txt[x : x + TINY_STEP]
 				writeconsole(self.hconsole, tiny, len(tiny), byref(chars_written), None)
 
+		def fileno(self):
+			return self.stream.fileno()
+
 		def flush(self):
 			pass
 
 		def isatty(self):
 			return True
 
-	sys.stderr = sys.stdout = AnsiTerm()
+	sys.stderr = AnsiTerm(sys.stderr)
+	sys.stdout = AnsiTerm(sys.stdout)
 	os.environ['TERM'] = 'vt100'
 
