@@ -13,6 +13,8 @@ console commands.
 
 import sys, os, re, threading
 
+TINY_STEP = 3000
+
 try:
 	if not (sys.stderr.isatty() and sys.stdout.isatty()):
 		raise ValueError('not a tty')
@@ -241,7 +243,6 @@ else:
 			if isinstance(txt, _type):
 				writeconsole = windll.kernel32.WriteConsoleW
 
-			TINY_STEP = 3000
 			for x in range(0, len(txt), TINY_STEP):
 				# According MSDN, size should NOT exceed 64 kb (issue #746)
 				tiny = txt[x : x + TINY_STEP]
