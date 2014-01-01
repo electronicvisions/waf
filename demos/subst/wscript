@@ -40,7 +40,7 @@ def build(bld):
 	def hlink(task):
 		try:
 			link = os.link
-		except NameError:
+		except AttributeError:
 			task.outputs[0].write(task.inputs[0].read('rb'), 'wb')
 		else:
 			for x, y in zip(task.inputs, task.outputs):
