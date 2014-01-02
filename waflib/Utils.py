@@ -19,6 +19,8 @@ except ImportError:
 		"""A deque for Python 2.3 which does not have one"""
 		def popleft(self):
 			return self.pop(0)
+		def appendleft(self, x):
+			sefl.insert(0, x)
 try:
 	import _winreg as winreg
 except ImportError:

@@ -114,10 +114,10 @@ class Parallel(object):
 		Instance of :py:class:`waflib.Build.BuildContext`
 		"""
 
-		self.outstanding = []
+		self.outstanding = Utils.deque()
 		"""List of :py:class:`waflib.Task.TaskBase` that may be ready to be executed"""
 
-		self.frozen = []
+		self.frozen = Utils.deque()
 		"""List of :py:class:`waflib.Task.TaskBase` that cannot be executed immediately"""
 
 		self.out = Queue(0)
@@ -149,7 +149,7 @@ class Parallel(object):
 		"""
 		if not self.outstanding:
 			return None
-		return self.outstanding.pop(0)
+		return self.outstanding.popleft()
 
 	def postpone(self, tsk):
 		"""
@@ -159,7 +159,7 @@ class Parallel(object):
 		:type tsk: :py:class:`waflib.Task.TaskBase`
 		"""
 		if random.randint(0, 1):
-			self.frozen.insert(0, tsk)
+			self.frozen.appendleft(tsk)
 		else:
 			self.frozen.append(tsk)
 
@@ -193,7 +193,7 @@ class Parallel(object):
 
 			if self.frozen:
 				self.outstanding += self.frozen
-				self.frozen = []
+				self.frozen = Utils.deque()
 			elif not self.count:
 				self.outstanding.extend(next(self.biter))
 				self.total = self.bld.total()
