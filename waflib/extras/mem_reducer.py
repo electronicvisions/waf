@@ -46,16 +46,16 @@ def set_precedence_constraints(tasks):
 		cstr_groups[h].append(x)
 
 	# create sets which can be reused for all tasks
-	for k in cstr_groups.iterkeys():
+	for k in cstr_groups.keys():
 		cstr_groups[k] = set(cstr_groups[k])
 
 	# this list should be short
-	for key1, key2 in itertools.combinations(cstr_groups.iterkeys(), 2):
+	for key1, key2 in itertools.combinations(cstr_groups.keys(), 2):
 		group1 = cstr_groups[key1]
 		group2 = cstr_groups[key2]
 		# get the first entry of the set
-		t1 = iter(group1).next()
-		t2 = iter(group2).next()
+		t1 = next(iter(group1))
+		t2 = next(iter(group2))
 
 		# add the constraints based on the comparisons
 		if Task.is_before(t1, t2):
