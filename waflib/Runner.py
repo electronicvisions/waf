@@ -279,6 +279,9 @@ class Parallel(object):
 				put_pool(x)
 			self.pool = []
 
+	def skip(self, tsk):
+		tsk.hasrun = Task.SKIPPED
+
 	def start(self):
 		"""
 		Give tasks to :py:class:`waflib.Runner.TaskConsumer` instances until the build finishes or the ``stop`` flag is set.
@@ -316,7 +319,7 @@ class Parallel(object):
 				# TODO waf 1.7 this piece of code should go in the error_handler
 				tsk.err_msg = Utils.ex_stack()
 				if not self.stop and self.bld.keep:
-					tsk.hasrun = Task.SKIPPED
+					self.skip(tsk)
 					if self.bld.keep == 1:
 						# if -k stop at the first exception, if -kk try to go as far as possible
 						if Logs.verbose > 1 or not self.error:
@@ -334,7 +337,7 @@ class Parallel(object):
 				self.postpone(tsk)
 			elif st == Task.SKIP_ME:
 				self.processed += 1
-				tsk.hasrun = Task.SKIPPED
+				self.skip(tsk)
 				self.add_more_tasks(tsk)
 			else:
 				# run me: put the task in ready queue
