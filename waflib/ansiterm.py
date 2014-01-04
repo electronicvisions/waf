@@ -13,13 +13,12 @@ console commands.
 
 import sys, os, re, threading
 
-TINY_STEP = 3000
-
 try:
 	from ctypes import Structure, windll, c_short, c_ulong, c_int, byref, c_wchar
 except ImportError:
 	pass
 else:
+
 	class COORD(Structure):
 		_fields_ = [("X", c_short), ("Y", c_short)]
 
@@ -31,8 +30,6 @@ else:
 
 	class CONSOLE_CURSOR_INFO(Structure):
 		_fields_ = [('dwSize',c_ulong), ('bVisible', c_int)]
-
-	is_vista = getattr(sys, "getwindowsversion", None) and sys.getwindowsversion()[0] >= 6
 
 	try:
 		_type = unicode
@@ -49,12 +46,12 @@ else:
 		"""
 		emulate a vt100 terminal in cmd.exe
 		"""
-		def __init__(self, stream):
-			self.stream = stream
-			self.encoding = self.stream.encoding
+		def __init__(self, s):
+			self.stream = s
+			self.encoding = s.encoding
 			self.cursor_history = []
 
-			handle = (stream.fileno() == 2) and STD_ERROR_HANDLE or STD_OUTPUT_HANDLE
+			handle = (s.fileno() == 2) and STD_ERROR_HANDLE or STD_OUTPUT_HANDLE
 			self.hconsole = windll.kernel32.GetStdHandle(handle)
 
 			self._sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
@@ -68,6 +65,9 @@ else:
 			self._isatty = r == 1
 
 		def screen_buffer_info(self):
+			"""
+			Updates self._sbinfo and returns it
+			"""
 			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
 			return self._sbinfo
 
@@ -173,13 +173,9 @@ else:
 		def set_color(self, param):
 			cols = param.split(';')
 			sbinfo = self.screen_buffer_info()
-			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(sbinfo))
 			attr = sbinfo.Attributes
 			for c in cols:
-				if is_vista:
-					c = int(c)
-				else:
-					c = to_int(c, 0)
+				c = to_int(c, 0)
 				if c in range(30,38): # fgcolor
 					attr = (attr & 0xfff0) | self.rgb2bgr(c-30)
 				elif c in range(40,48): # bgcolor
@@ -225,14 +221,16 @@ else:
 		def write(self, text):
 			try:
 				wlock.acquire()
-				for param, cmd, txt in self.ansi_tokens.findall(text):
-					if cmd:
-						if self._isatty:
+				if self._isatty:
+					for param, cmd, txt in self.ansi_tokens.findall(text):
+						if cmd:
 							cmd_func = self.ansi_command_table.get(cmd)
 							if cmd_func:
 								cmd_func(self, param)
-					else:
-						self.writeconsole(txt)
+						else:
+							self.writeconsole(txt)
+				else:
+					self.stream.write(text)
 			finally:
 				wlock.release()
 
@@ -242,10 +240,21 @@ else:
 			if isinstance(txt, _type):
 				writeconsole = windll.kernel32.WriteConsoleW
 
-			for x in range(0, len(txt), TINY_STEP):
-				# According MSDN, size should NOT exceed 64 kb (issue #746)
-				tiny = txt[x : x + TINY_STEP]
-				writeconsole(self.hconsole, tiny, len(tiny), byref(chars_written), None)
+			# MSDN says that there is a shared buffer of 64 KB for the console
+			# writes. Attempt to not get ERROR_NOT_ENOUGH_MEMORY, see waf issue #746
+			done = 0
+			todo = len(txt)
+			chunk = 32<<10
+			while todo != 0:
+				doing = min(chunk, todo)
+				buf = txt[done:done+doing]
+				r = writeconsole(self.hconsole, buf, doing, byref(chars_written), None)
+				if r == 0:
+					chunk >>= 1
+					continue
+				done += doing
+				todo -= doing
+
 
 		def fileno(self):
 			return self.stream.fileno()
