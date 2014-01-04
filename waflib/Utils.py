@@ -20,7 +20,7 @@ except ImportError:
 		def popleft(self):
 			return self.pop(0)
 		def appendleft(self, x):
-			sefl.insert(0, x)
+			self.insert(0, x)
 try:
 	import _winreg as winreg
 except ImportError:
