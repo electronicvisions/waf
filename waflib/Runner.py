@@ -268,6 +268,20 @@ class Parallel(object):
 	def skip(self, tsk):
 		tsk.hasrun = Task.SKIPPED
 
+	def error_handler(self, tsk):
+		"""
+		Called when a task cannot be executed. The flag :py:attr:`waflib.Runner.Parallel.stop` is set, unless
+		the build is executed with::
+
+			$ waf build -k
+
+		:param tsk: task
+		:type tsk: :py:attr:`waflib.Task.TaskBase`
+		"""
+		if not self.bld.keep:
+			self.stop = True
+		self.error.append(tsk)
+
 	def task_status(self, tsk):
 		try:
 			return tsk.runnable_status()
@@ -287,9 +301,7 @@ class Parallel(object):
 				return Task.EXCEPTION
 			tsk.hasrun = Task.EXCEPTION
 
-			if not self.bld.keep:
-				self.stop = True
-			self.error.append(tsk)
+			self.error_handler(tsk)
 			return Task.EXCEPTION
 
 	def start(self):
