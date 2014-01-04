@@ -16,11 +16,10 @@ import sys, os, re, threading
 TINY_STEP = 3000
 
 try:
-	if not (sys.stderr.isatty() and sys.stdout.isatty()):
-		raise ValueError('not a tty')
-
 	from ctypes import Structure, windll, c_short, c_ulong, c_int, byref, c_wchar
-
+except ImportError:
+	pass
+else:
 	class COORD(Structure):
 		_fields_ = [("X", c_short), ("Y", c_short)]
 
@@ -33,15 +32,6 @@ try:
 	class CONSOLE_CURSOR_INFO(Structure):
 		_fields_ = [('dwSize',c_ulong), ('bVisible', c_int)]
 
-	sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
-	csinfo = CONSOLE_CURSOR_INFO()
-	hconsole = windll.kernel32.GetStdHandle(-11)
-	windll.kernel32.GetConsoleScreenBufferInfo(hconsole, byref(sbinfo))
-	if sbinfo.Size.X < 9 or sbinfo.Size.Y < 9: raise ValueError('small console')
-	windll.kernel32.GetConsoleCursorInfo(hconsole, byref(csinfo))
-except Exception:
-	pass
-else:
 	is_vista = getattr(sys, "getwindowsversion", None) and sys.getwindowsversion()[0] >= 6
 
 	try:
@@ -62,16 +52,24 @@ else:
 		def __init__(self, stream):
 			self.stream = stream
 			self.encoding = self.stream.encoding
+			self.cursor_history = []
+
 			handle = (stream.fileno() == 2) and STD_ERROR_HANDLE or STD_OUTPUT_HANDLE
 			self.hconsole = windll.kernel32.GetStdHandle(handle)
-			self.cursor_history = []
-			self.orig_sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
-			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self.orig_sbinfo))
+
+			self._sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
+
+			self._csinfo = CONSOLE_CURSOR_INFO()
+			windll.kernel32.GetConsoleCursorInfo(self.hconsole, byref(self._csinfo))
+
+			# just to double check that the console is usable
+			self._orig_sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
+			r = windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._orig_sbinfo))
+			self._isatty = r == 1
 
 		def screen_buffer_info(self):
-			sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
-			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(sbinfo))
-			return sbinfo
+			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
+			return self._sbinfo
 
 		def clear_line(self, param):
 			mode = param and int(param) or 0
@@ -174,7 +172,7 @@ else:
 
 		def set_color(self, param):
 			cols = param.split(';')
-			sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
+			sbinfo = self.screen_buffer_info()
 			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(sbinfo))
 			attr = sbinfo.Attributes
 			for c in cols:
@@ -187,7 +185,7 @@ else:
 				elif c in range(40,48): # bgcolor
 					attr = (attr & 0xff0f) | (self.rgb2bgr(c-40) << 4)
 				elif c == 0: # reset
-					attr = self.orig_sbinfo.Attributes
+					attr = self._orig_sbinfo.Attributes
 				elif c == 1: # strong
 					attr |= 0x08
 				elif c == 4: # blink not available -> bg intensity
@@ -197,12 +195,12 @@ else:
 			windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
 
 		def show_cursor(self,param):
-			csinfo.bVisible = 1
-			windll.kernel32.SetConsoleCursorInfo(self.hconsole, byref(csinfo))
+			self._csinfo.bVisible = 1
+			windll.kernel32.SetConsoleCursorInfo(self.hconsole, byref(self._csinfo))
 
 		def hide_cursor(self,param):
-			csinfo.bVisible = 0
-			windll.kernel32.SetConsoleCursorInfo(self.hconsole, byref(csinfo))
+			self._csinfo.bVisible = 0
+			windll.kernel32.SetConsoleCursorInfo(self.hconsole, byref(self._csinfo))
 
 		ansi_command_table = {
 			'A': move_up,
@@ -229,9 +227,10 @@ else:
 				wlock.acquire()
 				for param, cmd, txt in self.ansi_tokens.findall(text):
 					if cmd:
-						cmd_func = self.ansi_command_table.get(cmd)
-						if cmd_func:
-							cmd_func(self, param)
+						if self._isatty:
+							cmd_func = self.ansi_command_table.get(cmd)
+							if cmd_func:
+								cmd_func(self, param)
 					else:
 						self.writeconsole(txt)
 			finally:
@@ -255,9 +254,10 @@ else:
 			pass
 
 		def isatty(self):
-			return True
+			return self._isatty
 
-	sys.stderr = AnsiTerm(sys.stderr)
-	sys.stdout = AnsiTerm(sys.stdout)
-	os.environ['TERM'] = 'vt100'
+	if sys.stdout.isatty() or sys.stderr.isatty():
+		sys.stderr = AnsiTerm(sys.stderr)
+		sys.stdout = AnsiTerm(sys.stdout)
+		os.environ['TERM'] = 'vt100'
 
