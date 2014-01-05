@@ -11,13 +11,13 @@ console commands.
 
 """
 
-import sys, re
+import re, sys, time
 from waflib.Utils import threading
 
 wlock = threading.Lock()
 
 try:
-	from ctypes import Structure, windll, c_short, c_ulong, c_int, byref, c_wchar
+	from ctypes import Structure, windll, c_short, c_ushort, c_ulong, c_int, byref, c_wchar, GetLastError
 except ImportError:
 
 	class AnsiTerm(object):
@@ -50,10 +50,10 @@ else:
 		_fields_ = [("Left", c_short), ("Top", c_short), ("Right", c_short), ("Bottom", c_short)]
 
 	class CONSOLE_SCREEN_BUFFER_INFO(Structure):
-		_fields_ = [("Size", COORD), ("CursorPosition", COORD), ("Attributes", c_short), ("Window", SMALL_RECT), ("MaximumWindowSize", COORD)]
+		_fields_ = [("Size", COORD), ("CursorPosition", COORD), ("Attributes", c_ushort), ("Window", SMALL_RECT), ("MaximumWindowSize", COORD)]
 
 	class CONSOLE_CURSOR_INFO(Structure):
-		_fields_ = [('dwSize',c_ulong), ('bVisible', c_int)]
+		_fields_ = [('dwSize', c_ulong), ('bVisible', c_int)]
 
 	try:
 		_type = unicode
@@ -95,7 +95,11 @@ else:
 			"""
 			Updates self._sbinfo and returns it
 			"""
-			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
+			ok = windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
+			while not ok:
+				time.sleep(0.001)
+				#self.stream.write("%r" % GetLastError())
+				ok = windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
 			return self._sbinfo
 
 		def clear_line(self, param):
@@ -215,7 +219,12 @@ else:
 					attr |= 0x80
 				elif c == 7: # negative
 					attr = (attr & 0xff88) | ((attr & 0x70) >> 4) | ((attr & 0x07) << 4)
-			windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
+
+			ok = windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
+			while not ok:
+				time.sleep(0.001)
+				#self.stream.write("fail %r color error %r\n" % (ok, GetLastError()))
+				ok = windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
 
 		def show_cursor(self,param):
 			self._csinfo.bVisible = 1
