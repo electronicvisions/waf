@@ -56,7 +56,7 @@ def bibunitscan(self):
 	for match in re_bibunit.finditer(code):
 		path = match.group('file')
 		if path:
-			for k in ['', '.bib']:
+			for k in ('', '.bib'):
 				# add another loop for the tex include paths?
 				Logs.debug('tex: trying %s%s' % (path, k))
 				fi = node.parent.find_resource(path + k)
@@ -418,7 +418,7 @@ def apply_tex(self):
 	"""
 	Create :py:class:`waflib.Tools.tex.tex` objects, and dvips/dvipdf/pdf2ps tasks if necessary (outs='ps', etc).
 	"""
-	if not getattr(self, 'type', None) in ['latex', 'pdflatex', 'xelatex']:
+	if not getattr(self, 'type', None) in ('latex', 'pdflatex', 'xelatex'):
 		self.type = 'pdflatex'
 
 	tree = self.bld
