@@ -69,7 +69,7 @@ else:
 	windll.kernel32.GetStdHandle.restype = c_ulong
 	windll.kernel32.GetConsoleScreenBufferInfo.argtypes = [c_ulong, POINTER(CONSOLE_SCREEN_BUFFER_INFO)]
 	windll.kernel32.GetConsoleScreenBufferInfo.restype = c_long
-	windll.kernel32.SetConsoleTextAttribute.argtypes [c_ulong, c_ushort]
+	windll.kernel32.SetConsoleTextAttribute.argtypes = [c_ulong, c_ushort]
 	windll.kernel32.SetConsoleTextAttribute.restype = c_long
 
 	class AnsiTerm(object):
@@ -102,11 +102,7 @@ else:
 			"""
 			Updates self._sbinfo and returns it
 			"""
-			ok = windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
-			while not ok:
-				time.sleep(0.001)
-				self.stream.write("%r" % GetLastError())
-				ok = windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
+			windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
 			return self._sbinfo
 
 		def clear_line(self, param):
@@ -227,11 +223,7 @@ else:
 				elif c == 7: # negative
 					attr = (attr & 0xff88) | ((attr & 0x70) >> 4) | ((attr & 0x07) << 4)
 
-			ok = windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
-			while not ok:
-				time.sleep(0.001)
-				self.stream.write("fail %r color error %r\n" % (ok, GetLastError()))
-				ok = windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
+			windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
 
 		def show_cursor(self,param):
 			self._csinfo.bVisible = 1
