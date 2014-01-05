@@ -65,6 +65,13 @@ else:
 	STD_OUTPUT_HANDLE = -11
 	STD_ERROR_HANDLE = -12
 
+	windll.kernel32.GetStdHandle.argtypes = [c_ulong]
+	windll.kernel32.GetStdHandle.restype = c_ulong
+	windll.kernel32.GetConsoleScreenBufferInfo.argtypes = [c_ulong, POINTER(CONSOLE_SCREEN_BUFFER_INFO)]
+	windll.kernel32.GetConsoleScreenBufferInfo.restype = c_long
+	windll.kernel32.SetConsoleTextAttribute.argtypes [c_ulong, c_ushort]
+	windll.kernel32.SetConsoleTextAttribute.restype = c_long
+
 	class AnsiTerm(object):
 		"""
 		Wrapper for cmd.exe stdio, to support vt100 escape codes
@@ -98,7 +105,7 @@ else:
 			ok = windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
 			while not ok:
 				time.sleep(0.001)
-				#self.stream.write("%r" % GetLastError())
+				self.stream.write("%r" % GetLastError())
 				ok = windll.kernel32.GetConsoleScreenBufferInfo(self.hconsole, byref(self._sbinfo))
 			return self._sbinfo
 
@@ -223,7 +230,7 @@ else:
 			ok = windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
 			while not ok:
 				time.sleep(0.001)
-				#self.stream.write("fail %r color error %r\n" % (ok, GetLastError()))
+				self.stream.write("fail %r color error %r\n" % (ok, GetLastError()))
 				ok = windll.kernel32.SetConsoleTextAttribute(self.hconsole, attr)
 
 		def show_cursor(self,param):
