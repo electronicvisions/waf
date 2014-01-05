@@ -243,7 +243,7 @@ class OptionsContext(Context.Context):
 		if options.verbose >= 1:
 			self.load('errcheck')
 
-		colors = {'always' : 2, 'auto' : 1, 'never' : 0}[options.colors]
+		colors = {'yes' : 2, 'auto' : 1, 'no' : 0}[options.colors]
 		Logs.enable_colors(colors)
 
 	def execute(self):
