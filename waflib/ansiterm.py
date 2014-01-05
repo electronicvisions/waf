@@ -66,7 +66,11 @@ else:
 
 	class AnsiTerm(object):
 		"""
-		emulate a vt100 terminal in cmd.exe
+		Wrapper for cmd.exe stdio, to support vt100 escape codes
+
+		Notes:
+		- CR printed when the cursor is at EOL will do nothing,
+		  whereas on UNIX, it will go to the line beginning.
 		"""
 		def __init__(self, s):
 			self.stream = s
@@ -250,7 +254,7 @@ else:
 							if cmd_func:
 								cmd_func(self, param)
 						else:
-							self.writeconsole(txt)
+							self.stream.write(txt)
 				else:
 					# no support for colors in the console, just output the text:
 					# eclipse or msys may be able to interpret the escape sequences
@@ -258,33 +262,11 @@ else:
 			finally:
 				wlock.release()
 
-		def writeconsole(self, txt):
-			chars_written = c_int()
-			writeconsole = windll.kernel32.WriteConsoleA
-			if isinstance(txt, _type):
-				writeconsole = windll.kernel32.WriteConsoleW
-
-			# MSDN says that there is a shared buffer of 64 KB for the console
-			# writes. Attempt to not get ERROR_NOT_ENOUGH_MEMORY, see waf issue #746
-			done = 0
-			todo = len(txt)
-			chunk = 32<<10
-			while todo != 0:
-				doing = min(chunk, todo)
-				buf = txt[done:done+doing]
-				r = writeconsole(self.hconsole, buf, doing, byref(chars_written), None)
-				if r == 0:
-					chunk >>= 1
-					continue
-				done += doing
-				todo -= doing
-
-
 		def fileno(self):
 			return self.stream.fileno()
 
 		def flush(self):
-			pass
+			return self.stream.flush()
 
 		def isatty(self):
 			return self._isatty
