@@ -7,16 +7,14 @@ logging, colors, terminal width and pretty-print
 """
 
 import os, re, traceback, sys
-from waflib import ansiterm
+from waflib import Utils, ansiterm
 
 if not os.environ.get('NOSYNC', False):
 	# synchronized output is nearly mandatory to prevent garbled output
 	if sys.stdout.isatty() and id(sys.stdout) == id(sys.__stdout__):
 		sys.stdout = ansiterm.AnsiTerm(sys.stdout)
-		os.environ['TERM'] = 'vt100' # <- not sure about this
 	if sys.stderr.isatty() and id(sys.stderr) == id(sys.__stderr__):
 		sys.stderr = ansiterm.AnsiTerm(sys.stderr)
-		os.environ['TERM'] = 'vt100' # <- not sure about this
 
 import logging # the logging module keeps holds reference on sys.stderr
 
@@ -40,17 +38,24 @@ colors_lst = {
 'cursor_off' :'\x1b[?25l',
 }
 
-def enable_colors(level):
-	if level == 0:
-		colors_lst['USE'] = False
-	elif level == 1:
-		# and here we guess
-		term = os.environ.get('TERM', '')
-		if term in ['dumb', 'emacs']:
-			colors_lst['USE'] = False
-		pass
-	else:
-		colors_lst['USE'] = True
+def enable_colors(use):
+	if use == 1:
+		if os.environ.get('NOCOLOR', ''):
+			use = 0
+		if not (sys.stderr.isatty() or sys.stdout.isatty()):
+			use = 0
+		if Utils.is_win32:
+			term = os.environ.get('TERM', '') # has ansiterm
+		else:
+			term = os.environ.get('TERM', 'dumb')
+
+		if term in ('dumb', 'emacs'):
+			use = 0
+
+	if use >= 1:
+		os.environ['TERM'] = 'vt100'
+
+	colors_lst['USE'] = use
 
 def get_term_cols():
 	return 80

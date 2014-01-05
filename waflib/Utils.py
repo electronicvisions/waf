@@ -48,6 +48,10 @@ except ImportError:
 try:
 	import threading
 except ImportError:
+	if not 'JOBS' in os.environ:
+		# no threading :-(
+		os.environ['JOBS'] = '1'
+
 	class threading(object):
 		"""
 			A fake threading class for platforms lacking the threading module.
@@ -602,7 +606,7 @@ def unversioned_sys_platform():
 		elif s in ('SunOS', 'Solaris'):
 			return 'sunos'
 		else: s = s.lower()
-	
+
 	# powerpc == darwin for our purposes
 	if s == 'powerpc':
 		return 'darwin'
