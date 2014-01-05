@@ -11,7 +11,7 @@ console commands.
 
 """
 
-import re
+import sys, re
 from waflib.Utils import threading
 
 wlock = threading.Lock()
@@ -19,6 +19,7 @@ wlock = threading.Lock()
 try:
 	from ctypes import Structure, windll, c_short, c_ulong, c_int, byref, c_wchar
 except ImportError:
+
 	class AnsiTerm(object):
 		def __init__(self, stream):
 			self.stream = stream
@@ -271,4 +272,28 @@ else:
 		def isatty(self):
 			return self._isatty
 
+	if sys.stdout.isatty() or sys.stderr.isatty():
+		handle = sys.stdout.isatty() and STD_OUTPUT_HANDLE or STD_ERROR_HANDLE
+		console = windll.kernel32.GetStdHandle(handle)
+		sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
+		def get_term_cols():
+			windll.kernel32.GetConsoleScreenBufferInfo(console, byref(sbinfo))
+			return sbinfo.Size.X
+
+# just try and see
+try:
+	import struct, fcntl, termios
+except ImportError:
+	pass
+else:
+	if sys.stdout.isatty() or sys.stderr.isatty():
+		FD = sys.stdout.isatty() and sys.stdout.fileno() or sys.stderr.fileno()
+		def fun():
+			return struct.unpack("HHHH", fcntl.ioctl(FD, termios.TIOCGWINSZ, struct.pack("HHHH", 0, 0, 0, 0)))[1]
+		try:
+			fun()
+		except Exception as e:
+			pass
+		else:
+			get_term_cols = fun
 

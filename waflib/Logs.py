@@ -57,33 +57,13 @@ def enable_colors(use):
 
 	colors_lst['USE'] = use
 
-def get_term_cols():
-	return 80
-
 # If console packages are available, replace the dummy function with a real
 # implementation
 try:
-	import struct, fcntl, termios
-except ImportError:
-	pass
-else:
-	for stream in (sys.stderr, sys.stdout):
-		def get_term_cols_real():
-			"""
-			Private use only.
-			"""
-			stuff = fcntl.ioctl(stream.fileno(), termios.TIOCGWINSZ, struct.pack("HHHH", 0, 0, 0, 0))
-			dummy_lines, cols = struct.unpack("HHHH", stuff)[:2]
-			return cols
-
-		# try the function once to see if it really works
-		try:
-			get_term_cols_real()
-		except Exception:
-			pass
-		else:
-			get_term_cols = get_term_cols_real
-			break
+	get_term_cols = ansiterm.get_term_cols
+except AttributeError:
+	def get_term_cols():
+		return 80
 
 get_term_cols.__doc__ = """
 	Get the console width in characters.
