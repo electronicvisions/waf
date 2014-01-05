@@ -7,51 +7,18 @@ logging, colors, terminal width and pretty-print
 """
 
 import os, re, traceback, sys
+from waflib import ansiterm
 
-_nocolor = os.environ.get('NOCOLOR', 'no') not in ('no', '0', 'false')
-try:
-	if not _nocolor:
-		import waflib.ansiterm
-except ImportError:
-	pass
+if not os.environ.get('NOSYNC', False):
+	# synchronized output is nearly mandatory to prevent garbled output
+	if sys.stdout.isatty() and id(sys.stdout) == id(sys.__stdout__):
+		sys.stdout = ansiterm.AnsiTerm(sys.stdout)
+		os.environ['TERM'] = 'vt100' # <- not sure about this
+	if sys.stderr.isatty() and id(sys.stderr) == id(sys.__stderr__):
+		sys.stderr = ansiterm.AnsiTerm(sys.stderr)
+		os.environ['TERM'] = 'vt100' # <- not sure about this
 
-try:
-	import threading
-except ImportError:
-	if not 'JOBS' in os.environ:
-		# no threading :-(
-		os.environ['JOBS'] = '1'
-else:
-	wlock = threading.Lock()
-
-	class sync_stream(object):
-		def __init__(self, stream):
-			self.stream = stream
-			self.encoding = self.stream.encoding
-
-		def write(self, txt):
-			try:
-				wlock.acquire()
-				self.stream.write(txt)
-				self.stream.flush()
-			finally:
-				wlock.release()
-
-		def fileno(self):
-			return self.stream.fileno()
-
-		def flush(self):
-			self.stream.flush()
-
-		def isatty(self):
-			return self.stream.isatty()
-
-	if not os.environ.get('NOSYNC', False):
-		if id(sys.stdout) == id(sys.__stdout__):
-			sys.stdout = sync_stream(sys.stdout)
-			sys.stderr = sync_stream(sys.stderr)
-
-import logging # import other modules only after
+import logging # the logging module keeps holds reference on sys.stderr
 
 LOG_FORMAT = "%(asctime)s %(c1)s%(zone)s%(c2)s %(message)s"
 HOUR_FORMAT = "%H:%M:%S"
@@ -73,15 +40,17 @@ colors_lst = {
 'cursor_off' :'\x1b[?25l',
 }
 
-got_tty = not os.environ.get('TERM', 'dumb') in ['dumb', 'emacs']
-if got_tty:
-	try:
-		got_tty = sys.stderr.isatty() and sys.stdout.isatty()
-	except AttributeError:
-		got_tty = False
-
-if (not got_tty and os.environ.get('TERM', 'dumb') != 'msys') or _nocolor:
-	colors_lst['USE'] = False
+def enable_colors(level):
+	if level == 0:
+		colors_lst['USE'] = False
+	elif level == 1:
+		# and here we guess
+		term = os.environ.get('TERM', '')
+		if term in ['dumb', 'emacs']:
+			colors_lst['USE'] = False
+		pass
+	else:
+		colors_lst['USE'] = True
 
 def get_term_cols():
 	return 80

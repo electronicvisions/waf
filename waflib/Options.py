@@ -14,6 +14,13 @@ as well as custom ones, used by the ``options`` wscript function.
 import os, tempfile, optparse, sys, re
 from waflib import Logs, Utils, Context
 
+try:
+	import threading
+except ImportError:
+	if not 'JOBS' in os.environ:
+		# no threading :-(
+		os.environ['JOBS'] = '1'
+
 cmds = 'distclean configure build install clean uninstall check dist distcheck'.split()
 """
 Constant representing the default waf commands displayed in::
@@ -51,6 +58,7 @@ class opt_parser(optparse.OptionParser):
 		self.ctx = ctx
 
 		jobs = ctx.jobs()
+		p('-c', '--color',    dest='colors',  default='auto', action='store', help='whether to use colors (always/auto/never) [default: auto]')
 		p('-j', '--jobs',     dest='jobs',    default=jobs, type='int', help='amount of parallel jobs (%r)' % jobs)
 		p('-k', '--keep',     dest='keep',    default=0,     action='count', help='keep running happily even if errors are found')
 		p('-v', '--verbose',  dest='verbose', default=0,     action='count', help='verbosity level -v -vv or -vvv [default: 0]')
@@ -241,6 +249,15 @@ class OptionsContext(Context.Context):
 
 		if options.verbose >= 1:
 			self.load('errcheck')
+
+		try:
+			colors = {'always' : 2, 'auto' : 1, 'never' : 0}[options.colors]
+		except KeyError:
+			self.parser.error('Bad option "%s" for --color option' % options.colors)
+		else:
+			if os.environ.get('NOCOLOR', ''):
+				colors = 0
+			Logs.enable_colors(colors)
 
 	def execute(self):
 		"""

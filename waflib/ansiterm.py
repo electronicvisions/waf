@@ -11,12 +11,35 @@ console commands.
 
 """
 
-import sys, os, re, threading
+import re
+from waflib.Utils import threading
+
+wlock = threading.Lock()
 
 try:
 	from ctypes import Structure, windll, c_short, c_ulong, c_int, byref, c_wchar
 except ImportError:
-	pass
+	class AnsiTerm(object):
+		def __init__(self, stream):
+			self.stream = stream
+			self.encoding = self.stream.encoding
+
+		def write(self, txt):
+			try:
+				wlock.acquire()
+				self.stream.write(txt)
+				self.stream.flush()
+			finally:
+				wlock.release()
+
+		def fileno(self):
+			return self.stream.fileno()
+
+		def flush(self):
+			self.stream.flush()
+
+		def isatty(self):
+			return self.stream.isatty()
 else:
 
 	class COORD(Structure):
@@ -37,7 +60,6 @@ else:
 		_type = str
 
 	to_int = lambda number, default: number and int(number) or default
-	wlock = threading.Lock()
 
 	STD_OUTPUT_HANDLE = -11
 	STD_ERROR_HANDLE = -12
@@ -230,6 +252,8 @@ else:
 						else:
 							self.writeconsole(txt)
 				else:
+					# no support for colors in the console, just output the text:
+					# eclipse or msys may be able to interpret the escape sequences
 					self.stream.write(text)
 			finally:
 				wlock.release()
@@ -265,8 +289,4 @@ else:
 		def isatty(self):
 			return self._isatty
 
-	if sys.stdout.isatty() or sys.stderr.isatty():
-		sys.stderr = AnsiTerm(sys.stderr)
-		sys.stdout = AnsiTerm(sys.stdout)
-		os.environ['TERM'] = 'vt100'
 
