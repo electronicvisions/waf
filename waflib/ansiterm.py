@@ -17,7 +17,7 @@ from waflib.Utils import threading
 wlock = threading.Lock()
 
 try:
-	from ctypes import Structure, windll, c_short, c_ushort, c_ulong, c_int, byref, c_wchar, GetLastError
+	from ctypes import Structure, windll, c_short, c_ushort, c_ulong, c_int, byref, c_wchar, GetLastError, POINTER, c_long
 except ImportError:
 
 	class AnsiTerm(object):
