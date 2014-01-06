@@ -125,7 +125,7 @@ else:
 			else: # Clear from cursor position to end of line
 				line_start = sbinfo.CursorPosition
 				line_length = sbinfo.Size.X - sbinfo.CursorPosition.X
-			chars_written = c_int()
+			chars_written = c_ulong()
 			windll.kernel32.FillConsoleOutputCharacterA(self.hconsole, c_char(' '), line_length, line_start, byref(chars_written))
 			windll.kernel32.FillConsoleOutputAttribute(self.hconsole, sbinfo.Attributes, line_length, line_start, byref(chars_written))
 
@@ -142,7 +142,7 @@ else:
 			else: # Clear from cursor position to end of screen
 				clear_start = sbinfo.CursorPosition
 				clear_length = ((sbinfo.Size.X - sbinfo.CursorPosition.X) + sbinfo.Size.X * (sbinfo.Size.Y - sbinfo.CursorPosition.Y))
-			chars_written = c_int()
+			chars_written = c_ulong()
 			windll.kernel32.FillConsoleOutputCharacterA(self.hconsole, c_char(' '), clear_length, clear_start, byref(chars_written))
 			windll.kernel32.FillConsoleOutputAttribute(self.hconsole, sbinfo.Attributes, clear_length, clear_start, byref(chars_written))
 
