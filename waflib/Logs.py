@@ -40,8 +40,6 @@ colors_lst = {
 
 def enable_colors(use):
 	if use == 1:
-		if os.environ.get('NOCOLOR', ''):
-			use = 0
 		if not (sys.stderr.isatty() or sys.stdout.isatty()):
 			use = 0
 		if Utils.is_win32:

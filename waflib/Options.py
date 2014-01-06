@@ -51,7 +51,8 @@ class opt_parser(optparse.OptionParser):
 		self.ctx = ctx
 
 		jobs = ctx.jobs()
-		p('-c', '--color',    dest='colors',  default='auto', action='store', help='whether to use colors (yes/no/auto) [default: auto]', choices=('yes', 'no', 'auto'))
+		color = os.environ.get('NOCOLOR', '') and 'no' or 'auto'
+		p('-c', '--color',    dest='colors',  default=color, action='store', help='whether to use colors (yes/no/auto) [default: auto]', choices=('yes', 'no', 'auto'))
 		p('-j', '--jobs',     dest='jobs',    default=jobs, type='int', help='amount of parallel jobs (%r)' % jobs)
 		p('-k', '--keep',     dest='keep',    default=0,     action='count', help='keep running happily even if errors are found')
 		p('-v', '--verbose',  dest='verbose', default=0,     action='count', help='verbosity level -v -vv or -vvv [default: 0]')
