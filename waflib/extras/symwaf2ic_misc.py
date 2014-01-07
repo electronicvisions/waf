@@ -25,7 +25,8 @@ class WithOrWithoutAction(argparse.Action):
             help=help)
 
     def __call__(self, parser, namespace, value, opt=None):
-        self.dest, value = withOrOut_option(None, opt, value, None)
+        dest, value = withOrOut_option(None, opt, value, None)
+        self.dest = getattr(self, 'dest', dest) # use specified dest if available
         setattr(namespace, self.dest, value)
 
 
