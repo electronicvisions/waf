@@ -471,13 +471,13 @@ def check_exe(name):
 
 	fpath, fname = os.path.split(name)
 	if fpath and is_exe(name):
-		return name
+		return os.path.abspath(name)
 	else:
 		for path in os.environ["PATH"].split(os.pathsep):
 			path = path.strip('"')
 			exe_file = os.path.join(path, name)
 			if is_exe(exe_file):
-				return exe_file
+				return os.path.abspath(exe_file)
 	return None
 
 def def_attrs(cls, **kw):
