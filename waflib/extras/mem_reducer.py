@@ -85,7 +85,10 @@ def get_out(self):
 		pass
 	else:
 		for k in ws:
-			k.remove(tsk)
+			try:
+				k.remove(tsk)
+			except KeyError:
+				pass
 
 	return tsk
 Runner.Parallel.get_out = get_out
@@ -100,6 +103,9 @@ def skip(self, tsk):
 		pass
 	else:
 		for k in ws:
-			k.remove(tsk)
+			try:
+				k.remove(tsk)
+			except KeyError:
+				pass
 Runner.Parallel.skip = skip
 
