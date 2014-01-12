@@ -435,7 +435,7 @@ def apply_tex(self):
 			if isinstance(dep, str):
 				n = self.path.find_resource(dep)
 				if not n:
-					self.bld.fatal('Could not find %r for %r' % (filename, self))
+					self.bld.fatal('Could not find %r for %r' % (dep, self))
 				if not n in deps_lst:
 					deps_lst.append(n)
 			elif isinstance(dep, Node.Node):
