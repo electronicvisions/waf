@@ -193,7 +193,7 @@ def parse_options():
 
 	# process some internal Waf options
 	Logs.verbose = Options.options.verbose
-	Logs.init_log()
+	#Logs.init_log()
 
 	if Options.options.zones:
 		Logs.zones = Options.options.zones.split(',')

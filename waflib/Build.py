@@ -504,6 +504,9 @@ class BuildContext(Context.Context):
 		"""
 		Compute the progress bar used by ``waf -p``
 		"""
+		if not sys.stderr.isatty():
+			return ''
+
 		n = len(str(total))
 
 		Utils.rot_idx += 1
