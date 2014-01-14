@@ -569,8 +569,8 @@ def validate_c(self, kw):
 
 	if 'define_name' in kw:
 		self.undefine(kw['define_name'])
-
-	assert 'msg' in kw, 'invalid parameters, read http://freehackers.org/~tnagy/wafbook/single.html#config_helpers_c'
+	if not 'msg' in kw:
+		self.fatal('missing "msg" in conf.check(...)')
 
 @conf
 def post_check(self, *k, **kw):
