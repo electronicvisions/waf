@@ -40,6 +40,8 @@ colors_lst = {
 'cursor_off' :'\x1b[?25l',
 }
 
+indicator = '\x1b[K%s%s%s\r'
+
 def enable_colors(use):
 	if use == 1:
 		if not (sys.stderr.isatty() or sys.stdout.isatty()):
@@ -174,7 +176,7 @@ class formatter(logging.Formatter):
 		if rec.stream.isatty():
 
 			c1 = getattr(rec, 'c1', None)
-			if not c1:
+			if c1 is None:
 				c1 = ''
 				if rec.levelno >= logging.ERROR:
 					c1 = colors.RED

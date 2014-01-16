@@ -139,11 +139,6 @@ except ImportError:
 
 is_win32 = sys.platform in ('win32', 'cli')
 
-# we should have put this in the Logs.py file instead :-/
-indicator = '\x1b[K%s%s%s\r'
-if is_win32 and 'NOCOLOR' in os.environ:
-	indicator = '%s%s%s\r'
-
 def readf(fname, m='r', encoding='ISO8859-1'):
 	"""
 	Read an entire file into a string, use this function instead of os.open() whenever possible.

@@ -344,14 +344,14 @@ class Context(ctx):
 			if self.logger:
 				self.logger.debug('out: %s' % out)
 			else:
-				Logs.info(out, extra={'stream':sys.stdout})
+				Logs.info(out, extra={'stream':sys.stdout, 'c1': ''})
 		if err:
 			if not isinstance(err, str):
 				err = err.decode(sys.stdout.encoding or 'iso8859-1')
 			if self.logger:
 				self.logger.error('err: %s' % err)
 			else:
-				Logs.info(err, extra={'stream':sys.stderr})
+				Logs.info(err, extra={'stream':sys.stderr, 'c1': ''})
 
 		return ret
 
