@@ -132,7 +132,10 @@ class log_handler(logging.StreamHandler):
 	def emit(self, record):
 		# default implementation
 		try:
-			record.stream = self.stream = sys.stderr
+			if record.levelno >= logging.WARNING:
+				record.stream = self.stream = sys.stderr
+			else:
+				record.stream = self.stream = sys.stdout
 			self.emit_override(record)
 			self.flush()
 		except (KeyboardInterrupt, SystemExit):
