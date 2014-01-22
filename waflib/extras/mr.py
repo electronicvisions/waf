@@ -283,12 +283,18 @@ class MR(object):
         self.db = Repo_DB(os.path.join(db_node.abspath(), self.DB_FILE))
 
     def init_mr(self):
+        self.init_default_config()
         self.load_projects()
         not_on_filesystem = []
         for name, p in self.projects.iteritems():
             if not os.path.isdir(p.node.abspath()):
                 not_on_filesystem.append(name)
         self.remove_projects(not_on_filesystem)
+
+    def init_default_config(self):
+        parser = self.load_config()
+        parser.set('DEFAULT', 'git_log', 'git log -n1 "$@"')
+        self.save_config(parser)
 
     def mr_log(self, msg, sep = "\n"):
         self.log.write(msg + sep, 'a')
@@ -619,6 +625,10 @@ class mr_commit(MRContext):
 class mr_push(MRContext):
     '''push all changes (using MR tool)'''
     cmd = 'repos-push'
+
+class mr_log(MRContext):
+    '''push all changes (using MR tool)'''
+    cmd = 'repos-log'
 
 
 #### DEPRECATED code startsnip
