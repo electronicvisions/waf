@@ -265,7 +265,7 @@ class BuildContext(Context.Context):
 		try:
 			self.compile()
 		finally:
-			if self.progress_bar == 1:
+			if self.progress_bar == 1 and sys.stderr.isatty():
 				c = len(self.returned_tasks) or 1
 				m = self.progress_line(c, c, Logs.colors.BLUE, Logs.colors.NORMAL)
 				Logs.info(m, extra={'stream': sys.stderr, 'c1': Logs.colors.cursor_off, 'c2' : Logs.colors.cursor_on})

@@ -252,10 +252,14 @@ class TaskBase(evil):
 			c1 = Logs.colors.cursor_off
 			c2 = Logs.colors.cursor_on
 		if bld.logger:
-			fun = bld.logger.info
+			logger = bld.logger
 		else:
-			fun = Logs.info
-		fun(self.display(), extra={'stream': sys.stderr, 'terminator':'', 'c1': c1, 'c2' : c2})
+			logger = Logs
+
+		if stderr:
+			logger.info(self.display(), extra={'stream': sys.stderr, 'terminator':'', 'c1': c1, 'c2' : c2})
+		else:
+			logger.info(self.display(), extra={'terminator':'', 'c1': c1, 'c2' : c2})
 
 	def display(self):
 		"""
