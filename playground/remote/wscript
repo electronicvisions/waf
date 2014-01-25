@@ -2,9 +2,6 @@
 # encoding: utf-8
 # Example using the `remote` tool.
 
-
-# Important! this requires ``export NO_CLIMB=1`` when run in the waf folder!
-
 from waflib import Utils
 
 top = '.'

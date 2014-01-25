@@ -45,9 +45,10 @@ def waf_entry_point(current_directory, version, wafdir):
 	no_climb = os.environ.get('NOCLIMB', None)
 	if not no_climb:
 		for k in no_climb_commands:
-			if k in sys.argv:
-				no_climb = True
-				break
+			for y in sys.argv:
+				if y.startswith(k):
+					no_climb = True
+					break
 
 	# try to find a lock file (if the project was configured)
 	# at the same time, store the first wscript file seen
