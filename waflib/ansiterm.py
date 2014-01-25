@@ -294,7 +294,8 @@ else:
 		sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
 		def get_term_cols():
 			windll.kernel32.GetConsoleScreenBufferInfo(console, byref(sbinfo))
-			return sbinfo.Size.X
+			# TODO Issue 1401
+			return sbinfo.Size.X - 1
 
 # just try and see
 try:
