@@ -550,11 +550,9 @@ def find_program(self, filename, **kw):
 	if interpreter is None:
 		if not Utils.check_exe(ret[0]):
 			self.fatal('Program %s is not executable' % ret)
-		if var:
-			self.env[var] = ret
+		self.env[var] = ret
 	else:
-		if var:
-			self.env[var] = self.env[interpreter] + ret
+		self.env[var] = self.env[interpreter] + ret
 
 	return ret
 
