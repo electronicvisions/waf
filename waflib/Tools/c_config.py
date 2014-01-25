@@ -1039,7 +1039,7 @@ def cxx_load_tools(conf):
 	conf.load('cxx')
 
 @conf
-def get_cc_version(conf, cc, gcc=False, icc=False):
+def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 	"""
 	Run the preprocessor to determine the compiler version
 
@@ -1066,8 +1066,11 @@ def get_cc_version(conf, cc, gcc=False, icc=False):
 	if icc and out.find('__INTEL_COMPILER') < 0:
 		conf.fatal('Not icc/icpc')
 
+	if clang and out.find('__clang__') < 0:
+		conf.fatal('Not clang/clang++')
+
 	k = {}
-	if icc or gcc:
+	if icc or gcc or clang:
 		out = out.splitlines()
 		for line in out:
 			lst = shlex.split(line)
