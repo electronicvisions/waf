@@ -20,16 +20,26 @@ Only three D compilers are really present at the moment:
 * ldc2
 """
 
-import os, sys, imp, types
+import os, sys, imp, types, re
 from waflib import Utils, Configure, Options, Logs
+
+d_compiler = {
+'default' : ['gdc', 'dmd', 'ldc2']
+}
+"""
+Dict mapping the platform names to lists of names of D compilers to try, in order of preference::
+
+	from waflib.Tools.compiler_d import d_compiler
+	d_compiler['default'] = ['gdc', 'dmd', 'ldc2']
+"""
 
 def configure(conf):
 	"""
 	Try to find a suitable D compiler or raise a :py:class:`waflib.Errors.ConfigurationError`.
 	"""
-	for compiler in conf.options.dcheck.split(','):
+	for compiler in re.split('[ ,]+', conf.options.dcheck):
 		conf.env.stash()
-		conf.start_msg('Checking for %r (d compiler)' % compiler)
+		conf.start_msg('Checking for %r (D compiler)' % compiler)
 		try:
 			conf.load(compiler)
 		except conf.errors.ConfigurationError as e:
@@ -51,9 +61,12 @@ def options(opt):
 
 		$ waf configure --check-d-compiler=dmd
 	"""
-	d_compiler_opts = opt.add_option_group('D Compiler Options')
-	d_compiler_opts.add_option('--check-d-compiler', default='gdc,dmd,ldc2', action='store',
-		help='check for the compiler [Default:gdc,dmd,ldc2]', dest='dcheck')
+	build_platform = Utils.unversioned_sys_platform()
+	possible_compiler_list = d_compiler[build_platform in cxx_compiler and build_platform or 'default']
+	test_for_compiler = ' '.join(possible_compiler_list)
+	d_compiler_opts = opt.add_option_group('Configuration options')
+	d_compiler_opts.add_option('--check-d-compiler', default=test_for_compiler, action='store',
+		help='list of D compilers to try [%s]' % test_for_compiler, dest='dcheck')
 	for d_compiler in ('gdc', 'dmd', 'ldc2'):
 		opt.load('%s' % d_compiler)
 

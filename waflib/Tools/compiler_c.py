@@ -48,7 +48,7 @@ c_compiler = {
 'default':['gcc'],
 }
 """
-Dict mapping the platform names to waf tools finding specific compilers::
+Dict mapping the platform names to Waf tools finding specific C compilers::
 
 	from waflib.Tools.compiler_c import c_compiler
 	c_compiler['linux'] = ['gcc', 'icc', 'suncc']
@@ -60,9 +60,10 @@ def configure(conf):
 	"""
 	try: test_for_compiler = conf.options.check_c_compiler
 	except AttributeError: conf.fatal("Add options(opt): opt.load('compiler_c')")
-	for compiler in test_for_compiler.split():
+
+	for compiler in re.split('[ ,]+', test_for_compiler):
 		conf.env.stash()
-		conf.start_msg('Checking for %r (c compiler)' % compiler)
+		conf.start_msg('Checking for %r (C compiler)' % compiler)
 		try:
 			conf.load(compiler)
 		except conf.errors.ConfigurationError as e:
@@ -76,7 +77,7 @@ def configure(conf):
 				break
 			conf.end_msg(False)
 	else:
-		conf.fatal('could not configure a c compiler!')
+		conf.fatal('could not configure a C compiler!')
 
 def options(opt):
 	"""
@@ -89,9 +90,9 @@ def options(opt):
 	build_platform = Utils.unversioned_sys_platform()
 	possible_compiler_list = c_compiler[build_platform in c_compiler and build_platform or 'default']
 	test_for_compiler = ' '.join(possible_compiler_list)
-	cc_compiler_opts = opt.add_option_group("C Compiler Options")
-	cc_compiler_opts.add_option('--check-c-compiler', default="%s" % test_for_compiler,
-		help='On this platform (%s) the following C-Compiler will be checked by default: "%s"' % (build_platform, test_for_compiler),
+	cc_compiler_opts = opt.add_option_group('Configuration options')
+	cc_compiler_opts.add_option('--check-c-compiler', default=test_for_compiler,
+		help='list of C compilers to try [%s]' % test_for_compiler,
 		dest="check_c_compiler")
 	for x in test_for_compiler.split():
 		opt.load('%s' % x)
