@@ -375,5 +375,6 @@ def options(opt):
 	"""
 	Add the ``--gsettingsschemadir`` command-line option
 	"""
-	opt.add_option('--gsettingsschemadir', help='GSettings schema location [Default: ${datadir}/glib-2.0/schemas]',default='',dest='GSETTINGSSCHEMADIR')
+	gr = opt.add_option_group('Installation directories')
+	gr.add_option('--gsettingsschemadir', help='GSettings schema location [DATADIR/glib-2.0/schemas]', default='', dest='GSETTINGSSCHEMADIR')
 
