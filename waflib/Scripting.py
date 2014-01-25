@@ -187,6 +187,10 @@ def parse_options():
 	"""
 	Context.create_context('options').execute()
 
+	for var in Options.envvars:
+		(name, value) = var.split('=', 1)
+		os.environ[name.strip()] = value
+
 	if not Options.commands:
 		Options.commands = [default_cmd]
 	Options.commands = [x for x in Options.commands if x != 'options'] # issue 1076

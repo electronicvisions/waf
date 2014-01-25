@@ -35,6 +35,12 @@ commands = []
 List of commands to execute extracted from the command-line. This list is consumed during the execution, see :py:func:`waflib.Scripting.run_commands`.
 """
 
+envvars = []
+"""
+List of environment variable declarations placed after the Waf executable name.
+These are detected by searching for "=" in the rest arguments.
+"""
+
 lockfile = os.environ.get('WAFLOCK', '.lock-waf_%s_build' % sys.platform)
 platform = Utils.unversioned_sys_platform()
 
@@ -227,9 +233,14 @@ class OptionsContext(Context.Context):
 		:param _args: arguments
 		:type _args: list of strings
 		"""
-		global options, commands
+		global options, commands, envvars
 		(options, leftover_args) = self.parser.parse_args(args=_args)
-		commands = leftover_args
+
+		for arg in leftover_args:
+			if '=' in arg:
+				envvars.append(arg)
+			else:
+				commands.append(arg)
 
 		if options.destdir:
 			options.destdir = os.path.abspath(os.path.expanduser(options.destdir))
