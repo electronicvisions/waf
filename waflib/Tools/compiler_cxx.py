@@ -36,17 +36,17 @@ from waflib import Utils, Configure
 from waflib.Logs import debug
 
 cxx_compiler = {
-'win32':  ['msvc', 'g++'],
+'win32':  ['msvc', 'g++', 'clang++'],
 'cygwin': ['g++'],
-'darwin': ['g++'],
-'aix':    ['xlc++', 'g++'],
-'linux':  ['g++', 'icpc'],
+'darwin': ['clang++', 'g++'],
+'aix':    ['xlc++', 'g++', 'clang++'],
+'linux':  ['g++', 'clang++', 'icpc'],
 'sunos':  ['sunc++', 'g++'],
 'irix':   ['g++'],
 'hpux':   ['g++'],
-'gnu':    ['g++'],
-'java':   ['g++', 'msvc', 'icpc'],
-'default': ['g++']
+'gnu':    ['g++', 'clang++'],
+'java':   ['g++', 'msvc', 'clang++', 'icpc'],
+'default': ['g++', 'clang++']
 }
 """
 Dict mapping the platform names to Waf tools finding specific C++ compilers::

@@ -493,7 +493,7 @@ def find_program(self, filename, **kw):
 
 	exts = kw.get('exts', Utils.is_win32 and '.exe,.com,.bat,.cmd' or ',.sh,.pl,.py')
 
-	environ = kw.get('environ', os.environ)
+	environ = kw.get('environ', self.environ)
 
 	ret = ''
 	filename = Utils.to_list(filename)
