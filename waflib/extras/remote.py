@@ -144,8 +144,15 @@ class remote(BuildContext):
 					Options.commands.remove(k)
 
 	def variant_to_host(self, variant):
+		"""linux_32_debug -> search LINUX_32 configs and then LINUX"""
 		x = variant[:variant.rfind('_')]
-		return os.environ.get('REMOTE_' + x.upper(), '%s@localhost' % getpass.getuser())
+		ret = os.environ.get('REMOTE_' + x.upper(), '')
+		if not ret:
+			x = x[:x.find('_')]
+			ret = os.environ.get('REMOTE_' + x.upper(), '')
+		if not ret:
+			ret = '%s@localhost' % getpass.getuser()
+		return ret
 
 	def execute(self):
 		global is_remote
@@ -166,15 +173,15 @@ class remote(BuildContext):
 		self.env = ConfigSet.ConfigSet()
 
 	def extract_groups_of_builds(self):
+		"""Return a dict mapping each variants to the commands to build"""
 		groups = {}
 		for x in reversed(Options.commands):
 			_, _, variant = x.partition('_')
 			if variant in Context.g_module.variants:
-				key = self.variant_to_host(x)
 				try:
-					dct = groups[key]
+					dct = groups[variant]
 				except KeyError:
-					dct = groups[key] = OrderedDict()
+					dct = groups[variant] = OrderedDict()
 				try:
 					dct[variant].append(x)
 				except KeyError:
@@ -189,12 +196,6 @@ class remote(BuildContext):
 			return {}
 
 	def recurse(self, *k, **kw):
-
-		#self.logger = Logs.make_mem_logger('123', '')
-		#self.find_program('rsync')
-		#self.find_program('ssh')
-		#self.logger = None
-
 		self.env.RSYNC = getattr(Context.g_module, 'rsync', 'rsync -a --chmod=u+rwx')
 		self.env.SSH = getattr(Context.g_module, 'ssh', 'ssh')
 		try:
@@ -210,7 +211,7 @@ class remote(BuildContext):
 		groups = self.extract_groups_of_builds()
 		for k, v in groups.items():
 			task = self(rule=rsync_and_ssh, always=True)
-			task.env.login = k
+			task.env.login = self.variant_to_host(k)
 
 			task.env.commands = []
 			for opt, value in v.items():
@@ -234,8 +235,11 @@ class remote(BuildContext):
 	def make_save_command(self, task):
 		return Utils.subst_vars('${RSYNC} -e "${SSH}" ${login}:${remote_dir_variant} ${build_dir}', task.env)
 
-
 def rsync_and_ssh(task):
+
+	# remove a warning
+	task.uid_ = id(task)
+
 	bld = task.generator.bld
 
 	task.env.user, _, _ = task.env.login.partition('@')
