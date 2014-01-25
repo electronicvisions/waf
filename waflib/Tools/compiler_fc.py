@@ -48,7 +48,7 @@ def configure(conf):
 				break
 			conf.end_msg(False)
 	else:
-		conf.fatal('could not configure a fortran compiler!')
+		conf.fatal('could not configure a Fortran compiler!')
 
 def options(opt):
 	"""

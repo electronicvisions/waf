@@ -53,7 +53,7 @@ def configure(conf):
 				break
 			conf.end_msg(False)
 	else:
-		conf.fatal('no suitable d compiler was found')
+		conf.fatal('could not configure a D compiler!')
 
 def options(opt):
 	"""
