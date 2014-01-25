@@ -377,6 +377,8 @@ def check_cfg(self, *k, **kw):
 		else:
 			self.fatal('The configuration failed')
 	else:
+		if not ret:
+			ret = True
 		kw['success'] = ret
 		if 'okmsg' in kw:
 			self.end_msg(self.ret_msg(kw['okmsg'], kw))
