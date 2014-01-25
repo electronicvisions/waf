@@ -12,7 +12,7 @@ A :py:class:`waflib.Configure.ConfigurationContext` instance is created when ``w
 * hold configuration routines such as ``find_program``, etc
 """
 
-import os, shlex, sys, time
+import os, shlex, sys, time, re
 from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
 
 try:
@@ -497,15 +497,19 @@ def find_program(self, filename, **kw):
 
 	ret = ''
 	filename = Utils.to_list(filename)
+	msg = kw.get('msg', ', '.join(filename))
 
 	var = kw.get('var', '')
 	if not var:
-		var = filename[0].upper()
+		var = re.sub(r'[-.]', '_', filename[0].upper())
+
+	if var in environ:
+		# do not use Utils.to_list here
+		# otherwise it would be impossible to specify an absolute path with spaces through the environment
+		filename = [environ[var]]
 
 	if self.env[var]:
 		ret = self.env[var]
-	elif var in environ:
-		ret = environ[var]
 
 	path_list = kw.get('path_list', '')
 	if not ret:
@@ -514,28 +518,26 @@ def find_program(self, filename, **kw):
 		else:
 			path_list = environ.get('PATH', '').split(os.pathsep)
 
-		if not isinstance(filename, list):
-			filename = [filename]
+		def find_binary():
+			for f in filename:
+				for ext in exts.split(','):			
+					exe_name = f + ext
+					if os.path.isabs(exe_name):
+						if os.path.isfile(exe_name):
+							return exe_name
+					else:
+						for path in path_list:
+							x = os.path.expanduser(os.path.join(path, exe_name))
+							if os.path.isfile(x):
+								return x
 
-		for a in exts.split(','):
-			if ret:
-				break
-			for b in filename:
-				if ret:
-					break
-				for c in path_list:
-					if ret:
-						break
-					x = os.path.expanduser(os.path.join(c, b + a))
-					if os.path.isfile(x):
-						ret = x
+		ret = find_binary()
 
 	if not ret and Utils.winreg:
 		ret = Utils.get_registry_app_path(Utils.winreg.HKEY_CURRENT_USER, filename)
 	if not ret and Utils.winreg:
 		ret = Utils.get_registry_app_path(Utils.winreg.HKEY_LOCAL_MACHINE, filename)
 
-	msg = kw.get('msg', ', '.join(filename))
 	self.msg("Checking for program '%s'" % msg, ret or False)
 	self.to_log('find program=%r paths=%r var=%r -> %r' % (filename, path_list, var, ret))
 
