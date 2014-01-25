@@ -47,52 +47,7 @@ class opt_parser(optparse.OptionParser):
 		optparse.OptionParser.__init__(self, conflict_handler="resolve", version='waf %s (%s)' % (Context.WAFVERSION, Context.WAFREVISION))
 
 		self.formatter.width = Logs.get_term_cols()
-		p = self.add_option
 		self.ctx = ctx
-
-		jobs = ctx.jobs()
-		color = os.environ.get('NOCOLOR', '') and 'no' or 'auto'
-		p('-c', '--color',    dest='colors',  default=color, action='store', help='whether to use colors (yes/no/auto) [default: auto]', choices=('yes', 'no', 'auto'))
-		p('-j', '--jobs',     dest='jobs',    default=jobs, type='int', help='amount of parallel jobs (%r)' % jobs)
-		p('-k', '--keep',     dest='keep',    default=0,     action='count', help='keep running happily even if errors are found')
-		p('-v', '--verbose',  dest='verbose', default=0,     action='count', help='verbosity level -v -vv or -vvv [default: 0]')
-		p('--zones',          dest='zones',   default='',    action='store', help='debugging zones (task_gen, deps, tasks, etc)')
-
-		gr = optparse.OptionGroup(self, 'configure options')
-		self.add_option_group(gr)
-
-		gr.add_option('-o', '--out', action='store', default='', help='build dir for the project', dest='out')
-		gr.add_option('-t', '--top', action='store', default='', help='src dir for the project', dest='top')
-
-		default_prefix = os.environ.get('PREFIX')
-		if not default_prefix:
-			if platform == 'win32':
-				d = tempfile.gettempdir()
-				default_prefix = d[0].upper() + d[1:]
-				# win32 preserves the case, but gettempdir does not
-			else:
-				default_prefix = '/usr/local/'
-		gr.add_option('--prefix', dest='prefix', default=default_prefix, help='installation prefix [default: %r]' % default_prefix)
-		gr.add_option('--download', dest='download', default=False, action='store_true', help='try to download the tools if missing')
-
-
-		gr = optparse.OptionGroup(self, 'build and install options')
-		self.add_option_group(gr)
-
-		gr.add_option('-p', '--progress', dest='progress_bar', default=0, action='count', help= '-p: progress bar; -pp: ide output')
-		gr.add_option('--targets',        dest='targets', default='', action='store', help='task generators, e.g. "target1,target2"')
-
-		gr = optparse.OptionGroup(self, 'step options')
-		self.add_option_group(gr)
-		gr.add_option('--files',          dest='files', default='', action='store', help='files to process, by regexp, e.g. "*/main.c,*/test/main.o"')
-
-		default_destdir = os.environ.get('DESTDIR', '')
-		gr = optparse.OptionGroup(self, 'install/uninstall options')
-		self.add_option_group(gr)
-		gr.add_option('--destdir', help='installation root [default: %r]' % default_destdir, default=default_destdir, dest='destdir')
-		gr.add_option('-f', '--force', dest='force', default=False, action='store_true', help='force file installation')
-
-		gr.add_option('--distcheck-args', help='arguments to pass to distcheck', default=None, action='store')
 
 	def get_usage(self):
 		"""
@@ -146,6 +101,44 @@ class OptionsContext(Context.Context):
 		"""Instance of :py:class:`waflib.Options.opt_parser`"""
 
 		self.option_groups = {}
+
+		jobs = self.jobs()
+		p = self.add_option
+		color = os.environ.get('NOCOLOR', '') and 'no' or 'auto'
+		p('-c', '--color',    dest='colors',  default=color, action='store', help='whether to use colors (yes/no/auto) [default: auto]', choices=('yes', 'no', 'auto'))
+		p('-j', '--jobs',     dest='jobs',    default=jobs, type='int', help='amount of parallel jobs (%r)' % jobs)
+		p('-k', '--keep',     dest='keep',    default=0,     action='count', help='keep running happily even if errors are found')
+		p('-v', '--verbose',  dest='verbose', default=0,     action='count', help='verbosity level -v -vv or -vvv [default: 0]')
+		p('--zones',          dest='zones',   default='',    action='store', help='debugging zones (task_gen, deps, tasks, etc)')
+
+		gr = self.add_option_group('Configuration options')
+
+		gr.add_option('-o', '--out', action='store', default='', help='build dir for the project', dest='out')
+		gr.add_option('-t', '--top', action='store', default='', help='src dir for the project', dest='top')
+
+		default_prefix = os.environ.get('PREFIX')
+		if not default_prefix:
+			if platform == 'win32':
+				d = tempfile.gettempdir()
+				default_prefix = d[0].upper() + d[1:]
+				# win32 preserves the case, but gettempdir does not
+			else:
+				default_prefix = '/usr/local/'
+		gr.add_option('--prefix', dest='prefix', default=default_prefix, help='installation prefix [default: %r]' % default_prefix)
+		gr.add_option('--download', dest='download', default=False, action='store_true', help='try to download the tools if missing')
+
+		gr = self.add_option_group('Build and installation options')
+		gr.add_option('-p', '--progress', dest='progress_bar', default=0, action='count', help= '-p: progress bar; -pp: ide output')
+		gr.add_option('--targets',        dest='targets', default='', action='store', help='task generators, e.g. "target1,target2"')
+
+		gr = self.add_option_group('Step options')
+		gr.add_option('--files',          dest='files', default='', action='store', help='files to process, by regexp, e.g. "*/main.c,*/test/main.o"')
+
+		default_destdir = os.environ.get('DESTDIR', '')
+		gr = self.add_option_group('Installation and uninstallation options')
+		gr.add_option('--destdir', help='installation root [default: %r]' % default_destdir, default=default_destdir, dest='destdir')
+		gr.add_option('-f', '--force', dest='force', default=False, action='store_true', help='force file installation')
+		gr.add_option('--distcheck-args', metavar='ARGS', help='arguments to pass to distcheck', default=None, action='store')
 
 	def jobs(self):
 		"""
