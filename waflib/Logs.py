@@ -40,7 +40,7 @@ colors_lst = {
 'cursor_off' :'\x1b[?25l',
 }
 
-indicator = '\x1b[K%s%s%s\r'
+indicator = '\r\x1b[K%s%s%s'
 
 def enable_colors(use):
 	if use == 1:
