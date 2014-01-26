@@ -1,7 +1,7 @@
 WHAT YOU WILL FIND HERE
 -----------------------
 
-Waf (1.8)
+Waf 1.8 - for Waf 1.7 use the branch waf-1.7
 
 For the manual: http://docs.waf.googlecode.com/git/book_16/single.html
 For the api docs: http://docs.waf.googlecode.com/git/apidocs_16/index.html
@@ -48,5 +48,5 @@ $ git remote add code https://code.google.com/p/waf.docs/
 $ git push code
 
 ---------------------------
-Thomas Nagy, 2013 (ita)
+Thomas Nagy, 2014 (ita)
 
