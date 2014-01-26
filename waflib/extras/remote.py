@@ -68,14 +68,31 @@ Usage
 
       ./waf-light --tools=remote
 
-3. Setup the ssh server and ssh keys so that password-less login is possible
-   (unless you really want to type the passwords every time...).
-
-4. Set host names to access the hosts:
+3. Set the host names to access the hosts:
 
    .. code:: bash
 
       export REMOTE_QNX=user@kiunix
+
+4. Setup the ssh server and ssh keys
+
+   The ssh key should not be protected by a password, or it will prompt for it everytime.
+   Create the key on the client:
+
+   .. code:: bash
+
+      ssh-keygen -t rsa -f foo.rsa
+
+   Then copy foo.rsa.pub to the remote machine (user@kiunix:/home/user/.ssh/authorized_keys),
+   and make sure the permissions are correct (chmod go-w ~ ~/.ssh ~/.ssh/authorized_keys)
+
+   A separate key for the build processes can be set in the environment variable WAF_SSH_KEY.
+   The tool will then use 'ssh-keyscan' to avoid prompting for remote hosts, so
+   be warned to use this feature on internal networks only (MITM).
+
+   .. code:: bash
+
+      export WAF_SSH_KEY=~/foo.rsa
 
 5. Perform the build:
 
@@ -86,7 +103,7 @@ Usage
 """
 
 
-import getpass, os, sys
+import getpass, os, re, sys
 from collections import OrderedDict
 from waflib import Context, Options, Utils, ConfigSet
 
@@ -134,6 +151,44 @@ class remote(BuildContext):
 	cmd = 'remote'
 	fun = 'build'
 
+	def get_ssh_hosts(self):
+		lst = []
+		for v in Context.g_module.variants:
+			self.env.HOST = self.login_to_host(self.variant_to_login(v))
+			cmd = Utils.subst_vars('${SSH_KEYSCAN} -t rsa,ecdsa ${HOST}', self.env)
+			out, err = self.cmd_and_log(cmd, output=Context.BOTH, quiet=Context.BOTH)
+			lst.append(out.strip())
+		return lst
+
+	def setup_private_ssh_key(self):
+		"""
+		When WAF_SSH_KEY points to a private key, a .ssh directory will be created in the build directory
+		Make sure that the ssh key does not prompt for a password
+		"""
+		key = os.environ.get('WAF_SSH_KEY', '')
+		if not key:
+			return
+		if not os.path.isfile(key):
+			self.fatal('Key in WAF_SSH_KEY must point to a valid file')
+		self.ssh_dir = os.path.join(self.path.abspath(), 'build', '.ssh')
+		self.ssh_hosts = os.path.join(self.ssh_dir, 'known_hosts')
+		self.ssh_key = os.path.join(self.ssh_dir, os.path.basename(key))
+		self.ssh_config = os.path.join(self.ssh_dir, 'config')
+		for x in self.ssh_hosts, self.ssh_key, self.ssh_config:
+			if not os.path.isfile(x):
+				if not os.path.isdir(self.ssh_dir):
+					os.makedirs(self.ssh_dir)
+				Utils.writef(self.ssh_key, Utils.readf(key), 'wb')
+				os.chmod(self.ssh_key, 448)
+
+				Utils.writef(self.ssh_hosts, '\n'.join(self.get_ssh_hosts()))
+				os.chmod(self.ssh_key, 448)
+
+				Utils.writef(self.ssh_config, 'UserKnownHostsFile %s' % self.ssh_hosts, 'wb')
+				os.chmod(self.ssh_config, 448)
+		self.env.SSH_OPTS = ['-F', self.ssh_config, '-i', self.ssh_key]
+		self.env.append_value('RSYNC_SEND_OPTS', '--exclude=build/.ssh')
+
 	def skip_unbuildable_variant(self):
 		# skip variants that cannot be built on this OS
 		for k in Options.commands:
@@ -143,8 +198,11 @@ class remote(BuildContext):
 				if c != Utils.unversioned_sys_platform():
 					Options.commands.remove(k)
 
-	def variant_to_host(self, variant):
-		"""linux_32_debug -> search LINUX_32 configs and then LINUX"""
+	def login_to_host(self, login):
+		return re.sub('(\w+@)', '', login)
+
+	def variant_to_login(self, variant):
+		"""linux_32_debug -> search env.LINUX_32 and then env.LINUX"""
 		x = variant[:variant.rfind('_')]
 		ret = os.environ.get('REMOTE_' + x.upper(), '')
 		if not ret:
@@ -174,20 +232,19 @@ class remote(BuildContext):
 
 	def extract_groups_of_builds(self):
 		"""Return a dict mapping each variants to the commands to build"""
-		groups = {}
+		self.vgroups = {}
 		for x in reversed(Options.commands):
 			_, _, variant = x.partition('_')
 			if variant in Context.g_module.variants:
 				try:
-					dct = groups[variant]
+					dct = self.vgroups[variant]
 				except KeyError:
-					dct = groups[variant] = OrderedDict()
+					dct = self.vgroups[variant] = OrderedDict()
 				try:
 					dct[variant].append(x)
 				except KeyError:
 					dct[variant] = [x]
 				Options.commands.remove(x)
-		return groups
 
 	def custom_options(self, login):
 		try:
@@ -198,6 +255,7 @@ class remote(BuildContext):
 	def recurse(self, *k, **kw):
 		self.env.RSYNC = getattr(Context.g_module, 'rsync', 'rsync -a --chmod=u+rwx')
 		self.env.SSH = getattr(Context.g_module, 'ssh', 'ssh')
+		self.env.SSH_KEYSCAN = getattr(Context.g_module, 'ssh_keyscan', 'ssh-keyscan')
 		try:
 			self.env.WAF = getattr(Context.g_module, 'waf')
 		except AttributeError:
@@ -208,10 +266,11 @@ class remote(BuildContext):
 			else:
 				self.env.WAF = './waf'
 
-		groups = self.extract_groups_of_builds()
-		for k, v in groups.items():
+		self.extract_groups_of_builds()
+		self.setup_private_ssh_key()
+		for k, v in self.vgroups.items():
 			task = self(rule=rsync_and_ssh, always=True)
-			task.env.login = self.variant_to_host(k)
+			task.env.login = self.variant_to_login(k)
 
 			task.env.commands = []
 			for opt, value in v.items():
@@ -219,21 +278,20 @@ class remote(BuildContext):
 			task.env.variant = task.env.commands[0].partition('_')[2]
 			for opt, value in self.custom_options(k):
 				task.env[opt] = value
-		self.jobs = len(groups)
-		self.synchronized = (self.jobs > 1)
+		self.jobs = len(self.vgroups)
 
 	def make_mkdir_command(self, task):
-		return Utils.subst_vars('${SSH} ${login} "rm -fr ${remote_dir} && mkdir -p ${remote_dir}"', task.env)
+		return Utils.subst_vars('${SSH} ${SSH_OPTS} ${login} "rm -fr ${remote_dir} && mkdir -p ${remote_dir}"', task.env)
 
 	def make_send_command(self, task):
-		return Utils.subst_vars('${RSYNC} -e "${SSH}" ${local_dir} ${login}:${remote_dir}', task.env)
+		return Utils.subst_vars('${RSYNC} ${RSYNC_SEND_OPTS} -e "${SSH} ${SSH_OPTS}" ${local_dir} ${login}:${remote_dir}', task.env)
 
 	def make_exec_command(self, task):
-		txt = '''${SSH} ${login} "cd ${remote_dir} && ${WAF} ${commands}"'''
+		txt = '''${SSH} ${SSH_OPTS} ${login} "cd ${remote_dir} && ${WAF} ${commands}"'''
 		return Utils.subst_vars(txt, task.env)
 
 	def make_save_command(self, task):
-		return Utils.subst_vars('${RSYNC} -e "${SSH}" ${login}:${remote_dir_variant} ${build_dir}', task.env)
+		return Utils.subst_vars('${RSYNC} ${RSYNC_SAVE_OPTS} -e "${SSH} ${SSH_OPTS}" ${login}:${remote_dir_variant} ${build_dir}', task.env)
 
 def rsync_and_ssh(task):
 
