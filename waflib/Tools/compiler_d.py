@@ -62,7 +62,7 @@ def options(opt):
 		$ waf configure --check-d-compiler=dmd
 	"""
 	build_platform = Utils.unversioned_sys_platform()
-	possible_compiler_list = d_compiler[build_platform in cxx_compiler and build_platform or 'default']
+	possible_compiler_list = d_compiler.get(build_platform, d_compiler['default'])
 	test_for_compiler = ' '.join(possible_compiler_list)
 	d_compiler_opts = opt.add_option_group('Configuration options')
 	d_compiler_opts.add_option('--check-d-compiler', default=test_for_compiler, action='store',

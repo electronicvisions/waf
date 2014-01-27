@@ -88,7 +88,7 @@ def options(opt):
 	opt.load_special_tools('c_*.py', ban=['c_dumbpreproc.py'])
 	global c_compiler
 	build_platform = Utils.unversioned_sys_platform()
-	possible_compiler_list = c_compiler[build_platform in c_compiler and build_platform or 'default']
+	possible_compiler_list = c_compiler.get(build_platform, c_compiler['default'])
 	test_for_compiler = ' '.join(possible_compiler_list)
 	cc_compiler_opts = opt.add_option_group('Configuration options')
 	cc_compiler_opts.add_option('--check-c-compiler', default=test_for_compiler,

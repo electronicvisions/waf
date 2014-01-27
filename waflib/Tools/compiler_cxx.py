@@ -90,7 +90,7 @@ def options(opt):
 	opt.load_special_tools('cxx_*.py')
 	global cxx_compiler
 	build_platform = Utils.unversioned_sys_platform()
-	possible_compiler_list = cxx_compiler[build_platform in cxx_compiler and build_platform or 'default']
+	possible_compiler_list = cxx_compiler.get(build_platform, cxx_compiler['default'])
 	test_for_compiler = ' '.join(possible_compiler_list)
 	cxx_compiler_opts = opt.add_option_group('Configuration options')
 	cxx_compiler_opts.add_option('--check-cxx-compiler', default=test_for_compiler,

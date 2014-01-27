@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys, imp, types
+import os, sys, imp, types, re
 from waflib import Utils, Configure, Options, Logs, Errors
 from waflib.Tools import fc
 
@@ -19,12 +19,6 @@ Dict mapping the platform names to lists of names of Fortran compilers to try, i
 	from waflib.Tools.compiler_c import c_compiler
 	c_compiler['linux'] = ['gfortran', 'g95', 'ifort']
 """
-
-def __list_possible_compiler(platform):
-	try:
-		return fc_compiler[platform]
-	except KeyError:
-		return fc_compiler["default"]
 
 def configure(conf):
 	"""
@@ -58,7 +52,7 @@ def options(opt):
 	"""
 	opt.load_special_tools('fc_*.py')
 	build_platform = Utils.unversioned_sys_platform()
-	possible_compiler_list = fc_compiler[build_platform in cxx_compiler and build_platform or 'default']
+	possible_compiler_list = fc_compiler.get(build_platform, fc_compiler['default'])
 	test_for_compiler = ' '.join(possible_compiler_list)
 	fortran_compiler_opts = opt.add_option_group('Configuration options')
 	fortran_compiler_opts.add_option('--check-fortran-compiler',
