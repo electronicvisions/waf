@@ -13,6 +13,7 @@ Support for GLib2 tools:
 import os
 from waflib import Task, Utils, Options, Errors, Logs
 from waflib.TaskGen import taskgen_method, before_method, after_method, feature
+from waflib.Configure import conf
 
 ################## marshal files
 
@@ -339,23 +340,21 @@ class glib_validate_schema(Task.Task):
 	run_str = 'rm -f ${GLIB_VALIDATE_SCHEMA_OUTPUT} && ${GLIB_COMPILE_SCHEMAS} --dry-run ${GLIB_COMPILE_SCHEMAS_OPTIONS} && touch ${GLIB_VALIDATE_SCHEMA_OUTPUT}'
 	color   = 'PINK'
 
-def configure(conf):
-	"""
-	Find the following programs:
-
-	* *glib-genmarshal* and set *GLIB_GENMARSHAL*
-	* *glib-mkenums* and set *GLIB_MKENUMS*
-	* *glib-compile-schemas* and set *GLIB_COMPILE_SCHEMAS* (not mandatory)
-
-	And set the variable *GSETTINGSSCHEMADIR*
-	"""
+@conf
+def find_glib_genmarshal(conf):
 	conf.find_program('glib-genmarshal', var='GLIB_GENMARSHAL')
-	conf.find_program('perl', var='PERL')
+
+@conf
+def find_glib_mkenums(conf):
+	if not conf.env.PERL:
+		conf.find_program('perl', var='PERL')
 	conf.find_program('glib-mkenums', interpreter='PERL', var='GLIB_MKENUMS')
 
+@conf
+def find_glib_compile_schemas(conf):
 	# when cross-compiling, gsettings.m4 locates the program with the following:
 	#   pkg-config --variable glib_compile_schemas gio-2.0
-	conf.find_program('glib-compile-schemas', var='GLIB_COMPILE_SCHEMAS', mandatory=False)
+	conf.find_program('glib-compile-schemas', var='GLIB_COMPILE_SCHEMAS')
 
 	def getstr(varname):
 		return getattr(Options.options, varname, getattr(conf.env,varname, ''))
@@ -370,6 +369,20 @@ def configure(conf):
 		gsettingsschemadir = os.path.join(datadir, 'glib-2.0', 'schemas')
 
 	conf.env['GSETTINGSSCHEMADIR'] = gsettingsschemadir
+
+def configure(conf):
+	"""
+	Find the following programs:
+
+	* *glib-genmarshal* and set *GLIB_GENMARSHAL*
+	* *glib-mkenums* and set *GLIB_MKENUMS*
+	* *glib-compile-schemas* and set *GLIB_COMPILE_SCHEMAS* (not mandatory)
+
+	And set the variable *GSETTINGSSCHEMADIR*
+	"""
+	conf.find_glib_genmarshal()
+	conf.find_glib_mkenums()
+	conf.find_glib_compile_schemas(mandatory=False)
 
 def options(opt):
 	"""

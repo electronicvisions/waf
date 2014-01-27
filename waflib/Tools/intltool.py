@@ -29,8 +29,18 @@ Usage of the :py:mod:`waflib.Tools.gnu_dirs` is recommended, but not obligatory.
 import os, re
 from waflib import Configure, TaskGen, Task, Utils, Runner, Options, Build, Logs
 import waflib.Tools.ccroot
-from waflib.TaskGen import feature, before_method
+from waflib.TaskGen import feature, before_method, taskgen_method
 from waflib.Logs import error
+from waflib.Configure import conf
+
+@taskgen_method
+def ensure_localedir(self):
+	# use the tool gnu_dirs to provide options to define this
+	if not self.env.LOCALEDIR:
+		if self.env.DATAROOTDIR:
+			self.env.LOCALEDIR = os.path.join(self.env.DATAROOTDIR, 'locale')
+		else:
+			self.env.LOCALEDIR = os.path.join(self.env.PREFIX, 'share', 'locale')
 
 @before_method('process_source')
 @feature('intltool_in')
@@ -59,8 +69,7 @@ def apply_intltool_in_f(self):
 	try: self.meths.remove('process_source')
 	except ValueError: pass
 
-	if not self.env.LOCALEDIR:
-		self.env.LOCALEDIR = self.env.PREFIX + '/share/locale'
+	self.ensure_localedir()
 
 	for i in self.to_list(self.source):
 		node = self.path.find_resource(i)
@@ -103,8 +112,7 @@ def apply_intltool_po(self):
 	try: self.meths.remove('process_source')
 	except ValueError: pass
 
-	if not self.env.LOCALEDIR:
-		self.env.LOCALEDIR = self.env.PREFIX + '/share/locale'
+	self.ensure_localedir()
 
 	appname = getattr(self, 'appname', 'set_your_app_name')
 	podir = getattr(self, 'podir', '')
@@ -150,6 +158,16 @@ class intltool(Task.Task):
 	run_str = '${INTLTOOL} ${INTLFLAGS} ${INTLCACHE} ${INTLPODIR} ${SRC} ${TGT}'
 	color   = 'BLUE'
 
+@conf
+def find_msgfmt(conf):
+	conf.find_program('msgfmt', var='MSGFMT')
+
+@conf
+def find_intltool_merge(conf):
+	if not conf.env.PERL:
+		conf.find_program('perl', var='PERL')
+	conf.find_program('intltool-merge', interpreter='PERL', var='INTLTOOL')
+
 def configure(conf):
 	"""
 	Detect the program *msgfmt* and set *conf.env.MSGFMT*.
@@ -160,17 +178,8 @@ def configure(conf):
 
 	If a C/C++ compiler is present, execute a compilation test to find the header *locale.h*.
 	"""
-	conf.find_program('msgfmt', var='MSGFMT')
-	conf.find_program('perl', var='PERL')
-	conf.find_program('intltool-merge', interpreter='PERL', var='INTLTOOL')
-
-	prefix  = conf.env.PREFIX
-	datadir = conf.env.DATADIR
-	if not datadir:
-		datadir = os.path.join(prefix,'share')
-
-	conf.define('LOCALEDIR', os.path.join(datadir, 'locale').replace('\\', '\\\\'))
-	conf.define('DATADIR', datadir.replace('\\', '\\\\'))
+	conf.find_msgfmt()
+	conf.find_intltool_merge()
 
 	if conf.env.CC or conf.env.CXX:
 		conf.check(header_name='locale.h')
