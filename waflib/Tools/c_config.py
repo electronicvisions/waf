@@ -247,6 +247,12 @@ def validate_cfg(self, kw):
 				kw['msg'] = 'Checking for %r %s %s' % (kw['package'], cfg_ver[x], kw[y])
 			return
 
+	if not 'define_name' in kw:
+		pkgname = kw.get('uselib_store', kw['package'].upper())
+		kw['define_name'] = self.have_define(pkgname)
+
+	self.undefine(kw['define_name'])
+
 	if not 'msg' in kw:
 		kw['msg'] = 'Checking for %r' % (kw['package'] or kw['path'])
 
@@ -389,6 +395,8 @@ def check_cfg(self, *k, **kw):
 		if not ret:
 			ret = True
 		kw['success'] = ret
+		if 'define_name' in kw:
+			self.define(kw['define_name'], 1)
 		if 'okmsg' in kw:
 			self.end_msg(self.ret_msg(kw['okmsg'], kw))
 
