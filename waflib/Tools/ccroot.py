@@ -13,6 +13,12 @@ from waflib.TaskGen import after_method, before_method, feature, taskgen_method,
 from waflib.Tools import c_aliases, c_preproc, c_config, c_osx, c_tests
 from waflib.Configure import conf
 
+prune_flags = False
+"""
+Boolean specifying whether only one instance of a given compiler flag
+should be left in the command line.
+"""
+
 SYSTEM_LIB_PATHS = ['/usr/lib64', '/usr/lib', '/usr/local/lib64', '/usr/local/lib']
 
 USELIB_VARS = Utils.defaultdict(set)
@@ -419,6 +425,18 @@ def propagate_uselib_vars(self):
 	for x in self.to_list(getattr(self, 'uselib', [])):
 		for v in _vars:
 			env.append_value(v, env[v + '_' + x])
+
+	# remove redundant values, leaving only the last instance of a flag
+	# leaving only the last flag is important for static libraries which depend on each other
+	if prune_flags:
+		for v in _vars:
+			uniqued = []
+			seen = set()
+			for a in reversed(env[v]):
+				if a not in seen:
+					seen.add(a)
+					uniqued.append(a)
+			env[v] = list(reversed(uniqued))
 
 # ============ the code above must not know anything about import libs ==========
 
