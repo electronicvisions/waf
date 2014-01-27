@@ -428,7 +428,7 @@ def propagate_uselib_vars(self):
 
 	# remove redundant values, leaving only the last instance of a flag
 	# leaving only the last flag is important for static libraries which depend on each other
-	if prune_flags:
+	if getattr(self, 'prune_flags', prune_flags):
 		for v in _vars:
 			uniqued = []
 			seen = set()
