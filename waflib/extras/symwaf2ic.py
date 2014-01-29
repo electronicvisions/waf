@@ -295,20 +295,20 @@ class OptionParserContext(Symwaf2icContext):
             super(Symwaf2icContext, self).load(tool, *k, **kw)
             self.loaded.add(tool)
 
-    def _parse_type(self, type_):
-        try:
-            return {
-                "string" : str
-                }[type_]
-        except KeyError:
-            return eval(type_)
+    def _parse_type(self, data_):
+            if data_['type'] == 'string':
+                data_['type'] = str
+            elif data_['type'] == 'choice':
+                del data_['type']
+            else:
+                data_['type'] = eval(data_['type'])
 
     # wrapper functions to use argparse even though waf still uses optparse
     def add_option(self, *k, **kw):
-        # fixes for optparse -> argparse compatability (NOTE: Might not be complete)
+        # fixes for optparse -> argparse compatability (NOTE: Definitively not be complete)
         if "type" in kw:
             if isinstance(kw["type"], basestring):
-                kw["type"] = self._parse_type(kw["type"])
+                self._parse_type(kw)
         if "callback" in kw:
             Logs.warn("Option '{}' was ignored during setup call, because it used callback keyword".format(k[0]))
             return
