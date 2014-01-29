@@ -1,4 +1,4 @@
-import argparse
+import argparse, os
 from waflib import Logs, Options
 
 class WithOrWithoutAction(argparse.Action):
@@ -110,3 +110,22 @@ def _process_args(self, largs, rargs, values):
 # monkey patch optparse to support unkown arguments (partial argument list while constructing the list => depends() needs it)
 Options.optparse.OptionParser._old_process_args = Options.optparse.OptionParser._process_args
 Options.optparse.OptionParser._process_args = _process_args
+
+
+from waflib.Configure import conf
+@conf
+def fix_boost_paths(self):
+    if not getattr(self, 'orig_check_boost', None) is None:
+        return # already set
+
+    self.orig_check_boost = self.check_boost # raise if boost tool isn't loaded
+    incs = os.environ.get('BOOSTINC', None)
+    libs = os.environ.get('BOOSTLIB', None)
+
+    def my_check_boost(*k, **kw):
+        if not kw.has_key('includes') and incs:
+            kw['includes'] = incs
+        if not kw.has_key('libs') and libs:
+            kw['libs'] = libs
+        self.orig_check_boost(*k, **kw)
+    self.check_boost = my_check_boost
