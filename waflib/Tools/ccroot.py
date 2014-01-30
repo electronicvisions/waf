@@ -409,7 +409,7 @@ def propagate_uselib_vars(self):
 
 	for x in _vars:
 		y = x.lower()
-		env.append_unique(x, self.to_list(getattr(self, y, [])))
+		env.append_value(x, self.to_list(getattr(self, y, [])))
 
 	for x in self.features:
 		for var in _vars:
