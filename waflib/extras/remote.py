@@ -125,13 +125,16 @@ class init(Context.Context):
 	def execute(self):
 		for x in list(Context.g_module.variants):
 			self.make_variant(x)
-		for name in ('configure', 'clean', 'build', 'install'):
-			if ('%s_all' % name) in Options.commands:
-				Options.commands.remove('%s_all' % name)
+		lst = ['remote']
+		for k in Options.commands:
+			if k.endswith('_all'):
+				name = k.replace('_all', '')
 				for x in Context.g_module.variants:
-					Options.commands.insert(0, '%s_%s' % (name, x))
-
-		Options.commands.insert(0, 'remote')
+					lst.append('%s_%s' % (name, x))
+			else:
+				lst.append(k)
+		del Options.commands[:]
+		Options.commands += lst
 
 	def make_variant(self, x):
 		for y in (BuildContext, CleanContext, InstallContext, UninstallContext):
@@ -143,6 +146,7 @@ class init(Context.Context):
 		class tmp(ConfigurationContext):
 			cmd = 'configure_' + x
 			fun = 'configure'
+			variant = x
 			def __init__(self, **kw):
 				ConfigurationContext.__init__(self, **kw)
 				self.setenv(x)
