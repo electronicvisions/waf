@@ -246,20 +246,19 @@ class TaskBase(evil):
 
 	def log_display(self, bld):
 		"Write the execution status on the context logger"
-		stderr = self.generator.bld.progress_bar > 0
-		c1 = c2 = ''
-		if stderr:
-			c1 = Logs.colors.cursor_off
-			c2 = Logs.colors.cursor_on
-		if bld.logger:
-			logger = bld.logger
-		else:
-			logger = Logs
+		s = self.display()
+		if s:
+			if bld.logger:
+				logger = bld.logger
+			else:
+				logger = Logs
 
-		if stderr:
-			logger.info(self.display(), extra={'stream': sys.stderr, 'terminator':'', 'c1': c1, 'c2' : c2})
-		else:
-			logger.info(self.display(), extra={'terminator':'', 'c1': c1, 'c2' : c2})
+			if self.generator.bld.progress_bar == 1:
+				c1 = Logs.colors.cursor_off
+				c2 = Logs.colors.cursor_on
+				logger.info(s, extra={'stream': sys.stderr, 'terminator':'', 'c1': c1, 'c2' : c2})
+			else:
+				logger.info(s, extra={'terminator':'', 'c1': '', 'c2' : ''})
 
 	def display(self):
 		"""
