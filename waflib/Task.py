@@ -6,7 +6,7 @@
 Tasks represent atomic operations such as processes.
 """
 
-import os, shutil, re, tempfile, sys
+import os, re, sys
 from waflib import Utils, Logs, Errors
 
 # task states
@@ -416,7 +416,6 @@ class Task(TaskBase):
 
 	def __str__(self):
 		"string to display to the user"
-		env = self.env
 		src_str = ' '.join([a.nice_path() for a in self.inputs])
 		tgt_str = ' '.join([a.nice_path() for a in self.outputs])
 		if self.outputs: sep = ' -> '
