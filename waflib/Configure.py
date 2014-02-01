@@ -517,21 +517,7 @@ def find_program(self, filename, **kw):
 			path_list = Utils.to_list(path_list)
 		else:
 			path_list = environ.get('PATH', '').split(os.pathsep)
-
-		def find_binary():
-			for f in filename:
-				for ext in exts.split(','):			
-					exe_name = f + ext
-					if os.path.isabs(exe_name):
-						if os.path.isfile(exe_name):
-							return exe_name
-					else:
-						for path in path_list:
-							x = os.path.expanduser(os.path.join(path, exe_name))
-							if os.path.isfile(x):
-								return x
-
-		ret = find_binary()
+		ret = self.find_binary(filename, exts.split(','), path_list)
 
 	if not ret and Utils.winreg:
 		ret = Utils.get_registry_app_path(Utils.winreg.HKEY_CURRENT_USER, filename)
@@ -555,4 +541,19 @@ def find_program(self, filename, **kw):
 		self.env[var] = self.env[interpreter] + ret
 
 	return ret
+
+@conf
+def find_binary(self, filenames, exts, paths):
+	for f in filenames:
+		for ext in exts:
+			exe_name = f + ext
+			if os.path.isabs(exe_name):
+				if os.path.isfile(exe_name):
+					return exe_name
+			else:
+				for path in paths:
+					x = os.path.expanduser(os.path.join(path, exe_name))
+					if os.path.isfile(x):
+						return x
+	return None
 
