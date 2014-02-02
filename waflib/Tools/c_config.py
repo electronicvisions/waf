@@ -380,13 +380,13 @@ def check_cfg(self, *k, **kw):
 
 	self.validate_cfg(kw)
 	if 'msg' in kw:
-		self.start_msg(kw['msg'])
+		self.start_msg(kw['msg'], **kw)
 	ret = None
 	try:
 		ret = self.exec_cfg(kw)
 	except self.errors.WafError:
 		if 'errmsg' in kw:
-			self.end_msg(kw['errmsg'], 'YELLOW')
+			self.end_msg(kw['errmsg'], 'YELLOW', **kw)
 		if Logs.verbose > 1:
 			raise
 		else:
@@ -398,7 +398,7 @@ def check_cfg(self, *k, **kw):
 		if 'define_name' in kw:
 			self.define(kw['define_name'], 1)
 		if 'okmsg' in kw:
-			self.end_msg(self.ret_msg(kw['okmsg'], kw))
+			self.end_msg(self.ret_msg(kw['okmsg'], kw), **kw)
 
 	return ret
 
@@ -637,12 +637,12 @@ def check(self, *k, **kw):
 	To force a specific compiler, prefer the methods :py:func:`waflib.Tools.c_config.check_cxx` or :py:func:`waflib.Tools.c_config.check_cc`
 	"""
 	self.validate_c(kw)
-	self.start_msg(kw['msg'])
+	self.start_msg(kw['msg'], **kw)
 	ret = None
 	try:
 		ret = self.run_c_code(*k, **kw)
 	except self.errors.ConfigurationError:
-		self.end_msg(kw['errmsg'], 'YELLOW')
+		self.end_msg(kw['errmsg'], 'YELLOW', **kw)
 		if Logs.verbose > 1:
 			raise
 		else:
@@ -652,10 +652,10 @@ def check(self, *k, **kw):
 
 	ret = self.post_check(*k, **kw)
 	if not ret:
-		self.end_msg(kw['errmsg'], 'YELLOW')
+		self.end_msg(kw['errmsg'], 'YELLOW', **kw)
 		self.fatal('The configuration failed %r' % ret)
 	else:
-		self.end_msg(self.ret_msg(kw['okmsg'], kw))
+		self.end_msg(self.ret_msg(kw['okmsg'], kw), **kw)
 	return ret
 
 class test_exec(Task.Task):
@@ -776,7 +776,8 @@ def run_c_code(self, *k, **kw):
 	for k, v in kw.items():
 		setattr(o, k, v)
 
-	self.to_log("==>\n%s\n<==" % kw['code'])
+	if not kw.get('quiet', None):
+		self.to_log("==>\n%s\n<==" % kw['code'])
 
 	# compile the program
 	bld.targets = '*'
@@ -1226,7 +1227,7 @@ def multicheck(self, *k, **kw):
 	"""
 	Use tuples to perform parallel configuration tests
 	"""
-	self.start_msg(kw.get('msg', 'Executing %d configuration tests' % len(k)))
+	self.start_msg(kw.get('msg', 'Executing %d configuration tests' % len(k)), **kw)
 
 	class par(object):
 		def __init__(self):
@@ -1265,8 +1266,8 @@ def multicheck(self, *k, **kw):
 
 	for x in tasks:
 		if x.hasrun != Task.SUCCESS:
-			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW')
+			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW', **kw)
 			self.fatal(kw.get('fatalmsg', None) or 'One of the tests has failed, see the config.log for more information')
 
-	self.end_msg('ok')
+	self.end_msg('ok', **kw)
 

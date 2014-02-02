@@ -434,7 +434,7 @@ def cmd_to_list(self, cmd):
 	return cmd
 
 @conf
-def check_waf_version(self, mini='1.7.99', maxi='1.9.0'):
+def check_waf_version(self, mini='1.7.99', maxi='1.9.0', **kw):
 	"""
 	Raise a Configuration error if the Waf version does not strictly match the given bounds::
 
@@ -445,14 +445,13 @@ def check_waf_version(self, mini='1.7.99', maxi='1.9.0'):
 	:type  maxi: number, tuple or string
 	:param maxi: Maximum allowed version
 	"""
-	self.start_msg('Checking for waf version in %s-%s' % (str(mini), str(maxi)))
+	self.start_msg('Checking for waf version in %s-%s' % (str(mini), str(maxi)), **kw)
 	ver = Context.HEXVERSION
 	if Utils.num2ver(mini) > ver:
 		self.fatal('waf version should be at least %r (%r found)' % (Utils.num2ver(mini), ver))
-
 	if Utils.num2ver(maxi) < ver:
 		self.fatal('waf version should be at most %r (%r found)' % (Utils.num2ver(maxi), ver))
-	self.end_msg('ok')
+	self.end_msg('ok', **kw)
 
 @conf
 def find_file(self, filename, path_list=[]):
@@ -493,7 +492,7 @@ def find_program(self, filename, **kw):
 
 	exts = kw.get('exts', Utils.is_win32 and '.exe,.com,.bat,.cmd' or ',.sh,.pl,.py')
 
-	environ = kw.get('environ', self.environ)
+	environ = kw.get('environ', getattr(self, 'environ', os.environ))
 
 	ret = ''
 	filename = Utils.to_list(filename)
@@ -524,8 +523,9 @@ def find_program(self, filename, **kw):
 	if not ret and Utils.winreg:
 		ret = Utils.get_registry_app_path(Utils.winreg.HKEY_LOCAL_MACHINE, filename)
 
-	self.msg("Checking for program '%s'" % msg, ret or False)
-	self.to_log('find program=%r paths=%r var=%r -> %r' % (filename, path_list, var, ret))
+	self.msg("Checking for program '%s'" % msg, ret or False, **kw)
+	if not kw.get('quiet', None):
+		self.to_log('find program=%r paths=%r var=%r -> %r' % (filename, path_list, var, ret))
 
 	if not ret:
 		self.fatal(kw.get('errmsg', '') or 'Could not find the program %s' % ','.join(filename))

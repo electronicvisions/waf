@@ -6,7 +6,7 @@
 Classes and functions required for waf commands
 """
 
-import os, imp, sys
+import os, re, imp, sys
 from waflib import Utils, Errors, Logs
 import waflib.Node
 
@@ -465,7 +465,7 @@ class Context(ctx):
 			sys.stderr.flush()
 
 
-	def msg(self, msg, result, color=None):
+	def msg(self, msg, result, color=None, **kw):
 		"""
 		Print a configuration message of the form ``msg: result``.
 		The second part of the message will be in colors. The output
@@ -483,17 +483,21 @@ class Context(ctx):
 		:param color: color to use, see :py:const:`waflib.Logs.colors_lst`
 		:type color: string
 		"""
-		self.start_msg(msg)
+		self.start_msg(msg, **kw)
 
 		if not isinstance(color, str):
 			color = result and 'GREEN' or 'YELLOW'
 
-		self.end_msg(result, color)
+		self.end_msg(result, color, **kw)
 
-	def start_msg(self, msg):
+	def start_msg(self, *k, **kw):
 		"""
 		Print the beginning of a 'Checking for xxx' message. See :py:meth:`waflib.Context.Context.msg`
 		"""
+		if kw.get('quiet', None):
+			return
+
+		msg = kw.get('msg', None) or k[0]
 		try:
 			if self.in_msg:
 				self.in_msg += 1
@@ -510,11 +514,15 @@ class Context(ctx):
 			self.to_log(x)
 		Logs.pprint('NORMAL', "%s :" % msg.ljust(self.line_just), sep='')
 
-	def end_msg(self, result, color=None):
+	def end_msg(self, *k, **kw):
 		"""Print the end of a 'Checking for' message. See :py:meth:`waflib.Context.Context.msg`"""
+		if kw.get('quiet', None):
+			return
 		self.in_msg -= 1
 		if self.in_msg:
 			return
+
+		result = kw.get('result', None) or k[0]
 
 		defcolor = 'GREEN'
 		if result == True:
@@ -526,8 +534,7 @@ class Context(ctx):
 			msg = str(result)
 
 		self.to_log(msg)
-		Logs.pprint(color or defcolor, msg)
-
+		Logs.pprint(kw.get('color', defcolor), msg)
 
 	def load_special_tools(self, var, ban=[]):
 		global waf_dir
@@ -538,7 +545,6 @@ class Context(ctx):
 					load_tool(x.name.replace('.py', ''))
 		else:
 			from zipfile import PyZipFile
-			import re
 			waflibs = PyZipFile(waf_dir)
 			lst = waflibs.namelist()
 			for x in lst:
