@@ -9,13 +9,33 @@ Caching files from a server has advantages over a NFS/Samba shared folder:
 - builds are much faster because they use local files
 - builds just continue to work in case of a network glitch
 - permissions are much simpler to manage
-
-TODO: python3 compatibility
-
 """
 
-import os, urllib, urllib2, tarfile, collections, re, shutil, tempfile
-from waflib import Context, Configure, Utils, Logs
+import os, urllib, tarfile, re, shutil, tempfile, sys
+from waflib import Context, Utils, Logs
+
+try:
+	from urllib.parse import urlencode
+except ImportError:
+	urlencode = urllib.urlencode
+
+def safe_urlencode(data):
+	x = urlencode(data)
+	try:
+		x = x.encode('utf-8')
+	except Exception:
+		pass
+	return x
+
+try:
+	from urllib.error import URLError
+except ImportError:
+	from urllib2 import URLError
+
+try:
+	from urllib.request import Request, urlopen
+except ImportError:
+	from urllib2 import Request, urlopen
 
 DISTNETCACHE = os.environ.get('DISTNETCACHE', '/tmp/distnetcache')
 DISTNETSERVER = os.environ.get('DISTNETSERVER', 'http://localhost:8000/cgi-bin/')
@@ -56,10 +76,10 @@ class package(Context.Context):
 
 		Context.Context.execute(self)
 		pkgfile = send_package_name()
-		if not pkgfile in self.files:
-			if not 'requires.txt' in self.files:
-				self.files.append('requires.txt')
-			self.make_tarfile(pkgfile, self.files, add_to_package=False)
+		if not pkgfile in files:
+			if not 'requires.txt' in files:
+				files.append('requires.txt')
+			self.make_tarfile(pkgfile, files, add_to_package=False)
 
 	def make_tarfile(self, filename, files, **kw):
 		if kw.get('add_to_package', True):
@@ -97,11 +117,14 @@ class publish(Context.Context):
 			self.fatal('Create the release file with "waf release" first! %r' % rfile)
 
 		fdata = Utils.readf(rfile, m='rb')
-		data = urllib.urlencode([('pkgdata', fdata), ('pkgname', mod.APPNAME), ('pkgver', mod.VERSION)])
+		data = safe_urlencode([('pkgdata', fdata), ('pkgname', mod.APPNAME), ('pkgver', mod.VERSION)])
 
-		req = urllib2.Request(get_upload_url(), data)
-		response = urllib2.urlopen(req, timeout=TIMEOUT)
+		req = Request(get_upload_url(), data)
+		response = urlopen(req, timeout=TIMEOUT)
 		data = response.read().strip()
+
+		if sys.hexversion>0x300000f:
+			data = data.decode('utf-8')
 
 		if data != 'ok':
 			self.fatal('Could not publish the package %r' % data)
@@ -116,7 +139,6 @@ class pkg(object):
 
 class package_reader(object):
 	def read_packages(self, filename='requires.txt'):
-		txt = Utils.readf(filename).strip()
 		self.compute_dependencies(filename)
 
 	def read_package_string(self, txt):
@@ -141,16 +163,21 @@ class package_reader(object):
 
 	def compute_dependencies(self, filename='requires.txt'):
 		text = Utils.readf(filename)
-		data = urllib.urlencode([('text', text)])
-		req = urllib2.Request(get_resolve_url(), data)
+		data = safe_urlencode([('text', text)])
+
+		req = Request(get_resolve_url(), data)
 		try:
-			response = urllib2.urlopen(req, timeout=TIMEOUT)
-		except urllib2.URLError as e:
+			response = urlopen(req, timeout=TIMEOUT)
+		except URLError as e:
 			Logs.warn('The package server is down! %r' % e)
 			self.local_resolve(text)
 		else:
 			ret = response.read()
-			print ret
+			try:
+				ret = ret.decode('utf-8')
+			except Exception:
+				pass
+			print(ret)
 			self.read_package_string(ret)
 
 		errors = False
@@ -193,8 +220,8 @@ class package_reader(object):
 				p.error = 'There is no package that satisfies %r %r' % (p.name, p.requested_version)
 
 	def download_to_file(self, p, subdir, tmp):
-		data = urllib.urlencode([('pkgname', p.name), ('pkgver', p.version), ('pkgfile', subdir)])
-		req = urllib2.urlopen(get_download_url(), data, timeout=TIMEOUT)
+		data = safe_urlencode([('pkgname', p.name), ('pkgver', p.version), ('pkgfile', subdir)])
+		req = urlopen(get_download_url(), data, timeout=TIMEOUT)
 		with open(tmp, 'wb') as f:
 			while True:
 				buf = req.read(8192)
@@ -234,7 +261,7 @@ class package_reader(object):
 		finally:
 			try:
 				os.remove(tmp)
-			except OSError as e:
+			except OSError:
 				pass
 
 		return target
