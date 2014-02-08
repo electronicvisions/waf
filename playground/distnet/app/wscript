@@ -35,10 +35,39 @@ def package(ctx):
 		ctx.make_tarfile(tar, inputs)
 	ctx.make_tarfile('build/noarch.tarfile', ['head.h', 'waf_pouet.py'])
 
-def test_download(ctx):
-	import urllib
-	data = urllib.urlencode([('pkgname', APPNAME), ('pkgver', VERSION), ('pkgfile', 'noarch.tarfile')])
-	def hook(a, b, c):
-		pass
-	urllib.urlretrieve('http://localhost:8000/cgi-bin/download.py', 'x', hook, data)
+# testing..........................................................................................
+#
+
+from waflib import Utils
+class problem(object):
+	def __init__(self):
+		self.reader = distnet.package_reader()
+		#self.reader.debug = 1
+		self.vtable = {self.reader.myproject : [self.reader.myversion]}
+
+	def add_constraint(self, pkgname, pkgver, text):
+		self.reader.cache_constraints[(pkgname, pkgver)] = distnet.parse_constraints(text)
+
+	def set_versions(self, pkgname, versions):
+		self.vtable[pkgname] = Utils.to_list(versions)
+
+def test(ctx):
+	p = problem()
+	p.add_constraint(APPNAME, VERSION, 'app1,1.0.*\napp2,1.0.*')
+	p.add_constraint('app1', '1.0.0', 'app3,1.0.*,')
+	p.add_constraint('app2', '1.0.0', 'app3,2.0.*,')
+	p.add_constraint('app3', '1.0.0', '')
+	p.add_constraint('app3', '2.0.0', '')
+
+	p.set_versions('app1', '1.0.0')
+	p.set_versions('app2', '1.0.0')
+	p.set_versions('app3', '1.0.0 2.0.0')
+
+	versions, constraints = p.reader.solve(p.vtable, {}, p.reader.myproject, p.reader.myversion)
+	#print versions
+	#print constraints
+	#for a, b in constraints.items():
+	#	print a, b
+	p.reader.constraints = p.reader.solution_to_constraints(versions, constraints)
+	p.reader.check_errors()
 
