@@ -35,9 +35,8 @@ Limitations
 ###########
 
 - Waf and Python cannot be distributed as a packages (may require another process or an auto-update system)
-- all dependencies must be specified at the moment, and there is no consistency verification
-- once a folder is written to the cache it is never updated again
-- there is no integrity verification aside from the package compresssion
-- files submitted must not be small enough
-- no server security (do it yourself!)
+- Once a folder is written to the cache it is never updated again
+- There is no integrity verification aside from the package compresssion
+- Files submitted must be small enough
+- Server server security and access right are to be implemented by the user (do it yourself!)
 
