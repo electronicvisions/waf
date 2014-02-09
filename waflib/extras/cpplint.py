@@ -12,7 +12,13 @@ $ ./waf-light --tools=compat15,cpplint
 $ ./waf update --files=cpplint
 
 this tool also requires cpplint for python.
-If you have PIP, install it like this: pip install cpplint
+If you have PIP, you can install it like this: pip install cpplint
+
+But I'd recommend getting the latest version from the SVN,
+the PIP version is outdated.
+https://code.google.com/p/google-styleguide/source/browse/trunk/cpplint/cpplint.py
+Apply this patch if you want to run it with Python 3:
+https://code.google.com/p/google-styleguide/issues/detail?id=19
 
 
 When using this tool, the wscript will look like:
@@ -50,6 +56,19 @@ except ImportError:
 
 CPPLINT_FORMAT = '[CPPLINT] %(filename)s:\nline %(linenum)s, severity %(confidence)s, category: %(category)s\n%(message)s\n'
 CPPLINT_RE = re.compile('(?P<filename>.*):(?P<linenum>\d+):  (?P<message>.*)  \[(?P<category>.*)\] \[(?P<confidence>\d+)\]')
+critical_errors = 0
+
+
+def init_env_from_options(env):
+    from waflib.Options import options
+    if not env.CPPLINT_FILTERS:
+        env.CPPLINT_FILTERS = options.CPPLINT_FILTERS
+    if not env.CPPLINT_LEVEL:
+        env.CPPLINT_LEVEL  = options.CPPLINT_LEVEL
+    if not env.CPPLINT_BREAK:
+        env.CPPLINT_BREAK  = options.CPPLINT_BREAK
+    if not env.CPPLINT_SKIP:
+        env.CPPLINT_SKIP   = options.CPPLINT_SKIP
 
 
 def options(opt):
@@ -72,14 +91,6 @@ def configure(conf):
     except ImportError:
         conf.fatal('cpplint not found. try "pip install cpplint".')
     conf.end_msg('ok')
-    if not conf.env.CPPLINT_FILTERS:
-        conf.env.CPPLINT_FILTERS = conf.options.CPPLINT_FILTERS
-    if not conf.env.CPPLINT_LEVEL:
-        conf.env.CPPLINT_LEVEL  = conf.options.CPPLINT_LEVEL
-    if not conf.env.CPPLINT_BREAK:
-        conf.env.CPPLINT_BREAK  = conf.options.CPPLINT_BREAK
-    if not conf.env.CPPLINT_SKIP:
-        conf.env.CPPLINT_SKIP   = conf.options.CPPLINT_SKIP
 
 
 class cpplint_formatter(Logs.formatter):
@@ -89,6 +100,8 @@ class cpplint_formatter(Logs.formatter):
     def format(self, rec):
         result = CPPLINT_RE.match(rec.msg).groupdict()
         rec.msg = CPPLINT_FORMAT % result
+        if rec.levelno <= logging.INFO:
+            rec.c1 = Logs.colors.CYAN
         return super(cpplint_formatter, self).format(rec)
 
 
@@ -130,12 +143,13 @@ class cpplint_wrapper(object):
                 sys.stderr.flush()
 
     def write(self, message):
+        global critical_errors
         result = CPPLINT_RE.match(message)
         if not result:
             return
         level = int(result.groupdict()['confidence'])
         if level >= self.threshold:
-            self.error_count += 1
+            critical_errors += 1
         if level <= 2:
             self.logger.info(message)
         elif level <= 4:
@@ -164,14 +178,13 @@ class cpplint(Task.Task):
         super(cpplint, self).__init__(*k, **kw)
 
     def run(self):
+        global critical_errors
         _cpplint_state.SetFilters(self.env.CPPLINT_FILTERS)
         break_level = self.env.CPPLINT_BREAK
         verbosity = self.env.CPPLINT_LEVEL
-        result = 0
-        with cpplint_wrapper(get_cpplint_logger(), break_level) as wrapper:
+        with cpplint_wrapper(get_cpplint_logger(), break_level):
             ProcessFile(self.inputs[0].abspath(), verbosity)
-            result = wrapper.error_count
-        return result
+        return critical_errors
 
 
 @TaskGen.extension('.h', '.hh', '.hpp', '.hxx')
@@ -181,6 +194,9 @@ def cpplint_includes(self, node):
 @TaskGen.feature('cpplint')
 @TaskGen.before_method('process_source')
 def run_cpplint(self):
+    if not self.env.CPPLINT_INITIALIZED:
+        self.env.CPPLINT_INITIALIZED = True
+        init_env_from_options(self.env)
     if self.env.CPPLINT_SKIP:
         return
     for src in self.to_list(getattr(self, 'source', [])):
