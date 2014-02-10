@@ -33,11 +33,19 @@ Dict mapping the platform names to lists of names of D compilers to try, in orde
 	d_compiler['default'] = ['gdc', 'dmd', 'ldc2']
 """
 
+def default_compilers():
+	build_platform = Utils.unversioned_sys_platform()
+	possible_compiler_list = d_compiler.get(build_platform, d_compiler['default'])
+	return ' '.join(possible_compiler_list)
+
 def configure(conf):
 	"""
 	Try to find a suitable D compiler or raise a :py:class:`waflib.Errors.ConfigurationError`.
 	"""
-	for compiler in re.split('[ ,]+', conf.options.dcheck):
+	try: test_for_compiler = conf.options.check_d_compiler or default_compilers()
+	except AttributeError: conf.fatal("Add options(opt): opt.load('compiler_d')")
+
+	for compiler in re.split('[ ,]+', test_for_compiler):
 		conf.env.stash()
 		conf.start_msg('Checking for %r (D compiler)' % compiler)
 		try:
@@ -61,12 +69,11 @@ def options(opt):
 
 		$ waf configure --check-d-compiler=dmd
 	"""
-	build_platform = Utils.unversioned_sys_platform()
-	possible_compiler_list = d_compiler.get(build_platform, d_compiler['default'])
-	test_for_compiler = ' '.join(possible_compiler_list)
+	test_for_compiler = default_compilers()
 	d_compiler_opts = opt.add_option_group('Configuration options')
-	d_compiler_opts.add_option('--check-d-compiler', default=test_for_compiler, action='store',
-		help='list of D compilers to try [%s]' % test_for_compiler, dest='dcheck')
-	for d_compiler in ('gdc', 'dmd', 'ldc2'):
-		opt.load('%s' % d_compiler)
+	d_compiler_opts.add_option('--check-d-compiler', default=None,
+		help='list of D compilers to try [%s]' % test_for_compiler, dest='check_d_compiler')
+
+	for x in test_for_compiler.split():
+		opt.load('%s' % x)
 

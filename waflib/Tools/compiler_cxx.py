@@ -15,11 +15,12 @@ Try to detect a C++ compiler from the list of supported compilers (g++, msvc, et
 The compilers are associated to platforms in :py:attr:`waflib.Tools.compiler_cxx.cxx_compiler`. To register
 a new C++ compiler named *cfoo* (assuming the tool ``waflib/extras/cfoo.py`` exists), use::
 
+	from waflib.Tools.compiler_cxx import cxx_compiler
+	cxx_compiler['win32'] = ['cfoo', 'msvc', 'gcc']
+
 	def options(opt):
 		opt.load('compiler_cxx')
 	def configure(cnf):
-		from waflib.Tools.compiler_cxx import cxx_compiler
-		cxx_compiler['win32'] = ['cfoo', 'msvc', 'gcc']
 		cnf.load('compiler_cxx')
 	def build(bld):
 		bld.program(source='main.c', target='app')
@@ -55,12 +56,16 @@ Dict mapping the platform names to Waf tools finding specific C++ compilers::
 	cxx_compiler['linux'] = ['gxx', 'icpc', 'suncxx']
 """
 
+def default_compilers():
+	build_platform = Utils.unversioned_sys_platform()
+	possible_compiler_list = cxx_compiler.get(build_platform, cxx_compiler['default'])
+	return ' '.join(possible_compiler_list)
 
 def configure(conf):
 	"""
 	Try to find a suitable C++ compiler or raise a :py:class:`waflib.Errors.ConfigurationError`.
 	"""
-	try: test_for_compiler = conf.options.check_cxx_compiler
+	try: test_for_compiler = conf.options.check_cxx_compiler or default_compilers()
 	except AttributeError: conf.fatal("Add options(opt): opt.load('compiler_cxx')")
 
 	for compiler in re.split('[ ,]+', test_for_compiler):
@@ -87,13 +92,10 @@ def options(opt):
 
 		$ waf configure --check-cxx-compiler=gxx
 	"""
+	test_for_compiler = default_compilers()
 	opt.load_special_tools('cxx_*.py')
-	global cxx_compiler
-	build_platform = Utils.unversioned_sys_platform()
-	possible_compiler_list = cxx_compiler.get(build_platform, cxx_compiler['default'])
-	test_for_compiler = ' '.join(possible_compiler_list)
 	cxx_compiler_opts = opt.add_option_group('Configuration options')
-	cxx_compiler_opts.add_option('--check-cxx-compiler', default=test_for_compiler,
+	cxx_compiler_opts.add_option('--check-cxx-compiler', default=None,
 		help='list of C++ compilers to try [%s]' % test_for_compiler,
 		dest="check_cxx_compiler")
 

@@ -15,11 +15,12 @@ Try to detect a C compiler from the list of supported compilers (gcc, msvc, etc)
 The compilers are associated to platforms in :py:attr:`waflib.Tools.compiler_c.c_compiler`. To register
 a new C compiler named *cfoo* (assuming the tool ``waflib/extras/cfoo.py`` exists), use::
 
+	from waflib.Tools.compiler_c import c_compiler
+	c_compiler['win32'] = ['cfoo', 'msvc', 'gcc']
+
 	def options(opt):
 		opt.load('compiler_c')
 	def configure(cnf):
-		from waflib.Tools.compiler_c import c_compiler
-		c_compiler['win32'] = ['cfoo', 'msvc', 'gcc']
 		cnf.load('compiler_c')
 	def build(bld):
 		bld.program(source='main.c', target='app')
@@ -54,11 +55,16 @@ Dict mapping the platform names to Waf tools finding specific C compilers::
 	c_compiler['linux'] = ['gcc', 'icc', 'suncc']
 """
 
+def default_compilers():
+	build_platform = Utils.unversioned_sys_platform()
+	possible_compiler_list = c_compiler.get(build_platform, c_compiler['default'])
+	return ' '.join(possible_compiler_list)
+
 def configure(conf):
 	"""
 	Try to find a suitable C compiler or raise a :py:class:`waflib.Errors.ConfigurationError`.
 	"""
-	try: test_for_compiler = conf.options.check_c_compiler
+	try: test_for_compiler = conf.options.check_c_compiler or default_compilers()
 	except AttributeError: conf.fatal("Add options(opt): opt.load('compiler_c')")
 
 	for compiler in re.split('[ ,]+', test_for_compiler):
@@ -85,15 +91,13 @@ def options(opt):
 
 		$ waf configure --check-c-compiler=gcc
 	"""
+	test_for_compiler = default_compilers()
 	opt.load_special_tools('c_*.py', ban=['c_dumbpreproc.py'])
-	global c_compiler
-	build_platform = Utils.unversioned_sys_platform()
-	possible_compiler_list = c_compiler.get(build_platform, c_compiler['default'])
-	test_for_compiler = ' '.join(possible_compiler_list)
 	cc_compiler_opts = opt.add_option_group('Configuration options')
-	cc_compiler_opts.add_option('--check-c-compiler', default=test_for_compiler,
+	cc_compiler_opts.add_option('--check-c-compiler', default=None,
 		help='list of C compilers to try [%s]' % test_for_compiler,
 		dest="check_c_compiler")
+
 	for x in test_for_compiler.split():
 		opt.load('%s' % x)
 
