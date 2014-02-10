@@ -63,10 +63,14 @@ def pytest_create_task(self):
     input_nodes = self.to_nodes(self.tests)
 
     # Adding the value of pythonpath to test_env
-    pythonpath = self.to_incnodes(getattr(self, "pythonpath", ""))
+    self.pythonpath = self.to_incnodes(getattr(self, "pythonpath", ""))
+    for use in self.tmp_use_seen:
+        tg = self.bld.get_tgen_by_name(use)
+        self.pythonpath.extend(getattr(tg, 'pythonpath', []))
+
     self.test_environ = getattr(self, "test_environ", {})
     self.test_environ["PYTHONPATH"] = os.pathsep.join(
-            [n.abspath() for n in pythonpath] +
+            [n.abspath() for n in self.pythonpath] +
             self.test_environ.get("PYTHONPATH","").split(os.pathsep) +
             os.environ.get("PYTHONPATH", "").split(os.pathsep)
     )
