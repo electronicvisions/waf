@@ -54,21 +54,26 @@ except ImportError:
     pass
 
 
-CPPLINT_FORMAT = '[CPPLINT] %(filename)s:\nline %(linenum)s, severity %(confidence)s, category: %(category)s\n%(message)s\n'
-CPPLINT_RE = re.compile('(?P<filename>.*):(?P<linenum>\d+):  (?P<message>.*)  \[(?P<category>.*)\] \[(?P<confidence>\d+)\]')
 critical_errors = 0
+CPPLINT_FORMAT = '[CPPLINT] %(filename)s:\nline %(linenum)s, severity %(confidence)s, category: %(category)s\n%(message)s\n'
+RE_EMACS = re.compile('(?P<filename>.*):(?P<linenum>\d+):  (?P<message>.*)  \[(?P<category>.*)\] \[(?P<confidence>\d+)\]');
+CPPLINT_RE = {
+    'waf': RE_EMACS,
+    'emacs': RE_EMACS,
+    'vs7': re.compile('(?P<filename>.*)\((?P<linenum>\d+)\):  (?P<message>.*)  \[(?P<category>.*)\] \[(?P<confidence>\d+)\]'),
+    'eclipse': re.compile('(?P<filename>.*):(?P<linenum>\d+): warning: (?P<message>.*)  \[(?P<category>.*)\] \[(?P<confidence>\d+)\]'),
+}
+
 
 
 def init_env_from_options(env):
     from waflib.Options import options
-    if not env.CPPLINT_FILTERS:
-        env.CPPLINT_FILTERS = options.CPPLINT_FILTERS
-    if not env.CPPLINT_LEVEL:
-        env.CPPLINT_LEVEL  = options.CPPLINT_LEVEL
-    if not env.CPPLINT_BREAK:
-        env.CPPLINT_BREAK  = options.CPPLINT_BREAK
-    if not env.CPPLINT_SKIP:
-        env.CPPLINT_SKIP   = options.CPPLINT_SKIP
+    for key, value in options.__dict__.items():
+        if not key.startswith('CPPLINT_') or env[key]:
+            continue
+        env[key] = value
+    if env.CPPLINT_OUTPUT != 'waf':
+        _cpplint_state.output_format = env.CPPLINT_OUTPUT
 
 
 def options(opt):
@@ -82,6 +87,9 @@ def options(opt):
     opt.add_option('--cpplint-skip', action='store_true',
                    default=False, dest='CPPLINT_SKIP',
                    help='skip cpplint during build')
+    opt.add_option('--cpplint-output', type='string',
+                   default='waf', dest='CPPLINT_OUTPUT',
+                   help='select output format (waf, emacs, vs7)')
 
 
 def configure(conf):
@@ -94,12 +102,14 @@ def configure(conf):
 
 
 class cpplint_formatter(Logs.formatter):
-    def __init__(self):
+    def __init__(self, fmt):
         logging.Formatter.__init__(self, CPPLINT_FORMAT)
+        self.fmt = fmt
 
     def format(self, rec):
-        result = CPPLINT_RE.match(rec.msg).groupdict()
-        rec.msg = CPPLINT_FORMAT % result
+        if self.fmt == 'waf':
+            result = CPPLINT_RE[self.fmt].match(rec.msg).groupdict()
+            rec.msg = CPPLINT_FORMAT % result
         if rec.levelno <= logging.INFO:
             rec.c1 = Logs.colors.CYAN
         return super(cpplint_formatter, self).format(rec)
@@ -121,10 +131,11 @@ class cpplint_wrapper(object):
     tasks_count = 0
     lock = threading.RLock()
 
-    def __init__(self, logger, threshold):
+    def __init__(self, logger, threshold, fmt):
         self.logger = logger
         self.threshold = threshold
         self.error_count = 0
+        self.fmt = fmt
 
     def __enter__(self):
         with cpplint_wrapper.lock:
@@ -144,7 +155,7 @@ class cpplint_wrapper(object):
 
     def write(self, message):
         global critical_errors
-        result = CPPLINT_RE.match(message)
+        result = CPPLINT_RE[self.fmt].match(message)
         if not result:
             return
         level = int(result.groupdict()['confidence'])
@@ -159,13 +170,13 @@ class cpplint_wrapper(object):
 
 
 cpplint_logger = None
-def get_cpplint_logger():
+def get_cpplint_logger(fmt):
     global cpplint_logger
     if cpplint_logger:
         return cpplint_logger
     cpplint_logger = logging.getLogger('cpplint')
     hdlr = cpplint_handler()
-    hdlr.setFormatter(cpplint_formatter())
+    hdlr.setFormatter(cpplint_formatter(fmt))
     cpplint_logger.addHandler(hdlr)
     cpplint_logger.setLevel(logging.DEBUG)
     return cpplint_logger
@@ -182,7 +193,8 @@ class cpplint(Task.Task):
         _cpplint_state.SetFilters(self.env.CPPLINT_FILTERS)
         break_level = self.env.CPPLINT_BREAK
         verbosity = self.env.CPPLINT_LEVEL
-        with cpplint_wrapper(get_cpplint_logger(), break_level):
+        with cpplint_wrapper(get_cpplint_logger(self.env.CPPLINT_OUTPUT),
+                             break_level, self.env.CPPLINT_OUTPUT):
             ProcessFile(self.inputs[0].abspath(), verbosity)
         return critical_errors
 
@@ -198,6 +210,8 @@ def run_cpplint(self):
         self.env.CPPLINT_INITIALIZED = True
         init_env_from_options(self.env)
     if self.env.CPPLINT_SKIP:
+        return
+    if not self.env.CPPLINT_OUTPUT in CPPLINT_RE:
         return
     for src in self.to_list(getattr(self, 'source', [])):
         if isinstance(src, str):
