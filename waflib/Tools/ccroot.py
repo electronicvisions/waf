@@ -319,6 +319,14 @@ def process_use(self):
 				else:
 					tmp.append(x)
 	if use_prec:
+                print "cat << EOF > use_dep.dot"
+                print "digraph G {"
+                for key, item in use_prec.iteritems():
+                        for i in item:
+                                print '"{}" -> "{}";'.format(i, key)
+                print "}"
+                print "EOF"
+                print "dot use_dep.dot -Tpdf -o use_dep.pdf"
 		raise Errors.WafError('Cycle detected in the use processing %r' % use_prec)
 	out.reverse()
 
