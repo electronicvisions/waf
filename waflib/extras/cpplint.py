@@ -95,10 +95,11 @@ def options(opt):
 def configure(conf):
     conf.start_msg('Checking cpplint')
     try:
-        import cpplint
+        import cpplnt
+        conf.end_msg('ok')
     except ImportError:
-        conf.fatal('cpplint not found. try "pip install cpplint".')
-    conf.end_msg('ok')
+        conf.env.CPPLINT_SKIP = True
+        conf.end_msg('not found, skipping it.')
 
 
 class cpplint_formatter(Logs.formatter):
