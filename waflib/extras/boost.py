@@ -220,6 +220,8 @@ def boost_get_libs(self, *k, **kw):
 	t = []
 	if kw.get('mt', False):
 		t.append('mt')
+	if kw.get('static', False):
+		t.append('s')
 	if kw.get('abi', None):
 		t.append(kw['abi'])
 	tags = t and '(-%s)+' % '-'.join(t) or ''
