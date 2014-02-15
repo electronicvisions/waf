@@ -39,9 +39,9 @@ When using MSVC, a lot of compilation flags need to match your BOOST build confi
  - boost libraries will try to be smart and use the (pretty but often not useful) auto-linking feature of MSVC
    So before calling `conf.check_boost` you might want to disabling by adding:
    	conf.env.DEFINES_BOOST += ['BOOST_ALL_NO_LIB']
-   Errors: 
+   Errors:
  - boost might also be compiled with /MT, which links the runtime statically.
-   If you have problems with redefined symbols, 
+   If you have problems with redefined symbols,
 		self.env['DEFINES_%s' % var] += ['BOOST_ALL_NO_LIB']
 		self.env['CXXFLAGS_%s' % var] += ['/MD', '/EHsc']
 Passing `--boost-linkage_autodetect` might help ensuring having a correct linkage in some basic cases.
@@ -151,7 +151,7 @@ def boost_get_includes(self, *k, **kw):
 	includes = k and k[0] or kw.get('includes', None)
 	if includes and self.__boost_get_version_file(includes):
 		return includes
-	for d in Utils.to_list(self.environ.get('INCLUDE', '')) + BOOST_INCLUDES:
+	for d in self.environ.get('INCLUDE', '').split(';') + BOOST_INCLUDES:
 		if self.__boost_get_version_file(d):
 			return d
 	if includes:
@@ -186,7 +186,7 @@ def __boost_get_libs_path(self, *k, **kw):
 		path = self.root.find_dir(libs)
 		files = path.ant_glob('*boost_*')
 	if not libs or not files:
-		for d in Utils.to_list(self.environ.get('LIB', [])) + BOOST_LIBS:
+		for d in self.environ.get('LIB', '').split(';') + BOOST_LIBS:
 			path = self.root.find_dir(d)
 			if path:
 				files = path.ant_glob('*boost_*')
