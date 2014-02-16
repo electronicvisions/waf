@@ -21,12 +21,13 @@ from waflib import Task, TaskGen
 class strip(Task.Task):
 	run_str = '${STRIP} ${SRC}'
 	color   = 'BLUE'
+	after   = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
 
 @TaskGen.feature('strip')
 @TaskGen.after('apply_link')
 def add_strip_task(self):
 	try:
 		link_task = self.link_task
-	except:
+	except AttributeError:
 		return
-	tsk = self.create_task('strip', self.link_task.outputs[0])
+	self.create_task('strip', link_task.outputs[0])
