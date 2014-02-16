@@ -36,9 +36,11 @@ class gen_sym(Task):
 		else:
 			if self.env.DEST_BINFMT == 'pe': #gcc uses nm, and has a preceding _ on windows
 				re_nm = re.compile(r'T\s+_(' + self.generator.export_symbols_regex + r')\b')
+			elif self.env.DEST_BINFMT=='mac-o':
+				re_nm=re.compile(r'T\s+(_?'+self.generator.export_symbols_regex+r')\b')
 			else:
 				re_nm = re.compile(r'T\s+(' + self.generator.export_symbols_regex + r')\b')
-			cmd = [self.env.NM or 'nm', '-g', obj.abspath()]
+			cmd = [self.env.NM[0] or 'nm', '-g', obj.abspath()]
 		syms = re_nm.findall(self.generator.bld.cmd_and_log(cmd, quiet=STDOUT, **kw))
 		self.outputs[0].write('%r' % syms)
 
@@ -55,6 +57,8 @@ class compile_sym(Task):
 			self.outputs[0].write('EXPORTS\n' + '\n'.join(lsyms))
 		elif self.env.DEST_BINFMT == 'elf':
 			self.outputs[0].write('{ global:\n' + ';\n'.join(lsyms) + ";\nlocal: *; };\n")
+		elif self.env.DEST_BINFMT=='mac-o':
+			self.outputs[0].write('\n'.join(lsyms) + '\n')
 		else:
 			raise WafError('NotImplemented')
 
@@ -75,6 +79,8 @@ def do_the_symbol_stuff(self):
 		self.link_task.inputs.append(tsk.outputs[0])
 	elif self.env.DEST_BINFMT == 'elf':
 		self.link_task.env.append_value('LINKFLAGS', ['-Wl,-version-script', '-Wl,' + tsk.outputs[0].bldpath()])
+	elif self.env.DEST_BINFMT=='mac-o':
+		self.link_task.env.append_value('LINKFLAGS',['-Wl,-exported_symbols_list,'+tsk.outputs[0].bldpath()])
 	else:
 		raise WafError('NotImplemented')
 
