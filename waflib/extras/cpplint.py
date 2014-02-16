@@ -95,7 +95,7 @@ def options(opt):
 def configure(conf):
     conf.start_msg('Checking cpplint')
     try:
-        import cpplnt
+        import cpplint
         conf.end_msg('ok')
     except ImportError:
         conf.env.CPPLINT_SKIP = True
