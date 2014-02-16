@@ -11,7 +11,23 @@ By using::
 
 	@TaskGen.feature('cprogram', 'cxxprogram', 'fcprogram')
 
-It is possible to have all the C, C++ and Fortran programs stripped automatically
+
+If stripping at installation time is preferred, use the following::
+
+	import shutil, os
+	from waflib import Build
+	from waflib.Tools import ccroot
+	def copy_fun(self, src, tgt, **kw):
+		shutil.copy2(src, tgt)
+		os.chmod(tgt, kw.get('chmod', Utils.O644))
+		try:
+			tsk = kw['tsk']
+		except KeyError:
+			pass
+		else:
+			if isinstance(tsk.task, ccroot.link_task):
+				self.cmd_and_log('strip %s' % tgt)
+	Build.InstallContext.copy_fun = copy_fun
 """
 
 def configure(conf):

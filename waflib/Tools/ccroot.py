@@ -213,7 +213,7 @@ def apply_link(self):
 		inst_to = self.link_task.__class__.inst_to
 	if inst_to:
 		# install a copy of the node list we have at this moment (implib not added)
-		self.install_task = self.bld.install_files(inst_to, self.link_task.outputs[:], env=self.env, chmod=self.link_task.chmod)
+		self.install_task = self.bld.install_files(inst_to, self.link_task.outputs[:], env=self.env, chmod=self.link_task.chmod, task=self.link_task)
 
 @taskgen_method
 def use_rec(self, name, **kw):
