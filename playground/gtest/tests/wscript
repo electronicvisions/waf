@@ -4,8 +4,10 @@
 def build(bld):
 	bld.recurse('test0 test1')
 
+    # can't use bld.stlib
 	bld(
-		features = 'cxx stlib',
+        # cxxstlib not required?!
+		features = 'cxx',
 		source   = 'gtest_main.cc',
 		use      = 'GTEST',
 		target   = 'unittestmain')

@@ -7,8 +7,8 @@ def fun(task):
 	# print task.generator.bld.name_to_obj('somelib').link_task.outputs[0].abspath(task.env)
 	# task.ut_exec.append('--help')
 
-bld(
-	features = 'cxx cxxprogram test',
+bld.program(
+	features = 'test',
 	source   = 'AccumulatorTest.cpp',
 	target   = 'unit_test_program',
 	use      = 'unittestmain useless GTEST',

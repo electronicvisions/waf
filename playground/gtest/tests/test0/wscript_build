@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-bld(
-	features = 'cxx cxxprogram test',
+bld.program(
+	features = 'test',
 	source   = 'HelloWorldTest.cpp',
 	target   = 'unit_test_program',
 	use      = 'unittestmain useless GTEST',

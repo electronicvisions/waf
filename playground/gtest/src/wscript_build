@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-bld(
-	features = 'cxx cxxstlib',
+bld.stlib(
 	source   = 'Accumulator.cpp HelloWorld.cpp',
 	target   = 'useless',
 	export_includes = '.',
