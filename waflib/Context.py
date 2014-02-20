@@ -465,7 +465,7 @@ class Context(ctx):
 			sys.stderr.flush()
 
 
-	def msg(self, msg, result, color=None, **kw):
+	def msg(self, *k, **kw):
 		"""
 		Print a configuration message of the form ``msg: result``.
 		The second part of the message will be in colors. The output
@@ -483,8 +483,19 @@ class Context(ctx):
 		:param color: color to use, see :py:const:`waflib.Logs.colors_lst`
 		:type color: string
 		"""
+		try:
+			msg = kw['msg']
+		except KeyError:
+			msg = k[0]
+
 		self.start_msg(msg, **kw)
 
+		try:
+			result = kw['result']
+		except KeyError:
+			result = k[1]
+
+		color = kw.get('color', None)
 		if not isinstance(color, str):
 			color = result and 'GREEN' or 'YELLOW'
 
