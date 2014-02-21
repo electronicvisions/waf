@@ -29,7 +29,7 @@ class pytest(test_base.TestBase):
             #self.env['PYNOSETESTS'],
             cmd = [ self.env.get_flat("PYTHON"),
                     '-c',
-                    frickeling,
+                    "'%s'" % frickeling,
                     test.abspath(),
                     '--with-xunit',
                     '--xunit-file=%s' % xml.abspath() if xml else '',
