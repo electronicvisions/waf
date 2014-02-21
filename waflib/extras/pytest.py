@@ -32,7 +32,7 @@ class pytest(test_base.TestBase):
                     "'%s'" % frickeling,
                     test.abspath(),
                     '--with-xunit',
-                    '--xunit-file=%s' % xml.abspath() if xml else '',
+                    '--xunit-file="%s"' % xml.abspath() if xml else '',
                     ]
             result = self.runTest(test.name, cmd)
 

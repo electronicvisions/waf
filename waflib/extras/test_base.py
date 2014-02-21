@@ -268,11 +268,13 @@ class TestBase(Task.Task):
             try:
                 if Logs.verbose:
                     Logs.pprint('PINK', '   spawning test:', '%s' % cmd)
-                self.proc = Popen(cmd,
+                self.proc = Popen('%s' % ' '.join(cmd),
                              cwd=cwd,
                              env=environ,
                              stderr=PIPE,
-                             stdout=PIPE)
+                             stdout=PIPE,
+                             shell=True
+                )
                 result["stdout"], result["stderr"] = self.proc.communicate()
                 if self.proc.returncode == 0:
                     result["status"] = self.PASSED
