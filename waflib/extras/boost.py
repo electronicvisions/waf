@@ -108,7 +108,7 @@ def options(opt):
 				   default=False, dest='boost_mt',
 				   help='select multi-threaded libraries')
 	opt.add_option('--boost-abi', type='string', default='', dest='boost_abi',
-				   help='''select libraries with tags (dgsyp, d for debug),
+				   help='''select libraries with tags (s for static, gd for debug),
 				   see doc Boost, Getting Started, chapter 6.1''')
 	opt.add_option('--boost-linkage_autodetect', action="store_true", dest='boost_linkage_autodetect',
 				   help="auto-detect boost linkage options (don't get used to it / might break other stuff)")
@@ -220,8 +220,6 @@ def boost_get_libs(self, *k, **kw):
 	t = []
 	if kw.get('mt', False):
 		t.append('mt')
-	if kw.get('static', False):
-		t.append('s')
 	if kw.get('abi', None):
 		t.append(kw['abi'])
 	tags = t and '(-%s)+' % '-'.join(t) or ''
