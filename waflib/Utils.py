@@ -497,7 +497,8 @@ def quote_define_name(s):
 	:rtype: string
 	:return: Identifier suitable for C defines
 	"""
-	fu = re.compile("[^a-zA-Z0-9]").sub("_", s)
+	fu = re.sub('[^a-zA-Z0-9]', '_', s)
+	fu = re.sub('_+', '_', fu)
 	fu = fu.upper()
 	return fu
 
