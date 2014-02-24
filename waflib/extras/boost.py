@@ -125,6 +125,8 @@ def options(opt):
 
 @conf
 def __boost_get_version_file(self, d):
+	if not d:
+		return None
 	dnode = self.root.find_dir(d)
 	if dnode:
 		return dnode.find_node(BOOST_VERSION_FILE)
@@ -152,7 +154,7 @@ def boost_get_includes(self, *k, **kw):
 	if includes and self.__boost_get_version_file(includes):
 		return includes
 	for d in self.environ.get('INCLUDE', '').split(';') + BOOST_INCLUDES:
-		if d and self.__boost_get_version_file(d):
+		if self.__boost_get_version_file(d):
 			return d
 	if includes:
 		self.end_msg('headers not found in %s' % includes)
