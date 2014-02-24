@@ -37,8 +37,8 @@ When using MSVC, a lot of compilation flags need to match your BOOST build confi
  - you may have to add /EHsc to your CXXFLAGS or define boost::throw_exception if BOOST_NO_EXCEPTIONS is defined.
    Errors: C4530
  - boost libraries will try to be smart and use the (pretty but often not useful) auto-linking feature of MSVC
-   So before calling `conf.check_boost` you might want to disabling by adding:
-   	conf.env.DEFINES_BOOST += ['BOOST_ALL_NO_LIB']
+   So before calling `conf.check_boost` you might want to disabling by adding
+		conf.env.DEFINES_BOOST += ['BOOST_ALL_NO_LIB']
    Errors:
  - boost might also be compiled with /MT, which links the runtime statically.
    If you have problems with redefined symbols,
@@ -54,7 +54,7 @@ from waflib import Utils, Logs, Errors
 from waflib.Configure import conf
 
 BOOST_LIBS = ['/usr/lib/x86_64-linux-gnu', '/usr/lib/i386-linux-gnu',
-	      '/usr/lib', '/usr/local/lib', '/opt/local/lib', '/sw/lib', '/lib']
+			  '/usr/lib', '/usr/local/lib', '/opt/local/lib', '/sw/lib', '/lib']
 BOOST_INCLUDES = ['/usr/include', '/usr/local/include', '/opt/local/include', '/sw/include']
 BOOST_VERSION_FILE = 'boost/version.hpp'
 BOOST_VERSION_CODE = '''
@@ -152,7 +152,7 @@ def boost_get_includes(self, *k, **kw):
 	if includes and self.__boost_get_version_file(includes):
 		return includes
 	for d in self.environ.get('INCLUDE', '').split(';') + BOOST_INCLUDES:
-		if self.__boost_get_version_file(d):
+		if d and self.__boost_get_version_file(d):
 			return d
 	if includes:
 		self.end_msg('headers not found in %s' % includes)
@@ -187,6 +187,8 @@ def __boost_get_libs_path(self, *k, **kw):
 		files = path.ant_glob('*boost_*')
 	if not libs or not files:
 		for d in self.environ.get('LIB', '').split(';') + BOOST_LIBS:
+			if not d:
+				continue
 			path = self.root.find_dir(d)
 			if path:
 				files = path.ant_glob('*boost_*')
