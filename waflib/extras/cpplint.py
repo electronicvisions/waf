@@ -154,6 +154,9 @@ class cpplint_wrapper(object):
                 sys.stderr = cpplint_wrapper.stream
                 sys.stderr.flush()
 
+    def isatty(self):
+        return True
+
     def write(self, message):
         global critical_errors
         result = CPPLINT_RE[self.fmt].match(message)
