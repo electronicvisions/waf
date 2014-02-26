@@ -128,7 +128,12 @@ def get_msvc_version(conf, compiler, version, target, vcvars):
 	:rtype: tuple of strings
 	"""
 	debug('msvc: get_msvc_version: %r %r %r', compiler, version, target)
-	batfile = conf.bldnode.make_node('waf-print-msvc.bat')
+
+	try:
+		conf.msvc_cnt += 1
+	except AttributeError:
+		conf.msvc_cnt = 1
+	batfile = conf.bldnode.make_node('waf-print-msvc-%d.bat' % conf.msvc_cnt)
 	batfile.write("""@echo off
 set INCLUDE=
 set LIB=
