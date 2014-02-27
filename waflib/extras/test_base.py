@@ -51,15 +51,17 @@ def configure(ctx):
 
     txt_result_path =  getattr(Options.options, 'test_text_output_folder', None)
     if txt_result_path:
+        path = ctx.bldnode.make_node(txt_result_path)
         ctx.start_msg('Test text summary directory')
-        ctx.end_msg(txt_result_path)
-        ctx.env.TEST_TEXT_DIR = txt_result_path
+        ctx.end_msg(path.path_from(ctx.srcnode))
+        ctx.env.TEST_TEXT_DIR = path.abspath()
 
     xml_result_path =  getattr(Options.options, 'test_xml_output_folder', None)
     if xml_result_path:
+        path = ctx.bldnode.make_node(xml_result_path)
         ctx.start_msg('Test xml summary directory')
-        ctx.end_msg(xml_result_path)
-        ctx.env.TEST_XML_DIR = xml_result_path
+        ctx.end_msg(path.path_from(ctx.srcnode))
+        ctx.env.TEST_XML_DIR = path.abspath()
 
     timeout = int(getattr(Options.options, 'test_timeout', DEFAULT_TEST_TIMEOUT))
     ctx.start_msg('GoogleTest maximal runtime')
@@ -153,13 +155,11 @@ def summary(ctx):
 def getDir(ctx, key):
     if key in ctx.env:
         with resultlock:
-            result_dir = ctx.path.find_or_declare(ctx.env.get_flat(key))
+            result_dir = ctx.bldnode.find_or_declare(ctx.env.get_flat(key))
             result_dir.mkdir()
             return result_dir
     else:
         return None
-
-
 
 def runAll():
     return getattr(Options.options, 'test_run_all', False)
@@ -193,20 +193,17 @@ class TestBase(Task.Task):
         self.test_timeout = getattr(self, "test_timeout", int(bld.env["TEST_TIMEOUT"]))
 
     def getXmlDir(self):
-        bld = self.generator.bld
-        return getDir(bld, "TEST_XML_DIR")
+        return getDir(self.generator.bld, "TEST_XML_DIR")
 
     def getTxtDir(self):
-        bld = self.generator.bld
-        return getDir(bld, "TEST_TEXT_DIR")
+        return getDir(self.generator.bld, "TEST_TEXT_DIR")
 
     def hasXmlStore(self):
-        bld = self.generator.bld
-        return not ctx.env.get_flat("TEST_XML_DIR")
+        return not self.env.get_flat("TEST_XML_DIR")
 
     def hasTxtStore(self):
         bld = self.generator.bld
-        return not ctx.env.get_flat("TEST_TEXT_DIR")
+        return not self.env.get_flat("TEST_TEXT_DIR")
 
     def timeout(self):
         return int(getattr(Options.options, 'test_timeout', self.test_timeout))
