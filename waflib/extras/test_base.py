@@ -51,17 +51,17 @@ def configure(ctx):
 
     txt_result_path =  getattr(Options.options, 'test_text_output_folder', None)
     if txt_result_path:
-        path = ctx.bldnode.make_node(txt_result_path)
+        ctx.env.TEST_TEXT_DIR = txt_result_path
+        node = getDir(ctx, 'TEST_TEXT_DIR')
         ctx.start_msg('Test text summary directory')
-        ctx.end_msg(path.path_from(ctx.srcnode))
-        ctx.env.TEST_TEXT_DIR = path.abspath()
+        ctx.end_msg(node.path_from(ctx.srcnode))
 
     xml_result_path =  getattr(Options.options, 'test_xml_output_folder', None)
     if xml_result_path:
-        path = ctx.bldnode.make_node(xml_result_path)
+        ctx.env.TEST_XML_DIR = xml_result_path
+        node = getDir(ctx, 'TEST_XML_DIR')
         ctx.start_msg('Test xml summary directory')
-        ctx.end_msg(path.path_from(ctx.srcnode))
-        ctx.env.TEST_XML_DIR = path.abspath()
+        ctx.end_msg(node.path_from(ctx.srcnode))
 
     timeout = int(getattr(Options.options, 'test_timeout', DEFAULT_TEST_TIMEOUT))
     ctx.start_msg('GoogleTest maximal runtime')
@@ -155,7 +155,11 @@ def summary(ctx):
 def getDir(ctx, key):
     if key in ctx.env:
         with resultlock:
-            result_dir = ctx.bldnode.find_or_declare(ctx.env.get_flat(key))
+            path = ctx.env.get_flat(key)
+            if os.path.isabs(path):
+                result_dir = ctx.root.make_node(path)
+            else:
+                result_dir = ctx.bldnode.make_node(path)
             result_dir.mkdir()
             return result_dir
     else:
