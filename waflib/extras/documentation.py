@@ -44,6 +44,7 @@ Nagy (see comment above).
 from fnmatch import fnmatchcase
 import os, os.path, re, stat, shlex
 from waflib import Task, Utils, Node, Logs, Errors
+from waflib.Options import OptionsContext
 from waflib.TaskGen import feature
 
 DOXY_STR = '${DOXYGEN} - '
@@ -798,6 +799,21 @@ def doc(ctx): # executed by: def doc(dcx): dcx.load('documentation')
 
 
 def options(opt):
+    # Some symwaf2ic specific handling, actually only removes a warning. But it was neccessary to inspect the source of the warning:
+    # TODO: it is because all options are parsed multiple times, and some options can only be handled by the original waf-optparse
+    # a) symwaf2ic.OptionParserContext called as pre-entry to run_commands
+    # b) during dependency checks, multiple times (OptionParserContext)
+    # c) finally the original waf OptionsContext loads them again...
+    isOriginalParser = isinstance(opt, OptionsContext)
+    if isOriginalParser:
+        #print "Documentation opts loaded by the original parser"
+        if getattr(options, "loaded", False): return
+        setattr(options, "loaded", True)
+    else:
+        #print "Documentation opts are incompatible with the "new" and buggy parser ;).
+        return
+    #print "Documentation options loaded first time"
+    ####################################################
 
     extended_formats=set(['pdf'] + DOXY_FMTS)
 

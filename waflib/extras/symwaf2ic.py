@@ -311,6 +311,7 @@ class OptionParserContext(Symwaf2icContext):
                 self._parse_type(kw)
         if "callback" in kw:
             Logs.warn("Option '{}' was ignored during setup call, because it used callback keyword".format(k[0]))
+            #--disable-doxygen
             return
         if storage.options:
             opt = k[0]
@@ -479,6 +480,10 @@ class DependencyContext(Symwaf2icContext):
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
+        # KHS: is this really neccessary? It recurses once again into all options of all wscripts of all dependencies
+        # and finally the default OptionParser (from waf) recurses them again. And this is actually the one that is used
+        # The whole symwaf2ic.OptionParserContext seems to be (at least partially) redundant code?
+        # And the use of the modern argparse instead of the older optparse (used by waf) is questionable...
         self.options = self.options_parser.parse_args(
                 self.path.abspath(), argv=storage.setup_argv)
 
