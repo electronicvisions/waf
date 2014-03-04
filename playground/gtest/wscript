@@ -38,10 +38,12 @@ def gtest_results(bld):
         output = str(out, 'utf-8').split('\n')
         for i, line in enumerate(output):
             if '[ RUN      ]' in line and code:
-                if '    OK ]' in output[i + 1]:
+                i += 1
+                if '    OK ]' in output[i]:
                     continue
-                # \r to get colors back...
-                Logs.warn('%s' % output[i + 1])
+                while not '[ ' in output[i]:
+                    Logs.warn('%s' % output[i])
+                    i += 1
             elif ' FAILED  ]' in line and code:
                 Logs.error('%s' % line)
             elif ' PASSED  ]' in line:
