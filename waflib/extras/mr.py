@@ -630,6 +630,11 @@ class mr_log(MRContext):
     '''push all changes (using MR tool)'''
     cmd = 'repos-log'
 
+class mr_lstag(MRContext):
+    '''lists all tags of all repos'''
+    cmd = 'repos-lstag'
+    mr_cmd = 'run git tag --list'
+
 
 #### DEPRECATED code startsnip
 # TODO [2013-09-17 15:08:56] old deprecated mr interface, will be deleted
