@@ -429,7 +429,7 @@ class MR(object):
             ctx.parse_args()
             sys.exit(0)
 
-        # Check if the project folder exists, in this case the repo 
+        # Check if the project folder exists, in this case the repo
         # needs only to be registered
         if os.path.isdir(p.node.abspath()):
             self.mr_print('Register existing repository %s..' % p, sep = '')
@@ -608,7 +608,7 @@ class mr_origin_log(mr_xrun):
 class mr_fetch(MRContext):
     '''updates origin in all repositories (git fetch --no-progress)'''
     cmd = 'repos-fetch'
-    mr_cmd = 'run git fetch --no-progress'
+    mr_cmd = 'run git fetch --tags --no-progress'
 
 class mr_up(MRContext):
     '''update the repositories (using MR tool)'''
