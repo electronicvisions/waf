@@ -18,7 +18,7 @@ Usage::
 		bld(
 			features  = "intltool_in",
 			podir     = "../po",
-			flags     = ["-d", "-q", "-u", "-c"],
+			flags     = ["-d", "-q", "-u"],
 			source    = 'kupfer.desktop.in',
 			install_path = "${DATADIR}/applications",
 		)
@@ -52,7 +52,7 @@ def apply_intltool_in_f(self):
 			bld(
 				features  = "intltool_in",
 				podir     = "../po",
-				flags     = ["-d", "-q", "-u", "-c"],
+				flags     = ["-d", "-q", "-u"],
 				source    = 'kupfer.desktop.in',
 				install_path = "${DATADIR}/applications",
 			)
@@ -81,9 +81,12 @@ def apply_intltool_in_f(self):
 			continue
 
 		cache = getattr(self, 'intlcache', '.intlcache')
-		self.env['INTLCACHE'] = os.path.join(self.path.bldpath(), podir, cache)
-		self.env['INTLPODIR'] = podirnode.bldpath()
-		self.env['INTLFLAGS'] = getattr(self, 'flags', ['-q', '-u', '-c'])
+		self.env.INTLCACHE = [os.path.join(self.path.bldpath(), podir, cache)]
+		self.env.INTLPODIR = podirnode.bldpath()
+		self.env.INTLFLAGS = getattr(self, 'flags', self.env.INTLFLAGS_DEFAULT)
+		if '-c' in self.env.INTLFLAGS:
+			Logs.warn('Redundant -c flag in intltool task %r' % self)
+			self.env.INTLFLAGS.remove('-c')
 
 		task = self.create_task('intltool', node, node.change_ext(''))
 		inst = getattr(self, 'install_path', '${LOCALEDIR}')
@@ -155,7 +158,7 @@ class intltool(Task.Task):
 	"""
 	Let intltool-merge translate an input file
 	"""
-	run_str = '${INTLTOOL} ${INTLFLAGS} ${INTLCACHE} ${INTLPODIR} ${SRC} ${TGT}'
+	run_str = '${INTLTOOL} ${INTLFLAGS} ${INTLCACHE_ST:INTLCACHE} ${INTLPODIR} ${SRC} ${TGT}'
 	color   = 'BLUE'
 
 @conf
@@ -166,6 +169,8 @@ def find_msgfmt(conf):
 def find_intltool_merge(conf):
 	if not conf.env.PERL:
 		conf.find_program('perl', var='PERL')
+	conf.env.INTLCACHE_ST = '--cache=%s'
+	conf.env.INTLFLAGS_DEFAULT = ['-q', '-u']
 	conf.find_program('intltool-merge', interpreter='PERL', var='INTLTOOL')
 
 def configure(conf):
