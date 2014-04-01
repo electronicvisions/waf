@@ -188,6 +188,18 @@ class Context(ctx):
 		"""
 		return id(self)
 
+	def finalize(self):
+		"""
+		Use to free resources such as open files potentially held by the logger
+		"""
+		try:
+			logger = self.logger
+		except AttributeError:
+			pass
+		else:
+			Logs.free_logger(logger)
+			delattr(self, 'logger')
+
 	def load(self, tool_list, *k, **kw):
 		"""
 		Load a Waf tool as a module, and try calling the function named :py:const:`waflib.Context.Context.fun` from it.

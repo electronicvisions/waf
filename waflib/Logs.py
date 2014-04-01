@@ -269,7 +269,14 @@ def make_logger(path, name):
 		from waflib import Logs
 		bld.logger = Logs.make_logger('test.log', 'build')
 		bld.check(header_name='sadlib.h', features='cxx cprogram', mandatory=False)
+
+		# have the file closed immediately
+		Logs.free_logger(bld.logger)
+
+		# stop logging
 		bld.logger = None
+
+	The method finalize() of the command will try to free the logger, if any
 
 	:param path: file name to write the log output to
 	:type path: string
@@ -284,7 +291,7 @@ def make_logger(path, name):
 	logger.setLevel(logging.DEBUG)
 	return logger
 
-def make_mem_logger(name, to_log, size=10000):
+def make_mem_logger(name, to_log, size=8192):
 	"""
 	Create a memory logger to avoid writing concurrently to the main logger
 	"""
@@ -298,7 +305,19 @@ def make_mem_logger(name, to_log, size=10000):
 	logger.setLevel(logging.DEBUG)
 	return logger
 
-def pprint(col, str, label='', sep='\n'):
+def free_logger(logger):
+	"""
+	Free the resources held by the loggers created through make_logger or make_mem_logger.
+	This is used for file cleanup and for handler removal (logger objects are re-used).
+	"""
+	try:
+		for x in logger.handlers:
+			x.close()
+			logger.removeHandler(x)
+	except Exception as e:
+		pass
+
+def pprint(col, msg, label='', sep='\n'):
 	"""
 	Print messages in color immediately on stderr::
 
@@ -307,12 +326,12 @@ def pprint(col, str, label='', sep='\n'):
 
 	:param col: color name to use in :py:const:`Logs.colors_lst`
 	:type col: string
-	:param str: message to display
-	:type str: string or a value that can be printed by %s
+	:param msg: message to display
+	:type msg: string or a value that can be printed by %s
 	:param label: a message to add after the colored output
 	:type label: string
 	:param sep: a string to append at the end (line separator)
 	:type sep: string
 	"""
-	info("%s%s%s %s" % (colors(col), str, colors.NORMAL, label), extra={'terminator':sep})
+	info("%s%s%s %s" % (colors(col), msg, colors.NORMAL, label), extra={'terminator':sep})
 
