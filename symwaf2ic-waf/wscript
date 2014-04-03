@@ -1,0 +1,36 @@
+print "Loading wscript for symwaf2ic-waf dependency of symwaf2ic framework."
+
+#symwaf2ic setup --project=symwaf2ic-framework # followed by ->
+#symwaf2ic setup --directory symwaf2ic-waf/.symwaf2ic-framework
+#symwaf2ic configure build
+
+def options(opt):
+    print "s-waf opts"
+    pass
+
+def configure(cfg):
+    print "s-waf conf"
+
+def build(bld):
+    print "s-waf build"
+    wafNode = bld.path.make_node("../waf")
+    bld(    name    = "make-waf",
+            rule    = 'pwd; make -f ${SRC}',
+            source  = '../Makefile',
+            target  = wafNode
+    )
+
+    bld(    name    = "symwaf2ic-waf",
+            always  = True,
+            rule    = 'pwd; mv ${SRC} ${TGT}',
+            source  = wafNode,
+            target  = bld.path.get_bld().find_or_declare("symwaf2ic")
+    )
+
+# TOOLS=boost,clang_compilation_database,documentation,gtest,jenkins,mr,nosepatch,openmp,post_task,pypp,pypp,pytest,symap2ic_doxygen,symwaf2ic,symwaf2ic_prelude,symwaf2ic_misc,test_base
+# # Note take care to preseve the leading tab character in the following line!
+# PRELUDE=from waflib.extras.symwaf2ic_prelude import prelude; prelude()
+# TOP=$(CURDIR)/$(dir $(lastword $(MAKEFILE_LIST)))
+# 
+# waf:
+# 	cd $(TOP) && ./waf-light '--tools=${TOOLS}' '--prelude=	${PRELUDE}' --nostrip configure build
