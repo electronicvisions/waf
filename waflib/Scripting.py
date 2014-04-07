@@ -221,7 +221,11 @@ def run_command(cmd_name):
 	ctx.log_timer = Utils.Timer()
 	ctx.options = Options.options # provided for convenience
 	ctx.cmd = cmd_name
-	ctx.execute()
+	try:
+		ctx.execute()
+	finally:
+		# Issue 1374
+		ctx.finalize()
 	return ctx
 
 def run_commands():
@@ -234,11 +238,7 @@ def run_commands():
 	run_command('init')
 	while Options.commands:
 		cmd_name = Options.commands.pop(0)
-		try:
-			ctx = run_command(cmd_name)
-		finally:
-			# Issue 1374
-			ctx.finalize()
+		ctx = run_command(cmd_name)
 		Logs.info('%r finished successfully (%s)' % (cmd_name, str(ctx.log_timer)))
 	run_command('shutdown')
 
