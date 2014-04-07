@@ -452,7 +452,7 @@ def check_dir(path):
 			if not os.path.isdir(path):
 				raise Errors.WafError('Cannot create the folder %r' % path, ex=e)
 
-def check_exe(name):
+def check_exe(name, env=None):
 	"""
 	Ensure that a program exists
 	:type name: string
@@ -468,7 +468,8 @@ def check_exe(name):
 	if fpath and is_exe(name):
 		return os.path.abspath(name)
 	else:
-		for path in os.environ["PATH"].split(os.pathsep):
+		env = env or os.environ
+		for path in env["PATH"].split(os.pathsep):
 			path = path.strip('"')
 			exe_file = os.path.join(path, name)
 			if is_exe(exe_file):

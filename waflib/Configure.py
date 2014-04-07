@@ -476,7 +476,7 @@ def find_program(self, filename, **kw):
 
 	When var is used, you may set os.environ[var] to help find a specific program version, for example::
 
-		$ VALAC=/usr/bin/valac_test waf configure
+		$ CC='ccache gcc' waf configure
 
 	:param path_list: paths to use for searching
 	:type param_list: list of string
@@ -495,6 +495,7 @@ def find_program(self, filename, **kw):
 	environ = kw.get('environ', getattr(self, 'environ', os.environ))
 
 	ret = ''
+
 	filename = Utils.to_list(filename)
 	msg = kw.get('msg', ', '.join(filename))
 
@@ -502,26 +503,32 @@ def find_program(self, filename, **kw):
 	if not var:
 		var = re.sub(r'[-.]', '_', filename[0].upper())
 
-	if var in environ:
-		# do not use Utils.to_list here
-		# otherwise it would be impossible to specify an absolute path with spaces through the environment
-		filename = [environ[var]]
-
-	if self.env[var]:
-		ret = self.env[var]
-
 	path_list = kw.get('path_list', '')
-	if not ret:
-		if path_list:
-			path_list = Utils.to_list(path_list)
-		else:
-			path_list = environ.get('PATH', '').split(os.pathsep)
-		ret = self.find_binary(filename, exts.split(','), path_list)
+	if path_list:
+		path_list = Utils.to_list(path_list)
+	else:
+		path_list = environ.get('PATH', '').split(os.pathsep)
 
-	if not ret and Utils.winreg:
-		ret = Utils.get_registry_app_path(Utils.winreg.HKEY_CURRENT_USER, filename)
-	if not ret and Utils.winreg:
-		ret = Utils.get_registry_app_path(Utils.winreg.HKEY_LOCAL_MACHINE, filename)
+	if var in environ:
+		filename = environ[var]
+		if os.path.isfile(filename):
+			# typical CC=/usr/bin/gcc waf configure build
+			ret = [filename]
+		else:
+			# case  CC='ccache gcc' waf configure build
+			ret = self.cmd_to_list(filename)
+	elif self.env[var]:
+		# set by the user in the wscript file
+		ret = self.env[var]
+		ret = self.cmd_to_list(ret)
+	else:
+		if not ret:
+			ret = self.find_binary(filename, exts.split(','), path_list)
+		if not ret and Utils.winreg:
+			ret = Utils.get_registry_app_path(Utils.winreg.HKEY_CURRENT_USER, filename)
+		if not ret and Utils.winreg:
+			ret = Utils.get_registry_app_path(Utils.winreg.HKEY_LOCAL_MACHINE, filename)
+		ret = self.cmd_to_list(ret)
 
 	self.msg("Checking for program '%s'" % msg, ret or False, **kw)
 	if not kw.get('quiet', None):
@@ -530,11 +537,9 @@ def find_program(self, filename, **kw):
 	if not ret:
 		self.fatal(kw.get('errmsg', '') or 'Could not find the program %s' % ','.join(filename))
 
-	ret = self.cmd_to_list(ret)
-
 	interpreter = kw.get('interpreter', None)
 	if interpreter is None:
-		if not Utils.check_exe(ret[0]):
+		if not Utils.check_exe(ret[0], env=environ):
 			self.fatal('Program %s is not executable' % ret)
 		self.env[var] = ret
 	else:
