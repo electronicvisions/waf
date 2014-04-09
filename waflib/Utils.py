@@ -236,72 +236,73 @@ def h_file(fname):
 		f.close()
 	return m.digest()
 
-if hasattr(os, 'O_NOINHERIT') and sys.hexversion < 0x3040000:
-	def readf_win32(f, m='r', encoding='ISO8859-1'):
-		flags = os.O_NOINHERIT | os.O_RDONLY
-		if 'b' in m:
-			flags |= os.O_BINARY
-		if '+' in m:
-			flags |= os.O_RDWR
-		try:
-			fd = os.open(f, flags)
-		except OSError:
-			raise IOError('Cannot read from %r' % f)
+def readf_win32(f, m='r', encoding='ISO8859-1'):
+	flags = os.O_NOINHERIT | os.O_RDONLY
+	if 'b' in m:
+		flags |= os.O_BINARY
+	if '+' in m:
+		flags |= os.O_RDWR
+	try:
+		fd = os.open(f, flags)
+	except OSError:
+		raise IOError('Cannot read from %r' % f)
 
-		if sys.hexversion > 0x3000000 and not 'b' in m:
-			m += 'b'
-			f = os.fdopen(fd, m)
-			try:
-				txt = f.read()
-			finally:
-				f.close()
-			txt = txt.decode(encoding)
-		else:
-			f = os.fdopen(fd, m)
-			try:
-				txt = f.read()
-			finally:
-				f.close()
-		return txt
-
-	def writef_win32(f, data, m='w', encoding='ISO8859-1'):
-		if sys.hexversion > 0x3000000 and not 'b' in m:
-			data = data.encode(encoding)
-			m += 'b'
-		flags = os.O_CREAT | os.O_TRUNC | os.O_WRONLY | os.O_NOINHERIT
-		if 'b' in m:
-			flags |= os.O_BINARY
-		if '+' in m:
-			flags |= os.O_RDWR
-		try:
-			fd = os.open(f, flags)
-		except OSError:
-			raise IOError('Cannot write to %r' % f)
+	if sys.hexversion > 0x3000000 and not 'b' in m:
+		m += 'b'
 		f = os.fdopen(fd, m)
 		try:
-			f.write(data)
+			txt = f.read()
 		finally:
 			f.close()
-
-	def h_file_win32(fname):
+		txt = txt.decode(encoding)
+	else:
+		f = os.fdopen(fd, m)
 		try:
-			fd = os.open(fname, os.O_BINARY | os.O_RDONLY | os.O_NOINHERIT)
-		except OSError:
-			raise IOError('Cannot read from %r' % fname)
-		f = os.fdopen(fd, 'rb')
-		m = md5()
-		try:
-			while fname:
-				fname = f.read(200000)
-				m.update(fname)
+			txt = f.read()
 		finally:
 			f.close()
-		return m.digest()
+	return txt
 
+def writef_win32(f, data, m='w', encoding='ISO8859-1'):
+	if sys.hexversion > 0x3000000 and not 'b' in m:
+		data = data.encode(encoding)
+		m += 'b'
+	flags = os.O_CREAT | os.O_TRUNC | os.O_WRONLY | os.O_NOINHERIT
+	if 'b' in m:
+		flags |= os.O_BINARY
+	if '+' in m:
+		flags |= os.O_RDWR
+	try:
+		fd = os.open(f, flags)
+	except OSError:
+		raise IOError('Cannot write to %r' % f)
+	f = os.fdopen(fd, m)
+	try:
+		f.write(data)
+	finally:
+		f.close()
+
+def h_file_win32(fname):
+	try:
+		fd = os.open(fname, os.O_BINARY | os.O_RDONLY | os.O_NOINHERIT)
+	except OSError:
+		raise IOError('Cannot read from %r' % fname)
+	f = os.fdopen(fd, 'rb')
+	m = md5()
+	try:
+		while fname:
+			fname = f.read(200000)
+			m.update(fname)
+	finally:
+		f.close()
+	return m.digest()
+
+# always save these
+readf_unix = readf
+writef_unix = writef
+h_file_unix = h_file
+if hasattr(os, 'O_NOINHERIT') and sys.hexversion < 0x3040000:
 	# replace the default functions
-	readf_old = readf
-	writef_old = writef
-	h_file_old = h_file
 	readf = readf_win32
 	writef = writef_win32
 	h_file = h_file_win32
@@ -326,37 +327,38 @@ Return the hexadecimal representation of a string
 :type s: string
 """
 
+def listdir_win32(s):
+	"""
+	List the contents of a folder in a portable manner.
+	On Win32, return the list of drive letters: ['C:', 'X:', 'Z:']
+
+	:type s: string
+	:param s: a string, which can be empty on Windows
+	"""
+	if not s:
+		try:
+			import ctypes
+		except ImportError:
+			# there is nothing much we can do
+			return [x + ':\\' for x in list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')]
+		else:
+			dlen = 4 # length of "?:\\x00"
+			maxdrives = 26
+			buf = ctypes.create_string_buffer(maxdrives * dlen)
+			ndrives = ctypes.windll.kernel32.GetLogicalDriveStringsA(maxdrives*dlen, ctypes.byref(buf))
+			return [ str(buf.raw[4*i:4*i+2].decode('ascii')) for i in range(int(ndrives/dlen)) ]
+
+	if len(s) == 2 and s[1] == ":":
+		s += os.sep
+
+	if not os.path.isdir(s):
+		e = OSError('%s is not a directory' % s)
+		e.errno = errno.ENOENT
+		raise e
+	return os.listdir(s)
+
 listdir = os.listdir
 if is_win32:
-	def listdir_win32(s):
-		"""
-		List the contents of a folder in a portable manner.
-		On Win32, return the list of drive letters: ['C:', 'X:', 'Z:']
-
-		:type s: string
-		:param s: a string, which can be empty on Windows
-		"""
-		if not s:
-			try:
-				import ctypes
-			except ImportError:
-				# there is nothing much we can do
-				return [x + ':\\' for x in list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')]
-			else:
-				dlen = 4 # length of "?:\\x00"
-				maxdrives = 26
-				buf = ctypes.create_string_buffer(maxdrives * dlen)
-				ndrives = ctypes.windll.kernel32.GetLogicalDriveStringsA(maxdrives*dlen, ctypes.byref(buf))
-				return [ str(buf.raw[4*i:4*i+2].decode('ascii')) for i in range(int(ndrives/dlen)) ]
-
-		if len(s) == 2 and s[1] == ":":
-			s += os.sep
-
-		if not os.path.isdir(s):
-			e = OSError('%s is not a directory' % s)
-			e.errno = errno.ENOENT
-			raise e
-		return os.listdir(s)
 	listdir = listdir_win32
 
 def num2ver(ver):
@@ -407,7 +409,7 @@ def to_list(sth):
 	else:
 		return sth
 
-def split_path(path):
+def split_path_unix(path):
 	return path.split('/')
 
 def split_path_cygwin(path):
@@ -429,6 +431,8 @@ if sys.platform == 'cygwin':
 	split_path = split_path_cygwin
 elif is_win32:
 	split_path = split_path_win32
+else:
+	split_path = split_path_unix
 
 split_path.__doc__ = """
 Split a path by / or \\. This function is not like os.path.split
