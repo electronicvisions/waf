@@ -455,14 +455,22 @@ def apply_implib(self):
 			#gcc for windows takes *.def file a an input without any special flag
 			self.link_task.inputs.append(node)
 
-	try:
-		inst_to = self.install_path
-	except AttributeError:
-		inst_to = self.link_task.__class__.inst_to
-	if not inst_to:
-		return
-
-	self.implib_install_task = self.bld.install_as('${LIBDIR}/%s' % implib.name, implib, self.env)
+	# where to put the import library
+	if getattr(self, 'install_task', None):
+		try:
+			# user has given a specific installation path for the import library
+			inst_to = self.install_path_implib
+		except AttributeError:
+			try:
+				# user has given an installation path for the main library, put the import library in it
+				inst_to = self.install_path
+			except AttributeError:
+				# else, put the library in BINDIR and the import library in LIBDIR
+				inst_to = '${IMPLIBDIR}'
+				self.install_task.dest = '${BINDIR}'
+				if not self.env.IMPLIBDIR:
+					self.env.IMPLIBDIR = self.env.LIBDIR
+		self.implib_install_task = self.bld.install_files(inst_to, implib, env=self.env, chmod=self.link_task.chmod, task=self.link_task)
 
 # ============ the code above must not know anything about vnum processing on unix platforms =========
 
