@@ -949,6 +949,7 @@ def compile_fun_noshell(line):
 	def repl(match):
 		g = match.group
 		if g('dollar'): return "$"
+		elif g('backslash'): return '\\'
 		elif g('subst'): extr.append((g('var'), g('code'))); return "<<|@|>>"
 		return None
 
