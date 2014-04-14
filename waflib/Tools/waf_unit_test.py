@@ -33,7 +33,7 @@ the predefined callback::
 		bld.add_post_fun(waf_unit_test.summary)
 """
 
-import os, sys
+import os
 from waflib.TaskGen import feature, after_method
 from waflib import Utils, Task, Logs, Options
 testlock = Utils.threading.Lock()
@@ -107,7 +107,7 @@ class utest(Task.Task):
 
 		cwd = getattr(self.generator, 'ut_cwd', '') or self.inputs[0].parent.abspath()
 
-		testcmd = getattr(Options.options, 'testcmd', False)
+		testcmd = getattr(self.generator, 'ut_cmd', False) or getattr(Options.options, 'testcmd', False)
 		if testcmd:
 			self.ut_exec = (testcmd % self.ut_exec[0]).split(' ')
 
