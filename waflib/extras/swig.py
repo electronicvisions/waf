@@ -4,8 +4,8 @@
 # Thomas Nagy 2008-2010 (ita)
 
 import re
-from waflib import Task, Utils, Logs
-from waflib.TaskGen import extension, feature, after_method
+from waflib import Task, Logs
+from waflib.TaskGen import extension
 from waflib.Configure import conf
 from waflib.Tools import c_preproc
 
@@ -62,8 +62,6 @@ class swig(Task.Task):
 
 	def scan(self):
 		"scan for swig dependencies, climb the .i files"
-		env = self.env
-
 		lst_src = []
 
 		seen = []
@@ -156,8 +154,7 @@ def i_file(self, node):
 
 @conf
 def check_swig_version(self):
-	"""Check for a minimum swig version like conf.check_swig_version('1.3.28')
-	or conf.check_swig_version((1,3,28)) """
+	"""Returns a tuple representing the swig version, like (1,3,28)"""
 	reg_swig = re.compile(r'SWIG Version\s(.*)', re.M)
 	swig_out = self.cmd_and_log(self.env.SWIG + ['-version'])
 
@@ -168,7 +165,7 @@ def check_swig_version(self):
 	return swigver
 
 def configure(conf):
-	swig = conf.find_program('swig', var='SWIG')
+	conf.find_program('swig', var='SWIG')
 	conf.env.SWIGPATH_ST = '-I%s'
 	conf.env.SWIGDEF_ST = '-D%s'
 
