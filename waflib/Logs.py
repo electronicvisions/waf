@@ -143,7 +143,7 @@ class log_handler(logging.StreamHandler):
 			self.flush()
 		except (KeyboardInterrupt, SystemExit):
 			raise
-		except:
+		except: # from the python library -_-
 			self.handleError(record)
 
 	def emit_override(self, record, **kw):

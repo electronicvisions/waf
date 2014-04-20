@@ -346,7 +346,7 @@ class Dist(Context.Context):
 		node = self.base_path.make_node(arch_name)
 		try:
 			node.delete()
-		except Exception:
+		except OSError:
 			pass
 
 		files = self.get_files()

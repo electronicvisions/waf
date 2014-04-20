@@ -189,9 +189,8 @@ class Node(object):
 				shutil.rmtree(self.abspath())
 			else:
 				os.remove(self.abspath())
-		except OSError:
-			pass
-		self.evict()
+		finally:
+			self.evict()
 
 	def evict(self):
 		"""Internal - called when a node is removed"""
