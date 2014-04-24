@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+#Demo on embedding resources in executables
+
+"""
+We embed the main.c source code in a section of the program.
+See http://gareus.org/wiki/embedding_resources_in_executables
+
+TODO: support for more toolchains
+"""
+
+from waflib import Task
+from waflib.TaskGen import feature, before_method
+
+def options(opt):
+	opt.load('compiler_c')
+
+def configure(cfg):
+	cfg.load('compiler_c')
+	cfg.find_program('ld')
+
+class resource_ldr(Task.Task):
+	def run(tsk):
+		dst = tsk.outputs[0]
+		src = tsk.inputs[0]
+		cmd = tsk.env.LD + [
+		 '-r',
+		 '-b', 'binary',
+		 '-o', dst.abspath(),
+		 src.name,
+		]
+		tsk.exec_command(cmd, cwd=src.parent.abspath())
+
+@feature('resource_embed')
+@before_method('process_source')
+def ld_binary(self):
+	src = self.path.find_resource(self.source)
+	dst = src.change_ext('.o')
+	tsk = self.create_task('resource_ldr', src, dst)
+	try:
+		self.compiled_tasks.append(tsk)
+	except AttributeError:
+		self.compiled_tasks = [tsk]
+	self.source = []
+
+def build(bld):
+	bld(
+	 name='example',
+	 source='main.c',
+	 features='resource_embed',
+	)
+	bld(
+	 target = 'app',
+	 features = 'c cprogram',
+	 source = 'main.c',
+	 use='example',
+    )
+
