@@ -360,9 +360,10 @@ def create_waf(*k, **kw):
 		raise
 
 	# The reverse order prevent collisions
+	(cnt, C3) = find_unused(cnt, '\x00')
 	(cnt, C2) = find_unused(cnt, '\r')
 	(cnt, C1) = find_unused(cnt, '\n')
-	ccc = code1.replace("C1='x'", "C1='%s'" % C1).replace("C2='x'", "C2='%s'" % C2)
+	ccc = code1.replace("C1='x'", "C1='%s'" % C1).replace("C2='x'", "C2='%s'" % C2).replace("C3='x'", "C3='%s'" % C3)
 
 	f = open('waf', 'wb')
 	try:
