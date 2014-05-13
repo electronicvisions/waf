@@ -65,6 +65,8 @@ def _withoption_helper(option, dest=None):
     wo_opt = '--without-' + option
     if not dest:
         dest= 'with_' + option
+    # fix dest variable name
+    dest = dest.replace('-', '_')
     return w_opt, wo_opt, dest
 
 
