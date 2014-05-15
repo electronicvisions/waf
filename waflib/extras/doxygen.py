@@ -142,6 +142,11 @@ class doxygen(Task.Task):
 		for x in nodes:
 			x.sig = Utils.h_file(x.abspath())
 		self.outputs += nodes
+		if getattr(self.generator, 'install_path', None):
+			if not getattr(self.generator, 'doxy_tar', None):
+				self.generator.bld.install_files(self.generator.install_path,
+					self.outputs,
+					postpone=False)
 		return Task.Task.post_run(self)
 
 class tar(Task.Task):
@@ -191,6 +196,8 @@ def process_doxy(self):
 			tsk.env['TAROPTS'] = ['czf']
 		else:
 			tsk.env['TAROPTS'] = ['cf']
+		if getattr(self, 'install_path', None):
+			self.bld.install_files(self.install_path, tsk.outputs)
 
 def configure(conf):
 	'''
