@@ -76,7 +76,11 @@ class doxygen(Task.Task):
 		if not getattr(self, 'pars', None):
 			txt = self.inputs[0].read()
 			self.pars = parse_doxy(txt)
-			if not self.pars.get('OUTPUT_DIRECTORY'):
+			if self.pars.get('OUTPUT_DIRECTORY'):
+				# Use the path parsed from the Doxyfile as an absolute path
+				self.pars['OUTPUT_DIRECTORY'] = self.inputs[0].parent.get_bld().make_node(self.pars['OUTPUT_DIRECTORY']).abspath()
+			else:
+				# If no OUTPUT_PATH was specified in the Doxyfile build path from where the Doxyfile lives
 				self.pars['OUTPUT_DIRECTORY'] = self.inputs[0].parent.get_bld().abspath()
 
 			# Override with any parameters passed to the task generator
@@ -99,10 +103,8 @@ class doxygen(Task.Task):
 
 		if not getattr(self, 'output_dir', None):
 			bld = self.generator.bld
-			# First try to find an absolute path, then find or declare a relative path
+			# Output path is always an absolute path as it was transformed above.
 			self.output_dir = bld.root.find_dir(self.pars['OUTPUT_DIRECTORY'])
-			if not self.output_dir:
-				self.output_dir = bld.path.find_or_declare(self.pars['OUTPUT_DIRECTORY'])
 
 		self.signature()
 		return Task.Task.runnable_status(self)
@@ -126,13 +128,12 @@ class doxygen(Task.Task):
 
 	def run(self):
 		dct = self.pars.copy()
-		dct['INPUT'] = ' '.join(['"%s"' % x.abspath() for x in self.doxy_inputs])
 		code = '\n'.join(['%s = %s' % (x, dct[x]) for x in self.pars])
 		code = code.encode() # for python 3
 		#fmt = DOXY_STR % (self.inputs[0].parent.abspath())
 		cmd = Utils.subst_vars(DOXY_STR, self.env)
 		env = self.env.env or None
-		proc = Utils.subprocess.Popen(cmd, shell=True, stdin=Utils.subprocess.PIPE, env=env, cwd=self.generator.bld.path.get_bld().abspath())
+		proc = Utils.subprocess.Popen(cmd, shell=True, stdin=Utils.subprocess.PIPE, env=env, cwd=self.inputs[0].parent.abspath())
 		proc.communicate(code)
 		return proc.returncode
 
