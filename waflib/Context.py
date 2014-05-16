@@ -557,7 +557,15 @@ class Context(ctx):
 			msg = str(result)
 
 		self.to_log(msg)
-		Logs.pprint(kw.get('color', defcolor), msg)
+		try:
+			color = kw['color']
+		except KeyError:
+			if len(k) > 1 and k[1] in Logs.colors_lst:
+				# compatibility waf 1.7
+				color = k[1]
+			else:
+				color = defcolor
+		Logs.pprint(color, msg)
 
 	def load_special_tools(self, var, ban=[]):
 		global waf_dir
