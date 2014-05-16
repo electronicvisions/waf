@@ -3,51 +3,47 @@
 # Thomas Nagy, 2006 (ita)
 
 """
-for some obscure reason, the precompiled header will not be taken if
-all.h is in the same directory as main.cpp
-we recommend to add the header to compile in a separate directory without any sources
-
-Note: the #warning will come once when the .h is compiled, it will not come when the .cpp is compiled
-Note: do not forget to set the include paths (include=...)
+Note: the #warning will come once when the .h is compiled, it should not not come when the .cpp is compiled when precompiled headers are enabled
 """
-
-from waflib.TaskGen import feature, after
-from waflib.Task import Task
-from waflib.Tools import c_preproc
-
-@feature('cxx')
-@after('apply_link')
-def process_pch(self):
-	if getattr(self, 'pch', ''):
-		nodes = self.to_nodes(self.pch)
-		for x in nodes:
-			self.create_task('gchx', x, x.change_ext('.h.gch'))
-
-class gchx(Task):
-	run_str = '${CXX} ${CXXFLAGS} ${FRAMEWORKPATH_ST:FRAMEWORKPATH} ${CPPPATH_ST:INCPATHS} ${DEFINES_ST:DEFINES} ${CXX_SRC_F}${SRC} ${CXX_TGT_F}${TGT}'
-	scan    = c_preproc.scan
-	ext_out = ['.h']
-	color   = 'BLUE'
-from waflib.Task import update_outputs
-update_outputs(gchx)
 
 #################################################
 # example below
 
-VERSION='0.0.1'
+VERSION='0.0.2'
 APPNAME='pch_test'
 
 top = '.'
 out = 'build'
 
+def options(opt):
+	opt.load('compiler_cxx')
+	opt.load('pch boost', tooldir=['../../waflib/extras'])
+
 def configure(conf):
-	conf.load('g++')
+	conf.load('compiler_cxx pch')
+
+	# to include <boost/asio.hpp> to slow down compilation of precompiled headers
+	conf.load('boost')
+	conf.check_boost('system')
 
 def build(bld):
+	# Simple way, when precompiled header is used in a single build task
 	bld.program(
-		source   = 'main.cpp',
-		includes = '. subdir',
-		target   = 'test',
-		pch      = 'subdir/all.h')
+		target='test',
+		features='pch',
+		source='a.cpp b.cpp c.cpp main.cpp',
+		headers='a.h b.h c.h',
+		use='BOOST')
 
+	# More complex way, where precompiled header is reused by several build tasks
+	bld(features='cxx pch',
+		name='base-with-pch',
+		target='pch-header',
+		headers='a.h b.h c.h',
+		source='a.cpp',
+		use='BOOST')
 
+	bld.program(
+		target  = 'test1',
+		source  = 'b.cpp c.cpp main.cpp',
+		use = 'base-with-pch')
