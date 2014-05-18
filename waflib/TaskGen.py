@@ -246,7 +246,7 @@ class task_gen(object):
 		for k in task_gen.mappings:
 			if name.endswith(k):
 				return task_gen.mappings[k]
-		raise Errors.WafError("File %r has no mapping in %r (did you forget to load a waf tool?)" % (node, task_gen.mappings.keys()))
+		raise Errors.WafError("File %r has no mapping in %r (have you forgotten to load a waf tool?)" % (node, task_gen.mappings.keys()))
 
 	def create_task(self, name, src=None, tgt=None, **kw):
 		"""
