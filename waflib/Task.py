@@ -416,8 +416,8 @@ class Task(TaskBase):
 
 	def __str__(self):
 		"string to display to the user"
-		src_str = ' '.join([a.nice_path() for a in self.inputs])
-		tgt_str = ' '.join([a.nice_path() for a in self.outputs])
+		src_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.inputs])
+		tgt_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.outputs])
 		if self.outputs: sep = ' -> '
 		else: sep = ''
 		return '%s: %s%s%s\n' % (self.__class__.__name__.replace('_task', ''), src_str, sep, tgt_str)

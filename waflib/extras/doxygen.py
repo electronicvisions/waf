@@ -163,7 +163,7 @@ class tar(Task.Task):
 		return Task.Task.runnable_status(self)
 
 	def __str__(self):
-		tgt_str = ' '.join([a.nice_path(self.env) for a in self.outputs])
+		tgt_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.outputs])
 		return '%s: %s\n' % (self.__class__.__name__, tgt_str)
 
 @feature('doxygen')
