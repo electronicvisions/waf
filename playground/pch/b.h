@@ -3,6 +3,8 @@
 
 #warning "testpch: b.h"
 
-#include <boost/asio.hpp>
+#ifdef HAS_MY_BOOST
+	#include <boost/asio.hpp>
+#endif
 
 #endif // B_H

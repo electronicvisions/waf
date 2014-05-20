@@ -62,22 +62,23 @@ PCH_COMPILER_OPTIONS = {
 
 
 def options(opt):
-	opt.add_option('--with-pch', action='store_true', default=False, dest='with_pch',
-	               help='''Try to use precompiled header to speed up compilation '''
-	                    '''(only g++ and clang++)''')
+	opt.add_option('--without-pch', action='store_false', default=True, dest='with_pch', help='''Try to use precompiled header to speed up compilation (only g++ and clang++)''')
 
 def configure(conf):
 	if (conf.options.with_pch and conf.env['COMPILER_CXX'] in PCH_COMPILER_OPTIONS.keys()):
-		conf.env['WITH_PCH'] = True
+		conf.env.WITH_PCH = True
 		flags = PCH_COMPILER_OPTIONS[conf.env['COMPILER_CXX']]
-		conf.env['CXXPCH_F'] = flags[0]
-		conf.env['CXXPCH_EXT'] = flags[1]
-		conf.env['CXXPCH_FLAGS'] = flags[2]
+		conf.env.CXXPCH_F = flags[0]
+		conf.env.CXXPCH_EXT = flags[1]
+		conf.env.CXXPCH_FLAGS = flags[2]
 
 
 @TaskGen.feature('pch')
 @TaskGen.before('process_source')
 def apply_pch(self):
+	if not self.env.WITH_PCH:
+		return
+
 	if getattr(self.bld, 'pch_tasks', None) is None:
 		self.bld.pch_tasks = {}
 
@@ -89,7 +90,7 @@ def apply_pch(self):
 	if getattr(self, 'name', None):
 		try:
 			task = self.bld.pch_tasks[self.name]
-			self.bld.fatal("Duplicated 'pch' task with name '%s'" % self.name)
+			self.bld.fatal("Duplicated 'pch' task with name %r" % self.name)
 		except KeyError:
 			pass
 
