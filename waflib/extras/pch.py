@@ -51,6 +51,7 @@ To use this tool, wscript should look like:
 Note that precompiled header must have multiple inclusion guards.  If the guards are missing, any benefit of precompiled header will be voided and compilation may fail in some cases.
 """
 
+import os
 from waflib import Task, TaskGen, Logs, Utils
 from waflib.Tools import c_preproc, cxx
 
@@ -132,3 +133,13 @@ class gchx(Task.Task):
 	scan    = c_preproc.scan
 	color   = 'BLUE'
 	ext_out=['.h']
+
+	def runnable_status(self):
+		ret = Task.Task.runnable_status(self)
+		if ret == Task.SKIP_ME and self.env.CXX_NAME == 'clang':
+			t = os.stat(self.outputs[0].abspath()).st_mtime
+			for n in self.inputs:
+				if os.stat(n.abspath()).st_mtime > t:
+					return Task.RUN_ME
+		return ret
+
