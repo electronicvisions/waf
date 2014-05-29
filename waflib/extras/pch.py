@@ -107,7 +107,7 @@ def apply_pch(self):
 		self.bld.pch_tasks[self.name] = task
 
 @TaskGen.feature('cxx')
-@TaskGen.after_method('process_source')
+@TaskGen.after_method('process_source', 'propagate_uselib_vars')
 def add_pch(self):
 	if not (self.env['WITH_PCH'] and getattr(self, 'use', None) and getattr(self, 'compiled_tasks', None) and getattr(self.bld, 'pch_tasks', None)):
 		return
@@ -125,8 +125,8 @@ def add_pch(self):
 				pass
 
 	if pch:
-		for task in self.compiled_tasks:
-			task.env.append_value('CXXFLAGS', self.env['CXXPCH_F'] + [pch.target])
+		for x in self.compiled_tasks:
+			x.env.append_value('CXXFLAGS', self.env['CXXPCH_F'] + [pch.target])
 
 class gchx(Task.Task):
 	run_str = '${CXX} ${ARCH_ST:ARCH} ${CXXFLAGS} ${CPPFLAGS} ${CXXPCH_FLAGS} ${FRAMEWORKPATH_ST:FRAMEWORKPATH} ${CPPPATH_ST:INCPATHS} ${DEFINES_ST:DEFINES} ${CXXPCH_F:SRC} ${CXX_SRC_F}${SRC[0].abspath()} ${CXX_TGT_F}${TGT[0].abspath()}'
