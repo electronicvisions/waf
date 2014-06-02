@@ -166,6 +166,9 @@ class stlink_task(link_task):
 	"""
 	run_str = '${AR} ${ARFLAGS} ${AR_TGT_F}${TGT} ${AR_SRC_F}${SRC}'
 
+	chmod   = Utils.O644
+	"""Default installation mode for the static libraries"""
+
 def rm_tgt(cls):
 	old = cls.run
 	def wrap(self):
@@ -669,4 +672,3 @@ def read_object(self, obj):
 	if not isinstance(obj, self.path.__class__):
 		obj = self.path.find_resource(obj)
 	return self(features='fake_obj', source=obj, name=obj.name)
-
