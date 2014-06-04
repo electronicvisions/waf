@@ -128,7 +128,7 @@ def options(opt):
 
     gr = opt.add_option_group("Symwaf2ic options")
     gr.add_option(
-            "--project", dest="projects", action="append",
+            "--project", dest="projects", action="append", default=[],
             type=Project.from_project_opt if is_symwaf2ic else str,
             metavar="REPOSITORY[@BRANCH]",
             help="Declare the specified project (repository) as required build target . Branches can be specified by appending '@branch', e.g. --project halbe@dev. (Can be specified several times.)"
@@ -201,14 +201,15 @@ class MainContext(Symwaf2icContext):
         storage.config_node.mkdir()
 
         # projects are only set during setup phase
-        cmdopts = OptionParserContext().parse_args()
+        options = OptionParserContext()
+        cmdopts = options.parse_args()
         Logs.verbose = cmdopts.verbose
         if SETUP_CMD in sys.argv:
             # already write projects to store
-            projects = cmdopts.projects if cmdopts.projects else []
-            config = { "projects" : projects,
+            config = { "projects" : cmdopts.projects,
                        "preserved_options" : [],
-                       "setup_argv" : sys.argv,
+                       "setup_argv" : options.get_unused_args(),
+                       "setup_raw_argv" : sys.argv,
                        "setup_options" : vars(cmdopts),
                        "saved_paths" : None }
             storage.lockfile.write(json.dumps(config, indent=4))
@@ -279,6 +280,7 @@ class OptionParserContext(Symwaf2icContext):
         self._first_recursion = False # disable symwaf2ic recursion
         self.loaded = set()
         self.used_args = []
+        self.unused_args = []
 
     def load(self, tool_list, *k, **kw):
         """
@@ -358,10 +360,14 @@ class OptionParserContext(Symwaf2icContext):
 
         opts, unknown = self.parser.parse_known_args(cmdline)
         self.used_args = [a for a in cmdline if not a in unknown]
+        self.unused_args = unknown
         return opts
 
     def get_used_args(self):
         return self.used_args
+
+    def get_unused_args(self):
+        return self.unused_args
 
 def topological_sort(dependencies):
     """Pseudo topological sort of dependencies, that allows cycles"""
@@ -459,6 +465,11 @@ class DependencyContext(Symwaf2icContext):
             self.recurse([path], mandatory=False)
 
         storage.paths = topological_sort(self.dependencies)
+
+        unused_args = [x for x in
+                       self.options_parser.get_unused_args() if x[0] == '-']
+        if unused_args:
+            raise Symwaf2icError("Unkown options: %s" % ", ".join(unused_args))
 
         if self._shall_store_config():
             if SETUP_CMD in sys.argv:
