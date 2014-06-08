@@ -530,17 +530,26 @@ def find_program(self, filename, **kw):
 			ret = Utils.get_registry_app_path(Utils.winreg.HKEY_LOCAL_MACHINE, filename)
 		ret = self.cmd_to_list(ret)
 
-	self.msg("Checking for program '%s'" % msg, ret or False, **kw)
+
+	if ret:
+		if len(ret) == 1:
+			retmsg = ret[0]
+		else:
+			retmsg = ret
+	else:
+		retmsg = False
+
+	self.msg("Checking for program '%s'" % msg, retmsg, **kw)
 	if not kw.get('quiet', None):
 		self.to_log('find program=%r paths=%r var=%r -> %r' % (filename, path_list, var, ret))
 
 	if not ret:
-		self.fatal(kw.get('errmsg', '') or 'Could not find the program %s' % ','.join(filename))
+		self.fatal(kw.get('errmsg', '') or 'Could not find the program %r' % filename)
 
 	interpreter = kw.get('interpreter', None)
 	if interpreter is None:
 		if not Utils.check_exe(ret[0], env=environ):
-			self.fatal('Program %s is not executable' % ret)
+			self.fatal('Program %r is not executable' % ret)
 		self.env[var] = ret
 	else:
 		self.env[var] = self.env[interpreter] + ret
