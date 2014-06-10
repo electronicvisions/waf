@@ -872,10 +872,8 @@ def apply_flags_msvc(self):
 				pdbnode = self.link_task.outputs[0].change_ext('.pdb')
 				self.link_task.outputs.append(pdbnode)
 
-				try:
-					self.install_task.source.append(pdbnode)
-				except AttributeError:
-					pass
+				if getattr(self, 'install_task', None):
+					self.pdb_install_task = self.bld.install_files(self.install_task.dest, pdbnode, env=self.env)
 
 				break
 
