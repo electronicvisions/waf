@@ -608,7 +608,8 @@ class mr_origin_log(mr_xrun):
 class mr_fetch(MRContext):
     '''updates origin in all repositories (git fetch --no-progress)'''
     cmd = 'repos-fetch'
-    mr_cmd = 'run git fetch --tags --no-progress'
+    # KHS: --tags removed as this somehow disables fetch
+    mr_cmd = 'run git fetch --no-progress'
 
 class mr_up(MRContext):
     '''update the repositories (using MR tool)'''
