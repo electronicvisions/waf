@@ -242,6 +242,8 @@ class JenkinsContext(Context.Context):
     exitcode_OK                 = 0
     exitcode_Failure            = 11    # failure
 
+    logformat                   = '-n1 --pretty=oneline'
+
     detailed_doc ="""\
 The ./waf jenkins command only works in a Jenkins environment. The environment
 is detected checking the variables WORKSPACE and JOB_NAME. If these are not
@@ -325,8 +327,12 @@ To simulate a valid Jenkins environment run:
     def fetch_upstream(self):
         """Fetches upstream changes (git fetch) and returns False if an error occurs"""
         try:
+            print("Fetching upstream..."),
             self.cmd_and_log(['./waf', 'repos-fetch'], quiet=Context.BOTH)
+            # TODO filter stderr for basic output? (output of fetch goes to stderr!)
+            print("OK.")
         except Exception as e:
+            print("FAILURE!")
             Logs.error("Fetching origin updates failed --> build due failure!")
             print(e.stdout, e.stderr)
             return False
@@ -347,6 +353,7 @@ I.e. it checks if the last commit of the upstream branch resp. to the local
 checkout differs from the last local commit. Also triggers on local changes,
 but such should not occur in a Jenkins environment, anyways.
         """
+        print
         Logs.info("Executing Symwaf2ic Jenkins: BuildTrigger")
 
         if self.old_flow_check():
@@ -358,26 +365,48 @@ but such should not occur in a Jenkins environment, anyways.
         Logs.info("Acquiring data...")
         if not self.minimal_symwaf2ic_test():
             return self.exitcode_buildDueFailure
+
+        # design notes:
+        #  Buildtrigger fetches, but does not merge (no pull!)
+        #  A triggered build might be executed on another machine
+        #  -> next check will still find differences b/n local and fetch
+        #  -> so we must compare prefetch and postfetch, but not local!
+        #  -> the build step then changes local->recentfetch to get changes and authors.
+
+        print("Parsing pre_fetch origin..."),
+        pre_fetch=self.getOriginCommits()
+        print("OK.")
+
         if not self.fetch_upstream():
             return self.exitcode_buildDueFailure
 
-        local_commits, origin_commits = self.getLatestCommits()
+        print("Parsing post_fetch origin..."),
+        post_fetch=self.getOriginCommits()
+        print("OK.")
+
+        # assert dependencies (both commands should return the same set of repositories)
+        # (we've not jet run any --update-repos)
+        okeys = set(pre_fetch.keys())
+        lkeys = set(post_fetch.keys())
+        assert okeys == lkeys, "if this fails we probably must change this assertion and instead trigger a build."
+        del okeys, lkeys
+        print # make output a bit human readable..
 
 
-        ### Comparing latest commits, search for differing ones...
+        ### Comparing pre and post fetch
         Logs.info("Looking for changes...")
         build_required = False
-        for repo in origin_commits:
-            local = local_commits[repo]
-            origin = origin_commits[repo]
+        for repo in pre_fetch:
+            pre     =   pre_fetch[repo]
+            post    =   post_fetch[repo]
 
-            if local == origin:
-                print "Unchanged:", origin.shortstring()
+            if pre == post:
+                print "Unchanged:", pre.shortstring()
                 continue
 
             # else:
             build_required=True # we could break here, but we want a nice and complete output...
-            print "Changed:  ", local.getCommitRange(origin, nice=True)
+            Logs.warn("Changed: {}".format(pre.getCommitRange(post, nice=True)))
         print # make output a bit human readable..
 
 
@@ -534,20 +563,18 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
     ###################
     ### Helper methods
 
-    ### returns latest local and origin commit of the current checked out branch for every mr-managed repo.
-    def getLatestCommits(self):
-        # git log format, latest and a format thats understood by parseLog
-        logformat='-n1 --pretty=oneline'
-
+    def getLocalCommits(self):
         # find latest local commits
         cmd = (
                 './waf',
                 'mr-xrun',
                 '--',
-                'git log {logformat}'.format(logformat=logformat)
+                'git log {logformat}'.format(logformat=self.logformat)
         )
-        local_commits,fi = parseLog(cmd, self.jenkins_workspace.abspath())
+        local_commits = parseLog(cmd, self.jenkins_workspace.abspath())
+        return local_commits
 
+    def getOriginCommits(self):
         # find according (same branch) upstream (last fetch) commits
         cmd = (
                 "./waf",
@@ -556,9 +583,18 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
                 "ref=`git symbolic-ref -q HEAD` # refs/heads/<branchname>",
                 #"# upstream: The name of a local ref which can be considered “upstream” from the displayed ref (KHS: ie, origin)",
                 "branch=`git for-each-ref --format='%(upstream:short)' $ref` # origin/<branchname>",
-                "git log {logformat} $branch".format(logformat=logformat)
+                "git log {logformat} $branch".format(logformat=self.logformat)
         )
-        origin_commits,fi = parseLog(cmd, self.jenkins_workspace.abspath())
+        origin_commits = parseLog(cmd, self.jenkins_workspace.abspath())
+        return origin_commits
+
+
+    ### returns latest local and origin commit of the current checked out branch for every mr-managed repo.
+    def getLatestCommits(self):
+        # git log format, latest and a format thats understood by parseLog
+
+        local_commits=self.getLocalCommits()
+        origin_commits=self.getOriginCommits()
 
         # assert dependencies (both commands should return the same set of repositories)
         okeys = set(origin_commits.keys())
@@ -730,8 +766,8 @@ blame mails to the vandals (i.e. those who probably broke the build).
         fn_changelog    = self.jenkins_workspace.make_node("changelog").abspath()
         curdir          = os.getcwd()
 
-        #origin_commits,fi = parseLog(cmd_fetch_log)
-        #checkout_commits,fi = parseLog(cmd_checkout_log)
+        #origin_commits = parseLog(cmd_fetch_log)
+        #checkout_commits = parseLog(cmd_checkout_log)
 
         local_commits, origin_commits = self.getLatestCommits()
 
@@ -960,7 +996,8 @@ class ProcessPipe():
 
 ### function to parse "git log -n1 --pretty=oneline", retrieving the recent authors
 def parseLog(command, toplevel):
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+    with open(os.devnull, 'w') as fp:
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=fp)
     # mr title line has been removed (was available in the old flow)
     triple=[]   # 3 lines log output
     ret={}      # ret['<repo>'] = CommitSpecifier(...)
@@ -994,11 +1031,11 @@ def parseLog(command, toplevel):
             assert repo not in ret
             ret[repo] = c
             triple = []
+    returncode = proc.wait()
 
+    assert( returncode == 0 )
     assert( len(triple) == 1 )          # ~ "mr run: finished (N ok)"
     assert( triple[0].startswith("mr run: finished (") )    # failures not jet handled..
     final = triple[0]
 
-    print "{}".format(final)
-
-    return ret, final
+    return ret
