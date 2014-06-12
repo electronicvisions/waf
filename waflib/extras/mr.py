@@ -767,10 +767,16 @@ class show_repos_context(Context.Context):
         self.used = set(self.mr.get_projects().keys())
 
         try:
-            columns = int(os.popen('stty size', 'r').read().split()[1]) # 0 are the rows.
+            columns = int(os.getenv("STTY_COLUMNS", 0))
+            if not columns:    
+                columns = int(os.popen('stty size', 'r').read().split()[1]) # 0 are the rows.
         except:
-            Logs.warn("Could not determine console width ('stty size' failed), defaulting to 80.")
-            columns = 80 # very basic size uh...
+            #test -t 0 && ... otherwise it fails (if stdin is not there - like in jenkins)
+            if os.getenv("JOB_URL"):
+                columns = 160 # jenkins is wide
+            else:
+                Logs.warn("Could not determine console width ('stty size' failed), defaulting to 80.")
+                columns = 80 # very basic size uh...
 
         data = [ self.build_repo_info(r) for r in self.repos ]
 
