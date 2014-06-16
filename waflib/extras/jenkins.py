@@ -488,6 +488,7 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
         Logs.info("Retrieving authors and changelog...")
         authors=set()
 
+        cwd = os.getcwd()
         for repo in origin_commits:
             local = local_commits[repo]
             origin = origin_commits[repo]
@@ -523,6 +524,7 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
             with open(fn_changelog, "a") as f:
                 f.write('\n')
         # done: for repo in origin_commits
+        os.chdir(cwd)
         print # make output a bit human readable..
 
         if not authors:
