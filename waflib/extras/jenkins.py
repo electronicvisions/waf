@@ -6,6 +6,7 @@
 # Integrates jenkins commands into symap2ic waf (symap2ic/src/jenkins)
 
 from waflib import Logs, Context, Options
+from waflib.extras import mr
 import os, re, subprocess, platform
 
 TOOL            = "Jenkins Integration"
@@ -449,7 +450,7 @@ Usage: ./waf jenkins BuildPreamble || rm -rf *; exit 1 # to delete the bad works
         """
 Creates authors and changelog file in jenkins.log/BUILD_NUMBER
 
-The authors and the changelog are deduced from the "diff" of the upstream and the local "git log", i.e. from the recent commits.
+The authors and the changelog are deduced from the git log 'diff' of the origin (last fetched upstream) and the active branch.
 """
         Logs.info("Executing Symwaf2ic Jenkins: getAuthors")
         build_number = JenkinsContext.jenkins_build_number
@@ -527,11 +528,36 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
         os.chdir(cwd)
         print # make output a bit human readable..
 
+
+        # TODO also load repo managers? -> but only for those with changes?!
+
+        # checking project managers
+        prj = os.getenv("SYMWAF2IC_PROJECT") # TODO any better option to pass the SYMWAF2IC_PROJECT info to waf?
+        managers = []
+        if prj:
+            pdb = mr.Project_DB(self.path.find_node('.symwaf2ic/mr_conf/repo_db/project_db.json'))
+            managers = pdb.getManagers(prj)
+
         if not authors:
             Logs.info("No authors found.")
-            return self.exitcode_OK
+            assert not ( os.path.exists(fn_authors) or os.path.exists(fn_changelog) ), "WIERD: No authors found but authors/changelog files created?"
+            with open(fn_changelog) as f:
+                f.write("No specific changes, triggered for external reasons.\n")
+            if (managers):
+                Logs.info("Adressing the managers only...")
+            else:
+                return self.exitcode_OK
 
-        # else: CHANGES HAVE BEEN FOUND
+
+        # Add managers to authors list
+        if managers:
+            print "Adding the managers of '{}':".format(prj)
+            for m in managers:
+                authors.add(m+'\n')
+                print ', '.join(managers)
+
+
+        # else: Authors available/ CHANGES HAVE BEEN FOUND and/or managers
 
 
         ### Filter out external mails and stuff
