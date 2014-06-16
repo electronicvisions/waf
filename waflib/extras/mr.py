@@ -9,7 +9,7 @@ A :py:class:`waflib.Dependencies.DependenciesContext` instance is created when `
 """
 
 import os, sys
-from waflib import Utils, Logs, Context, Options, Configure, Errors
+from waflib import Utils, Logs, Context, Options, Configure, Errors, Node
 from pprint import pprint
 import json
 import tempfile
@@ -21,6 +21,52 @@ from StringIO import StringIO
 
 # will be set from symwaf2ic
 get_repo_tool = lambda: None
+
+
+class Project_DB(object):
+    def __init__(self, filepath):
+        if isinstance(filepath, Node.Node): filepath=filepath.abspath()
+        with open(filepath, 'r') as f:
+            self.content=f.read().replace('\n', ' ') # make real linebreaks in json strings act as spaces
+        self.db = json.loads(self.content)
+
+        # Toplevel data
+        self.projects=self.db.get('projects')
+        self.email_provider=self.db.get('known_email_provider')
+        self.default_pfiles=self.db.get('default_project_files')
+        self.reposerver=self.db.get('reposerver')
+
+    # Project data
+    def getManagers(self, project):
+        "A list of project managers (or a string): 'Name <email@address>'. Addresses ending with '@UPPERCASE' expand to a known_email_provider."
+        ml = self.projects.get(project)
+        if not ml: return None # project not found
+        ml = ml['manager']
+        if not ml: return None # no managers specified
+        if not isinstance(ml,list): ml = [ml]
+
+        for i,m in enumerate(ml):
+            for k,v in self.email_provider.iteritems():
+                k='@'+k+'>'
+                if m.endswith(k):
+                    ml[i] = m.replace(k, '@'+v+'>')
+                    break
+        return ml
+
+    #"title"
+    #    : "A short title that will be used to create display names for the projects jobs. Should start uppercase. Defaults to the project name.",
+    #"description"
+    #    : "An explicit description. Might be shown in the generated jobs. Maybe html?!",
+    #"since"
+    #    : "When was this project created, i.e. the project file generated and this entry added: 'yyyy-mm-dd'.",
+
+    #"setup"
+    #    : "The waf setup command: './waf setup --project xyz', Note that '--update-branches' will be appended automaticly (if not present).",
+    #"pfile"
+    #    : "The location of the project file: 'repo@branch:path/to/somefile.prj'. This holds the __definition__ of the project (the jobs).",
+
+    #"comment"
+
 
 class Repo_DB(object):
     def __init__(self, filepath):
@@ -768,7 +814,7 @@ class show_repos_context(Context.Context):
 
         try:
             columns = int(os.getenv("STTY_COLUMNS", 0))
-            if not columns:    
+            if not columns:
                 columns = int(os.popen('stty size', 'r').read().split()[1]) # 0 are the rows.
         except:
             #test -t 0 && ... otherwise it fails (if stdin is not there - like in jenkins)
