@@ -475,11 +475,11 @@ The authors and the changelog are deduced from the "diff" of the upstream and th
 
         # preparing the file system
         jenkins_log = self.jenkins_workspace.make_node(self.jenkins_log_dir)
-        jenkins_log = jenkins_log.make_node(build_number)
+        #jenkins_log = jenkins_log.make_node(build_number)
         jenkins_log.mkdir()
 
-        fn_authors      = jenkins_log.make_node("authors").abspath()
-        fn_changelog    = jenkins_log.make_node("changelog").abspath()
+        fn_authors      = jenkins_log.make_node(build_number.zfill(4)+".authors").abspath()
+        fn_changelog    = jenkins_log.make_node(build_number.zfill(4)+".changelog").abspath()
         assert not ( os.path.exists(fn_authors) or os.path.exists(fn_changelog) ), "Old authors or changelog file found in recent build number WHAT!!!"
         workspace_path  = self.jenkins_workspace.abspath()
 
