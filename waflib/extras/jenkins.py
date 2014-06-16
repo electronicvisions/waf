@@ -541,7 +541,7 @@ The authors and the changelog are deduced from the git log 'diff' of the origin 
         if not authors:
             Logs.info("No authors found.")
             assert not ( os.path.exists(fn_authors) or os.path.exists(fn_changelog) ), "WIERD: No authors found but authors/changelog files created?"
-            with open(fn_changelog) as f:
+            with open(fn_changelog, 'w') as f:
                 f.write("No specific changes, triggered for external reasons.\n")
             if (managers):
                 Logs.info("Adressing the managers only...")
