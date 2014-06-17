@@ -259,8 +259,7 @@ def boost_get_libs(self, *k, **kw):
 		tags = t and ''.join(t) or ''
 		for lib in lib_names:
 			if lib == 'python':
-				py = '(-py%s)?' % kw['python']
-				tags = '%s?%s' % (tags, py)
+				tags = '%s?(-py%s)?' % (tags, kw['python'])
 			# Trying libraries, from most strict match to least one
 			for pattern in ['boost_%s%s%s%s' % (lib, toolset_pat, tags, version),
 							'boost_%s%s%s' % (lib, tags, version),
