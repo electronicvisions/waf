@@ -229,8 +229,8 @@ def boost_get_libs(self, *k, **kw):
 	'''
 	path, files = self.__boost_get_libs_path(**kw)
 	toolset = self.boost_get_toolset(kw.get('toolset', ''))
-	toolset_pat = '(-%s[0-9]{0,3})+' % toolset
-	version = '(-%s)+' % self.env.BOOST_VERSION
+	toolset_pat = '(-%s[0-9]{0,3})' % toolset
+	version = '(-%s)' % self.env.BOOST_VERSION
 
 	def find_lib(re_lib, files):
 		for file in files:
@@ -250,24 +250,24 @@ def boost_get_libs(self, *k, **kw):
 		if not lib_names:
 			return libs
 		t = []
-		if kw.get('mt', None):
-			t.append('-mt')
-		t.append(is_static and '-s' or '-')
+		if kw.get('mt', False):
+			t.append('(-mt)')
 		if kw.get('abi', None):
-			t.append(kw['abi'])
-		elif not is_static:
-			t.pop()
-		tags = t and '(%s)' % ''.join(t) or ''
+			t.append('(%s%s)' % (is_static and '-s' or '-', kw['abi']))
+		elif is_static:
+			t.append('(-s)')
+		tags = t and ''.join(t) or ''
 		for lib in lib_names:
-			py = (lib == 'python') and '(-py%s)+' % kw['python'] or ''
+			if lib == 'python':
+				py = '(-py%s)?' % kw['python']
+				tags = '%s?%s' % (tags, py)
 			# Trying libraries, from most strict match to least one
-			for pattern in ['boost_%s%s%s+%s%s' % (lib, toolset_pat, tags, py, version),
-							'boost_%s%s+%s%s' % (lib, tags, py, version),
-							'boost_%s%s+%s' % (lib, tags, version),
+			for pattern in ['boost_%s%s%s%s' % (lib, toolset_pat, tags, version),
+							'boost_%s%s%s' % (lib, tags, version),
 							# Give up trying to find the right version
-							'boost_%s%s%s+%s' % (lib, toolset_pat, tags, py),
-							'boost_%s%s+%s' % (lib, tags, py),
-							'boost_%s%s?' % (lib, tags)]:
+							'boost_%s%s%s' % (lib, toolset_pat, tags),
+							'boost_%s%s' % (lib, tags),
+							'boost_%s' % lib]:
 				self.to_log('Trying pattern %s' % pattern)
 				file = find_lib(re.compile(pattern), files)
 				if file:
