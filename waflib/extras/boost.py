@@ -256,10 +256,12 @@ def boost_get_libs(self, *k, **kw):
 			t.append('(%s%s)' % (is_static and '-s' or '-', kw['abi']))
 		elif is_static:
 			t.append('(-s)')
-		tags = t and ''.join(t) or ''
+		tags_pat = t and ''.join(t) or ''
 		for lib in lib_names:
 			if lib == 'python':
-				tags = '%s?(-py%s)?' % (tags, kw['python'])
+				tags = '%s?(-py%s)?' % (tags_pat, kw['python'])
+			else:
+				tags = tags_pat
 			# Trying libraries, from most strict match to least one
 			for pattern in ['boost_%s%s%s%s' % (lib, toolset_pat, tags, version),
 							'boost_%s%s%s' % (lib, tags, version),
