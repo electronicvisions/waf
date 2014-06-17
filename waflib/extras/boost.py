@@ -30,6 +30,7 @@ When using this tool, the wscript will look like:
 
 Options are generated, in order to specify the location of boost includes/libraries.
 The `check_boost` configuration function allows to specify the used boost libraries.
+It can also provide default arguments to the --boost-mt command-line arguments.
 Everything will be packaged together in a BOOST component that you can use.
 
 When using MSVC, a lot of compilation flags need to match your BOOST build configuration:
@@ -110,8 +111,11 @@ def options(opt):
 				   default='', dest='boost_libs',
 				   help='''path to the directory where the boost libs are
 				   e.g. /path/to/boost_1_47_0/stage/lib''')
+	opt.add_option('--boost-mt', action='store_true',
+				   default=False, dest='boost_mt',
+				   help='select multi-threaded libraries')
 	opt.add_option('--boost-abi', type='string', default='', dest='boost_abi',
-				   help='''select libraries with tags (mt- for multithreaded, s for static, gd for debug. ex: mt-sgd),
+				   help='''select libraries with tags (gd for debug, static is automatically added),
 				   see doc Boost, Getting Started, chapter 6.1''')
 	opt.add_option('--boost-linkage_autodetect', action="store_true", dest='boost_linkage_autodetect',
 				   help="auto-detect boost linkage options (don't get used to it / might break other stuff)")
@@ -224,7 +228,6 @@ def boost_get_libs(self, *k, **kw):
 	according to the parameters
 	'''
 	path, files = self.__boost_get_libs_path(**kw)
-	tags = kw.get('abi', None) and '(-%s)+' % kw.get('abi') or ''
 	toolset = self.boost_get_toolset(kw.get('toolset', ''))
 	toolset_pat = '(-%s[0-9]{0,3})+' % toolset
 	version = '(-%s)+' % self.env.BOOST_VERSION
@@ -241,21 +244,30 @@ def boost_get_libs(self, *k, **kw):
 			name = name[3:]
 		return name[:name.rfind('.')]
 
-	def match_libs(lib_names):
+	def match_libs(lib_names, is_static):
 		libs = []
 		lib_names = Utils.to_list(lib_names)
 		if not lib_names:
 			return libs
+		t = []
+		if kw.get('mt', None):
+			t.append('-mt')
+		t.append(is_static and '-s' or '-')
+		if kw.get('abi', None):
+			t.append(kw['abi'])
+		elif not is_static:
+			t.pop()
+		tags = t and '(%s)' % ''.join(t) or ''
 		for lib in lib_names:
 			py = (lib == 'python') and '(-py%s)+' % kw['python'] or ''
 			# Trying libraries, from most strict match to least one
-			for pattern in ['boost_%s%s%s%s%s' % (lib, toolset_pat, tags, py, version),
-							'boost_%s%s%s%s' % (lib, tags, py, version),
-							'boost_%s%s%s' % (lib, tags, version),
+			for pattern in ['boost_%s%s%s+%s%s' % (lib, toolset_pat, tags, py, version),
+							'boost_%s%s+%s%s' % (lib, tags, py, version),
+							'boost_%s%s+%s' % (lib, tags, version),
 							# Give up trying to find the right version
-							'boost_%s%s%s%s' % (lib, toolset_pat, tags, py),
-							'boost_%s%s%s' % (lib, tags, py),
-							'boost_%s%s' % (lib, tags)]:
+							'boost_%s%s%s+%s' % (lib, toolset_pat, tags, py),
+							'boost_%s%s+%s' % (lib, tags, py),
+							'boost_%s%s?' % (lib, tags)]:
 				self.to_log('Trying pattern %s' % pattern)
 				file = find_lib(re.compile(pattern), files)
 				if file:
@@ -267,8 +279,8 @@ def boost_get_libs(self, *k, **kw):
 		return libs
 
 	return  path.abspath(), \
-			match_libs(kw.get('lib', None)), \
-			match_libs(kw.get('stlib', None))
+			match_libs(kw.get('lib', None), False), \
+			match_libs(kw.get('stlib', None), True)
 
 
 @conf
