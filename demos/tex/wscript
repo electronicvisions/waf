@@ -12,6 +12,8 @@ def configure(conf):
 	conf.load('tex')
 	if not conf.env.PDFLATEX:
 		conf.fatal('could not find the program pdflatex')
+	if not conf.env.MAKEGLOSSARIES:
+		conf.fatal('could not find the program makeglossaries which is absolutely required for this example')
 
 def build(bld):
 	bld.recurse('src')
