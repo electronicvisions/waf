@@ -469,6 +469,12 @@ class DependencyContext(Symwaf2icContext):
 
         storage.paths = topological_sort(self.dependencies)
 
+        # KHS: get top directories/repos of dependencies to add them to
+        # .git/info/exclude in case toplevel is under version control
+        gitnode = self.toplevel.find_node('.git')
+        if gitnode:
+            self.writeDotGitInfoExclude(gitnode, self.toplevel.abspath(), storage.paths)
+
         unused_args = [x for x in
                        self.options_parser.get_unused_args() if x[0] == '-']
         if unused_args:
