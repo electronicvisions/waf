@@ -492,6 +492,47 @@ class DependencyContext(Symwaf2icContext):
         if self.write_dot_file:
             self._dump_dot_file(self.write_dot_file)
 
+    #[2014-06-24 10:42:01] KHS
+    def writeDotGitInfoExclude(self, gitnode, toplevel, paths):
+        '''if there is a toplevel git repo we want to exclude repos checked out by waf'''
+        # this means all subfolders of toplevel which contain dependencies
+
+        # the dependency pathes all begin with 'toplevel/'
+        lentop=len(toplevel) + 1 # toplevel does not end with /
+        ignores=set()
+        for p in paths:
+            p = p[lentop:]              # make it relative to toplevel (remove toplevel/abspath part) 
+            p = p.split('/',1)[0]       # we want to exclude subfolders containing deps completely
+            if p: ignores.add(p + '/')  # they are all directories
+
+        # some more symwaf2ic generated stuff
+        ignores.update([
+            '.waf-*',
+            '.lock-waf_*_build',
+            '.symwaf2ic*',
+            'build/',
+        ])
+        ignores_avail=set()
+
+        # get already existant ignores
+        git_info_exclude_node = gitnode.find_node("info/exclude")
+        if git_info_exclude_node:
+            for line in git_info_exclude_node.read().split('\n'):
+                if not line: continue
+                if line.startswith('#'): continue
+                ignores_avail.add(line)
+        else:
+            git_info_exclude_node = gitnode.make_node("info/exclude")
+
+        # add missing ignores
+        ignores = ignores - ignores_avail
+        data = '\n'.join(ignores)
+        if data:
+            Logs.info("Appending git exclude rules to '{}'".format(git_info_exclude_node.abspath()))
+            data=data+'\n'
+            print data
+            git_info_exclude_node.write(data,'a')
+
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
         # KHS: is this really neccessary? It recurses once again into all options of all wscripts of all dependencies
