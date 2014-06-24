@@ -460,9 +460,12 @@ class DependencyContext(Symwaf2icContext):
 
         self._recurse_projects()
 
+        # KHS: changes self.path to arbitrary value, now back it up
+        path_prior_recurse = self.path
         while self.to_recurse:
-            path = self.to_recurse.popleft()
-            self.recurse([path], mandatory=False)
+            rpath = self.to_recurse.popleft()
+            self.recurse([rpath], mandatory=False)
+        self.path=path_prior_recurse
 
         storage.paths = topological_sort(self.dependencies)
 
