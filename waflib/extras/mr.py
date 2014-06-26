@@ -541,14 +541,20 @@ class MR(object):
         # return node
 
     def _get_or_create_project(self, name):
+        ret = self.projects.get(name, None)
+        if ret:
+            return ret
+
         try:
-            return self.projects[name]
-        except KeyError:
             vcs = self.db.get_type(name)
-            node = self.base.make_node(name)
-            p = self.project_types[vcs](name = name, node = node)
-            self.projects[name] = p
-            return p
+        except KeyError as e:
+            Logs.error("Missing information in repository database: %s" % name)
+            raise KeyError("Missing information in repository database. Missing key: '%s'" % e.message)
+
+        node = self.base.make_node(name)
+        p = self.project_types[vcs](name = name, node = node)
+        self.projects[name] = p
+        return p
 
 
 # TODO: KHS, this is not a build step, its a configure step if any specific step at all.
