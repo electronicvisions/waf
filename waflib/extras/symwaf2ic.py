@@ -188,7 +188,7 @@ class MainContext(Symwaf2icContext):
     cmd = "_symwaf2ic"
 
     def execute(self):
-        Logs.info("Starting up symwaf2ic")
+        Logs.debug("symwaf2ic: Starting up symwaf2ic")
 
         self.set_toplevel()
         self.get_config()
@@ -222,7 +222,8 @@ class MainContext(Symwaf2icContext):
 
         if not SETUP_CMD in sys.argv:
             args = [o for o in storage.preserved_options if not o in sys.argv]
-            Logs.info("Using options from setup call: " + " ".join(args))
+            if args:
+                Logs.info("symwaf2ic: Using options from setup call: " + " ".join(args))
             sys.argv += args
 
         storage.current_options = vars(cmdopts)
@@ -231,7 +232,7 @@ class MainContext(Symwaf2icContext):
         self.repo_db_type = cmdopts.repo_db_type
 
     def init_toplevel(self):
-        Logs.info("Setting up symwaf2ic toplevel.")
+        Logs.debug("symwaf2ic: Setting up symwaf2ic toplevel.")
 
         # Since we need the toplevel in several commands, only store the path
         storage.toplevel = self.path.abspath()

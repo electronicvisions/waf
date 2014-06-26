@@ -241,13 +241,13 @@ class MR(object):
         if clear_log:
             self.log.write("")
 
-        self.mr_print('Using "%s" to manage repositories' % self.mr_tool.abspath())
-        self.mr_print('commands are logged to "%s"' % self.log.path_from(self.base))
+        Logs.debug('mr: Using "%s" to manage repositories' % self.mr_tool.abspath())
+        Logs.debug('mr: commands are logged to "%s"' % self.log.path_from(self.base))
 
         self.setup_repo_db(db_url, db_type)
 
         self.init_mr()
-        self.mr_print("Found managed repositories: " + str(self.pretty_projects() ))
+        Logs.debug("mr: Found managed repositories: " + str(self.pretty_projects() ))
 
     def init_dirs(self, top, cfg):
         # Find top node
