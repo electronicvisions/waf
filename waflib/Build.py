@@ -9,7 +9,7 @@ The inheritance tree is the following:
 
 """
 
-import os, sys, errno, re, shutil
+import os, sys, errno, re, shutil, stat
 try:
 	import cPickle
 except ImportError:
@@ -950,6 +950,13 @@ class InstallContext(BuildContext):
 
 		if not self.progress_bar:
 			Logs.info('+ install %s (from %s)' % (tgt, srclbl))
+
+		# Give best attempt at making destination overwritable,
+		# like the 'install' utility used by 'make install' does.
+		try:
+			os.chmod(tgt, 0644 | stat.S_IMODE(os.stat(tgt).st_mode))
+		except (OSError, IOError):
+			pass
 
 		# following is for shared libs and stale inodes (-_-)
 		try:
