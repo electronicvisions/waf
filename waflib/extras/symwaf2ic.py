@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 "Symwaf2ic package"
+# waf --zones=symwaf2ic
 
 import os
 import sys
@@ -156,10 +157,19 @@ def options(opt):
             help="Stores graph in a dot file",
             default=None
             )
-    gr.add_option(
-            '-v', '--verbose',  dest='verbose',
-            default=0, action='count',
-            help='verbosity level -v -vv or -vvv [default: 0]')
+
+    if is_symwaf2ic:
+        gr.add_option(
+                '-v', '--verbose', dest='verbose',
+                default=0, action='count',
+                help='<should be invisible>verbosity level -v -vv or -vvv [default: 0]'
+        )
+
+        gr.add_option(
+                '--zones', dest='zones',
+                default='', action='store',
+                help='debugging zones (task_gen, deps, tasks, etc)'
+        )
 
 
 class Symwaf2icContext(Context.Context):
@@ -203,7 +213,23 @@ class MainContext(Symwaf2icContext):
         # projects are only set during setup phase
         options = OptionParserContext()
         cmdopts = options.parse_args()
+
+        # KHS: reused from Scripting.parse_args()
         Logs.verbose = cmdopts.verbose
+        Logs.init_log()
+
+        if cmdopts.zones:
+            Logs.zones = cmdopts.zones.split(',')
+            if not Logs.verbose:
+                Logs.verbose = 1
+        elif Logs.verbose > 0:
+            Logs.zones = ['runner']
+
+        if Logs.verbose > 2:
+            Logs.zones = ['*']
+        # end snip
+
+
         if SETUP_CMD in sys.argv:
             # already write projects to store
             config = { "projects" : cmdopts.projects,
@@ -508,7 +534,7 @@ class DependencyContext(Symwaf2icContext):
         lentop=len(toplevel) + 1 # toplevel does not end with /
         ignores=set()
         for p in paths:
-            p = p[lentop:]              # make it relative to toplevel (remove toplevel/abspath part) 
+            p = p[lentop:]              # make it relative to toplevel (remove toplevel/abspath part)
             p = p.split('/',1)[0]       # we want to exclude subfolders containing deps completely
             if p: ignores.add(p + '/')  # they are all directories
 
@@ -542,10 +568,6 @@ class DependencyContext(Symwaf2icContext):
 
     def pre_recurse(self, node):
         super(DependencyContext, self).pre_recurse(node)
-        # KHS: is this really neccessary? It recurses once again into all options of all wscripts of all dependencies
-        # and finally the default OptionParser (from waf) recurses them again. And this is actually the one that is used
-        # The whole symwaf2ic.OptionParserContext seems to be (at least partially) redundant code?
-        # And the use of the modern argparse instead of the older optparse (used by waf) is questionable...
         self.options = self.options_parser.parse_args(
                 self.path.abspath(), argv=storage.setup_argv)
 

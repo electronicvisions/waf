@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # Thomas Nagy, 2005-2010 (ita)
+# vim: set noexpandtab:
 
 "Module called for configuring, compiling and installing targets"
 
@@ -207,19 +208,8 @@ def parse_options():
 		Options.commands = [default_cmd]
 	Options.commands = [x for x in Options.commands if x != 'options'] # issue 1076
 
-	# process some internal Waf options
-	Logs.verbose = Options.options.verbose
-	#Logs.init_log()
-
-	if Options.options.zones:
-		Logs.zones = Options.options.zones.split(',')
-		if not Logs.verbose:
-			Logs.verbose = 1
-	elif Logs.verbose > 0:
-		Logs.zones = ['runner']
-
-	if Logs.verbose > 2:
-		Logs.zones = ['*']
+	# process some internal Waf options (KHS: verbose and zones)
+	# KHS moved to symwaf2ic.py options
 
 def run_command(cmd_name):
 	"""
