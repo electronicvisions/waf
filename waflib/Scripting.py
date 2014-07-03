@@ -218,6 +218,8 @@ def run_command(cmd_name):
 	:param cmd_name: command to execute, like ``build``
 	:type cmd_name: string
 	"""
+	if Logs.verbose > 0:
+		Logs.pprint('CYAN', '\nExecuting command: "%s"' % cmd_name)
 	ctx = Context.create_context(cmd_name)
 	ctx.log_timer = Utils.Timer()
 	ctx.options = Options.options # provided for convenience

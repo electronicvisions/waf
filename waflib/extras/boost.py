@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# vim: set noexpandtab:
 #
 # partially based on boost.py written by Gernot Vormayr
 # written by Ruediger Sonderfeld <ruediger@c-plusplus.de>, 2008
@@ -318,8 +319,7 @@ def check_boost(self, *k, **kw):
 	self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
 	self.env.BOOST_VERSION = self.boost_get_version(inc)
 	self.end_msg(self.env.BOOST_VERSION)
-	if Logs.verbose:
-		Logs.pprint('CYAN', '	path : %s' % self.env['INCLUDES_%s' % var])
+	Logs.debug("boost: path -> %s" % self.env['INCLUDES_%s' % var])
 
 	if not params['lib'] and not params['stlib']:
 		return
@@ -332,10 +332,9 @@ def check_boost(self, *k, **kw):
 	self.env['LIB_%s' % var] = libs
 	self.env['STLIB_%s' % var] = stlibs
 	self.end_msg('ok')
-	if Logs.verbose:
-		Logs.pprint('CYAN', '	path : %s' % path)
-		Logs.pprint('CYAN', '	shared libs : %s' % libs)
-		Logs.pprint('CYAN', '	static libs : %s' % stlibs)
+	Logs.debug('boost: path : %s' % path)
+	Logs.debug('boost: shared libs : %s' % libs)
+	Logs.debug('boost: static libs : %s' % stlibs)
 
 
 	def try_link():

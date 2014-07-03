@@ -271,7 +271,7 @@ class MainContext(Symwaf2icContext):
         # sys.argv.remove(SETUP_CMD)
 
     def set_toplevel(self):
-        Logs.debug("Finding toplevel")
+        Logs.debug("symwaf2ic: Finding toplevel")
         if SETUP_CMD in sys.argv:
             self.init_toplevel()
         else:
@@ -449,8 +449,7 @@ class DependencyContext(Symwaf2icContext):
         self.to_recurse = deque()
 
     def __call__(self, project, subfolder="", branch=None):
-        if Logs.verbose > 0:
-            Logs.info("Required by {script}: {project}{branch}{subfolder}".format(
+        Logs.debug("symwaf2ic: Required by {script}: {project}{branch}{subfolder}".format(
                     project=project,
                     subfolder="" if len(subfolder) == 0 else " ({0})".format(subfolder),
                     branch="" if branch is None else "@{0}".format(branch),
@@ -474,7 +473,7 @@ class DependencyContext(Symwaf2icContext):
         self._first_recursion = False
 
         info = [str(p) for p in get_projects()]
-        Logs.info("Required from toplevel: {0}".format( ", ".join(info)))
+        Logs.debug("symwaf2ic: Required from toplevel: {0}".format( ", ".join(info)))
 
         # Color map for topological sort
         self.visited = defaultdict(lambda: self.NOT_VISITED)
