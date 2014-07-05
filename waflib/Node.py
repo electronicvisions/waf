@@ -99,7 +99,7 @@ class Node(object):
 
 	The Node objects are not thread safe in any way.
 	"""
-
+	dict_class = dict
 	__slots__ = ('name', 'sig', 'children', 'parent', 'cache_abspath', 'cache_isdir', 'cache_sig')
 	def __init__(self, name, parent):
 		self.name = name
@@ -241,7 +241,7 @@ class Node(object):
 			try:
 				self.children
 			except AttributeError:
-				self.children = {}
+				self.children = self.dict_class()
 
 		self.cache_isdir = True
 
@@ -265,7 +265,7 @@ class Node(object):
 			try:
 				ch = cur.children
 			except AttributeError:
-				cur.children = {}
+				cur.children = self.dict_class()
 			else:
 				try:
 					cur = cur.children[x]
@@ -319,7 +319,7 @@ class Node(object):
 					cur = cur.children[x]
 					continue
 			else:
-				cur.children = {}
+				cur.children = self.dict_class()
 			cur = self.__class__(x, cur)
 		return cur
 
@@ -457,7 +457,7 @@ class Node(object):
 		try:
 			lst = set(self.children.keys())
 		except AttributeError:
-			self.children = {}
+			self.children = self.dict_class()
 		else:
 			if remove:
 				for x in lst - set(dircont):
