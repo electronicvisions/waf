@@ -397,8 +397,9 @@ def install_boost(self):
 	install_boost.done = True
 	inst_to = getattr(self, 'install_path', '${BINDIR}')
 	for lib in self.env.LIB_BOOST:
-		file = self.bld.find_file(self.env.cxxshlib_PATTERN % lib, self.env.LIBPATH_BOOST)
-		if not file:
+		try:
+			file = self.bld.find_file(self.env.cxxshlib_PATTERN % lib, self.env.LIBPATH_BOOST)
+			self.bld.install_files(inst_to, self.bld.root.find_node(file))
+		except:
 			continue
-		self.bld.install_files(inst_to, self.bld.root.find_node(file))
 install_boost.done = False
