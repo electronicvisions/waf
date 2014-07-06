@@ -52,6 +52,7 @@ import sys
 import re
 from waflib import Utils, Logs, Errors
 from waflib.Configure import conf
+from waflib.TaskGen import feature, after_method
 
 BOOST_LIBS = ['/usr/lib/x86_64-linux-gnu', '/usr/lib/i386-linux-gnu',
 			  '/usr/lib', '/usr/local/lib', '/opt/local/lib', '/sw/lib', '/lib']
@@ -387,3 +388,17 @@ def check_boost(self, *k, **kw):
 			self.fatal('The configuration failed')
 		self.end_msg('ok')
 
+
+@feature('cxx')
+@after_method('apply_link')
+def install_boost(self):
+	if install_boost.done or not Utils.is_win32 or not self.bld.cmd.startswith('install'):
+		return
+	install_boost.done = True
+	inst_to = getattr(self, 'install_path', '${BINDIR}')
+	for lib in self.env.LIB_BOOST:
+		file = self.bld.find_file(self.env.cxxshlib_PATTERN % lib, self.env.LIBPATH_BOOST)
+		if not file:
+			continue
+		self.bld.install_files(inst_to, self.bld.root.find_node(file))
+install_boost.done = False
