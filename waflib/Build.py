@@ -954,7 +954,7 @@ class InstallContext(BuildContext):
 		# Give best attempt at making destination overwritable,
 		# like the 'install' utility used by 'make install' does.
 		try:
-			os.chmod(tgt, 0644 | stat.S_IMODE(os.stat(tgt).st_mode))
+			os.chmod(tgt, Utils.O644 | stat.S_IMODE(os.stat(tgt).st_mode))
 		except (OSError, IOError):
 			pass
 
