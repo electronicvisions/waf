@@ -99,7 +99,9 @@ EXT_QT5 = ['.cpp', '.cc', '.cxx', '.C']
 File extensions of C++ files that may require a .moc processing
 """
 
-QT5_LIBS = '''Qt5Bluetooth
+QT5_LIBS = '''
+qtmain
+Qt5Bluetooth
 Qt5CLucene
 Qt5Concurrent
 Qt5Core
