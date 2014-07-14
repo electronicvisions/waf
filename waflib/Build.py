@@ -1158,7 +1158,7 @@ class UninstallContext(InstallContext):
 
 		self.rm_empty_dirs(tgt)
 
-	def do_link(self, src, tgt):
+	def do_link(self, src, tgt, **kw):
 		"""See :py:meth:`waflib.Build.InstallContext.do_link`"""
 		try:
 			if not self.progress_bar:
