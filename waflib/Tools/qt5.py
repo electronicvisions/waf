@@ -133,6 +133,7 @@ Qt5Test
 Qt5WebKit
 Qt5WebKitWidgets
 Qt5Widgets
+Qt5WinExtras
 Qt5X11Extras
 Qt5XmlPatterns
 Qt5Xml'''
