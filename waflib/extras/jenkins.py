@@ -482,10 +482,10 @@ The authors and the changelog are deduced from the git log 'diff' of the origin 
         fn_authors      = jenkins_log.make_node(build_number.zfill(4)+".authors")
         fn_changelog    = jenkins_log.make_node(build_number.zfill(4)+".changelog")
         #assert not ( os.path.exists(fn_authors) or os.path.exists(fn_changelog) ), "Old authors or changelog file found in recent build number WHAT!!!"
-        if os.path.exists(fn_authors):
+        if os.path.exists(fn_authors.abspath()):
             Logs.warn("Old authors file found... deleting it.")
             fn_authors.delete()
-        if os.path.exists(fn_changelog):
+        if os.path.exists(fn_changelog.abspath()):
             Logs.warn("Old changelog file found... deleting it.")
             fn_changelog.delete()
         fn_authors      = fn_authors.abspath()
