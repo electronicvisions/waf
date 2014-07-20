@@ -584,6 +584,8 @@ def autoconfigure(execute_method):
 		if do_config:
 			Options.commands.insert(0, self.cmd)
 			Options.commands.insert(0, 'configure')
+			if Configure.autoconfig == 'clobber':
+				Options.options.__dict__ = env.options
 			return
 
 		return execute_method(self)
