@@ -191,7 +191,7 @@ class formatter(logging.Formatter):
 				elif rec.levelno >= logging.INFO:
 					c1 = colors.GREEN
 			c2 = getattr(rec, 'c2', colors.NORMAL)
-			msg = '%s%s%s' % (c1, msg, c2) # TODO OMG
+			msg = '%s%s%s' % (c1, msg, c2)
 		else:
 			msg = msg.replace('\r', '\n')
 			msg = re.sub(r'\x1B\[(K|.*?(m|h|l))', '', msg)

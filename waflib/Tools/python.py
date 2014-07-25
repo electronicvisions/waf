@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2007-2010 (ita)
+# Thomas Nagy, 2007-2014 (ita)
 # Gustavo Carneiro (gjc), 2007
 
 """
@@ -55,65 +55,70 @@ Piece of Python code used in :py:func:`waflib.Tools.python.pytask` for byte-comp
 
 DISTUTILS_IMP = ['from distutils.sysconfig import get_config_var, get_python_lib']
 
+@before_method('process_source')
 @feature('py')
 def feature_py(self):
 	"""
 	Create tasks to byte-compile .py files and install them, if requested
 	"""
+	self.install_path = getattr(self, 'install_path', '${PYTHONDIR}')
+	install_from = getattr(self, 'install_from', None)
+	if install_from and not isinstance(install_from, Node.Node):
+		install_from = self.path.find_dir(install_from)
+	self.install_from = install_from
 
-	install_path = getattr (self, 'install_path', '${PYTHONDIR}')
-	install_from = getattr (self, 'install_from', None)
-	if install_from and not isinstance (install_from, Node.Node):
-			install_from = self.path.find_dir (install_from)
+	ver = self.env.PYTHON_VERSION
+	if not ver:
+		self.bld.fatal('Installing python files requires PYTHON_VERSION, try conf.check_python_version')
 
-	inputs = []
-	for x in Utils.to_list (self.source):
-		if isinstance (x, Node.Node):
-			y = x
-		else:
-			y = self.path.find_resource (x)
-		inputs.append (y)
-
-		if install_path:
-			if install_from:
-				pyd = Utils.subst_vars ("%s/%s" % (install_path, y.path_from (install_from)), self.env)
-			else:
-				pyd = Utils.subst_vars ("%s/%s" % (install_path, y.path_from (self.path)), self.env)
-		else:
-			pyd = y.abspath ()
-
-		for ext in ("pyc", "pyo"):
-			if install_from:
-				pyobj = self.path.get_bld ().make_node (y
-														.change_ext (".%s" % ext)
-														.get_bld ()
-														.path_from (install_from.get_bld ()))
-			else:
-				pyobj = self.path.get_bld ().make_node (y
-														.change_ext (".%s" % ext)
-														.name)
-			pyobj.parent.mkdir ()
-
-			tsk = self.create_task (ext, y, pyobj)
-			tsk.pyd = pyd
-
-			if install_path:
-				self.bld.install_files (install_path, pyobj, cwd = self.path.get_bld (), relative_trick = True)
-
-	if install_path:
-		if install_from:
-			self.bld.install_files (install_path, inputs, cwd = install_from, relative_trick = True)
-		else:
-			self.bld.install_files (install_path, inputs)
+	if int(ver.replace('.', '')) > 31:
+		self.install_32 = True
 
 @extension('.py')
 def process_py(self, node):
 	"""
 	Add signature of .py file, so it will be byte-compiled when necessary
 	"""
-	node.sig = Utils.h_file (node.abspath())
+	assert(node.get_bld_sig())
+	assert(getattr(self, 'install_path')), 'add features="py"'
 
-class pyc (Task.Task):
+	# where to install the python file
+	if self.install_path:
+		if self.install_from:
+			self.bld.install_files(self.install_path, [node], cwd=self.install_from, relative_trick=True)
+		else:
+			self.bld.install_files(self.install_path, [node])
+
+	lst = []
+	if self.env.PYC:
+		lst.append('pyc')
+	if self.env.PYO:
+		lst.append('pyo')
+
+	if self.install_path:
+		if self.install_from:
+			pyd = Utils.subst_vars("%s/%s" % (self.install_path, node.path_from(self.install_from)), self.env)
+		else:
+			pyd = Utils.subst_vars("%s/%s" % (self.install_path, node.path_from(self.path)), self.env)
+	else:
+		pyd = node.abspath()
+
+	for ext in lst:
+		if self.env.PYTAG:
+			# __pycache__ installation for python 3.2 - PEP 3147
+			name = node.name[:-3]
+			pyobj = node.parent.get_bld().make_node('__pycache__').make_node("%s.%s.%s" % (name, self.env.PYTAG, ext))
+			pyobj.parent.mkdir()
+		else:
+			pyobj = node.change_ext(".%s" % ext)
+
+		tsk = self.create_task(ext, node, pyobj)
+		tsk.pyd = pyd
+
+		if self.install_path:
+			self.bld.install_files(self.install_path, pyobj, cwd=self.path.get_bld(), relative_trick=True)
+
+class pyc(Task.Task):
 	"""
 	Byte-compiling python files
 	"""
@@ -123,14 +128,13 @@ class pyc (Task.Task):
 		ret = self.generator.bld.exec_command(cmd)
 		return ret
 
-class pyo (Task.Task):
+class pyo(Task.Task):
 	"""
 	Byte-compiling python files
 	"""
 	color = 'PINK'
 	def run(self):
-		cmd = [Utils.subst_vars('${PYTHON}', self.env),
-			   Utils.subst_vars('${PYFLAGS_OPT}', self.env), '-c', INST, self.inputs[0].abspath(), self.outputs[0].abspath(), self.pyd]
+		cmd = [Utils.subst_vars('${PYTHON}', self.env), Utils.subst_vars('${PYFLAGS_OPT}', self.env), '-c', INST, self.inputs[0].abspath(), self.outputs[0].abspath(), self.pyd]
 		ret = self.generator.bld.exec_command(cmd)
 		return ret
 
@@ -526,12 +530,16 @@ def configure(conf):
 
 	conf.find_program('python', var='PYTHON')
 
-	v['PYCMD'] = '"import sys, py_compile;py_compile.compile(sys.argv[1], sys.argv[2])"'
 	v['PYFLAGS'] = ''
 	v['PYFLAGS_OPT'] = '-O'
 
 	v['PYC'] = getattr(Options.options, 'pyc', 1)
 	v['PYO'] = getattr(Options.options, 'pyo', 1)
+
+	try:
+		v.PYTAG = conf.cmd_and_log(conf.env.PYTHON + ['-c', "import imp;print(imp.get_tag())"]).strip()
+	except Errors.WafError:
+		pass
 
 def options(opt):
 	"""
@@ -548,3 +556,4 @@ def options(opt):
 					 help='Installation path for python modules (py, platform-independent .py and .pyc files)')
 	pyopt.add_option('--pythonarchdir', dest='pythonarchdir',
 					 help='Installation path for python extension (pyext, platform-dependent .so or .dylib files)')
+
