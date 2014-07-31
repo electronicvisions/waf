@@ -675,7 +675,7 @@ class mr_tag(mr_xrun):
             tag = Options.commands[0]
             Options.commands=[]
         else:
-            self.fatal("You must specify a tag; it will be prefixed with 'symwaftic-'")
+            self.fatal("You must specify a tag; it will be prefixed with 'symwaf2ic-'")
 
         print
         Logs.info("If you have not choosen a unique tag, tagging will fail on some repos with collisions.\n" +
