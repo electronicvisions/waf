@@ -657,6 +657,36 @@ class mr_origin_log(mr_xrun):
         return ['run', self.getMrCmdFile(), logformat]
 
 
+# [2014-07-31 21:07:45] KHS, inital draft version
+# TODO add some reasonable checks (collision)
+# TODO help with autoincreasing version number
+# TODO write tags to file instead of the git repos
+# TODO add option to autopush?
+
+class mr_tag(mr_xrun):
+    """tag all repositories with "symwaf2ic-param1", right now no collision checks are performed."""
+    cmd = "repos-tag"
+    mr_cmds = [
+            'git tag "symwaf2ic-$1"',
+    ]
+
+    def get_args(self):
+        if Options.commands:
+            tag = Options.commands[0]
+            Options.commands=[]
+        else:
+            self.fatal("You must specify a tag; it will be prefixed with 'symwaftic-'")
+
+        print
+        Logs.info("If you have not choosen a unique tag, tagging will fail on some repos with collisions.\n" +
+                    "Performing 'git tag symwaf2ic-{}'.\n".format(tag) +
+                    "Also be aware that you need to push the tags using 'git push --tags' (./waf mr-xrun \"git push --tags\")"
+        )
+        print
+
+        return [ 'run', self.getMrCmdFile(), tag ]
+
+
 class mr_fetch(MRContext):
     '''updates origin in all repositories (git fetch --no-progress)'''
     cmd = 'repos-fetch'
