@@ -246,7 +246,7 @@ def sfilter(path):
 			f.close()
 
 	if sys.hexversion > 0x030000f0:
-		return (io.BytesIO(cnt.encode('utf-8')), len(cnt), cnt)
+		return (io.BytesIO(cnt.encode('utf-8')), len(cnt.encode('utf-8')), cnt)
 	return (io.BytesIO(cnt), len(cnt), cnt)
 
 def create_waf(*k, **kw):
