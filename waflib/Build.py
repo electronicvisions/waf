@@ -910,6 +910,8 @@ class InstallContext(BuildContext):
 	def copy_fun(self, src, tgt, **kw):
 		# override this if you want to strip executables
 		# kw['tsk'].source is the task that created the files in the build
+		if Utils.is_win32 and len(tgt) > 259 and not tgt.startswith('\\\\?\\'):
+			tgt = '\\\\?\\' + tgt
 		shutil.copy2(src, tgt)
 		os.chmod(tgt, kw.get('chmod', Utils.O644))
 
