@@ -32,7 +32,9 @@ and output files. While a typical script may require the following::
 
 this tool will make the process much easier, for example::
 
-	from waflib.extras import unc
+	def configure(conf):
+		conf.load('unc') # do not import the module directly
+
 	def build(bld):
 		def myfun(tsk):
 			tsk.outputs[0].write("data")
@@ -45,7 +47,7 @@ this tool will make the process much easier, for example::
 """
 
 import os
-from waflib import Node, Utils
+from waflib import Node, Utils, Context
 
 def find_resource(self, lst):
 	if isinstance(lst, str):
@@ -103,4 +105,7 @@ if Utils.is_win32:
 
 	Node.Node.abspath_orig = Node.Node.abspath
 	Node.Node.abspath = abspath
+
+	for k in list(Context.cache_modules.keys()):
+		Context.cache_modules["\\\\?\\" + k] = Context.cache_modules[k]
 
