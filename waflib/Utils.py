@@ -137,7 +137,7 @@ except ImportError:
 		def keys(self):
 			return self.lst
 
-is_win32 = sys.platform in ('win32', 'cli')
+is_win32 = sys.platform in ('win32', 'cli', 'os2')
 
 def readf(fname, m='r', encoding='ISO8859-1'):
 	"""
@@ -611,7 +611,8 @@ def unversioned_sys_platform():
 	# powerpc == darwin for our purposes
 	if s == 'powerpc':
 		return 'darwin'
-	if s == 'win32' or s.endswith('os2') and s != 'sunos2': return s
+	if s == 'win32' or s == 'os2':
+		return s
 	return re.split('\d+$', s)[0]
 
 def nada(*k, **kw):
