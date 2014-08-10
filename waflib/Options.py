@@ -55,6 +55,9 @@ class opt_parser(optparse.OptionParser):
 		self.formatter.width = Logs.get_term_cols()
 		self.ctx = ctx
 
+	def print_usage(self, file=None):
+		return self.print_help(file)
+
 	def get_usage(self):
 		"""
 		Return the message to print on ``waf --help``
