@@ -39,10 +39,10 @@ def get_ifort_version(conf, fc):
 
 	if Utils.is_win32:
 		version_re = re.compile(r"Intel[\sa-zA-Z()0-9,]*Version\s*(?P<major>\d*)\.(?P<minor>\d*)",re.I).search
-		cmd = fc + ['--version']
+		cmd = fc + ['/version']
 	else:
 		version_re = re.compile(r"ifort\s*\(IFORT\)\s*(?P<major>\d*)\.(?P<minor>\d*)",re.I).search
-		cmd = fc
+		cmd = fc + ['--version']
 
 	out, err = fc_config.getoutput(conf, cmd, stdin=False)
 	if out:
