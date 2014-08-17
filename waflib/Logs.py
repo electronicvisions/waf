@@ -179,7 +179,8 @@ class formatter(logging.Formatter):
 		except Exception:
 			msg = rec.msg
 
-		if rec.stream.isatty():
+		use = colors_lst['USE']
+		if (use == 1 and rec.stream.isatty()) or use == 2:
 
 			c1 = getattr(rec, 'c1', None)
 			if c1 is None:
