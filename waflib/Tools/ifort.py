@@ -39,7 +39,7 @@ def get_ifort_version(conf, fc):
 
 	version_re = re.compile(r"Intel[\sa-zA-Z()0-9,]*Version\s*(?P<major>\d*)\.(?P<minor>\d*)",re.I).search
 	if Utils.is_win32:
-		cmd = fc + ['/logo']
+		cmd = fc
 	else:
 		cmd = fc + ['-logo']
 
