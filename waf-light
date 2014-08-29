@@ -30,7 +30,7 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-import os, sys
+import os, sys, inspect
 
 VERSION="1.8.0"
 REVISION="x"
@@ -56,8 +56,8 @@ def err(m):
 	print(('\033[91mError: %s\033[0m' % m))
 	sys.exit(1)
 
-def unpack_wafdir(dir):
-	f = open(sys.argv[0],'rb')
+def unpack_wafdir(dir, src):
+	f = open(src,'rb')
 	c = 'corrupt archive (%d)'
 	while 1:
 		line = f.readline()
@@ -130,8 +130,8 @@ def test(dir):
 		pass
 
 def find_lib():
-	name = sys.argv[0]
-	base = os.path.dirname(os.path.abspath(name))
+	src = os.path.abspath(inspect.getfile(inspect.getmodule(err)))
+	base, name = os.path.split(src)
 
 	#devs use $WAFDIR
 	w=test(os.environ.get('WAFDIR', ''))
@@ -154,7 +154,7 @@ def find_lib():
 	if w: return w
 
 	#unpack
-	unpack_wafdir(dir)
+	unpack_wafdir(dir, src)
 	return dir
 
 wafdir = find_lib()
