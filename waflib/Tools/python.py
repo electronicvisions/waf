@@ -259,123 +259,31 @@ def check_python_headers(conf):
 	if dct[x]:
 		conf.env[x] = conf.environ[x] = dct[x]
 
-	env['pyext_PATTERN'] = '%s' + dct['SO'] # not a mistake
+	if not env.pyext_PATTERN:
+		if dct['SO']:
+			env.pyext_PATTERN = '%s' + dct['SO'] # not a mistake
+		else:
+			env.pyext_PATTERN = (conf.env.cshlib_PATTERN or conf.env.cxxshlib_PATTERN).lstrip('lib')
 
-	# Check for python libraries for embedding
-
-	all_flags = dct['LDFLAGS'] + ' ' + dct['CFLAGS']
-	conf.parse_flags(all_flags, 'PYEMBED')
-
-	all_flags = dct['LDFLAGS'] + ' ' + dct['LDSHARED'] + ' ' + dct['CFLAGS']
-	conf.parse_flags(all_flags, 'PYEXT')
-
-	result = None
-	#name = 'python' + env['PYTHON_VERSION']
-
-	if not dct["LDVERSION"]:
-		dct["LDVERSION"] = env['PYTHON_VERSION']
-
-	# TODO simplify this
-	for name in ('python' + dct['LDVERSION'], 'python' + env['PYTHON_VERSION'] + 'm', 'python' + env['PYTHON_VERSION'].replace('.', '')):
-
-		# LIBPATH_PYEMBED is already set; see if it works.
-		if not result and env['LIBPATH_PYEMBED']:
-			path = env['LIBPATH_PYEMBED']
-			conf.to_log("\n\n# Trying default LIBPATH_PYEMBED: %r\n" % path)
-			result = conf.check(lib=name, uselib='PYEMBED', libpath=path, mandatory=False, msg='Checking for library %s in LIBPATH_PYEMBED' % name)
-
-		if not result and dct['LIBDIR']:
-			path = [dct['LIBDIR']]
-			conf.to_log("\n\n# try again with -L$python_LIBDIR: %r\n" % path)
-			result = conf.check(lib=name, uselib='PYEMBED', libpath=path, mandatory=False, msg='Checking for library %s in LIBDIR' % name)
-
-		if not result and dct['LIBPL']:
-			path = [dct['LIBPL']]
-			conf.to_log("\n\n# try again with -L$python_LIBPL (some systems don't install the python library in $prefix/lib)\n")
-			result = conf.check(lib=name, uselib='PYEMBED', libpath=path, mandatory=False, msg='Checking for library %s in python_LIBPL' % name)
-
-		if not result:
-			path = [os.path.join(dct['prefix'], "libs")]
-			conf.to_log("\n\n# try again with -L$prefix/libs, and pythonXY name rather than pythonX.Y (win32)\n")
-			result = conf.check(lib=name, uselib='PYEMBED', libpath=path, mandatory=False, msg='Checking for library %s in $prefix/libs' % name)
-
-		if result:
-			break # do not forget to set LIBPATH_PYEMBED
-
-	if result:
-		env['LIBPATH_PYEMBED'] = path
-		env.append_value('LIB_PYEMBED', [name])
-	else:
-		conf.to_log("\n\n### LIB NOT FOUND\n")
-
-	# under certain conditions, python extensions must link to
-	# python libraries, not just python embedding programs.
-	if Utils.is_win32 or dct['Py_ENABLE_SHARED']:
-		env['LIBPATH_PYEXT'] = env['LIBPATH_PYEMBED']
-		env['LIB_PYEXT'] = env['LIB_PYEMBED']
-
-	# We check that pythonX.Y-config exists, and if it exists we
-	# use it to get only the includes, else fall back to distutils.
+	# We require pythonX.Y-config to get the flags
 	num = '.'.join(env['PYTHON_VERSION'].split('.')[:2])
-	conf.find_program([''.join(pybin) + '-config', 'python%s-config' % num, 'python-config-%s' % num, 'python%sm-config' % num], var='PYTHON_CONFIG', msg="python-config", mandatory=False)
+	conf.find_program([''.join(pybin) + '-config', 'python%s-config' % num, 'python-config-%s' % num, 'python%sm-config' % num], var='PYTHON_CONFIG', msg="python-config")
 
-	includes = []
-	if conf.env.PYTHON_CONFIG:
-		for incstr in conf.cmd_and_log(conf.env.PYTHON_CONFIG + ['--includes']).strip().split():
-			# strip the -I or /I
-			if (incstr.startswith('-I') or incstr.startswith('/I')):
-				incstr = incstr[2:]
-			# append include path, unless already given
-			if incstr not in includes:
-				includes.append(incstr)
-		conf.to_log("Include path for Python extensions (found via python-config --includes): %r\n" % (includes,))
-		env['INCLUDES_PYEXT'] = includes
-		env['INCLUDES_PYEMBED'] = includes
-	else:
-		conf.to_log("Include path for Python extensions "
-					"(found via distutils module): %r\n" % (dct['INCLUDEPY'],))
-		env['INCLUDES_PYEXT'] = [dct['INCLUDEPY']]
-		env['INCLUDES_PYEMBED'] = [dct['INCLUDEPY']]
+	flags = ['--cflags', '--libs', '--ldflags']
+	xx = conf.env.CXX_NAME and 'cxx' or 'c'
 
-	# Code using the Python API needs to be compiled with -fno-strict-aliasing
-	if env['CC_NAME'] == 'gcc':
-		env.append_value('CFLAGS_PYEMBED', ['-fno-strict-aliasing'])
-		env.append_value('CFLAGS_PYEXT', ['-fno-strict-aliasing'])
-	if env['CXX_NAME'] == 'gcc':
-		env.append_value('CXXFLAGS_PYEMBED', ['-fno-strict-aliasing'])
-		env.append_value('CXXFLAGS_PYEXT', ['-fno-strict-aliasing'])
+	conf.check_cfg(msg='Asking python-config for pyembed %r flags' % ' '.join(flags),
+		path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEMBED', args=flags)
+	conf.check(header_name='Python.h', define_name='HAVE_PYEMBED', msg='Getting pyembed flags from python-config',
+		fragment=FRAG, errmsg='Could not build a python embedded interpreter',
+		features='%s %sprogram pyembed' % (xx, xx))
 
-	if env.CC_NAME == "msvc":
-		from distutils.msvccompiler import MSVCCompiler
-		dist_compiler = MSVCCompiler()
-		dist_compiler.initialize()
-		env.append_value('CFLAGS_PYEXT', dist_compiler.compile_options)
-		env.append_value('CXXFLAGS_PYEXT', dist_compiler.compile_options)
-		env.append_value('LINKFLAGS_PYEXT', dist_compiler.ldflags_shared)
+	conf.check_cfg(msg='Asking python-config for pyext %r flags' % ' '.join(flags),
+		path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEXT', args=flags)
+	conf.check(header_name='Python.h', define_name='HAVE_PYEXT', msg='Getting pyext flags from python-config',
+		features='%s %sshlib pyext' % (xx, xx), fragment=FRAG, errmsg='Could not build python extensions')
 
-	# See if it compiles
-	try:
-		conf.check(header_name='Python.h', define_name='HAVE_PYTHON_H',
-		   uselib='PYEMBED', fragment=FRAG,
-		   errmsg=':-(')
-	except conf.errors.ConfigurationError:
-		# python3.2, oh yeah
-		xx = conf.env.CXX_NAME and 'cxx' or 'c'
-
-		flags = ['--cflags', '--libs', '--ldflags']
-
-		for f in flags:
-			conf.check_cfg(msg='Asking python-config for pyembed %s flags' % f,
-				path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEMBED', args=[f])
-		conf.check(header_name='Python.h', define_name='HAVE_PYTHON_H', msg='Getting pyembed flags from python-config',
-			fragment=FRAG, errmsg='Could not build a python embedded interpreter',
-			features='%s %sprogram pyembed' % (xx, xx))
-
-		for f in flags:
-			conf.check_cfg(msg='Asking python-config for pyext %s flags' % f,
-				path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEXT', args=[f])
-		conf.check(header_name='Python.h', define_name='HAVE_PYTHON_H', msg='Getting pyext flags from python-config',
-			features='%s %sshlib pyext' % (xx, xx), fragment=FRAG, errmsg='Could not build python extensions')
+	conf.define('HAVE_PYTHON_H', 1)
 
 @conf
 def check_python_version(conf, minver=None):
