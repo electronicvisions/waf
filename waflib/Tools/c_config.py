@@ -185,7 +185,7 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			app('CXXFLAGS_' + uselib, [x])
 		elif x.startswith('-bundle'):
 			app('LINKFLAGS_' + uselib, [x])
-		elif x.startswith('-undefined'):
+		elif x.startswith('-undefined') or x.startswith('-Xlinker'):
 			arg = lst.pop(0)
 			app('LINKFLAGS_' + uselib, [x, arg])
 		elif x.startswith('-arch') or x.startswith('-isysroot'):
