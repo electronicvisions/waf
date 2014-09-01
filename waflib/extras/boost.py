@@ -261,9 +261,9 @@ def boost_get_libs(self, *k, **kw):
 		tags_pat = t and ''.join(t) or ''
 		for lib in lib_names:
 			if lib == 'python':
-			   # for instance, with python='27',
-			   # accepts '-py27', '-py2', '27' and '2'
-			   # but will reject '-py3', '-py26', '26' and '3'
+			    # for instance, with python='27',
+			    # accepts '-py27', '-py2', '27' and '2'
+			    # but will reject '-py3', '-py26', '26' and '3'
 				tags = '({0})?((-py{2})|(-py{1}(?=[^0-9]))|({2})|({1}(?=[^0-9]))|(?=[^0-9])(?!-py))'.format(tags_pat, kw['python'][0], kw['python'])
 			else:
 				tags = tags_pat
