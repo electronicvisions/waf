@@ -229,6 +229,7 @@ def boost_get_libs(self, *k, **kw):
 	according to the parameters
 	'''
 	path, files = self.__boost_get_libs_path(**kw)
+	files = sorted(files, key=lambda f: len(f.name), reverse=True)
 	toolset = self.boost_get_toolset(kw.get('toolset', ''))
 	toolset_pat = '(-%s[0-9]{0,3})' % toolset
 	version = '(-%s)' % self.env.BOOST_VERSION
@@ -260,7 +261,10 @@ def boost_get_libs(self, *k, **kw):
 		tags_pat = t and ''.join(t) or ''
 		for lib in lib_names:
 			if lib == 'python':
-				tags = '%s?(-py%s)?' % (tags_pat, kw['python'])
+			   # for instance, with python='27',
+			   # accepts '-py27', '-py2', '27' and '2'
+			   # but will reject '-py3', '-py26', '26' and '3'
+				tags = '({0})?((-py{2})|(-py{1}(?=[^0-9]))|({2})|({1}(?=[^0-9]))|(?=[^0-9])(?!-py))'.format(tags_pat, kw['python'][0], kw['python'])
 			else:
 				tags = tags_pat
 			# Trying libraries, from most strict match to least one
