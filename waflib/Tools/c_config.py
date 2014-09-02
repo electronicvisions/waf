@@ -749,6 +749,8 @@ def run_c_code(self, *k, **kw):
 			proj = ConfigSet.ConfigSet(os.path.join(dir, 'cache_run_c_code'))
 		except OSError:
 			pass
+		except IOError:
+			pass
 		else:
 			ret = proj['cache_run_c_code']
 			if isinstance(ret, str) and ret.startswith('Test does not build'):
