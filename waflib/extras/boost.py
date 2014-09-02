@@ -236,7 +236,7 @@ def boost_get_libs(self, *k, **kw):
 
 	def find_lib(re_lib, files):
 		for file in files:
-			if re_lib.search(file.name):
+			if file.name.endswith(('.a', '.so', '.dylib', '.lib', '.dll')) and re_lib.search(file.name):
 				self.to_log('Found boost lib %s' % file)
 				return file
 		return None
