@@ -33,11 +33,48 @@ Known issues:
 
 """
 
-from waflib import Task, Utils, TaskGen
+import os
+
+from waflib import Task, Utils, TaskGen, Errors
 
 class file_to_object(Task.Task):
-	run_str = '${LD} -r -b binary -o ${TGT[0].abspath()} ${SRC[0].name}'
 	color = 'CYAN'
+	def run(self):
+		name = []
+		for i, x in enumerate(self.inputs[0].name):
+			if x.isalnum():
+				name.append(x)
+			else:
+				name.append('_')
+		file = self.inputs[0].abspath()
+		size = os.path.getsize(file)
+		if self.env.DEST_CPU in ('x86_64', 'ia', 'aarch64'):
+			unit = 'quad'
+		elif self.env.DEST_CPU in ('x86','arm', 'thumb', 'm68k'):
+			unit = 'long'
+		else:
+			raise Errors.WafError("Unsupported DEST_CPU, please report bug!")
+
+		name = "_binary_" + "".join(name)
+		rodata = ".section .rodata"
+		if self.env.DEST_BINFMT == "mac-o":
+			name = "_" + name
+			rodata = ".section __TEXT,__const"
+
+		with open(self.outputs[0].abspath(), 'w') as f:
+			f.write(\
+"""
+	.global %(name)s_start
+	.global %(name)s_end
+	.global %(name)s_size
+	%(rodata)s
+%(name)s_start:
+	.incbin "%(file)s"
+%(name)s_end:
+	.align 64
+%(name)s_size:
+	.%(unit)s 0x%(size)x
+""" % locals())
 
 @TaskGen.feature('file_to_object')
 @TaskGen.before_method('process_source')
@@ -46,15 +83,11 @@ def tg_file_to_object(self):
 	src = self.to_nodes(self.source)
 	assert len(src) == 1
 	src = src[0]
-	tgt = src.change_ext('.o')
+	tgt = src.change_ext('-wrap.S')
 	task = self.create_task('file_to_object',
 	 src, tgt, cwd=src.parent.abspath())
-	try:
-		self.compiled_tasks.append(task)
-	except AttributeError:
-		self.compiled_tasks = [task]
-	self.source = []
+	self.source = [tgt]
 
 def configure(conf):
-	conf.load('gcc')
-	conf.env.LD = [ conf.env.CC[0].replace('gcc', 'ld') ]
+	conf.load('gas')
+
