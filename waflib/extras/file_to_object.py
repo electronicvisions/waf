@@ -50,8 +50,10 @@ class file_to_object(Task.Task):
 		size = os.path.getsize(file)
 		if self.env.DEST_CPU in ('x86_64', 'ia', 'aarch64'):
 			unit = 'quad'
+			align = 8
 		elif self.env.DEST_CPU in ('x86','arm', 'thumb', 'm68k'):
 			unit = 'long'
+			align = 4
 		else:
 			raise Errors.WafError("Unsupported DEST_CPU, please report bug!")
 
@@ -71,7 +73,7 @@ class file_to_object(Task.Task):
 %(name)s_start:
 	.incbin "%(file)s"
 %(name)s_end:
-	.align 64
+	.align %(align)d
 %(name)s_size:
 	.%(unit)s 0x%(size)x
 """ % locals())
