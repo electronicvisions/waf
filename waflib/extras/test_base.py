@@ -6,7 +6,9 @@
 """
 """
 
-import os, sys
+import os
+import sys
+import pprint
 from waflib.TaskGen import taskgen_method
 from waflib import Configure, Utils, Task, Logs, Options, Errors
 from os.path import basename, join
@@ -308,9 +310,11 @@ class TestBase(Task.Task):
 
         txt_result_dir = self.getTxtDir()
         if not txt_result_dir is None:
-            result_file = txt_result_dir.find_or_declare(name + ".txt");
+            result_file = txt_result_dir.find_or_declare(name + ".txt")
             result_file.write(result.get("stdout", ""))
-            result_file = txt_result_dir.find_or_declare(name + ".err");
+            result_file = txt_result_dir.find_or_declare(name + ".err")
             result_file.write(result.get("stderr", ""))
+            result_file = txt_result_dir.find_or_declare(name + ".env")
+            result_file.write(pprint.pformat(environ))
 
         return result
