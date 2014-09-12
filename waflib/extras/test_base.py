@@ -193,10 +193,13 @@ class TestBase(Task.Task):
 
     def __init__(self, *args, **kwargs):
         super(TestBase, self).__init__(self, *args, **kwargs)
-        gen = self.generator
-        bld = self.generator.bld
-        self.test_environ = getattr(gen, "test_environ", {})
-        self.test_timeout = getattr(self, "test_timeout", int(bld.env["TEST_TIMEOUT"]))
+
+    def init(self, task_gen):
+        self.cwd = task_gen.path.abspath()
+        self.test_environ = getattr(task_gen, "test_environ", {})
+        self.test_timeout = getattr(task_gen, "test_timeout",
+                                    int(task_gen.env["TEST_TIMEOUT"]))
+        self.skip_run = getattr(task_gen, "skip_run", False)
 
     def getXmlDir(self):
         return getDir(self.generator.bld, "TEST_XML_DIR")
@@ -262,9 +265,6 @@ class TestBase(Task.Task):
         return env
 
     def runTest(self, name, cmd):
-        bld = self.generator.bld
-        cwd = bld.path.abspath()
-
         environ = self.getEnviron()
         result = { "file" : name }
         def target():
@@ -272,7 +272,7 @@ class TestBase(Task.Task):
                 if Logs.verbose:
                     Logs.pprint('PINK', '   spawning test:', '%s' % cmd)
                 self.proc = Popen('%s' % ' '.join(cmd),
-                             cwd=cwd,
+                             cwd=self.cwd,
                              env=environ,
                              stderr=PIPE,
                              stdout=PIPE,

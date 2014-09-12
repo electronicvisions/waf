@@ -76,7 +76,7 @@ def pytest_create_task(self):
     )
 
     self.pytest_task = t = self.create_task('pytest', input_nodes)
-    t.skip_run = getattr(self, "skip_run", False)
+    t.init(self)
     for use in self.tmp_use_seen:
         tg = self.bld.get_tgen_by_name(use)
         if hasattr(tg, "pyext_task"):
