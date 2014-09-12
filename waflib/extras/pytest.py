@@ -66,7 +66,7 @@ def pytest_create_task(self):
     self.pythonpath = self.to_incnodes(getattr(self, "pythonpath", ""))
     for use in self.tmp_use_seen:
         tg = self.bld.get_tgen_by_name(use)
-        self.pythonpath.extend(getattr(tg, 'pythonpath', []))
+        self.pythonpath.extend(self.to_incnodes(getattr(tg, 'pythonpath', [])))
 
     self.test_environ = getattr(self, "test_environ", {})
     self.test_environ["PYTHONPATH"] = os.pathsep.join(
