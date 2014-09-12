@@ -314,7 +314,12 @@ class TestBase(Task.Task):
             result_file.write(result.get("stdout", ""))
             result_file = txt_result_dir.find_or_declare(name + ".err")
             result_file.write(result.get("stderr", ""))
-            result_file = txt_result_dir.find_or_declare(name + ".env")
-            result_file.write(pprint.pformat(environ))
+            debug_script = ['cd ' + self.cwd]
+            for var, value in environ.iteritems():
+                debug_script.append('export {var}="{value}"'.format(
+                    var=var, value=value))
+            debug_script.append('%s' % ' '.join(cmd))
+            result_file = txt_result_dir.find_or_declare(name + ".sh")
+            result_file.write('\n'.join(debug_script))
 
         return result
