@@ -87,8 +87,21 @@ def halide(self):
 
 	args = Utils.to_list(self.args)
 
-	tgt = [src.change_ext('.o'), src.change_ext('.h')]
-	task = self.create_task('run_halide_gen', src, tgt)
+	def change_ext(src, ext):
+		# Return a node with a new extension, in an appropriate folder
+		name = src.name
+		xpos = src.name.rfind('.')
+		if xpos == -1: xpos = len(src.name)
+		newname = name[:xpos] + ext
+		if src.is_child_of(bld.bldnode):
+			node = src.get_src().parent.find_or_declare(newname)
+		else:
+			node = bld.bldnode.find_or_declare(newname)
+		return node
+
+	tgt = [change_ext(src, '.o'), change_ext(src, '.h')]
+	cwd = tgt[0].parent.abspath()
+	task = self.create_task('run_halide_gen', src, tgt, cwd=cwd)
 	task.env.append_unique('HALIDE_ARGS', args)
 	oldenv = task.env.env
 	if task.env.env == []:
