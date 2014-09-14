@@ -229,7 +229,7 @@ def boost_get_libs(self, *k, **kw):
 	according to the parameters
 	'''
 	path, files = self.__boost_get_libs_path(**kw)
-	files = sorted(files, key=lambda f: len(f.name), reverse=True)
+	files = sorted(files, key=lambda f: (len(f.name), f.name), reverse=True)
 	toolset = self.boost_get_toolset(kw.get('toolset', ''))
 	toolset_pat = '(-%s[0-9]{0,3})' % toolset
 	version = '-%s' % self.env.BOOST_VERSION
