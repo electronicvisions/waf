@@ -6,7 +6,7 @@
 C/C++/D configuration helpers
 """
 
-import os, re, shlex, shutil, sys
+import os, re, shlex, sys
 from waflib import Build, Utils, Task, Options, Logs, Errors, ConfigSet, Runner
 from waflib.TaskGen import after_method, feature
 from waflib.Configure import conf
@@ -195,12 +195,6 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			app('LINKFLAGS_' + uselib, tmp)
 		elif x.endswith('.a') or x.endswith('.so') or x.endswith('.dylib') or x.endswith('.lib'):
 			appu('LINKFLAGS_' + uselib, [x]) # not cool, #762
-
-@conf
-def ret_msg(self, f, kw):
-	if isinstance(f, str):
-		return f
-	return f(kw)
 
 @conf
 def validate_cfg(self, kw):
@@ -404,10 +398,23 @@ def check_cfg(self, *k, **kw):
 
 	return ret
 
+def build_fun(bld):
+	if bld.kw['compile_filename']:
+		node = bld.srcnode.make_node(bld.kw['compile_filename'])
+		node.write(bld.kw['code'])
+
+	o = bld(features=bld.kw['features'], source=bld.kw['compile_filename'], target='testprog')
+
+	for k, v in bld.kw.items():
+		setattr(o, k, v)
+
+	if not bld.kw.get('quiet', None):
+		bld.conf.to_log("==>\n%s\n<==" % bld.kw['code'])
+
 @conf
 def validate_c(self, kw):
 	"""
-	pre-check the parameters that will be given to run_c_code
+	pre-check the parameters that will be given to :py:func:`waflib.Configure.run_build`
 
 	:param compiler: c or cxx (tries to guess what is best)
 	:type compiler: string
@@ -432,6 +439,9 @@ def validate_c(self, kw):
 	:param auto_add_header_name: if header_name was set, add the headers in env.INCKEYS so the next tests will include these headers
 	:type auto_add_header_name: bool
 	"""
+
+	if not 'build_fun' in kw:
+		kw['build_fun'] = build_fun
 
 	if not 'env' in kw:
 		kw['env'] = self.env.derive()
@@ -634,15 +644,15 @@ def post_check(self, *k, **kw):
 @conf
 def check(self, *k, **kw):
 	"""
-	Perform a configuration test by calling :py:func:`waflib.Tools.c_config.run_c_code`.
+	Perform a configuration test by calling :py:func:`waflib.Configure.run_build`.
 	For the complete list of parameters, see :py:func:`waflib.Tools.c_config.validate_c`.
-	To force a specific compiler, prefer the methods :py:func:`waflib.Tools.c_config.check_cxx` or :py:func:`waflib.Tools.c_config.check_cc`
+	To force a specific compiler, pass "compiler='c'" or "compiler='cxx'" in the arguments
 	"""
 	self.validate_c(kw)
 	self.start_msg(kw['msg'], **kw)
 	ret = None
 	try:
-		ret = self.run_c_code(*k, **kw)
+		ret = self.run_build(*k, **kw)
 	except self.errors.ConfigurationError:
 		self.end_msg(kw['errmsg'], 'YELLOW', **kw)
 		if Logs.verbose > 1:
@@ -695,130 +705,15 @@ def test_exec_fun(self):
 	"""
 	self.create_task('test_exec', self.link_task.outputs[0])
 
-CACHE_RESULTS = 1
-COMPILE_ERRORS = 2
-
-@conf
-def run_c_code(self, *k, **kw):
-	"""
-	Create a temporary build context to execute a build. A reference to that build
-	context is kept on self.test_bld for debugging purposes, and you should not rely
-	on it too much (read the note on the cache below).
-	The parameters given in the arguments to this function are passed as arguments for
-	a single task generator created in the build. Only three parameters are obligatory:
-
-	:param features: features to pass to a task generator created in the build
-	:type features: list of string
-	:param compile_filename: file to create for the compilation (default: *test.c*)
-	:type compile_filename: string
-	:param code: code to write in the filename to compile
-	:type code: string
-
-	Though this function returns *0* by default, the build may set an attribute named *retval* on the
-	build context object to return a particular value. See :py:func:`waflib.Tools.c_config.test_exec_fun` for example.
-
-	This function also provides a limited cache. To use it, provide the following option::
-
-		def options(opt):
-			opt.add_option('--confcache', dest='confcache', default=0,
-				action='count', help='Use a configuration cache')
-
-	And execute the configuration with the following command-line::
-
-		$ waf configure --confcache
-
-	"""
-
-	lst = [str(v) for (p, v) in kw.items() if p != 'env']
-	h = Utils.h_list(lst)
-	dir = self.bldnode.abspath() + os.sep + (not Utils.is_win32 and '.' or '') + 'conf_check_' + Utils.to_hex(h)
-
-	try:
-		os.makedirs(dir)
-	except OSError:
-		pass
-
-	try:
-		os.stat(dir)
-	except OSError:
-		self.fatal('cannot use the configuration test folder %r' % dir)
-
-	cachemode = getattr(Options.options, 'confcache', None)
-	if cachemode == CACHE_RESULTS:
-		try:
-			proj = ConfigSet.ConfigSet(os.path.join(dir, 'cache_run_c_code'))
-		except OSError:
-			pass
-		except IOError:
-			pass
-		else:
-			ret = proj['cache_run_c_code']
-			if isinstance(ret, str) and ret.startswith('Test does not build'):
-				self.fatal(ret)
-			return ret
-
-	bdir = os.path.join(dir, 'testbuild')
-
-	if not os.path.exists(bdir):
-		os.makedirs(bdir)
-
-	self.test_bld = bld = Build.BuildContext(top_dir=dir, out_dir=bdir)
-	bld.init_dirs()
-	bld.progress_bar = 0
-	bld.targets = '*'
-
-	if kw['compile_filename']:
-		node = bld.srcnode.make_node(kw['compile_filename'])
-		node.write(kw['code'])
-
-	bld.logger = self.logger
-	bld.all_envs.update(self.all_envs) # not really necessary
-	bld.env = kw['env']
-
-	o = bld(features=kw['features'], source=kw['compile_filename'], target='testprog')
-
-	for k, v in kw.items():
-		setattr(o, k, v)
-
-	if not kw.get('quiet', None):
-		self.to_log("==>\n%s\n<==" % kw['code'])
-
-	# compile the program
-	bld.targets = '*'
-
-	ret = -1
-	try:
-		try:
-			bld.compile()
-		except Errors.WafError:
-			ret = 'Test does not build: %s' % Utils.ex_stack()
-			self.fatal(ret)
-		else:
-			ret = getattr(bld, 'retval', 0)
-	finally:
-		if cachemode == CACHE_RESULTS:
-			# cache the results each time
-			proj = ConfigSet.ConfigSet()
-			proj['cache_run_c_code'] = ret
-			proj.store(os.path.join(dir, 'cache_run_c_code'))
-		else:
-			shutil.rmtree(dir)
-
-	return ret
-
 @conf
 def check_cxx(self, *k, **kw):
-	"""
-	Same as :py:func:`waflib.Tools.c_config.check` but default to the *c++* programming language
-	"""
+	# DO NOT USE
 	kw['compiler'] = 'cxx'
 	return self.check(*k, **kw)
 
 @conf
 def check_cc(self, *k, **kw):
-	"""
-	Same as :py:func:`waflib.Tools.c_config.check` but default to the *c* programming language
-	"""
+	# DO NOT USE
 	kw['compiler'] = 'c'
 	return self.check(*k, **kw)
 

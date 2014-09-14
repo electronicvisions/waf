@@ -12,7 +12,7 @@ A :py:class:`waflib.Configure.ConfigurationContext` instance is created when ``w
 * hold configuration routines such as ``find_program``, etc
 """
 
-import os, shlex, sys, time, re
+import os, shlex, sys, time, re, shutil
 from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
 
 try:
@@ -570,4 +570,144 @@ def find_binary(self, filenames, exts, paths):
 					if os.path.isfile(x):
 						return x
 	return None
+
+
+@conf
+def run_build(self, *k, **kw):
+	"""
+	Create a temporary build context to execute a build. A reference to that build
+	context is kept on self.test_bld for debugging purposes, and you should not rely
+	on it too much (read the note on the cache below).
+	The parameters given in the arguments to this function are passed as arguments for
+	a single task generator created in the build. Only three parameters are obligatory:
+
+	:param features: features to pass to a task generator created in the build
+	:type features: list of string
+	:param compile_filename: file to create for the compilation (default: *test.c*)
+	:type compile_filename: string
+	:param code: code to write in the filename to compile
+	:type code: string
+
+	Though this function returns *0* by default, the build may set an attribute named *retval* on the
+	build context object to return a particular value. See :py:func:`waflib.Tools.c_config.test_exec_fun` for example.
+
+	This function also provides a limited cache. To use it, provide the following option::
+
+		def options(opt):
+			opt.add_option('--confcache', dest='confcache', default=0,
+				action='count', help='Use a configuration cache')
+
+	And execute the configuration with the following command-line::
+
+		$ waf configure --confcache
+
+	"""
+
+	lst = [str(v) for (p, v) in kw.items() if p != 'env']
+	h = Utils.h_list(lst)
+	dir = self.bldnode.abspath() + os.sep + (not Utils.is_win32 and '.' or '') + 'conf_check_' + Utils.to_hex(h)
+
+	try:
+		os.makedirs(dir)
+	except OSError:
+		pass
+
+	try:
+		os.stat(dir)
+	except OSError:
+		self.fatal('cannot use the configuration test folder %r' % dir)
+
+	cachemode = getattr(Options.options, 'confcache', None)
+	if cachemode == 1:
+		try:
+			proj = ConfigSet.ConfigSet(os.path.join(dir, 'cache_run_build'))
+		except OSError:
+			pass
+		except IOError:
+			pass
+		else:
+			ret = proj['cache_run_build']
+			if isinstance(ret, str) and ret.startswith('Test does not build'):
+				self.fatal(ret)
+			return ret
+
+	bdir = os.path.join(dir, 'testbuild')
+
+	if not os.path.exists(bdir):
+		os.makedirs(bdir)
+
+	self.test_bld = bld = Build.BuildContext(top_dir=dir, out_dir=bdir)
+	bld.init_dirs()
+	bld.progress_bar = 0
+	bld.targets = '*'
+
+	bld.logger = self.logger
+	bld.all_envs.update(self.all_envs) # not really necessary
+	bld.env = kw['env']
+
+	# OMG huge hack
+	bld.kw = kw
+	bld.conf = self
+	kw['build_fun'](bld)
+
+	ret = -1
+	try:
+		try:
+			bld.compile()
+		except Errors.WafError:
+			ret = 'Test does not build: %s' % Utils.ex_stack()
+			self.fatal(ret)
+		else:
+			ret = getattr(bld, 'retval', 0)
+	finally:
+		if cachemode == 1:
+			# cache the results each time
+			proj = ConfigSet.ConfigSet()
+			proj['cache_run_build'] = ret
+			proj.store(os.path.join(dir, 'cache_run_build'))
+		else:
+			shutil.rmtree(dir)
+
+	return ret
+
+@conf
+def ret_msg(self, msg, args):
+	if isinstance(msg, str):
+		return msg
+	return msg(args)
+
+@conf
+def test(self, *k, **kw):
+
+	if not 'env' in kw:
+		kw['env'] = self.env.derive()
+
+	# validate_c for example
+	if kw.get('validate', None):
+		kw['validate'](kw)
+
+	self.start_msg(kw['msg'], **kw)
+	ret = None
+	try:
+		ret = self.run_build(*k, **kw)
+	except self.errors.ConfigurationError:
+		self.end_msg(kw['errmsg'], 'YELLOW', **kw)
+		if Logs.verbose > 1:
+			raise
+		else:
+			self.fatal('The configuration failed')
+	else:
+		kw['success'] = ret
+
+	if kw.get('post_check', None):
+		ret = kw['post_check'](kw)
+
+	if ret:
+		self.end_msg(kw['errmsg'], 'YELLOW', **kw)
+		self.fatal('The configuration failed %r' % ret)
+	else:
+		self.end_msg(self.ret_msg(kw['okmsg'], kw), **kw)
+	return ret
+
+
 
