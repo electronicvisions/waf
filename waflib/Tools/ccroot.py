@@ -324,11 +324,11 @@ def process_use(self):
 		y = self.bld.get_tgen_by_name(x)
 		var = y.tmp_use_var
 		if var and link_task:
-			if var == 'LIB' or y.tmp_use_stlib:
+			if var == 'LIB' or y.tmp_use_stlib or x in names:
 				self.env.append_value(var, [y.target[y.target.rfind(os.sep) + 1:]])
 				self.link_task.dep_nodes.extend(y.link_task.outputs)
 				tmp_path = y.link_task.outputs[0].parent.path_from(self.bld.bldnode)
-				self.env.append_value(var + 'PATH', [tmp_path])
+				self.env.append_unique(var + 'PATH', [tmp_path])
 		else:
 			if y.tmp_use_objects:
 				self.add_objects_from_tgen(y)
