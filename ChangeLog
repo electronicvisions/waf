@@ -9,6 +9,7 @@ NEW IN WAF 1.8.0
 * Rst document processing
 * Console handling improvements
 * Properly-sized progress bar on windows
+* Generic configuration tests
 
 NEW IN WAF 1.7.11
 -----------------
