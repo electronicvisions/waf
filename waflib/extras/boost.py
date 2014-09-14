@@ -260,12 +260,13 @@ def boost_get_libs(self, *k, **kw):
 			t.append('-s')
 		tags_pat = t and ''.join(t) or ''
 		ext = is_static and self.env.cxxstlib_PATTERN or self.env.cxxshlib_PATTERN
-		ext = ext % ''	# remove %s from PATTERN
+		ext = ext.partition('%s')[2] # remove '%s' or 'lib%s' from PATTERN
+
 		for lib in lib_names:
 			if lib == 'python':
-			    # for instance, with python='27',
-			    # accepts '-py27', '-py2', '27' and '2'
-			    # but will reject '-py3', '-py26', '26' and '3'
+				# for instance, with python='27',
+				# accepts '-py27', '-py2', '27' and '2'
+				# but will reject '-py3', '-py26', '26' and '3'
 				tags = '({0})?((-py{2})|(-py{1}(?=[^0-9]))|({2})|({1}(?=[^0-9]))|(?=[^0-9])(?!-py))'.format(tags_pat, kw['python'][0], kw['python'])
 			else:
 				tags = tags_pat
@@ -275,6 +276,7 @@ def boost_get_libs(self, *k, **kw):
 							# Give up trying to find the right version
 							'boost_%s%s%s%s$' % (lib, toolset_pat, tags, ext),
 							'boost_%s%s%s$' % (lib, tags, ext),
+							'boost_%s%s$' % (lib, ext),
 							'boost_%s' % lib]:
 				self.to_log('Trying pattern %s' % pattern)
 				file = find_lib(re.compile(pattern), files)
@@ -286,9 +288,7 @@ def boost_get_libs(self, *k, **kw):
 				self.fatal('The configuration failed')
 		return libs
 
-	return  path.abspath(), \
-			match_libs(kw.get('lib', None), False), \
-			match_libs(kw.get('stlib', None), True)
+	return  path.abspath(), match_libs(kw.get('lib', None), False), match_libs(kw.get('stlib', None), True)
 
 
 @conf
