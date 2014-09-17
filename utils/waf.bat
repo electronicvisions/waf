@@ -88,9 +88,6 @@ set PYTHON=python
 goto running
 )
 
-set PYTHON_INCLUDE=%PYTHON_DIR%include
-set PATH=%PYTHON_DIR%;%PYTHON_DIR%Scripts;%PYTHON_DIR%Tools\Scripts;%PATH%
-
 :running
 
 @echo Using %PYTHON%
