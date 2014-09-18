@@ -81,7 +81,7 @@ def apply_intltool_in_f(self):
 			continue
 
 		cache = getattr(self, 'intlcache', '.intlcache')
-		self.env.INTLCACHE = [os.path.join(self.path.bldpath(), podir, cache)]
+		self.env.INTLCACHE = [os.path.join(str(self.path.get_bld()), podir, cache)]
 		self.env.INTLPODIR = podirnode.bldpath()
 		self.env.INTLFLAGS = getattr(self, 'flags', self.env.INTLFLAGS_DEFAULT)
 		if '-c' in self.env.INTLFLAGS:
