@@ -74,7 +74,7 @@ def apply_intltool_in_f(self):
 	for i in self.to_list(self.source):
 		node = self.path.find_resource(i)
 
-		podir = getattr(self, 'podir', 'po')
+		podir = getattr(self, 'podir', '.')
 		podirnode = self.path.find_dir(podir)
 		if not podirnode:
 			error("could not find the podir %r" % podir)
