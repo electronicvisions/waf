@@ -118,7 +118,7 @@ def apply_intltool_po(self):
 	self.ensure_localedir()
 
 	appname = getattr(self, 'appname', 'set_your_app_name')
-	podir = getattr(self, 'podir', '')
+	podir = getattr(self, 'podir', '.')
 	inst = getattr(self, 'install_path', '${LOCALEDIR}')
 
 	linguas = self.path.find_node(os.path.join(podir, 'LINGUAS'))
