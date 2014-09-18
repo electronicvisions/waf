@@ -89,7 +89,7 @@ def apply_intltool_in_f(self):
 			self.env.INTLFLAGS.remove('-c')
 
 		task = self.create_task('intltool', node, node.change_ext(''))
-		inst = getattr(self, 'install_path', '${LOCALEDIR}')
+		inst = getattr(self, 'install_path', None)
 		if inst:
 			self.bld.install_files(inst, task.outputs)
 
