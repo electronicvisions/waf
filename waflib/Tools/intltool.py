@@ -71,22 +71,22 @@ def apply_intltool_in_f(self):
 
 	self.ensure_localedir()
 
+	podir = getattr(self, 'podir', '.')
+	podirnode = self.path.find_dir(podir)
+	if not podirnode:
+		error("could not find the podir %r" % podir)
+		return
+
+	cache = getattr(self, 'intlcache', '.intlcache')
+	self.env.INTLCACHE = [os.path.join(str(self.path.get_bld()), podir, cache)]
+	self.env.INTLPODIR = podirnode.bldpath()
+	self.env.INTLFLAGS = getattr(self, 'flags', self.env.INTLFLAGS_DEFAULT)
+	if '-c' in self.env.INTLFLAGS:
+		Logs.warn('Redundant -c flag in intltool task %r' % self)
+		self.env.INTLFLAGS.remove('-c')
+
 	for i in self.to_list(self.source):
 		node = self.path.find_resource(i)
-
-		podir = getattr(self, 'podir', '.')
-		podirnode = self.path.find_dir(podir)
-		if not podirnode:
-			error("could not find the podir %r" % podir)
-			continue
-
-		cache = getattr(self, 'intlcache', '.intlcache')
-		self.env.INTLCACHE = [os.path.join(str(self.path.get_bld()), podir, cache)]
-		self.env.INTLPODIR = podirnode.bldpath()
-		self.env.INTLFLAGS = getattr(self, 'flags', self.env.INTLFLAGS_DEFAULT)
-		if '-c' in self.env.INTLFLAGS:
-			Logs.warn('Redundant -c flag in intltool task %r' % self)
-			self.env.INTLFLAGS.remove('-c')
 
 		task = self.create_task('intltool', node, node.change_ext(''))
 		inst = getattr(self, 'install_path', None)
