@@ -30,6 +30,8 @@ def options(opt):
     grp = opt.add_option_group('Testing Options')
     grp.add_option('--disable-tests', action='store_true', default=False,
                    dest="test_disabled", help='Disable build and execution of test')
+    grp.add_option('--test-exec', action='append', default=[],
+                   help='Run a unit test', dest='test_run_by_name')
     grp.add_option('--test-execall', action='store_true', default=False,
                    help='Exec all unit tests', dest='test_run_all')
     grp.add_option('--test-execnone', action='store_true', default=False,
@@ -170,6 +172,10 @@ def getDir(ctx, key):
 def runAll():
     return getattr(Options.options, 'test_run_all', False)
 
+def runByName(name):
+    task_names = getattr(Options.options, 'test_run_by_name', [])
+    return name in task_names
+
 def runNone():
     return getattr(Options.options, 'test_run_none', False)
 
@@ -237,7 +243,8 @@ class TestBase(Task.Task):
         ret = super(TestBase, self).runnable_status()
         if self.skip_run:
             ret = Task.SKIP_ME
-        if ret == Task.SKIP_ME and runAll():
+        if (ret == Task.SKIP_ME and
+                (runAll() or runByName(self.generator.name))):
             ret = Task.RUN_ME
         if runNone():
             ret = Task.SKIP_ME
