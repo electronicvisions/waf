@@ -288,6 +288,7 @@ class tex(Task.Task):
 		Look on the filesystem if there is a *.idx* file to process. If yes, execute
 		:py:meth:`waflib.Tools.tex.tex.makeindex_fun`
 		"""
+		self.idx_node = self.inputs[0].change_ext('.idx')
 		try:
 			idx_path = self.idx_node.abspath()
 			os.stat(idx_path)
@@ -347,24 +348,18 @@ class tex(Task.Task):
 			env.append_value('PDFLATEXFLAGS', '-interaction=batchmode')
 			env.append_value('XELATEXFLAGS', '-interaction=batchmode')
 
-		fun = self.texfun
-
-		node = self.inputs[0]
-		srcfile = node.abspath()
-
 		# important, set the cwd for everybody
 		self.cwd = self.inputs[0].parent.get_bld().abspath()
 
 		Logs.info('first pass on %s' % self.__class__.__name__)
 
-		self.env.env = {}
-		self.env.env.update(os.environ)
-		self.env.env.update({'TEXINPUTS': self.texinputs()})
-		self.env.SRCFILE = srcfile
-		self.check_status('error when calling latex', fun())
+		# Hash .aux files before even calling the LaTeX compiler
+		cur_hash = self.hash_aux_nodes()
 
-		self.aux_nodes = self.scan_aux(node.change_ext('.aux'))
-		self.idx_node = node.change_ext('.idx')
+		self.call_latex()
+
+		# Find the .aux files again since bibtex processing can require it
+		self.hash_aux_nodes()
 
 		self.bibtopic()
 		self.bibfile()
@@ -372,29 +367,36 @@ class tex(Task.Task):
 		self.makeindex()
 		self.makeglossaries()
 
-		hash = ''
 		for i in range(10):
-			# prevent against infinite loops - one never knows
-
-			# watch the contents of file.aux and stop if file.aux does not change anymore
-			prev_hash = hash
-			try:
-				hashes = [Utils.h_file(x.abspath()) for x in self.aux_nodes]
-				hash = Utils.h_list(hashes)
-			except (OSError, IOError):
-				Logs.error('could not read aux.h')
-				pass
-			if hash and hash == prev_hash:
+			# There is no need to call latex again if the .aux hash value has not changed
+			prev_hash = cur_hash
+			cur_hash = self.hash_aux_nodes()
+			if not cur_hash:
+				Logs.error('No aux.h to process')
+			if cur_hash and cur_hash == prev_hash:
 				break
 
 			# run the command
 			Logs.info('calling %s' % self.__class__.__name__)
+			self.call_latex()
 
-			self.env.env = {}
-			self.env.env.update(os.environ)
-			self.env.env.update({'TEXINPUTS': self.texinputs()})
-			self.env.SRCFILE = srcfile
-			self.check_status('error when calling %s' % self.__class__.__name__, fun())
+	def hash_aux_nodes(self):
+		try:
+			nodes = self.aux_nodes
+		except AttributeError:
+			try:
+				self.aux_nodes = self.scan_aux(self.inputs[0].change_ext('.aux'))
+			except IOError:
+				return None
+		return Utils.h_list([Utils.h_file(x.abspath()) for x in self.aux_nodes])
+
+	def call_latex(self):
+		self.env.env = {}
+		self.env.env.update(os.environ)
+		self.env.env.update({'TEXINPUTS': self.texinputs()})
+		self.env.SRCFILE = self.inputs[0].abspath()
+		self.check_status('error when calling latex', self.texfun())
+
 
 class latex(tex):
 	texfun, vars = Task.compile_fun('${LATEX} ${LATEXFLAGS} ${SRCFILE}', shell=False)
