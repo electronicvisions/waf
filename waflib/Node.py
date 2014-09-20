@@ -118,7 +118,8 @@ class Node(object):
 		self.name = data[0]
 		self.parent = data[1]
 		if data[2] is not None:
-			self.children = data[2]
+			# Issue 1480
+			self.children = self.dict_class(data[2])
 		if data[3] is not None:
 			self.sig = data[3]
 
