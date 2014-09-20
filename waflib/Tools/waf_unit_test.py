@@ -34,7 +34,7 @@ the predefined callback::
 """
 
 import os
-from waflib.TaskGen import feature, after_method
+from waflib.TaskGen import feature, after_method, taskgen_method
 from waflib import Utils, Task, Logs, Options
 testlock = Utils.threading.Lock()
 
@@ -44,6 +44,17 @@ def make_test(self):
 	"""Create the unit test task. There can be only one unit test task by task generator."""
 	if getattr(self, 'link_task', None):
 		self.create_task('utest', self.link_task.outputs)
+
+
+@taskgen_method
+def add_test_results(self, tup):
+	"""Override and return tup[1] to interrupt the build immediately if a test does not run"""
+	Logs.debug("ut: %r", tup)
+	self.utest_result = tup
+	try:
+		self.bld.utest_results.append(tup)
+	except AttributeError:
+		self.bld.utest_results = [tup]
 
 class utest(Task.Task):
 	"""
@@ -68,14 +79,15 @@ class utest(Task.Task):
 
 	def run(self):
 		"""
-		Execute the test. The execution is always successful, but the results
+		Execute the test. The execution is always successful, and the results
 		are stored on ``self.generator.bld.utest_results`` for postprocessing.
+
+		Override ``add_test_results`` to interrupt the build
 		"""
 
 		filename = self.inputs[0].abspath()
 		self.ut_exec = getattr(self.generator, 'ut_exec', [filename])
 		if getattr(self.generator, 'ut_fun', None):
-			# FIXME waf 1.8 - add a return statement here?
 			self.generator.ut_fun(self)
 
 		try:
@@ -115,16 +127,9 @@ class utest(Task.Task):
 		(stdout, stderr) = proc.communicate()
 
 		tup = (filename, proc.returncode, stdout, stderr)
-		self.generator.utest_result = tup
-
 		testlock.acquire()
 		try:
-			bld = self.generator.bld
-			Logs.debug("ut: %r", tup)
-			try:
-				bld.utest_results.append(tup)
-			except AttributeError:
-				bld.utest_results = [tup]
+			return self.generator.add_test_results(tup)
 		finally:
 			testlock.release()
 
