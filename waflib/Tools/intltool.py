@@ -27,7 +27,7 @@ Usage of the :py:mod:`waflib.Tools.gnu_dirs` is recommended, but not obligatory.
 """
 
 import os, re
-from waflib import Configure, TaskGen, Task, Utils, Runner, Options, Build, Logs
+from waflib import Configure, Context, TaskGen, Task, Utils, Runner, Options, Build, Logs
 import waflib.Tools.ccroot
 from waflib.TaskGen import feature, before_method, taskgen_method
 from waflib.Logs import error
@@ -117,7 +117,7 @@ def apply_intltool_po(self):
 
 	self.ensure_localedir()
 
-	appname = getattr(self, 'appname', 'set_your_app_name')
+	appname = getattr(self, 'appname', getattr(Context.g_module, Context.APPNAME, 'set_your_app_name'))
 	podir = getattr(self, 'podir', '.')
 	inst = getattr(self, 'install_path', '${LOCALEDIR}')
 
