@@ -174,6 +174,9 @@ class ConfigurationContext(Context.Context):
 		if not out:
 			out = Options.lockfile.replace('.lock-waf_%s_' % sys.platform, '').replace('.lock-waf', '')
 
+		# someone can be messing with symlinks
+		out = os.path.realpath(out)
+
 		self.bldnode = (os.path.isabs(out) and self.root or self.path).make_node(out)
 		self.bldnode.mkdir()
 
