@@ -41,7 +41,8 @@ Known issues:
 
 """
 
-from waflib import Node, Task, Utils, Options, TaskGen, Errors
+import os
+from waflib import Task, Utils, Options, TaskGen, Errors
 
 class run_halide_gen(Task.Task):
 	color = 'CYAN'
@@ -103,7 +104,6 @@ def halide(self):
 	cwd = tgt[0].parent.abspath()
 	task = self.create_task('run_halide_gen', src, tgt, cwd=cwd)
 	task.env.append_unique('HALIDE_ARGS', args)
-	oldenv = task.env.env
 	if task.env.env == []:
 		task.env.env = {}
 	task.env.env.update(env)
