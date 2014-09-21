@@ -8,11 +8,12 @@ Support for GLib2 tools:
 * marshal
 * enums
 * gsettings
+* gresource
 """
 
 import os
-from waflib import Task, Utils, Options, Errors, Logs
-from waflib.TaskGen import taskgen_method, before_method, after_method, feature
+from waflib import Context, Task, Utils, Options, Errors, Logs
+from waflib.TaskGen import taskgen_method, before_method, after_method, feature, extension
 from waflib.Configure import conf
 
 ################## marshal files
@@ -340,6 +341,108 @@ class glib_validate_schema(Task.Task):
 	run_str = 'rm -f ${GLIB_VALIDATE_SCHEMA_OUTPUT} && ${GLIB_COMPILE_SCHEMAS} --dry-run ${GLIB_COMPILE_SCHEMAS_OPTIONS} && touch ${GLIB_VALIDATE_SCHEMA_OUTPUT}'
 	color   = 'PINK'
 
+################## gresource
+
+@extension('.gresource.xml')
+def process_gresource_source(self, node):
+	"""
+	Hook to process .gresource.xml to generate C source files
+	"""
+	if not self.env['GLIB_COMPILE_RESOURCES']:
+		raise Errors.WafError ("Unable to process GResource file - glib-compile-resources was not found during configure")
+
+	if 'gresource' in self.features:
+		return
+
+	h_node = node.change_ext('_xml.h')
+	c_node = node.change_ext('_xml.c')
+	self.create_task('glib_gresource_source', node, [h_node, c_node])
+	self.source.append(c_node)
+
+@feature('gresource')
+def process_gresource_bundle(self):
+	"""
+	Generate a binary .gresource files from .gresource.xml files::
+
+		def build(bld):
+			bld(
+				features='gresource',
+				source=['resources1.gresource.xml', 'resources2.gresource.xml'],
+				install_path='${LIBDIR}/${PACKAGE}'
+			)
+
+	:param source: XML files to process
+	:type source: list of string
+	:param install_path: installation path
+	:type install_path: string
+	"""
+	for i in self.to_list(self.source):
+		node = self.path.find_resource(i)
+
+		task = self.create_task('glib_gresource_bundle', node, node.change_ext(''))
+		inst_to = getattr(self, 'install_path', None)
+		if inst_to:
+			self.bld.install_files(inst_to, task.outputs)
+
+class glib_gresource_base(Task.Task):
+	"""
+	Base class for gresource based tasks, it implements the implicit dependencies scan.
+	"""
+	color    = 'BLUE'
+	base_cmd = '${GLIB_COMPILE_RESOURCES} --sourcedir=${SRC[0].parent.srcpath()} --sourcedir=${SRC[0].bld_dir()}'
+
+	def scan(self):
+		"""
+		Scan gresource dependencies through ``glib-compile-resources --generate-dependencies command``
+		"""
+		bld = self.generator.bld
+		kw = {}
+		try:
+			if not kw.get('cwd', None):
+				kw['cwd'] = bld.cwd
+		except AttributeError:
+			bld.cwd = kw['cwd'] = bld.variant_dir
+		kw['quiet'] = Context.BOTH
+
+		cmd = Utils.subst_vars('${GLIB_COMPILE_RESOURCES} --sourcedir=%s --sourcedir=%s --generate-dependencies %s' % (
+			self.inputs[0].parent.srcpath(),
+			self.inputs[0].bld_dir(),
+			self.inputs[0].bldpath()
+		), self.env)
+
+		output = bld.cmd_and_log(cmd, **kw)
+
+		nodes = []
+		names = []
+		for dep in output.splitlines():
+			if dep:
+				node = bld.bldnode.find_node(dep)
+				if node:
+					nodes.append(node)
+				else:
+					names.append(dep)
+
+		return (nodes, names)
+
+class glib_gresource_source(glib_gresource_base):
+	"""
+	Task to generate C source code (.h and .c files) from a gresource.xml file
+	"""
+	vars    = ['GLIB_COMPILE_RESOURCES']
+	fun_h   = Task.compile_fun_shell(glib_gresource_base.base_cmd + ' --target=${TGT[0].abspath()} --generate-header ${SRC}')
+	fun_c   = Task.compile_fun_shell(glib_gresource_base.base_cmd + ' --target=${TGT[1].abspath()} --generate-source ${SRC}')
+	ext_out = ['.h']
+
+	def run(self):
+		return self.fun_h[0](self) or self.fun_c[0](self)
+
+class glib_gresource_bundle(glib_gresource_base):
+	"""
+	Task to generate a .gresource binary file from a gresource.xml file
+	"""
+	run_str = glib_gresource_base.base_cmd + ' --target=${TGT} ${SRC}'
+	shell   = True # temporary workaround for #795
+
 @conf
 def find_glib_genmarshal(conf):
 	conf.find_program('glib-genmarshal', var='GLIB_GENMARSHAL')
@@ -370,6 +473,10 @@ def find_glib_compile_schemas(conf):
 
 	conf.env['GSETTINGSSCHEMADIR'] = gsettingsschemadir
 
+@conf
+def find_glib_compile_resources(conf):
+	conf.find_program('glib-compile-resources', var='GLIB_COMPILE_RESOURCES')
+
 def configure(conf):
 	"""
 	Find the following programs:
@@ -377,12 +484,14 @@ def configure(conf):
 	* *glib-genmarshal* and set *GLIB_GENMARSHAL*
 	* *glib-mkenums* and set *GLIB_MKENUMS*
 	* *glib-compile-schemas* and set *GLIB_COMPILE_SCHEMAS* (not mandatory)
+	* *glib-compile-resources* and set *GLIB_COMPILE_RESOURCES* (not mandatory)
 
 	And set the variable *GSETTINGSSCHEMADIR*
 	"""
 	conf.find_glib_genmarshal()
 	conf.find_glib_mkenums()
 	conf.find_glib_compile_schemas(mandatory=False)
+	conf.find_glib_compile_resources(mandatory=False)
 
 def options(opt):
 	"""
