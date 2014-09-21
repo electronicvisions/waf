@@ -80,19 +80,11 @@ class utest(Task.Task):
 	def add_path(self, dct, path, var):
 		dct[var] = os.pathsep.join(Utils.to_list(path) + [os.environ.get(var, '')])
 
-	def run(self):
+	def get_test_env(self):
 		"""
-		Execute the test. The execution is always successful, and the results
-		are stored on ``self.generator.bld.utest_results`` for postprocessing.
-
-		Override ``add_test_results`` to interrupt the build
+		In general, tests may require any library built anywhere in the project.
+		Override this method if fewer paths are needed
 		"""
-
-		filename = self.inputs[0].abspath()
-		self.ut_exec = getattr(self.generator, 'ut_exec', [filename])
-		if getattr(self.generator, 'ut_fun', None):
-			self.generator.ut_fun(self)
-
 		try:
 			fu = getattr(self.generator.bld, 'all_test_paths')
 		except AttributeError:
@@ -115,6 +107,20 @@ class utest(Task.Task):
 			else:
 				self.add_path(fu, lst, 'LD_LIBRARY_PATH')
 			self.generator.bld.all_test_paths = fu
+		return fu
+
+	def run(self):
+		"""
+		Execute the test. The execution is always successful, and the results
+		are stored on ``self.generator.bld.utest_results`` for postprocessing.
+
+		Override ``add_test_results`` to interrupt the build
+		"""
+
+		filename = self.inputs[0].abspath()
+		self.ut_exec = getattr(self.generator, 'ut_exec', [filename])
+		if getattr(self.generator, 'ut_fun', None):
+			self.generator.ut_fun(self)
 
 
 		cwd = getattr(self.generator, 'ut_cwd', '') or self.inputs[0].parent.abspath()
@@ -123,7 +129,7 @@ class utest(Task.Task):
 		if testcmd:
 			self.ut_exec = (testcmd % self.ut_exec[0]).split(' ')
 
-		proc = Utils.subprocess.Popen(self.ut_exec, cwd=cwd, env=fu, stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE)
+		proc = Utils.subprocess.Popen(self.ut_exec, cwd=cwd, env=self.get_test_env(), stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE)
 		(stdout, stderr) = proc.communicate()
 
 		tup = (filename, proc.returncode, stdout, stderr)
