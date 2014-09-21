@@ -15,13 +15,6 @@ A :py:class:`waflib.Configure.ConfigurationContext` instance is created when ``w
 import os, shlex, sys, time, re, shutil
 from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
 
-try:
-	from urllib import request
-except ImportError:
-	from urllib import urlopen
-else:
-	urlopen = request.urlopen
-
 BREAK    = 'break'
 """In case of a configuration error, break"""
 
@@ -38,49 +31,6 @@ conf_template = '''# project %(app)s configured on %(now)s by
 # waf %(wafver)s (abi %(abi)s, python %(pyver)x on %(systype)s)
 # using %(args)s
 #'''
-
-def download_check(node):
-	"""
-	Hook to check for the tools which are downloaded. Replace with your function if necessary.
-	"""
-	pass
-
-def download_tool(tool, force=False, ctx=None):
-	"""
-	Download a Waf tool from the remote repository defined in :py:const:`waflib.Context.remote_repo`::
-
-		$ waf configure --download
-	"""
-	for x in Utils.to_list(Context.remote_repo):
-		for sub in Utils.to_list(Context.remote_locs):
-			url = '/'.join((x, sub, tool + '.py'))
-			try:
-				web = urlopen(url)
-				try:
-					if web.getcode() != 200:
-						continue
-				except AttributeError:
-					pass
-			except Exception:
-				# on python3 urlopen throws an exception
-				# python 2.3 does not have getcode and throws an exception to fail
-				continue
-			else:
-				tmp = ctx.root.make_node(os.sep.join((Context.waf_dir, 'waflib', 'extras', tool + '.py')))
-				tmp.write(web.read(), 'wb')
-				Logs.warn('Downloaded %s from %s' % (tool, url))
-				download_check(tmp)
-				try:
-					module = Context.load_tool(tool)
-				except Exception:
-					Logs.warn('The tool %s from %s is unusable' % (tool, url))
-					try:
-						tmp.delete()
-					except Exception:
-						pass
-					continue
-				return module
-	raise Errors.WafError('Could not load the Waf tool')
 
 class ConfigurationContext(Context.Context):
 	'''configures the project'''
@@ -278,7 +228,7 @@ class ConfigurationContext(Context.Context):
 			tmpenv = self.all_envs[key]
 			tmpenv.store(os.path.join(self.cachedir.abspath(), key + Build.CACHE_SUFFIX))
 
-	def load(self, input, tooldir=None, funs=None, download=True):
+	def load(self, input, tooldir=None, funs=None):
 		"""
 		Load Waf tools, which will be imported whenever a build is started.
 
@@ -288,8 +238,6 @@ class ConfigurationContext(Context.Context):
 		:type tooldir: list of string
 		:param funs: functions to execute from the waf tools
 		:type funs: list of string
-		:param download: whether to download the tool from the waf repository
-		:type download: bool
 		"""
 
 		tools = Utils.to_list(input)
@@ -306,14 +254,9 @@ class ConfigurationContext(Context.Context):
 
 			module = None
 			try:
-				module = Context.load_tool(tool, tooldir)
+				module = Context.load_tool(tool, tooldir, ctx=self)
 			except ImportError as e:
-				if Options.options.download:
-					module = download_tool(tool, ctx=self)
-					if not module:
-						self.fatal('Could not load the Waf tool %r or download a suitable replacement from the repository (sys.path %r)\n%s' % (tool, sys.path, e))
-				else:
-					self.fatal('Could not load the Waf tool %r from %r (try the --download option?):\n%s' % (tool, sys.path, e))
+				self.fatal('Could not load the Waf tool %r from %r\n%s' % (tool, sys.path, e))
 			except Exception as e:
 				self.to_log('imp %r (%r & %r)' % (tool, tooldir, funs))
 				self.to_log(Utils.ex_stack())

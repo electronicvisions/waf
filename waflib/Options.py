@@ -134,7 +134,6 @@ class OptionsContext(Context.Context):
 			else:
 				default_prefix = '/usr/local/'
 		gr.add_option('--prefix', dest='prefix', default=default_prefix, help='installation prefix [default: %r]' % default_prefix)
-		gr.add_option('--download', dest='download', default=False, action='store_true', help='try to download the tools if missing')
 
 		gr = self.add_option_group('Build and installation options')
 		gr.add_option('-p', '--progress', dest='progress_bar', default=0, action='count', help= '-p: progress bar; -pp: ide output')

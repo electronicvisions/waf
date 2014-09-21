@@ -627,7 +627,7 @@ def load_module(path):
 
 	return module
 
-def load_tool(tool, tooldir=None):
+def load_tool(tool, tooldir=None, ctx=None):
 	"""
 	Import a Waf tool (python module), and store it in the dict :py:const:`waflib.Context.Context.tools`
 
