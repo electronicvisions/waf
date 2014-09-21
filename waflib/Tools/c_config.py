@@ -247,7 +247,8 @@ def validate_cfg(self, kw):
 		pkgname = kw.get('uselib_store', kw['package'].upper())
 		kw['define_name'] = self.have_define(pkgname)
 
-	self.undefine(kw['define_name'])
+	if not 'uselib_store' in kw:
+		self.undefine(kw['define_name'])
 
 	if not 'msg' in kw:
 		kw['msg'] = 'Checking for %r' % (kw['package'] or kw['path'])
@@ -280,7 +281,13 @@ def exec_cfg(self, kw):
 	path = Utils.to_list(kw['path'])
 
 	def define_it():
-		self.define(self.have_define(kw.get('uselib_store', kw['package'])), 1, 0)
+		pkgname = kw.get('uselib_store', kw['package'].upper())
+		if kw.get('global_define'):
+			# compatibility
+			self.define(self.have_define(kw['package']), 1, False)
+		else:
+			self.env.append_unique('DEFINES_%s' % pkgname, "%s=1" % self.have_define(pkgname))
+		self.env[self.have_define(pkgname)] = 1
 
 	# pkg-config version
 	if 'atleast_pkgconfig_version' in kw:
@@ -391,8 +398,6 @@ def check_cfg(self, *k, **kw):
 		if not ret:
 			ret = True
 		kw['success'] = ret
-		if 'define_name' in kw:
-			self.define(kw['define_name'], 1)
 		if 'okmsg' in kw:
 			self.end_msg(self.ret_msg(kw['okmsg'], kw), **kw)
 
