@@ -77,6 +77,9 @@ class utest(Task.Task):
 				return Task.RUN_ME
 		return ret
 
+	def add_path(self, dct, path, var):
+		dct[var] = os.pathsep.join(Utils.to_list(path) + [os.environ.get(var, '')])
+
 	def run(self):
 		"""
 		Execute the test. The execution is always successful, and the results
@@ -104,16 +107,13 @@ class utest(Task.Task):
 						if s not in lst:
 							lst.append(s)
 
-			def add_path(dct, path, var):
-				dct[var] = os.pathsep.join(Utils.to_list(path) + [os.environ.get(var, '')])
-
 			if Utils.is_win32:
-				add_path(fu, lst, 'PATH')
+				self.add_path(fu, lst, 'PATH')
 			elif Utils.unversioned_sys_platform() == 'darwin':
-				add_path(fu, lst, 'DYLD_LIBRARY_PATH')
-				add_path(fu, lst, 'LD_LIBRARY_PATH')
+				self.add_path(fu, lst, 'DYLD_LIBRARY_PATH')
+				self.add_path(fu, lst, 'LD_LIBRARY_PATH')
 			else:
-				add_path(fu, lst, 'LD_LIBRARY_PATH')
+				self.add_path(fu, lst, 'LD_LIBRARY_PATH')
 			self.generator.bld.all_test_paths = fu
 
 
