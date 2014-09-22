@@ -187,13 +187,16 @@ class Node(object):
 		os.chmod(self.abspath(), val)
 
 	def delete(self):
-		"""Delete the file/folders if it exists, and remove this node from the tree. Do not use this object after calling this method."""
+		"""Delete the file/folder, and remove this node from the tree. Do not use this object after calling this method."""
 		try:
-			if os.path.exists(self.abspath()):
+			try:
 				if hasattr(self, 'children'):
 					shutil.rmtree(self.abspath())
 				else:
 					os.remove(self.abspath())
+			except OSError as e:
+				if os.path.exists(self.abspath()):
+					raise e
 		finally:
 			self.evict()
 
