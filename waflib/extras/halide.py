@@ -14,6 +14,8 @@ Usage::
    bld(
     name='pipeline',
      # ^ Reference this in use="..." for things using the generated code
+    #target=['pipeline.o', 'pipeline.h']
+     # ^ by default, name.{o,h} is added, but you can set the outputs here
     features='halide',
     halide_env="HL_TRACE=1 HL_TARGET=host-opencl-gpu_debug",
      # ^ Environment passed to the generator,
@@ -28,11 +30,6 @@ Usage::
 
 Known issues:
 
-- Currently only handles .o+.h generation
-
-- Currently the generator must name its generated files
-  like himself ('source' not 'name').
-  eg. halide_x.cpp -> halide_x.{o,h}
 
 - Currently only supports Linux (no ".exe")
 
@@ -100,7 +97,25 @@ def halide(self):
 			node = bld.bldnode.find_or_declare(newname)
 		return node
 
-	tgt = [change_ext(src, '.o'), change_ext(src, '.h')]
+	def to_nodes(self, lst, path=None):
+		tmp = []
+		path = path or self.path
+		find = path.find_or_declare
+
+		if isinstance(lst, self.path.__class__):
+			lst = [lst]
+
+		for x in Utils.to_list(lst):
+			if isinstance(x, str):
+				node = find(x)
+			else:
+				node = x
+			tmp.append(node)
+		return tmp
+
+	tgt = to_nodes(self, self.target)
+	if not tgt:
+		tgt = [change_ext(src, '.o'), change_ext(src, '.h')]
 	cwd = tgt[0].parent.abspath()
 	task = self.create_task('run_halide_gen', src, tgt, cwd=cwd)
 	task.env.append_unique('HALIDE_ARGS', args)
