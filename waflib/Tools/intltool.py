@@ -18,7 +18,8 @@ Usage::
 		bld(
 			features  = "intltool_in",
 			podir     = "../po",
-			flags     = ["-d", "-q", "-u"],
+			style     = "desktop",
+			flags     = ["-u"],
 			source    = 'kupfer.desktop.in',
 			install_path = "${DATADIR}/applications",
 		)
@@ -32,6 +33,17 @@ import waflib.Tools.ccroot
 from waflib.TaskGen import feature, before_method, taskgen_method
 from waflib.Logs import error
 from waflib.Configure import conf
+
+_style_flags = {
+	'ba': '-b',
+	'desktop': '-d',
+	'keys': '-k',
+	'quoted': '--quoted-style',
+	'quotedxml': '--quotedxml-style',
+	'rfc822deb': '-r',
+	'schemas': '-s',
+	'xml': '-x',
+}
 
 @taskgen_method
 def ensure_localedir(self):
@@ -52,7 +64,8 @@ def apply_intltool_in_f(self):
 			bld(
 				features  = "intltool_in",
 				podir     = "../po",
-				flags     = ["-d", "-q", "-u"],
+				style     = "desktop",
+				flags     = ["-u"],
 				source    = 'kupfer.desktop.in',
 				install_path = "${DATADIR}/applications",
 			)
@@ -61,6 +74,10 @@ def apply_intltool_in_f(self):
 	:type podir: string
 	:param source: source files to process
 	:type source: list of string
+	:param style: the intltool-merge mode of operation, can be one of the following values:
+	``ba``, ``desktop``, ``keys``, ``quoted``, ``quotedxml``, ``rfc822deb``, ``schemas`` and ``xml``.
+	See the ``intltool-merge`` man page for more information about supported modes of operation.
+	:type style: string
 	:param flags: compilation flags ("-quc" by default)
 	:type flags: list of string
 	:param install_path: installation path
@@ -84,6 +101,16 @@ def apply_intltool_in_f(self):
 	if '-c' in self.env.INTLFLAGS:
 		Logs.warn('Redundant -c flag in intltool task %r' % self)
 		self.env.INTLFLAGS.remove('-c')
+
+	style = getattr(self, 'style', None)
+	if style:
+		try:
+			style_flag = _style_flags[style]
+		except KeyError:
+			self.bld.fatal('intltool_in style "%s" is not valid' % style)
+
+		if style_flag not in self.env.INTLFLAGS:
+			self.env.append_value('INTLFLAGS', [style_flag])
 
 	for i in self.to_list(self.source):
 		node = self.path.find_resource(i)
