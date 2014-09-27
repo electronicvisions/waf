@@ -167,7 +167,10 @@ def readf(fname, m='r', encoding='ISO8859-1'):
 			txt = f.read()
 		finally:
 			f.close()
-		txt = txt.decode(encoding)
+		if encoding:
+			txt = txt.decode(encoding)
+		else:
+			txt = txt.decode()
 	else:
 		f = open(fname, m)
 		try:
@@ -254,7 +257,10 @@ def readf_win32(f, m='r', encoding='ISO8859-1'):
 			txt = f.read()
 		finally:
 			f.close()
-		txt = txt.decode(encoding)
+		if encoding:
+			txt = txt.decode(encoding)
+		else:
+			txt = txt.decode()
 	else:
 		f = os.fdopen(fd, m)
 		try:

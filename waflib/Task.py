@@ -484,14 +484,14 @@ class Task(TaskBase):
 		try:
 			return self.uid_
 		except AttributeError:
-			# this is not a real hot zone, but we want to avoid surprises here
 			m = Utils.md5()
 			up = m.update
-			up(self.__class__.__name__.encode())
+			up(self.__class__.__name__)
 			for x in self.inputs + self.outputs:
-				up(x.abspath().encode())
+				up(x.abspath())
 			self.uid_ = m.digest()
 			return self.uid_
+
 
 	def set_inputs(self, inp):
 		"""
@@ -824,6 +824,20 @@ class Task(TaskBase):
 				if not tsk.hasrun:
 					#print "task is not ready..."
 					raise Errors.TaskNotReady('not ready')
+if sys.hexversion > 0x3000000:
+	def uid(self):
+		try:
+			return self.uid_
+		except AttributeError:
+			m = Utils.md5()
+			up = m.update
+			up(self.__class__.__name__.encode('iso8859-1'))
+			for x in self.inputs + self.outputs:
+				up(x.abspath().encode('iso8859-1'))
+			self.uid_ = m.digest()
+			return self.uid_
+	uid.__doc__ = Task.uid.__doc__
+	Task.uid = uid
 
 def is_before(t1, t2):
 	"""

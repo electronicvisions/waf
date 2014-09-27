@@ -248,7 +248,7 @@ class Context(ctx):
 		if self.cur_script:
 			self.path = self.cur_script.parent
 
-	def recurse(self, dirs, name=None, mandatory=True, once=True):
+	def recurse(self, dirs, name=None, mandatory=True, once=True, encoding=None):
 		"""
 		Run user code from the supplied list of directories.
 		The directories can be either absolute, or relative to the directory
@@ -283,7 +283,7 @@ class Context(ctx):
 				cache[node] = True
 				self.pre_recurse(node)
 				try:
-					function_code = node.read('rU')
+					function_code = node.read('rU', encoding)
 					exec(compile(function_code, node.abspath(), 'exec'), self.exec_dict)
 				finally:
 					self.post_recurse(node)
@@ -294,7 +294,7 @@ class Context(ctx):
 					cache[tup] = True
 					self.pre_recurse(node)
 					try:
-						wscript_module = load_module(node.abspath())
+						wscript_module = load_module(node.abspath(), encoding=encoding)
 						user_function = getattr(wscript_module, (name or self.fun), None)
 						if not user_function:
 							if not mandatory:
@@ -597,7 +597,7 @@ Dictionary holding already loaded modules, keyed by their absolute path.
 The modules are added automatically by :py:func:`waflib.Context.load_module`
 """
 
-def load_module(path):
+def load_module(path, encoding=None):
 	"""
 	Load a source file as a python module.
 
@@ -613,7 +613,7 @@ def load_module(path):
 
 	module = imp.new_module(WSCRIPT_FILE)
 	try:
-		code = Utils.readf(path, m='rU')
+		code = Utils.readf(path, m='rU', encoding=encoding)
 	except (IOError, OSError):
 		raise Errors.WafError('Could not read the file %r' % path)
 
