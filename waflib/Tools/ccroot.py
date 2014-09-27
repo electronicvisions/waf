@@ -550,6 +550,8 @@ class vnum(Task.Task):
 	color = 'CYAN'
 	quient = True
 	ext_in = ['.bin']
+	def keyword(self):
+		return 'Symlinking'
 	def run(self):
 		for x in self.outputs:
 			path = x.abspath()

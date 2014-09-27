@@ -150,12 +150,17 @@ class TaskBase(evil):
 	def __str__(self):
 		"string to display to the user"
 		if hasattr(self, 'fun'):
-			return 'executing: %s\n' % self.fun.__name__
-		return self.__class__.__name__ + '\n'
+			return self.fun.__name__
+		return self.__class__.__name__
 
 	def __hash__(self):
 		"Very fast hashing scheme but not persistent (replace/implement in subclasses and see :py:meth:`waflib.Task.Task.uid`)"
 		return id(self)
+
+	def keyword(self):
+		if hasattr(self, 'fun'):
+			return 'Function'
+		return 'Processing'
 
 	def exec_command(self, cmd, **kw):
 		"""
@@ -298,8 +303,11 @@ class TaskBase(evil):
 
 		total = master.total
 		n = len(str(total))
-		fs = '[%%%dd/%%%dd] %%s%%s%%s' % (n, n)
-		return fs % (cur(), total, col1, s, col2)
+		fs = '[%%%dd/%%%dd] %%s%%s%%s%%s\n' % (n, n)
+		kw = self.keyword()
+		if kw:
+			kw += ' '
+		return fs % (cur(), total, kw, col1, s, col2)
 
 	def attr(self, att, default=None):
 		"""
@@ -416,11 +424,35 @@ class Task(TaskBase):
 
 	def __str__(self):
 		"string to display to the user"
+		name = self.__class__.__name__
+		if self.outputs:
+			if (name.endswith('lib') or name.endswith('program')) or not self.inputs:
+				node = self.outputs[0]
+				return node.path_from(node.ctx.launch_node())
+		if not (self.inputs or self.outputs):
+			return self.__class__.__name__
+		if len(self.inputs) == 1:
+			node = self.inputs[0]
+			return node.path_from(node.ctx.launch_node())
+
 		src_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.inputs])
 		tgt_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.outputs])
 		if self.outputs: sep = ' -> '
 		else: sep = ''
-		return '%s: %s%s%s\n' % (self.__class__.__name__.replace('_task', ''), src_str, sep, tgt_str)
+		return '%s: %s%s%s' % (self.__class__.__name__.replace('_task', ''), src_str, sep, tgt_str)
+
+	def keyword(self):
+		name = self.__class__.__name__
+		if name.endswith('lib') or name.endswith('program'):
+			return 'Linking'
+		if len(self.inputs) == 1 and len(self.outputs) == 1:
+			return 'Compiling'
+		if not self.inputs:
+			if self.outputs:
+				return 'Creating'
+			else:
+				return 'Running'
+		return 'Processing'
 
 	def __repr__(self):
 		"for debugging purposes"
@@ -1024,8 +1056,7 @@ def compile_fun(line, shell=False):
 
 def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[], before=[], after=[], shell=False, scan=None):
 	"""
-	Deprecated. Return a new task subclass with the function ``run`` compiled from the line given.
-	Provided for compatibility with waf 1.4-1.5, when we did not have the metaclass to register new classes (will be removed in Waf 1.8)
+	Returns a new task subclass with the function ``run`` compiled from the line given.
 
 	:param func: method run
 	:type func: string or function

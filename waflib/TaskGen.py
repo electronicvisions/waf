@@ -606,9 +606,6 @@ def process_rule(self):
 				x.parent.mkdir() # if a node was given, create the required folders
 				tsk.outputs.append(x)
 		if getattr(self, 'install_path', None):
-			# from waf 1.5
-			# although convenient, it does not 1. allow to name the target file and 2. symlinks
-			# TODO remove in waf 1.7
 			self.bld.install_files(self.install_path, tsk.outputs)
 
 	if getattr(self, 'source', None):
