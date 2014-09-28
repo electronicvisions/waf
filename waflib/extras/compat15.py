@@ -108,8 +108,8 @@ def load_tool(*k, **kw):
 Context.load_tool = load_tool
 
 rev = Context.load_module
-def load_module(path):
-	ret = rev(path)
+def load_module(path, encoding=None):
+	ret = rev(path, encoding)
 	if 'set_options' in ret.__dict__:
 		Logs.warn('compat: rename "set_options" to "options" (%r)' % path)
 		ret.options = ret.set_options
