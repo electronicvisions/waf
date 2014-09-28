@@ -97,10 +97,10 @@ def apply_intltool_in_f(self):
 	cache = getattr(self, 'intlcache', '.intlcache')
 	self.env.INTLCACHE = [os.path.join(str(self.path.get_bld()), podir, cache)]
 	self.env.INTLPODIR = podirnode.bldpath()
-	self.env.INTLFLAGS = getattr(self, 'flags', self.env.INTLFLAGS_DEFAULT)
+	self.env.append_value('INTLFLAGS', getattr(self, 'flags', self.env.INTLFLAGS_DEFAULT))
+
 	if '-c' in self.env.INTLFLAGS:
-		Logs.warn('Redundant -c flag in intltool task %r' % self)
-		self.env.INTLFLAGS.remove('-c')
+		self.bld.fatal('Redundant -c flag in intltool task %r' % self)
 
 	style = getattr(self, 'style', None)
 	if style:
@@ -109,8 +109,7 @@ def apply_intltool_in_f(self):
 		except KeyError:
 			self.bld.fatal('intltool_in style "%s" is not valid' % style)
 
-		if style_flag not in self.env.INTLFLAGS:
-			self.env.append_value('INTLFLAGS', [style_flag])
+		self.env.append_unique('INTLFLAGS', [style_flag])
 
 	for i in self.to_list(self.source):
 		node = self.path.find_resource(i)
