@@ -23,7 +23,10 @@ except ImportError:
 	class AnsiTerm(object):
 		def __init__(self, stream):
 			self.stream = stream
-			self.errors = self.stream.errors
+			try:
+				self.errors = self.stream.errors
+			except AttributeError:
+				pass # python 2.5
 			self.encoding = self.stream.encoding
 
 		def write(self, txt):
@@ -87,7 +90,10 @@ else:
 		"""
 		def __init__(self, s):
 			self.stream = s
-			self.errors = s.errors
+			try:
+				self.errors = s.errors
+			except AttributeError:
+				pass # python2.5
 			self.encoding = s.encoding
 			self.cursor_history = []
 
