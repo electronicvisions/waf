@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2010 (ita)
+# Thomas Nagy, 2010-2014 (ita)
 
 """
 burn a book, save a tree
 """
 
-import os
+import os, sys
+
 all_modifs = {}
 
 def fixdir(dir):
@@ -54,6 +55,12 @@ def subst(*k):
 				all_modifs[x] = [fun]
 		return fun
 	return do_subst
+
+@subst('*')
+def r3(code):
+	if sys.hexversion < 0x2500000:
+		code = code.replace(',extra={', ') #extra={')
+	return code
 
 @subst('*')
 def r1(code):
