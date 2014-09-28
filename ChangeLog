@@ -10,6 +10,8 @@ NEW IN WAF 1.8.0
 * Console handling improvements
 * Properly-sized progress bar on windows
 * Generic configuration tests
+* Better unicode handlig in scripts and in file names
+* Shorter build outputs
 
 NEW IN WAF 1.7.11
 -----------------

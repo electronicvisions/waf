@@ -163,7 +163,7 @@ class log_handler(logging.StreamHandler):
 				else:
 					stream.write(fs % msg)
 			except UnicodeError:
-				stream.write(fs % msg.encode("UTF-8"))
+				stream.write((fs % msg).encode("UTF-8"))
 		else:
 			logging.StreamHandler.emit(self, record)
 
