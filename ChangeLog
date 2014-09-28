@@ -12,6 +12,7 @@ NEW IN WAF 1.8.0
 * Generic configuration tests
 * Better unicode handlig in scripts and in file names
 * Shorter build outputs
+* Python 2.5 is now required for all functionality (compatibility with Python 2.4 is limited)
 
 NEW IN WAF 1.7.11
 -----------------

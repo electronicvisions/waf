@@ -58,7 +58,7 @@ def subst(*k):
 
 @subst('*')
 def r3(code):
-	if sys.hexversion < 0x2500000:
+	if sys.hexversion < 0x2050000:
 		code = code.replace(',extra={', ') #extra={')
 	return code
 

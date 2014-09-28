@@ -269,17 +269,23 @@ def check_python_headers(conf):
 	num = '.'.join(env['PYTHON_VERSION'].split('.')[:2])
 	conf.find_program([''.join(pybin) + '-config', 'python%s-config' % num, 'python-config-%s' % num, 'python%sm-config' % num], var='PYTHON_CONFIG', msg="python-config")
 
-	flags = ['--cflags', '--libs', '--ldflags']
+	# oh great, python2.5-config requires 3 runs
+	all_flags = [['--cflags', '--libs', '--ldflags']]
+	if sys.hexversion < 0x2060000:
+		all_flags = [[x] for x in all_flags[0]]
+
 	xx = conf.env.CXX_NAME and 'cxx' or 'c'
 
-	conf.check_cfg(msg='Asking python-config for pyembed %r flags' % ' '.join(flags),
-		path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEMBED', args=flags)
+	for flags in all_flags:
+		conf.check_cfg(msg='Asking python-config for pyembed %r flags' % ' '.join(flags), path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEMBED', args=flags)
+
 	conf.check(header_name='Python.h', define_name='HAVE_PYEMBED', msg='Getting pyembed flags from python-config',
 		fragment=FRAG, errmsg='Could not build a python embedded interpreter',
 		features='%s %sprogram pyembed' % (xx, xx))
 
-	conf.check_cfg(msg='Asking python-config for pyext %r flags' % ' '.join(flags),
-		path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEXT', args=flags)
+	for flags in all_flags:
+		conf.check_cfg(msg='Asking python-config for pyext %r flags' % ' '.join(flags), path=conf.env.PYTHON_CONFIG, package='', uselib_store='PYEXT', args=flags)
+
 	conf.check(header_name='Python.h', define_name='HAVE_PYEXT', msg='Getting pyext flags from python-config',
 		features='%s %sshlib pyext' % (xx, xx), fragment=FRAG, errmsg='Could not build python extensions')
 
