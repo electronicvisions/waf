@@ -249,20 +249,6 @@ def add_settings_enums(self, namespace, filename_list):
 		filename_list = [filename_list]
 	self.settings_enum_files = filename_list
 
-
-def r_change_ext(self, ext):
-	"""
-	Change the extension from the *last* dot in the filename. The gsettings schemas
-	often have names of the form org.gsettings.test.gschema.xml
-	"""
-	name = self.name
-	k = name.rfind('.')
-	if k >= 0:
-		name = name[:k] + ext
-	else:
-		name = name + ext
-	return self.parent.find_or_declare([name])
-
 @feature('glib2')
 def process_settings(self):
 	"""
@@ -312,7 +298,7 @@ def process_settings(self):
 		schema_task.set_inputs (source_list)
 		schema_task.env['GLIB_COMPILE_SCHEMAS_OPTIONS'] = [("--schema-file=" + k.abspath()) for k in source_list]
 
-		target_node = r_change_ext (schema_node, '.xml.valid')
+		target_node = schema_node.change_ext('.xml.valid')
 		schema_task.set_outputs (target_node)
 		schema_task.env['GLIB_VALIDATE_SCHEMA_OUTPUT'] = target_node.abspath()
 
