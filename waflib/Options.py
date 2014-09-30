@@ -125,7 +125,7 @@ class OptionsContext(Context.Context):
 		gr.add_option('-o', '--out', action='store', default='', help='build dir for the project', dest='out')
 		gr.add_option('-t', '--top', action='store', default='', help='src dir for the project', dest='top')
 
-		default_prefix = os.environ.get('PREFIX')
+		default_prefix = getattr(Context.g_module, 'default_prefix', os.environ.get('PREFIX'))
 		if not default_prefix:
 			if platform == 'win32':
 				d = tempfile.gettempdir()

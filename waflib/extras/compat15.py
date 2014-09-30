@@ -110,6 +110,7 @@ Configure.ConfigurationContext.sub_config = Configure.ConfigurationContext.recur
 Configure.ConfigurationContext.check_tool = Configure.ConfigurationContext.load
 Configure.conftest = Configure.conf
 Configure.ConfigurationError = Errors.ConfigurationError
+Utils.WafError = Errors.WafError
 
 Options.OptionsContext.sub_options = Options.OptionsContext.recurse
 Options.OptionsContext.tool_options = Context.Context.load
