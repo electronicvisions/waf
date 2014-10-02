@@ -904,12 +904,17 @@ def get_config_header(self, defines=True, headers=False, define_prefix=''):
 			lst.append('#include <%s>' % x)
 
 	if defines:
-		for x in self.env[DEFKEYS]:
-			if self.is_defined(x):
-				val = self.get_define(x)
-				lst.append('#define %s %s' % (define_prefix + x, val))
-			else:
-				lst.append('/* #undef %s */' % (define_prefix + x))
+		tbl = {}
+		for k in self.env['DEFINES']:
+			a, _, b = k.partition('=')
+			tbl[a] = b
+
+		for k in self.env[DEFKEYS]:
+			try:
+				txt = '#define %s%s %s' % (define_prefix, k, tbl[k])
+			except KeyError:
+				txt = '/* #undef %s%s */' % (define_prefix, k)
+			lst.append(txt)
 	return "\n".join(lst)
 
 @conf
