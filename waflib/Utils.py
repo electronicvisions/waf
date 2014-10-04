@@ -12,15 +12,8 @@ through Python versions 2.3 to 3.X and across different platforms (win32, linux,
 import os, sys, errno, traceback, inspect, re, shutil, datetime, gc
 import subprocess # <- leave this!
 
-try:
-	from collections import deque
-except ImportError:
-	class deque(list):
-		"""A deque for Python 2.3 which does not have one"""
-		def popleft(self):
-			return self.pop(0)
-		def appendleft(self, x):
-			self.insert(0, x)
+from collections import deque, defaultdict
+
 try:
 	import _winreg as winreg
 except ImportError:
@@ -91,23 +84,6 @@ rot_chr = ['\\', '|', '/', '-']
 rot_idx = 0
 "Index of the current throbber character (progress bar)"
 
-try:
-	from collections import defaultdict
-except ImportError:
-	class defaultdict(dict):
-		"""
-		defaultdict was introduced in python 2.5, so we leave it for python 2.4 and 2.3
-		"""
-		def __init__(self, default_factory):
-			super(defaultdict, self).__init__()
-			self.default_factory = default_factory
-		def __getitem__(self, key):
-			try:
-				return super(defaultdict, self).__getitem__(key)
-			except KeyError:
-				value = self.default_factory()
-				self[key] = value
-				return value
 try:
 	from collections import OrderedDict as ordered_iter_dict
 except ImportError:

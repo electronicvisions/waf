@@ -83,6 +83,7 @@ def to_incnodes(self, inlst):
 			continue
 		seen.add(x)
 
+		# with a real lot of targets, it is sometimes interesting to cache the results below
 		if isinstance(x, Node.Node):
 			lst.append(x)
 		else:
@@ -410,13 +411,14 @@ def propagate_uselib_vars(self):
 	_vars = self.get_uselib_vars()
 	env = self.env
 	app = env.append_value
+	feature_uselib = self.features + self.to_list(getattr(self, 'uselib', []))
 	for var in _vars:
 		y = var.lower()
 		val = getattr(self, y, [])
 		if val:
 			app(var, val)
 
-		for x in self.features + self.uselib:
+		for x in feature_uselib:
 			val = env['%s_%s' % (var, x)]
 			if val:
 				app(var, val)

@@ -29,7 +29,7 @@ NOTE: The binary file requires http://docs.python.org/library/bz2.html[bzip2] co
 
 ==== Building Waf from the source code
 
-Building Waf requires a Python interpreter having a version number in the range 2.6-3.1. The source code is then processed to support Python 2.3, 2.4 and 2.5.
+Building Waf requires a Python interpreter having a version number in the range 2.6-3.4. The source code is then processed to support Python 2.5.
 
 [source,shishell]
 ---------------

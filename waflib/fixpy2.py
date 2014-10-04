@@ -6,7 +6,7 @@
 burn a book, save a tree
 """
 
-import os, sys
+import os
 
 all_modifs = {}
 
@@ -55,12 +55,6 @@ def subst(*k):
 				all_modifs[x] = [fun]
 		return fun
 	return do_subst
-
-@subst('*')
-def r3(code):
-	if sys.hexversion < 0x2050000:
-		code = code.replace(',extra={', ') #extra={')
-	return code
 
 @subst('*')
 def r1(code):

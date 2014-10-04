@@ -358,10 +358,10 @@ def install_dir(self, path):
 	destpath = Utils.subst_vars(path, self.env)
 
 	if self.is_install > 0:
-		info('* creating %s' % destpath)
+		Logs.info('* creating %s' % destpath)
 		Utils.check_dir(destpath)
 	elif self.is_install < 0:
-		info('* removing %s' % destpath)
+		Logs.info('* removing %s' % destpath)
 		try:
 			os.remove(destpath)
 		except OSError:
