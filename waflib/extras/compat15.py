@@ -213,6 +213,7 @@ def apply_uselib_local(self):
 	names = self.to_list(getattr(self, 'uselib_local', []))
 	get = self.bld.get_tgen_by_name
 	seen = set([])
+	seen_uselib = set([])
 	tmp = Utils.deque(names) # consume a copy of the list of names
 	if tmp:
 		if Logs.verbose:
@@ -259,9 +260,11 @@ def apply_uselib_local(self):
 
 		# add ancestors uselib too - but only propagate those that have no staticlib defined
 		for v in self.to_list(getattr(y, 'uselib', [])):
-			if not env['STLIB_' + v]:
-				if not v in self.uselib:
-					self.uselib.insert(0, v)
+			if v not in seen_uselib:
+				seen_uselib.add(v)
+				if not env['STLIB_' + v]:
+					if not v in self.uselib:
+						self.uselib.insert(0, v)
 
 		# if the library task generator provides 'export_includes', add to the include path
 		# the export_includes must be a list of paths relative to the other library

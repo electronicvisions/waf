@@ -409,19 +409,17 @@ def propagate_uselib_vars(self):
 	"""
 	_vars = self.get_uselib_vars()
 	env = self.env
+	app = env.append_value
+	for var in _vars:
+		y = var.lower()
+		val = getattr(self, y, [])
+		if val:
+			app(var, val)
 
-	for x in _vars:
-		y = x.lower()
-		env.append_value(x, self.to_list(getattr(self, y, [])))
-
-	for x in self.features:
-		for var in _vars:
-			compvar = '%s_%s' % (var, x)
-			env.append_value(var, env[compvar])
-
-	for x in self.to_list(getattr(self, 'uselib', [])):
-		for v in _vars:
-			env.append_value(v, env[v + '_' + x])
+		for x in self.features + self.uselib:
+			val = env['%s_%s' % (var, x)]
+			if val:
+				app(var, val)
 
 # ============ the code above must not know anything about import libs ==========
 
