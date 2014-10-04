@@ -658,6 +658,7 @@ class BuildContext(Context.Context):
 			for i in range(len(self.groups)):
 				if id(g) == id(self.groups[i]):
 					self.current_group = i
+					break
 		else:
 			self.current_group = idx
 

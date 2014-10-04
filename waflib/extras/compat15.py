@@ -348,3 +348,20 @@ def set_incdirs(self, val):
 	self.export_includes = val
 TaskGen.task_gen.export_incdirs = property(None, set_incdirs)
 
+def install_dir(self, path):
+	if not path:
+		return []
+
+	destpath = Utils.subst_vars(path, self.env)
+
+	if self.is_install > 0:
+		info('* creating %s' % destpath)
+		Utils.check_dir(destpath)
+	elif self.is_install < 0:
+		info('* removing %s' % destpath)
+		try:
+			os.remove(destpath)
+		except OSError:
+			pass
+Build.BuildContext.install_dir = install_dir
+
