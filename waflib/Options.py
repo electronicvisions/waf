@@ -121,6 +121,7 @@ class OptionsContext(Context.Context):
 		p('--zones',          dest='zones',   default='',    action='store', help='debugging zones (task_gen, deps, tasks, etc)')
 
 		gr = self.add_option_group('Configuration options')
+		self.option_groups['configure options'] = gr
 
 		gr.add_option('-o', '--out', action='store', default='', help='build dir for the project', dest='out')
 		gr.add_option('-t', '--top', action='store', default='', help='src dir for the project', dest='top')
@@ -136,14 +137,18 @@ class OptionsContext(Context.Context):
 		gr.add_option('--prefix', dest='prefix', default=default_prefix, help='installation prefix [default: %r]' % default_prefix)
 
 		gr = self.add_option_group('Build and installation options')
+		self.option_groups['build and install options'] = gr
 		gr.add_option('-p', '--progress', dest='progress_bar', default=0, action='count', help= '-p: progress bar; -pp: ide output')
 		gr.add_option('--targets',        dest='targets', default='', action='store', help='task generators, e.g. "target1,target2"')
 
 		gr = self.add_option_group('Step options')
+		self.option_groups['step options'] = gr
 		gr.add_option('--files',          dest='files', default='', action='store', help='files to process, by regexp, e.g. "*/main.c,*/test/main.o"')
 
 		default_destdir = os.environ.get('DESTDIR', '')
+
 		gr = self.add_option_group('Installation and uninstallation options')
+		self.option_groups['install/uninstall options'] = gr
 		gr.add_option('--destdir', help='installation root [default: %r]' % default_destdir, default=default_destdir, dest='destdir')
 		gr.add_option('-f', '--force', dest='force', default=False, action='store_true', help='force file installation')
 		gr.add_option('--distcheck-args', metavar='ARGS', help='arguments to pass to distcheck', default=None, action='store')
