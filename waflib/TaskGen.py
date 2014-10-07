@@ -505,7 +505,7 @@ def to_nodes(self, lst, path=None):
 	path = path or self.path
 	find = path.find_resource
 
-	if isinstance(lst, self.path.__class__):
+	if isinstance(lst, Node.Node):
 		lst = [lst]
 
 	# either a list or a string, convert to a list of nodes
