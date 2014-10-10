@@ -416,7 +416,7 @@ def propagate_uselib_vars(self):
 		y = var.lower()
 		val = getattr(self, y, [])
 		if val:
-			app(var, val)
+			app(var, self.to_list(val))
 
 		for x in feature_uselib:
 			val = env['%s_%s' % (var, x)]
