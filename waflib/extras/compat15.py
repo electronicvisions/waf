@@ -62,7 +62,7 @@ def cmd_output(cmd, **kw):
 	try:
 		p = Utils.subprocess.Popen(cmd, **kw)
 		output = p.communicate()[0]
-	except OSError, e:
+	except OSError as e:
 		raise ValueError(str(e))
 
 	if p.returncode:

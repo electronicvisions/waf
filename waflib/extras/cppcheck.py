@@ -96,7 +96,7 @@ see 'http://pygments.org/download/' for installation instructions.
 try:
 	import pygments
 	from pygments import formatters, lexers
-except ImportError, e:
+except ImportError as e:
 	Logs.warn(PYGMENTS_EXC_MSG)
  	raise e
 
