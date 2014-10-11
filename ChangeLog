@@ -1,3 +1,7 @@
+NEW IN WAF 1.8.2
+----------------
+* Removed the modules c_* that were accidentally shipped and break pkg-config tests
+
 NEW IN WAF 1.8.1
 ----------------
 * Re-added compatible option group names from waf 1.7 #1495
