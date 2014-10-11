@@ -1,3 +1,8 @@
+NEW IN WAF 1.8.1
+----------------
+* Re-added compatible option group names from waf 1.7 #1495
+* Fixed bld(define='') splitting which was disabled by mistake
+
 NEW IN WAF 1.8.0
 ----------------
 * Python 2.5 is now required

@@ -36,7 +36,7 @@ Usage:
 
 """
 
-import os, shutil
+import os
 from waflib import Utils, Configure
 
 try:
