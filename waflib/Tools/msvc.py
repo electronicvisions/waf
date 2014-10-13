@@ -1030,6 +1030,9 @@ def wrap_class(class_name):
 	derived_class.exec_command_msvc = exec_command_msvc
 	derived_class.exec_mf = exec_mf
 
+	if hasattr(cls, 'hcode'):
+		derived_class.hcode = cls.hcode
+
 	return derived_class
 
 for k in 'c cxx cprogram cxxprogram cshlib cxxshlib cstlib cxxstlib'.split():
