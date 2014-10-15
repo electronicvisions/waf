@@ -9,7 +9,8 @@ information about the task execution (why it must run, etc)::
 	def configure(conf):
 		conf.load('why')
 
-After adding the tool, a full rebuild is necessary.
+After adding the tool, a full rebuild is necessary:
+waf clean build --zones=task
 """
 
 from waflib import Task, Utils, Logs, Errors
