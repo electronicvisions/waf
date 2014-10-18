@@ -39,6 +39,7 @@ class src2c(Task.Task):
 			if getattr(self.generator, 'link_task', None):
 				self.generator.link_task.set_run_after(tsk)
 				self.generator.link_task.inputs.append(tsk.outputs[0])
+		self.generator.link_task.inputs.sort(key=lambda x: x.abspath())
 
 	def runnable_status(self):
 
