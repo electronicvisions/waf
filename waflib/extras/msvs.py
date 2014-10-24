@@ -358,7 +358,7 @@ except TypeError:
 def stealth_write(self, data, flags='wb'):
 	try:
 		x = unicode
-	except AttributeError:
+	except NameError:
 		data = data.encode('utf-8') # python 3
 	else:
 		data = data.decode(sys.getfilesystemencoding(), 'replace')
