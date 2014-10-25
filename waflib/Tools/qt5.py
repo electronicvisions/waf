@@ -73,7 +73,7 @@ else:
 	has_xml = True
 
 import os, sys
-from waflib.Tools import c_preproc, cxx
+from waflib.Tools import cxx
 from waflib import Task, Utils, Options, Errors, Context
 from waflib.TaskGen import feature, after_method, extension
 from waflib.Configure import conf
@@ -201,6 +201,15 @@ class qxx(Task.classes['cxx']):
 			# remove the signature, it must be recomputed with the moc task
 			delattr(self, 'cache_sig')
 
+	def moc_h_ext(self):
+		try:
+			ext = Options.options.qt_header_ext.split()
+		except AttributeError:
+			pass
+		if not ext:
+			ext = MOC_H
+		return ext
+
 	def add_moc_tasks(self):
 		"""
 		Create the moc tasks by looking in ``bld.raw_deps[self.uid()]``
@@ -292,7 +301,7 @@ class XMLHandler(ContentHandler):
 def create_rcc_task(self, node):
 	"Create rcc and cxx tasks for *.qrc* files"
 	rcnode = node.change_ext('_rc.cpp')
-	rcctask = self.create_task('rcc', node, rcnode)
+	self.create_task('rcc', node, rcnode)
 	cpptask = self.create_task('cxx', rcnode, rcnode.change_ext('.o'))
 	try:
 		self.compiled_tasks.append(cpptask)
@@ -382,8 +391,6 @@ class rcc(Task.Task):
 
 	def scan(self):
 		"""Parse the *.qrc* files"""
-		node = self.inputs[0]
-
 		if not has_xml:
 			Logs.error('no xml support was found, the rcc dependencies will be incomplete!')
 			return ([], [])
