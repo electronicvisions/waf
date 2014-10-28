@@ -729,12 +729,14 @@ class Task(TaskBase):
 			try:
 				if prev == self.compute_sig_implicit_deps():
 					return prev
-			except Exception:
+			except Errors.TaskNotReady:
+				raise
+			except IOError:
 				# when a file was renamed (IOError usually), remove the stale nodes (headers in folders without source files)
 				# this will break the order calculation for headers created during the build in the source directory (should be uncommon)
 				# the behaviour will differ when top != out
 				for x in bld.node_deps.get(self.uid(), []):
-					if x.is_child_of(bld.srcnode):
+					if not x.is_bld():
 						try:
 							os.stat(x.abspath())
 						except OSError:
