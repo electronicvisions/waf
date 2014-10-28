@@ -391,8 +391,9 @@ class Node(object):
 			c1 = c1.parent
 			c2 = c2.parent
 
-		for i in range(up):
-			lst.append('..')
+		if c1.parent:
+			for i in range(up):
+				lst.append('..')
 		lst.reverse()
 		return os.sep.join(lst) or '.'
 
