@@ -614,7 +614,7 @@ def load_module(path, encoding=None):
 	module = imp.new_module(WSCRIPT_FILE)
 	try:
 		code = Utils.readf(path, m='rU', encoding=encoding)
-	except (IOError, OSError):
+	except EnvironmentError:
 		raise Errors.WafError('Could not read the file %r' % path)
 
 	module_dir = os.path.dirname(path)

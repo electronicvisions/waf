@@ -731,7 +731,7 @@ class Task(TaskBase):
 					return prev
 			except Errors.TaskNotReady:
 				raise
-			except IOError:
+			except EnvironmentError:
 				# when a file was renamed (IOError usually), remove the stale nodes (headers in folders without source files)
 				# this will break the order calculation for headers created during the build in the source directory (should be uncommon)
 				# the behaviour will differ when top != out

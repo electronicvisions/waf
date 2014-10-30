@@ -1011,7 +1011,7 @@ def options(ctx):
 			uns = ctx.root.make_node(uns)
 			try:
 				uns.write('')
-			except (OSError, IOError):
+			except EnvironmentError:
 				pass
 
 		if ctx.options.execsolution:

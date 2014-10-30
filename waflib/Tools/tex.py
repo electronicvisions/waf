@@ -244,7 +244,7 @@ class tex(Task.Task):
 		for aux_node in self.aux_nodes:
 			try:
 				ct = aux_node.read()
-			except (OSError, IOError):
+			except EnvironmentError:
 				Logs.error('Error reading %s: %r' % aux_node.abspath())
 				continue
 
@@ -317,7 +317,7 @@ class tex(Task.Task):
 		for aux_node in self.aux_nodes:
 			try:
 				ct = aux_node.read()
-			except (OSError, IOError):
+			except EnvironmentError:
 				Logs.error('Error reading %s: %r' % aux_node.abspath())
 				continue
 
