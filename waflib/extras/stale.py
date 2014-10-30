@@ -25,18 +25,18 @@ def refill_task_list(self):
 	iit = old(self)
 	bld = self.bld
 
+	# execute this operation only once
+	if getattr(self, 'stale_done', False):
+		return iit
+	self.stale_done = True
+
 	# this does not work in partial builds
-	if bld.options.targets and bld.options.targets != '*':
+	if hasattr(bld, 'options') and bld.options.targets and bld.options.targets != '*':
 		return iit
 
 	# this does not work in dynamic builds
-	if bld.post_mode == Build.POST_LAZY:
+	if not hasattr(bld, 'post_mode') or bld.post_mode == Build.POST_LAZY:
 		return iit
-
-	# execute this operation only once - using refill_task_list is
-	if getattr(self, 'clean', False):
-		return iit
-	self.clean = True
 
 	# obtain the nodes to use during the build
 	nodes = []
@@ -50,6 +50,10 @@ def refill_task_list(self):
 
 	# recursion over the nodes to find the stale files
 	def iter(node):
+
+		if node.abspath() in bld.env[Build.CFG_FILES]:
+			return
+
 		if getattr(node, 'children', []):
 			for x in node.children.values():
 				if x.name != "c4che":

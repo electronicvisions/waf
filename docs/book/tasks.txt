@@ -98,10 +98,9 @@ Here is how to tune the build groups:
 [source,python]
 ---------------
 def build(ctx):
-	from waflib.Build import POST_LAZY, POST_BOTH, POST_AT_ONCE
+	from waflib.Build import POST_LAZY, POST_AT_ONCE
 	ctx.post_mode = POST_AT_ONCE <1>
 	#ctx.post_mode = POST_LAZY <2>
-	#ctx.post_mode = POST_BOTH <3>
 ---------------
 
 <1> All task generators create their tasks before the build starts (default behaviour)
