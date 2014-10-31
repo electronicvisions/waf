@@ -1,3 +1,12 @@
+NEW IN WAF 1.8.3
+----------------
+* Various improvements in stale.py
+* More robust file scanning in Qt processing #1502
+* More robust handling of build order implied by hidden dependencies #1506
+* Run msvs on Python 3 #1503
+* Biber update #1501
+* Fixed the Python detection on Windows #1498
+
 NEW IN WAF 1.8.2
 ----------------
 * Removed the modules c_* that were accidentally shipped and break pkg-config tests
