@@ -171,6 +171,23 @@ def build(bld):
 	test('a&&b&&c&&d', 0)
 	test('e', 1)
 
+	def test_rec(defines, expected):
+		main = bld.path.find_resource('recursion/a.c')
+		bld.env.DEFINES = defines.split()
+		gruik = c_preproc.c_parser([main.parent])
+		gruik.start(main, bld.env)
+		result = "".join([x.name[0] for x in gruik.nodes])
+		if result == expected:
+			color = "GREEN"
+		else:
+			color = "RED"
+		pprint(color, "%s\t\t%r" % (expected, gruik.nodes))
+
+	test_rec("", "a")
+	test_rec("FOO=1", "aca")
+	test_rec("BAR=1", "abca")
+	test_rec("FOO=1 BAR=1", "aca")
+
 
 	return
 	test("1?1,(0?5:9):3,4", 0) # <- invalid expression

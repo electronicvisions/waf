@@ -1,4 +1,4 @@
-NEW IN WAF 1.8.3
+NEW IN WAF 1.8.4
 ----------------
 * Various improvements in stale.py
 * More robust file scanning in Qt processing #1502
