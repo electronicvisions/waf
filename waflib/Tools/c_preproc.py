@@ -868,6 +868,7 @@ class c_parser(object):
 		if found and not found in self.ban_includes:
 			# TODO duplicates do not increase the no-op build times too much, but they may be worth removing
 			self.nodes.append(found)
+			self.addlines(found)
 		else:
 			if not filename in self.names:
 				self.names.append(filename)
