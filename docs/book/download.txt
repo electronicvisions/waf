@@ -141,12 +141,12 @@ Although the waf library is unpacked automatically from the waf binary file, it 
 
 The following diagram represents the process used to find the +waflib+ directory:
 
-image::waflib{PIC}["Waflib discovery"{backend@docbook:,width=220:},align="center"]
+image::waflib{PIC}["Waflib discovery"{backend@docbook:,width=450:},align="center"]
 
 
 ==== Portability concerns
 
-By default, the recommended Python interpreter is cPython, for which the supported versions are 2.5 to 3.1. For maximum convenience for the user, a copy of the http://www.jython.org[Jython] interpreter in the version 2.5 could be redistributed along with a copy of the Waf executable.
+By default, the recommended Python interpreter is cPython, for which the supported versions are 2.5 to 3.4. For maximum convenience for the user, a copy of the http://www.jython.org[Jython] interpreter (version >= 2.5) could be redistributed along with a copy of the Waf executable.
 
 WARNING: The 'waf' script must reside in a writable folder to unpack its cache files.
 

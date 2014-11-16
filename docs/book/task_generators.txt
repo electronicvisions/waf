@@ -248,7 +248,7 @@ def remove_process_source(self):
 
 The task generator method workflow is represented in the following illustration:
 
-image::posting{PIC}["Task generator workflow"{backend@docbook:,width=320:},align="center"]
+image::posting{PIC}["Task generator workflow"{backend@docbook:,width=520:},align="center"]
 
 ==== Expressing abstract dependencies between task generators
 

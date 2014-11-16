@@ -10,6 +10,7 @@ VERSION='0.0.1'
 APPNAME='wafdocs'
 
 import os, re, shutil
+from waflib import TaskGen
 
 top = '.'
 out = 'build'
@@ -109,15 +110,15 @@ def build(bld):
 		tg = bld(rule='${DOT} -Tpng -o${TGT} ${SRC}', source=x, target=x.change_ext('.png'), scan=scansize)
 		#tg = bld(rule='${CONVERT} ${bld.raw_deps[tsk.uid()]} ${SRC} ${TGT}', source=x.change_ext('.eps'), target=x.change_ext('.png'), scan=scansize)
 
-	#for x in bld.path.ant_glob('*.dia'):
-	#	tg = bld(rule='${DIA} -t eps ${SRC} -e ${TGT}', source=x, target=x.change_ext('.eps'))
-	#	tg = bld(rule='${DIA} -t png ${SRC} -e ${TGT}', source=x, target=x.change_ext('.png'), scan=scansize)
-	#	#bld(rule='${CONVERT} ${bld.raw_deps[tsk.uid()]} ${SRC} ${TGT}', source=tg.target, target=tg.target.change_ext('.png'), scan=scansize)
+	for x in bld.path.ant_glob('*.dia'):
+		tg = bld(rule='${DIA} -t eps ${SRC} -e ${TGT}', source=x, target=x.change_ext('.eps'))
+		tg = bld(rule='${DIA} -t png ${SRC} -e ${TGT}', source=x, target=x.change_ext('.png'), scan=scansize)
+		#bld(rule='${CONVERT} ${bld.raw_deps[tsk.uid()]} ${SRC} ${TGT}', source=tg.target, target=tg.target.change_ext('.png'), scan=scansize)
 
 	for x in bld.path.ant_glob('*.semd'):
 		bld(rule='${SEMANTIK_D} ${SRC[0].abspath()} -o ${TGT[0].abspath()}', source=x, target=x.change_ext('.svg'))
 		bld(rule='${SEMANTIK_D} ${SRC[0].abspath()} -o ${TGT[0].abspath()}', source=x, target=x.change_ext('.pdf'))
-		bld(rule='${SEMANTIK_D} ${bld.raw_deps[tsk.uid()]} ${SRC[0].abspath()} -o ${TGT[0].abspath()}', source=x, target=x.change_ext('.png'), scan=scansize)
+		bld(rule='${SEMANTIK_D} ${SIZEPARAMS} ${SRC[0].abspath()} -o ${TGT[0].abspath()}', source=x, target=x.change_ext('.png'), features="sizer")
 
 	for x in bld.path.ant_glob('pics/*.png'):
 		bld(features='subst', source=x, target=x.name, is_copy=True)
@@ -136,10 +137,10 @@ def build(bld):
 	bld(rule='${ADOC} -a icons=true -a stylesheet=${SRC[1].abspath()} -a iconsdir=. -a toc -d book -o ${TGT} ${SRC[0].abspath()}',
 		source='waf.txt waf.css', target='single.html', scan=ascii_doc_scan)
 
-	bld(rule='${A2X} -L -a toc --icons-dir=. --icons -D ${gen.path.get_bld().abspath()} \
-                -d book -f pdf --dblatex-opts "-s ${SRC[1].abspath()} -p ${SRC[2].abspath()}" ${SRC[0].bldpath()}',
-		shell=True,
-		source='waf.txt asciidoc-dblatex.sty asciidoc-dblatex.xsl', target='waf.pdf', scan=ascii_doc_scan)
+	#bld(rule='${A2X} -L -a toc --icons-dir=. --icons -D ${gen.path.get_bld().abspath()} \
+        #        -d book -f pdf --dblatex-opts "-s ${SRC[1].abspath()} -p ${SRC[2].abspath()}" ${SRC[0].bldpath()}',
+	#	shell=True,
+	#	source='waf.txt asciidoc-dblatex.sty asciidoc-dblatex.xsl', target='waf.pdf', scan=ascii_doc_scan)
 
 	bld(rule='ln -sf single.html index.html', shell=True)
 
@@ -147,6 +148,65 @@ def build(bld):
 		def exe(ctx):
 			bld.exec_command('firefox build/single.html')
 		bld.add_post_fun(exe)
+
+@TaskGen.feature('sizer')
+@TaskGen.after_method('process_rule')
+def process_sizes(self):
+
+	try:
+		tbl = self.bld.size_table
+	except AttributeError:
+		tbl = self.bld.size_table = make_size_table(self)
+
+	base, _, ext = self.tasks[0].outputs[0].name.partition('.')
+	if ext == 'png' and base in tbl:
+		self.env.SIZEPARAMS = "--%s=%s" % tbl[base]
+
+@TaskGen.taskgen_method
+def make_size_table(self):
+	name = 'image::(.*?)\\{PIC\\}\\[.*,(width|height)=(\\d+)'
+	re_src = re.compile(name)
+
+	tbl = {}
+
+	lst = self.path.ant_glob('*.txt')
+	for x in lst:
+		for m in re.finditer(re_src, x.read()):
+			tbl[m.group(1)] = (m.group(2), m.group(3))
+
+	return tbl
+
+
+	if 0:
+			val = str(int(1.6 * int(m.group(2))))
+			if m.group(1) == 'width':
+				w = val
+				h = "800"
+			else:
+				w = "800"
+				h = val
+
+			if ext == 'eps':
+				code = '-geometry %sx%s' % (w, h)
+			elif ext == 'dia':
+				if m.group(1) == 'width':
+					h = ''
+				else:
+					w = ''
+				code = '--size %sx%s' % (w, h)
+			elif ext == 'semd':
+				if m.group(1) == 'width':
+					code = '--width=%s' % w
+				else:
+					code = '--height=%s' % h
+			else:
+				code = '-Gsize="%s,%s"' % (w, h)
+			break
+	else:
+		return ([], '')
+
+	return ([], code)
+
 
 """
 For vim highlighting:

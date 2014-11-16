@@ -105,7 +105,6 @@ def build(ctx):
 
 <1> All task generators create their tasks before the build starts (default behaviour)
 <2> Groups are processed sequentially: all tasks from previous groups are executed before the task generators from the next group are processed
-<3> Combination of the two previous behaviours: task generators created by tasks in the next groups may create tasks
 
 Build groups can be used for <<build_compiler_first,building a compiler to generate more source files>> to process.
 
@@ -119,7 +118,7 @@ The producer uses the an internal list named _outstanding_ to iterate over the t
 
 The following illustrates the relationship between the task producers and consumers as performed during the build:
 
-image::prodcons{PIC}["Parallel execution"{backend@docbook:,width=470:},align="center"]
+image::prodcons{PIC}["Parallel execution"{backend@docbook:,width=900:},align="center"]
 
 ==== Task states and status
 
@@ -148,7 +147,7 @@ To decide to execute a task or not, the producer uses the value returned by the 
 
 The following diagram represents the interaction between the main task methods and the states and status:
 
-image::task_run{PIC}["Task states"{backend@docbook:,width=310:},align="center"]
+image::task_run{PIC}["Task states"{backend@docbook:,width=610:},align="center"]
 
 === Build order constraints
 
@@ -249,7 +248,7 @@ The dependency tracking is based on the use of hashes of the dependencies called
 
 The following diagram describes how 'waflib.Task.Task' instances are processed:
 
-image::task_signature{PIC}["Signatures"{backend@docbook:,height=350:},align="center"]
+image::task_signature{PIC}["Signatures"{backend@docbook:,height=580:},align="center"]
 
 The following data is used in the signature computation:
 
