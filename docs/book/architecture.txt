@@ -50,7 +50,7 @@ class somename(Context):
     fun = 'foo'
 ---------------
 
-image::classes{PIC}["Context classes"{backend@docbook:,width=1000:},align="center"]
+image::classes{PIC}["Context classes"{backend@docbook:,width=850:},align="center"]
 
 ==== Build classes
 
@@ -62,7 +62,7 @@ The 'Parallel' object encapsulates the iteration over all tasks of the build con
 
 The overall structure is represented on the following diagram:
 
-image::classes_build{PIC}["Build classes"{backend@docbook:,width=1000:},align="center"]
+image::classes_build{PIC}["Build classes"{backend@docbook:,width=1100:},align="center"]
 
 === Context objects
 

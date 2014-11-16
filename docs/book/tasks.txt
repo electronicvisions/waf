@@ -9,7 +9,7 @@ This chapter provides a description of the task classes which are used during th
 
 The build context is only used to create the tasks and to return lists of tasks that may be executed in parallel. The scheduling is delegated to a task producer which lets task consumers to execute the tasks. The task producer keeps a record of the build state such as the amount of tasks processed or the errors.
 
-image::tasks_actors{PIC}["Actors processing the tasks"{backend@docbook:,width=150:},align="center"]
+image::tasks_actors{PIC}["Actors processing the tasks"{backend@docbook:,width=250:},align="center"]
 
 // To reduce the build time, it is interesting to take advantage of the hardware (multiple cpu cores) or of the environment (distributed builds).
 The amount of consumers is determined from the number of processors, or may be set manually by using the '-j' option:
