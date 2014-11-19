@@ -156,7 +156,7 @@ def summary(ctx):
         Logs.pprint(COLOR,
             "xml summaries are stored in {}".format(xml_result_dir.abspath()))
 
-def getDir(ctx, key):
+def getDir(ctx, key, sub_dir=None):
     if key in ctx.env:
         with resultlock:
             path = ctx.env.get_flat(key)
@@ -164,6 +164,8 @@ def getDir(ctx, key):
                 result_dir = ctx.root.make_node(path)
             else:
                 result_dir = ctx.bldnode.make_node(path)
+            if sub_dir is not None:
+                result_dir = result_dir.make_node(sub_dir)
             result_dir.mkdir()
             return result_dir
     else:
@@ -208,10 +210,12 @@ class TestBase(Task.Task):
         self.skip_run = getattr(task_gen, "skip_run", False)
 
     def getXmlDir(self):
-        return getDir(self.generator.bld, "TEST_XML_DIR")
+        gen = self.generator
+        return getDir(gen.bld, "TEST_XML_DIR", gen.get_name())
 
     def getTxtDir(self):
-        return getDir(self.generator.bld, "TEST_TEXT_DIR")
+        gen = self.generator
+        return getDir(gen.bld, "TEST_TEXT_DIR", gen.get_name())
 
     def hasXmlStore(self):
         return not self.env.get_flat("TEST_XML_DIR")

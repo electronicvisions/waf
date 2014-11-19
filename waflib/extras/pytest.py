@@ -6,6 +6,7 @@
 """
 
 import os, sys
+import re
 from waflib.TaskGen import feature, after_method, before_method
 from waflib.Tools import ccroot
 from waflib import Utils
@@ -62,6 +63,11 @@ def pytest_create_task(self):
     """Create the unit test task. There can be only one unit test task by task generator."""
     input_nodes = self.to_nodes(self.tests)
 
+    # Set test name if not given by user
+    if not getattr(self, 'name', None):
+        fix = re.compile(r'(\.py$)?')
+        self.name = "__and__".join(fix.sub('', n.name) for n in input_nodes)
+
     # Adding the value of pythonpath to test_env
     self.pythonpath = self.to_incnodes(getattr(self, "pythonpath", ""))
     for use in self.tmp_use_seen:
@@ -86,7 +92,6 @@ def pytest_create_task(self):
     inst_to = getattr(self, 'install_path', None)
     if inst_to:
         self.bld.install_files(inst_to, input_nodes, chmod=getattr(self, 'chmod', Utils.O755))
-
 
 def options(opt):
     test_base.options(opt)
