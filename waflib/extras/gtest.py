@@ -152,7 +152,7 @@ class gtest(test.TestBase):
         name = basename(filename)
         cmd = [ filename ]
 
-        xml_result_dir = self.getXmlDir()
+        xml_result_dir = self.xmlDir
         if not xml_result_dir is None:
             xml_result_file = xml_result_dir.find_or_declare( name + ".xml")
             cmd.append( "--gtest_output=xml:" + xml_result_file.abspath() )

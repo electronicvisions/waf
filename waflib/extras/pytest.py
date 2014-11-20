@@ -23,7 +23,7 @@ class pytest(test_base.TestBase):
         are stored on ``self.generator.bld.utest_results`` for postprocessing.
         """
         for test in self.inputs:
-            xml = self.getOutputNode(test.name, self.getXmlDir(), "xml")
+            xml = self.getOutputNode(test.name, self.xmlDir, "xml")
 
             frickeling = "import sys; sys.path.append(r{0}{1}{0}); import nose; import nosepatch; nose.main()".format('"', str(os.path.dirname(os.path.abspath(__file__))))
 

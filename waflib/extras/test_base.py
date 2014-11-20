@@ -208,21 +208,9 @@ class TestBase(Task.Task):
         self.test_timeout = getattr(task_gen, "test_timeout",
                                     int(task_gen.env["TEST_TIMEOUT"]))
         self.skip_run = getattr(task_gen, "skip_run", False)
-
-    def getXmlDir(self):
-        gen = self.generator
-        return getDir(gen.bld, "TEST_XML_DIR", gen.get_name())
-
-    def getTxtDir(self):
-        gen = self.generator
-        return getDir(gen.bld, "TEST_TEXT_DIR", gen.get_name())
-
-    def hasXmlStore(self):
-        return not self.env.get_flat("TEST_XML_DIR")
-
-    def hasTxtStore(self):
-        bld = self.generator.bld
-        return not self.env.get_flat("TEST_TEXT_DIR")
+        src_dir = task_gen.path.srcpath()
+        self.xmlDir = getDir(task_gen.bld, "TEST_XML_DIR", src_dir)
+        self.txtDir = getDir(task_gen.bld, "TEST_XML_DIR", src_dir)
 
     def timeout(self):
         return int(getattr(Options.options, 'test_timeout', self.test_timeout))
@@ -319,7 +307,7 @@ class TestBase(Task.Task):
         result["time"] = time() - starttime
         self.storeResult(result)
 
-        txt_result_dir = self.getTxtDir()
+        txt_result_dir = self.txtDir
         if not txt_result_dir is None:
             result_file = txt_result_dir.find_or_declare(name + ".txt")
             result_file.write(result.get("stdout", ""))
