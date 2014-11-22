@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
+"""
+waf configure_all build_all
+"""
+
 VERSION='1.0.0'
 APPNAME='app'
 
@@ -25,13 +29,17 @@ def configure(conf):
 	conf.load('distnet')
 	conf.load('compiler_c')
 
+	if conf.variant == 'linux_64_release':
+		conf.env.LIB_m = ['m']
+
 def build(bld):
-	bld.shlib(source='main.c', target='pouet', includes='.')
+	bld.shlib(source='prep.c', target='prepouet', includes='.', use='m')
+	bld.shlib(source='main.c', target='pouet', includes='.', use='prepouet')
 
 def package(ctx):
 	for v in variants:
 		tar = 'build/%s.tarfile' % v
-		inputs = ['build/%s/libpouet.so' % v]
+		inputs = ['build/%s/libpouet.so' % v, 'build/%s/libprepouet.so' % v]
 		ctx.make_tarfile(tar, inputs)
 	ctx.make_tarfile('build/noarch.tarfile', ['head.h', 'waf_pouet.py'])
 

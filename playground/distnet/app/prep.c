@@ -5,6 +5,6 @@
 #define testEXPORT
 #endif
 
-testEXPORT int pouet() {
-	return prepouet();
+testEXPORT int prepouet() {
+	return 0;
 }
