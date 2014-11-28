@@ -42,7 +42,8 @@ def name_to_dest(x):
 def options(opt):
 	def x(opt, param):
 		dest = name_to_dest(param)
-		opt.add_option('--%s-root' % dest,
+		gr = opt.get_option_group("configure options")
+		gr.add_option('--%s-root' % dest,
 		 help="path containing include and lib subfolders for %s" \
 		  % param,
 		)
