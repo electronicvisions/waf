@@ -136,7 +136,7 @@ def xcheck_host(conf):
 	conf.xcheck_host_prog('LD', 'ld')
 	conf.xcheck_host_envar('CFLAGS')
 	conf.xcheck_host_envar('CXXFLAGS')
-	conf.xcheck_host_envar('LINKFLAGS', 'LDFLAGS')
+	conf.xcheck_host_envar('LDFLAGS', 'LINKFLAGS')
 	conf.xcheck_host_envar('LIB')
 	conf.xcheck_host_envar('PKG_CONFIG_PATH')
 	# TODO find a better solution than this ugliness
