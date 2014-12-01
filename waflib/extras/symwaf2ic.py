@@ -12,7 +12,7 @@ import shutil
 import json
 from collections import defaultdict, deque
 
-from waflib import Build, Context, Errors, Logs, Utils
+from waflib import Build, Context, Errors, Logs, Utils, Options
 from waflib.extras import mr
 
 import symwaf2ic_misc as misc
@@ -158,19 +158,6 @@ def options(opt):
             default=None
             )
 
-    if is_symwaf2ic:
-        gr.add_option(
-                '-v', '--verbose', dest='verbose',
-                default=0, action='count',
-                help='<should be invisible>verbosity level -v -vv or -vvv [default: 0]'
-        )
-
-        gr.add_option(
-                '--zones', dest='zones',
-                default='', action='store',
-                help='debugging zones (task_gen, deps, tasks, etc)'
-        )
-
 
 class Symwaf2icContext(Context.Context):
     cmd = None
@@ -304,6 +291,7 @@ class OptionParserContext(Symwaf2icContext):
     def __init__(self, *k, **kw):
         super(OptionParserContext, self).__init__(*k, **kw)
         self.parser = argparse.ArgumentParser()
+        self._add_waf_options()
         self._first_recursion = False # disable symwaf2ic recursion
         self.loaded = set()
         self.used_args = []
@@ -360,10 +348,8 @@ class OptionParserContext(Symwaf2icContext):
     def add_option_group(self, *k, **kw):
         return self
 
-
     def get_option_group(self, opt_str):
         return self
-
 
     def parse_args(self, path = None, argv=None):
         """Parse args from wscript path (or command line if path is None)
@@ -395,6 +381,28 @@ class OptionParserContext(Symwaf2icContext):
 
     def get_unused_args(self):
         return self.unused_args
+
+    def _add_waf_options(self):
+        ctx = Options.OptionsContext()
+        opt = Options.opt_parser(ctx)
+
+        def copy_option(argparser, opt):
+            args = dict((a, getattr(opt, a)) for a in opt.ATTRS if getattr(opt, a))
+            if args.get('action', '') in ('version', 'help'):
+                return
+            if 'type' in args:
+                self._parse_type(args)
+            opt_names = opt._short_opts + opt._long_opts
+            argparser.add_argument(*opt_names, **args)
+
+        for option in opt.option_list:
+            copy_option(self.parser, option)
+
+        for group in opt.option_groups:
+            arg_group = self.parser.add_argument_group(
+                group.title, group.description)
+            for option in group.option_list:
+                copy_option(arg_group, option)
 
 def topological_sort(dependencies):
     """Pseudo topological sort of dependencies, that allows cycles"""
@@ -635,7 +643,6 @@ class DependencyContext(Symwaf2icContext):
                     t = target[prefix:]
                     outfile.write('"{}" -> "{}";\n'.format(s, t))
             outfile.write("}")
-
 
 # Currently only kept for posterity
 # import types
