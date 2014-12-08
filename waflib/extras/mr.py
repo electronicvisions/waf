@@ -274,29 +274,11 @@ class MR(object):
             projects[name] = self._get_or_create_project(name)
             projects[name].mr_registered = True
 
-    def find_mr(self, mr_url="https://github.com/joeyh/myrepos.git"):
-        mr_path = which("mr")
-        if mr_path is None:
-            # we didnt find the mr tool in path, just look in local directory
-            self.mr_tool = self.base.find_node(self.MR)
-            # ok, finally let's checkout from upstream
-            if not self.mr_tool:
-                if not self.base.find_node(self.MR_LOCAL_DIR):
-                    Logs.pprint(self.LOG_COLOR, "'{mr}' tool not found, cloning from upstream".format(mr=self.MR))
-                    cmd = "git clone '{url}' '{target}'".format(url=mr_url, target=self.MR_LOCAL_DIR)
-                    subprocess.call(cmd, shell=True)
-                try:
-                    local_mr = self.base.find_node(self.MR_LOCAL_DIR).find_node(self.MR)
-                except AttributeError, e:
-                    local_mr = None
-                if not local_mr:
-                    self.ctx.fatal("Checking out {mr} tool from upstream failed".format(mr=self.MR))
-                self.mr_tool = local_mr
-        else:
-            self.mr_tool = self.ctx.root.find_node(mr_path)
-        if self.mr_tool is None:
-            self.ctx.fatal("Could not find " + self.MR + " repo tool:\n" +
-            "Please install " + self.MR + " on your machine or place mr in this folder")
+    def find_mr(self):
+        waflib_node = self.ctx.root.find_node(os.path.join(Context.waf_dir, 'waflib'))
+        self.mr_tool = waflib_node.find_node(os.path.join('bin', 'mr'))
+        if not self.mr_tool:
+            self.ctx.fatal("Your symwaf2ic-waflib seems to be corrupted, could not find mr tool!")
 
     def setup_repo_db(self, db_url, db_type):
         # first install some mock object that servers to create the repo db repository
