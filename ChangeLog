@@ -1,3 +1,11 @@
+NEW IN WAF 1.8.5
+----------------
+* Enhanced Sun compiler detection #1510
+* Fixed a regression in Emacs shell support #1511
+* Fixed a regression in cross-directory builds (Linux only) #1512
+* Executable wscript files #1517
+* Generic script signing utility #1520
+
 NEW IN WAF 1.8.4
 ----------------
 * Various improvements in stale.py

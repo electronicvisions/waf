@@ -3,6 +3,8 @@
 .text
 .align 2
 
+.section .data
+
 val:
  .long SOME_VALUE
 
