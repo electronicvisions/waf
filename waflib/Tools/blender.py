@@ -40,11 +40,14 @@ def options(opt):
 def find_blender(ctx):
 	'''Return version number of blender, if not exist return None'''
 	blender = ctx.find_program('blender')
+	output = ctx.cmd_and_log(blender + ['--version'])
+	m = re.search(r'Blender\s*((\d+(\.|))*)', output)
+	if not m:
+		ctx.fatal('Could not retrieve blender version')
+
 	try:
-		output = ctx.cmd_and_log(blender + ['--version'])
-		m = re.search(r'Blender\s*((\d+(\.|))*)', output)
 		blender_version = m.group(1)
-	except Exception:
+	except IndexError:
 		ctx.fatal('Could not retrieve blender version')
 
 	ctx.env['BLENDER_VERSION'] = blender_version
@@ -55,17 +58,17 @@ def configure_paths(ctx):
 	"""Setup blender paths"""
 	# Get the username
 	user = getuser()
-	# Default: Linux
-	config_path = {
-		'user': '/home/%s/.config/blender/' % user,
-		'system': '/usr/share/blender/'
-	}
-	if _platform == 'darwin':
+	_platform = Utils.unversioned_sys_platform()
+	config_path = {'user': '', 'system': ''}
+	if _platform.startswith('linux'):
+		config_path['user'] = '/home/%s/.config/blender/' % user
+		config_path['system'] = '/usr/share/blender/'
+	elif _platform == 'darwin':
 		# MAC OS X
 		config_path['user'] = \
 			'/Users/%s/Library/Application Support/Blender/' % user
 		config_path['system'] = '/Library/Application Support/Blender/'
-	elif _platform == 'win32':
+	elif Utils.is_win32:
 		# Windows
 		appdata_path = ctx.getenv('APPDATA').replace('\\', '/')
 		homedrive = ctx.getenv('HOMEDRIVE').replace('\\', '/')
@@ -73,6 +76,11 @@ def configure_paths(ctx):
 		config_path['user'] = '%s/Blender Foundation/Blender/' % appdata_path
 		config_path['system'] = \
 			'%sAll Users/AppData/Roaming/Blender Foundation/Blender/' % homedrive
+	else:
+		ctx.fatal(
+			'Unsupported platform. '
+			'Available platforms: Linux, OSX, MS-Windows.'
+		)
 
 	blender_version = ctx.env['BLENDER_VERSION']
 
