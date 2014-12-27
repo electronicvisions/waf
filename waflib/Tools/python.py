@@ -116,7 +116,7 @@ def process_py(self, node):
 		tsk.pyd = pyd
 
 		if self.install_path:
-			self.bld.install_files(self.install_path, pyobj, cwd=node.parent.get_bld(), relative_trick=True)
+			self.bld.install_files(os.path.dirname(pyd), pyobj, cwd=node.parent.get_bld(), relative_trick=True)
 
 class pyc(Task.Task):
 	"""
