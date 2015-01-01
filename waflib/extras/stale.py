@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: UTF-8
-# Thomas Nagy, 2006-2014 (ita)
+# Thomas Nagy, 2006-2015 (ita)
 
 """
 Add a pre-build hook to remove build files (declared in the system)

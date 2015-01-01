@@ -1,7 +1,10 @@
 #! /usr/bin/env python
+# encoding: ISO8859-1
+# Thomas Nagy, 2014-2015
 
 """
 A simple file for verifying signatures in signed waf files
+This script is meant for Python >= 2.6 and the encoding is bytes - ISO8859-1
 
 Distributing detached signatures is boring
 """

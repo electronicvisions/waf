@@ -2,10 +2,7 @@
 
 """
 A script that creates signed Python files.
-
-Distributing detached signatures is boring.
 """
-
 
 from __future__ import print_function
 

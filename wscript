@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2014
+# Thomas Nagy, 2005-2015
 
 """
 to make a custom waf file use the option --tools
