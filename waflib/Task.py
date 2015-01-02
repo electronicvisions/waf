@@ -833,9 +833,15 @@ if sys.hexversion > 0x3000000:
 		except AttributeError:
 			m = Utils.md5()
 			up = m.update
-			up(self.__class__.__name__.encode('iso8859-1'))
+			def encode_and_update(path):
+				try:
+					up(path.encode('iso8859-1'))
+				except UnicodeEncodeError as e:
+					Logs.error("Can't encode in iso8859-1: %s" % path)
+					raise e
+			encode_and_update(self.__class__.__name__)
 			for x in self.inputs + self.outputs:
-				up(x.abspath().encode('iso8859-1'))
+				encode_and_update(x.abspath())
 			self.uid_ = m.digest()
 			return self.uid_
 	uid.__doc__ = Task.uid.__doc__
