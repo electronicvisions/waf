@@ -87,7 +87,7 @@ def process_py(self, node):
 		if self.install_from:
 			self.bld.install_files(self.install_path, [node], cwd=self.install_from, relative_trick=True)
 		else:
-			self.bld.install_files(self.install_path, [node])
+			self.bld.install_files(self.install_path, [node], relative_trick=True)
 
 	lst = []
 	if self.env.PYC:
