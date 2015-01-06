@@ -94,6 +94,9 @@ class store_task_type(type):
 				# getattr(cls, 'hcode') would look in the upper classes
 				cls.hcode = Utils.h_fun(cls.run)
 
+			if sys.hexversion > 0x3000000:
+				cls.hcode = cls.hcode.encode('iso8859-1', 'xmlcharrefreplace')
+
 			# be creative
 			getattr(cls, 'register', classes)[name] = cls
 
@@ -546,7 +549,7 @@ class Task(TaskBase):
 		except AttributeError: pass
 
 		self.m = Utils.md5()
-		self.m.update(self.hcode.encode())
+		self.m.update(self.hcode)
 
 		# explicit deps
 		self.sig_explicit_deps()
@@ -833,15 +836,9 @@ if sys.hexversion > 0x3000000:
 		except AttributeError:
 			m = Utils.md5()
 			up = m.update
-			def encode_and_update(path):
-				try:
-					up(path.encode('iso8859-1'))
-				except UnicodeEncodeError as e:
-					Logs.error("Can't encode in iso8859-1: %s" % path)
-					raise e
-			encode_and_update(self.__class__.__name__)
+			up(self.__class__.__name__.encode('iso8859-1', 'xmlcharrefreplace'))
 			for x in self.inputs + self.outputs:
-				encode_and_update(x.abspath())
+				up(x.abspath().encode('iso8859-1', 'xmlcharrefreplace'))
 			self.uid_ = m.digest()
 			return self.uid_
 	uid.__doc__ = Task.uid.__doc__
