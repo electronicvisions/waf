@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2010 (ita)
+# Thomas Nagy, 2006-2015 (ita)
 
 """
 
@@ -521,12 +521,29 @@ def find_qt5_binaries(self):
 					if new_ver > prev_ver:
 						cand = qmake
 						prev_ver = new_ver
+
+	# qmake could not be found easily, rely on qtchooser
+	if not cand:
+		try:
+			self.find_program('qtchooser')
+		except self.errors.ConfigurationError:
+			pass
+		else:
+			cmd = self.env.QTCHOOSER + ['-qt=5', '-run-tool=qmake']
+			try:
+				version = self.cmd_and_log(cmd + ['-query', 'QT_VERSION'])
+			except self.errors.WafError:
+				pass
+			else:
+				cand = cmd
+
 	if cand:
 		self.env.QMAKE = cand
 	else:
 		self.fatal('Could not find qmake for qt5')
 
-	qtbin = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_BINS']).strip() + os.sep
+	self.env.QT_INSTALL_BINS = qtbin = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_BINS']).strip() + os.sep
+	paths.insert(0, qtbin)
 
 	def find_bin(lst, var):
 		if var in env:
@@ -545,7 +562,7 @@ def find_qt5_binaries(self):
 		self.fatal('cannot find the uic compiler for qt5')
 
 	self.start_msg('Checking for uic version')
-	uicver = self.cmd_and_log(env.QT_UIC + ["-version"], output=Context.BOTH)
+	uicver = self.cmd_and_log(env.QT_UIC + ['-version'], output=Context.BOTH)
 	uicver = ''.join(uicver).strip()
 	uicver = uicver.replace('Qt User Interface Compiler ','').replace('User Interface Compiler for Qt', '')
 	self.end_msg(uicver)
