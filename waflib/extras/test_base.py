@@ -42,7 +42,10 @@ def options(opt):
     grp.add_option('--test-xml-summary', action='store', default="test_results",
                    dest="test_xml_output_folder",
                    help='Store test results as junit-xml in the given path relative to the build directory')
-    grp.add_option('--test-timeout', action='store', default=DEFAULT_TEST_TIMEOUT,
+    # Note: Default for timeout is set during configure, otherwise we can not
+    # detect, if --test-timeout was given during build, e.g:
+    #   waf build --test-timeout 60
+    grp.add_option('--test-timeout', action='store',
                    dest="test_timeout",
                    help='Maximal runtime in seconds per test executable')
 
@@ -67,10 +70,15 @@ def configure(ctx):
         ctx.start_msg('Test xml summary directory')
         ctx.end_msg(node.path_from(ctx.srcnode))
 
-    timeout = int(getattr(Options.options, 'test_timeout', DEFAULT_TEST_TIMEOUT))
+    # See TestBase.init
     ctx.start_msg('GoogleTest maximal runtime')
-    ctx.end_msg(str(timeout) + " seconds")
-    ctx.env.TEST_TIMEOUT = timeout
+    timeout = getattr(Options.options, 'test_timeout', None)
+    if timeout is not None:
+        ctx.end_msg(str(timeout) + " seconds")
+        ctx.env.TEST_TIMEOUT = timeout
+    else:
+        ctx.end_msg(str(DEFAULT_TEST_TIMEOUT) + " seconds (default)")
+
 
 @Configure.conf
 def tests_disabled(ctx):
@@ -201,19 +209,39 @@ class TestBase(Task.Task):
 
     def __init__(self, *args, **kwargs):
         super(TestBase, self).__init__(self, *args, **kwargs)
+        self.timeout = DEFAULT_TEST_TIMEOUT # For __str__, overwriten in init
+
+    def __str__(self):
+        "string to display to the user"
+        return '%s (timeout: %is)\n' % (
+            Task.Task.__str__(self)[:-1], self.timeout)
 
     def init(self, task_gen):
+        """Common initialisation of Test tast, should be called by task_gen
+        methods for derived tests
+        """
         self.cwd = task_gen.path.abspath()
         self.test_environ = getattr(task_gen, "test_environ", {})
-        self.test_timeout = getattr(task_gen, "test_timeout",
-                                    int(task_gen.env["TEST_TIMEOUT"]))
         self.skip_run = getattr(task_gen, "skip_run", False)
         src_dir = task_gen.path.srcpath()
         self.xmlDir = getDir(task_gen.bld, "TEST_XML_DIR", src_dir)
         self.txtDir = getDir(task_gen.bld, "TEST_XML_DIR", src_dir)
 
-    def timeout(self):
-        return int(getattr(Options.options, 'test_timeout', self.test_timeout))
+        # Get timeout for test execution, order is:
+        #   1. command line argument given during execution, e.g. build --test-timeout 20
+        #   2. command line argument given during configure, e.g. build --test-timeout 30
+        #   3. timeout specified in task: e.g.: bld(features='pytest', test_timeout=60)
+        #   4. default timeout
+        timeout = getattr(Options.options, 'test_timeout', None)
+        if timeout is None:
+            timeout = task_gen.env["TEST_TIMEOUT"]
+            if timeout != 0 and not timeout:
+                timeout = None
+        if timeout is None:
+            timeout = getattr(task_gen, "test_timeout", None)
+        if timeout is None:
+            timeout = DEFAULT_TEST_TIMEOUT
+        self.timeout = int(timeout)
 
     def storeResult(self, result):
         bld = self.generator.bld
@@ -291,7 +319,7 @@ class TestBase(Task.Task):
         starttime = time()
         thread = Thread(target=target)
         thread.start()
-        thread.join(self.timeout())
+        thread.join(self.timeout)
         if thread.is_alive():
             # killing processes is difficult (race conditions all over the place)...
             if hasattr(self, 'proc'):
