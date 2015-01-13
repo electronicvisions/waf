@@ -18,8 +18,8 @@ Usage:
       ...
       conf.load('c_cross_gnu')
       for variant in x_variants:
-        conf.xcheck_cross()
-        conf.xcheck_cross_var('POUET')
+        conf.xcheck_host()
+        conf.xcheck_host_var('POUET')
         ...
 
       ...
