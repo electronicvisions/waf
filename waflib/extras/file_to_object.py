@@ -39,6 +39,8 @@ from waflib import Task, Utils, TaskGen, Errors
 
 class file_to_object(Task.Task):
 	color = 'CYAN'
+	dep_vars = ('DEST_CPU', 'DEST_BINFMT')
+
 	def run(self):
 		name = []
 		for i, x in enumerate(self.inputs[0].name):
