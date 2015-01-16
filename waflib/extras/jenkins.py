@@ -562,7 +562,7 @@ The authors and the changelog are deduced from the git log 'diff' of the origin 
         if managers:
             print "Adding the managers of '{}':".format(prj)
             for m in managers:
-                authors.add(m+'\n')
+                authors.add('cc:'+m+'\n') # managers will be addressed in cc.
                 print ', '.join(managers)
 
 
