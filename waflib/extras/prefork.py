@@ -21,8 +21,7 @@ To use::
 The servers and the build process are using a shared nonce to prevent undesirable external connections.
 """
 
-import os, re, socket, threading, sys, subprocess, time, atexit
-import random
+import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random
 try:
 	import SocketServer
 except ImportError:
@@ -138,7 +137,7 @@ class req(SocketServer.StreamRequestHandler):
 			return
 		except Exception as e:
 			ret = -1
-			exc = str(e)
+			exc = str(e) + traceback.format_exc()
 
 		self.send_response(ret, out, err, exc)
 
@@ -236,6 +235,13 @@ else:
 
 	def exec_command(self, cmd, **kw):
 
+		if 'stdout' in kw:
+			if kw['stdout'] not in (None, subprocess.PIPE):
+				return self.exec_command_old(cmd, **kw)
+		elif 'stderr' in kw:
+			if kw['stderr'] not in (None, subprocess.PIPE):
+				return self.exec_command_old(cmd, **kw)
+
 		kw['shell'] = isinstance(cmd, str)
 		Logs.debug('runner: %r' % cmd)
 		Logs.debug('runner_env: kw=%s' % kw)
@@ -328,5 +334,6 @@ else:
 			if not conn:
 				raise ValueError('Could not start the server!')
 			CONNS.append(conn)
+		bld.__class__.exec_command_old = bld.__class__.exec_command
 		bld.__class__.exec_command = exec_command
 
