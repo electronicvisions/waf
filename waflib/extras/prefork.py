@@ -63,9 +63,25 @@ class req(SocketServer.StreamRequestHandler):
 		while 1:
 			try:
 				self.process_command()
+			except KeyboardInterrupt:
+				break
 			except Exception as e:
 				print(e)
 				break
+
+	def send_response(self, ret, out, err, exc):
+		if out or err or exc:
+			data = (out, err, exc)
+			data = cPickle.dumps(data, -1)
+		else:
+			data = ''
+
+		params = [RES, str(ret), str(len(data))]
+
+		# no need for the cookie in the response
+		self.wfile.write(make_header(params))
+		if data:
+			self.wfile.write(data)
 
 	def process_command(self):
 		query = self.rfile.read(HEADER_SIZE)
@@ -79,12 +95,14 @@ class req(SocketServer.StreamRequestHandler):
 		# magic cookie
 		key = query[-20:]
 		if not safe_compare(key, SHARED_KEY):
-			print('Invalid key given!')
+			print('%r %r' % (key, SHARED_KEY))
+			self.send_response(-1, '', '', 'Invalid key given!')
 			return
 
 		query = query[:-20]
 		#print "%r" % query
 		if not re_valid_query.match(query):
+			self.send_response(-1, '', '', 'Invalid query %r' % query)
 			raise ValueError('Invalid query %r' % query)
 
 		query = query.strip().split(',')
@@ -116,24 +134,13 @@ class req(SocketServer.StreamRequestHandler):
 				ret = p.returncode
 			else:
 				ret = subprocess.Popen(cmd, **kw).wait()
+		except KeyboardInterrupt:
+			return
 		except Exception as e:
 			ret = -1
 			exc = str(e)
 
-		# write the results
-		if out or err or exc:
-			data = (out, err, exc)
-			data = cPickle.dumps(data, -1)
-		else:
-			data = ''
-
-		params = [RES, str(ret), str(len(data))]
-
-		# no need for the cookie in the response
-		self.wfile.write(make_header(params))
-
-		if data:
-			self.wfile.write(data)
+		self.send_response(ret, out, err, exc)
 
 def create_server(conn, cls):
 	#SocketServer.ThreadingTCPServer.allow_reuse_address = True
@@ -222,9 +229,8 @@ else:
 
 	def read_data(conn, siz):
 		ret = conn.recv(siz)
-		if not ret:
-			print("closed connection?")
-
+		#if not ret:
+		#	print("closed connection?")
 		assert(len(ret) == siz)
 		return ret
 
