@@ -17,9 +17,12 @@ To use::
         bld.load('serverprocess_client')
         ...
         more code
+
+The servers and the build process are using a shared nonce to prevent undesirable external connections.
 """
 
-import os, re, tempfile, socket, threading, shutil, sys, subprocess, time, atexit
+import os, re, socket, threading, sys, subprocess, time, atexit
+import random
 try:
 	import SocketServer
 except ImportError:
@@ -34,21 +37,25 @@ except ImportError:
 	import pickle as cPickle
 
 DEFAULT_PORT = 51200
-
-HEADER_SIZE = 128
+SHARED_KEY = None
+HEADER_SIZE = 64
 
 REQ = 'REQ'
 RES = 'RES'
 BYE = 'BYE'
 
-def make_header(params):
+def make_header(params, cookie=''):
 	header = ','.join(params)
+	header = header.ljust(HEADER_SIZE - len(cookie))
+	assert(len(header) == HEADER_SIZE - len(cookie))
+	header = header + cookie
 	if sys.hexversion > 0x3000000:
 		header = header.encode('iso8859-1')
-	header = header.ljust(HEADER_SIZE)
-	assert(len(header) == HEADER_SIZE)
 	return header
 
+def safe_compare(x, y):
+	vec = [abs(ord(a) - ord(b)) for (a, b) in zip(x, y)]
+	return not sum(vec)
 
 re_valid_query = re.compile('^[a-zA-Z0-9_, ]+$')
 class req(SocketServer.StreamRequestHandler):
@@ -68,6 +75,14 @@ class req(SocketServer.StreamRequestHandler):
 		assert(len(query) == HEADER_SIZE)
 		if sys.hexversion > 0x3000000:
 			query = query.decode('iso8859-1')
+
+		# magic cookie
+		key = query[-20:]
+		if not safe_compare(key, SHARED_KEY):
+			print('Invalid key given!')
+			return
+
+		query = query[:-20]
 		#print "%r" % query
 		if not re_valid_query.match(query):
 			raise ValueError('Invalid query %r' % query)
@@ -114,6 +129,7 @@ class req(SocketServer.StreamRequestHandler):
 
 		params = [RES, str(ret), str(len(data))]
 
+		# no need for the cookie in the response
 		self.wfile.write(make_header(params))
 
 		if data:
@@ -122,6 +138,11 @@ class req(SocketServer.StreamRequestHandler):
 def create_server(conn, cls):
 	#SocketServer.ThreadingTCPServer.allow_reuse_address = True
 	#server = SocketServer.ThreadingTCPServer(conn, req)
+
+	# child processes do not need the key, so we remove it from the OS environment
+	global SHARED_KEY
+	SHARED_KEY = os.environ['SHARED_KEY']
+	os.environ['SHARED_KEY'] = ''
 
 	SocketServer.TCPServer.allow_reuse_address = True
 	server = SocketServer.TCPServer(conn, req)
@@ -139,7 +160,7 @@ if __name__ == '__main__':
 	create_server(conn, req)
 else:
 
-	from waflib import Task, Logs, Utils, Build, Options, Runner, Errors
+	from waflib import Logs, Utils, Runner, Errors
 
 	SERVERS = []
 
@@ -233,7 +254,7 @@ else:
 
 		data = cPickle.dumps(kw, -1)
 		params = [REQ, str(len(data))]
-		header = make_header(params)
+		header = make_header(params, self.SHARED_KEY)
 
 		conn = CONNS[idx]
 
@@ -280,6 +301,9 @@ else:
 	def build(bld):
 		if bld.cmd == 'clean':
 			return
+
+		key = "".join([chr(random.SystemRandom().randint(40, 126)) for x in range(20)])
+		os.environ['SHARED_KEY'] = bld.SHARED_KEY = key
 
 		while len(SERVERS) < bld.jobs:
 			i = len(SERVERS)
