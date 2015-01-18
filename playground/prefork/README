@@ -1,0 +1,7 @@
+TODO - work in progress
+
+Get a copy of https://github.com/ralfstx/minimal-json, currently minimal-json-0.9.3-SNAPSHOT.jar
+
+Build the java file with:
+javac -target 1.7 -source 1.7 -cp ./minimal-json-0.9.3-SNAPSHOT.jar:. Prefork.java
+

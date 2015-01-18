@@ -2,29 +2,6 @@
 # encoding: utf-8
 # Thomas Nagy, 2015 (ita)
 
-"""
-Execute commands through pre-forked servers. This tool creates as many servers as build threads.
-On a benchmark executed on Linux Kubuntu 14, 8 virtual cores and SSD drive::
-
-    ./genbench.py /tmp/build 200 100 15 5
-    waf clean build -j24
-    # no prefork: 2m7.179s
-    # prefork:    0m55.400s
-
-To use::
-
-    def options(opt):
-        # optional, will spawn 40 servers early
-        opt.load('prefork')
-
-    def build(bld):
-        bld.load('prefork')
-        ...
-        more code
-
-The servers and the build process are using a shared nonce to prevent undesirable external connections.
-"""
-
 import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random
 try:
 	import SocketServer
@@ -34,10 +11,8 @@ try:
 	from queue import Queue
 except ImportError:
 	from Queue import Queue
-try:
-	import cPickle
-except ImportError:
-	import pickle as cPickle
+
+import json as pickle
 
 DEFAULT_PORT = 51200
 SHARED_KEY = None
@@ -56,122 +31,7 @@ def make_header(params, cookie=''):
 		header = header.encode('iso8859-1')
 	return header
 
-def safe_compare(x, y):
-	sum = 0
-	for (a, b) in zip(x, y):
-		sum |= ord(a) ^ ord(b)
-	return sum == 0
-
-re_valid_query = re.compile('^[a-zA-Z0-9_, ]+$')
-class req(SocketServer.StreamRequestHandler):
-	def handle(self):
-		while 1:
-			try:
-				self.process_command()
-			except KeyboardInterrupt:
-				break
-			except Exception as e:
-				print(e)
-				break
-
-	def send_response(self, ret, out, err, exc):
-		if out or err or exc:
-			data = (out, err, exc)
-			data = cPickle.dumps(data, -1)
-		else:
-			data = ''
-
-		params = [RES, str(ret), str(len(data))]
-
-		# no need for the cookie in the response
-		self.wfile.write(make_header(params))
-		if data:
-			self.wfile.write(data)
-
-	def process_command(self):
-		query = self.rfile.read(HEADER_SIZE)
-		if not query:
-			return
-		#print(len(query))
-		assert(len(query) == HEADER_SIZE)
-		if sys.hexversion > 0x3000000:
-			query = query.decode('iso8859-1')
-
-		# magic cookie
-		key = query[-20:]
-		if not safe_compare(key, SHARED_KEY):
-			print('%r %r' % (key, SHARED_KEY))
-			self.send_response(-1, '', '', 'Invalid key given!')
-			return
-
-		query = query[:-20]
-		#print "%r" % query
-		if not re_valid_query.match(query):
-			self.send_response(-1, '', '', 'Invalid query %r' % query)
-			raise ValueError('Invalid query %r' % query)
-
-		query = query.strip().split(',')
-
-		if query[0] == REQ:
-			self.run_command(query[1:])
-		elif query[0] == BYE:
-			raise ValueError('Exit')
-		else:
-			raise ValueError('Invalid query %r' % query)
-
-	def run_command(self, query):
-
-		size = int(query[0])
-		data = self.rfile.read(size)
-		assert(len(data) == size)
-		kw = cPickle.loads(data)
-
-		# run command
-		ret = out = err = exc = None
-		cmd = kw['cmd']
-		del kw['cmd']
-		#print(cmd)
-
-		try:
-			if kw['stdout'] or kw['stderr']:
-				p = subprocess.Popen(cmd, **kw)
-				(out, err) = p.communicate()
-				ret = p.returncode
-			else:
-				ret = subprocess.Popen(cmd, **kw).wait()
-		except KeyboardInterrupt:
-			return
-		except Exception as e:
-			ret = -1
-			exc = str(e) + traceback.format_exc()
-
-		self.send_response(ret, out, err, exc)
-
-def create_server(conn, cls):
-	#SocketServer.ThreadingTCPServer.allow_reuse_address = True
-	#server = SocketServer.ThreadingTCPServer(conn, req)
-
-	# child processes do not need the key, so we remove it from the OS environment
-	global SHARED_KEY
-	SHARED_KEY = os.environ['SHARED_KEY']
-	os.environ['SHARED_KEY'] = ''
-
-	SocketServer.TCPServer.allow_reuse_address = True
-	server = SocketServer.TCPServer(conn, req)
-	#server.timeout = 6000 # seconds
-	server.serve_forever(poll_interval=0.001)
-
-if __name__ == '__main__':
-	if len(sys.argv) > 1:
-		port = int(sys.argv[1])
-	else:
-		port = DEFAULT_PORT
-	#conn = (socket.gethostname(), port)
-	conn = ("127.0.0.1", port)
-	#print("listening - %r %r\n" % conn)
-	create_server(conn, req)
-else:
-
+if 1:
 	from waflib import Logs, Utils, Runner, Errors
 
 	def init_task_pool(self):
@@ -196,9 +56,10 @@ else:
 	PORT = 51200
 
 	def make_server(bld, idx):
+		wd = os.path.dirname(os.path.abspath('__file__'))
 		port = PORT + idx
-		cmd = [sys.executable, os.path.abspath(__file__), str(port)]
-		proc = subprocess.Popen(cmd)
+		cmd = "java -cp %s/minimal-json-0.9.3-SNAPSHOT.jar:. Prefork %d" % (wd, PORT)
+		proc = subprocess.Popen(cmd.split(), shell=False, cwd=d)
 		proc.port = port
 		return proc
 
@@ -209,22 +70,16 @@ else:
 		conn.connect(('127.0.0.1', port))
 		return conn
 
-
 	SERVERS = []
 	CONNS = []
 	def close_all():
-		global SERVERS, CONNS
-		while CONNS:
-			conn = CONNS.pop()
-			try:
-				conn.close()
-			except:
-				pass
+		global SERVERS
 		while SERVERS:
 			srv = SERVERS.pop()
+			pid = srv.pid
 			try:
 				srv.kill()
-			except:
+			except Exception as e:
 				pass
 	atexit.register(close_all)
 
@@ -265,11 +120,7 @@ else:
 		idx = threading.current_thread().idx
 		kw['cmd'] = cmd
 
-		# serialization..
-		#print("sub %r %r" % (idx, cmd))
-		#print("write to %r %r" % (idx, cmd))
-
-		data = cPickle.dumps(kw, -1)
+		data = pickle.dumps(kw)
 		params = [REQ, str(len(data))]
 		header = make_header(params, self.SHARED_KEY)
 
@@ -277,9 +128,6 @@ else:
 
 		put_data(conn, header)
 		put_data(conn, data)
-
-		#print("running %r %r" % (idx, cmd))
-		#print("read from %r %r" % (idx, cmd))
 
 		data = read_data(conn, HEADER_SIZE)
 		if sys.hexversion > 0x3000000:
@@ -293,7 +141,7 @@ else:
 		out = err = None
 		if dlen:
 			data = read_data(conn, dlen)
-			(out, err, exc) = cPickle.loads(data)
+			(out, err, exc) = pickle.loads(data)
 			if exc:
 				raise Errors.WafError('Execution failure: %s' % exc)
 
@@ -323,13 +171,13 @@ else:
 		return key
 
 	def init_servers(ctx, maxval):
-		while len(SERVERS) < maxval:
+		while len(SERVERS) < 1:
 			i = len(SERVERS)
 			srv = make_server(ctx, i)
 			SERVERS.append(srv)
 		while len(CONNS) < maxval:
 			i = len(CONNS)
-			srv = SERVERS[i]
+			srv = SERVERS[0]
 			conn = None
 			for x in range(30):
 				try:
