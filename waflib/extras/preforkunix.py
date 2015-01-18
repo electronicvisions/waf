@@ -3,26 +3,20 @@
 # Thomas Nagy, 2015 (ita)
 
 """
-Execute commands through pre-forked servers. This tool creates as many servers as build threads.
-On a benchmark executed on Linux Kubuntu 14, 8 virtual cores and SSD drive::
-
-    ./genbench.py /tmp/build 200 100 15 5
-    waf clean build -j24
-    # no prefork: 2m7.179s
-    # prefork:    0m55.400s
+A version of prefork.py that uses unix sockets. The advantage is that it does not expose
+connections to the outside. Yet performance it only works on unix-like systems
+and performance can be slightly worse.
 
 To use::
 
     def options(opt):
-        # optional, will spawn 40 servers early
-        opt.load('prefork')
+        # recommended, fork new processes before using more memory
+        opt.load('preforkunix')
 
     def build(bld):
-        bld.load('prefork')
+        bld.load('preforkunix')
         ...
         more code
-
-The servers and the build process are using a shared nonce to prevent undesirable external connections.
 """
 
 import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random
@@ -39,9 +33,7 @@ try:
 except ImportError:
 	import pickle as cPickle
 
-DEFAULT_PORT = 51200
-SHARED_KEY = None
-HEADER_SIZE = 64
+HEADER_SIZE = 20
 
 REQ = 'REQ'
 RES = 'RES'
@@ -61,18 +53,8 @@ def safe_compare(x, y):
 	return not sum(vec)
 
 re_valid_query = re.compile('^[a-zA-Z0-9_, ]+$')
-class req(SocketServer.StreamRequestHandler):
-	def handle(self):
-		while 1:
-			try:
-				self.process_command()
-			except KeyboardInterrupt:
-				break
-			except Exception as e:
-				print(e)
-				break
-
-	def send_response(self, ret, out, err, exc):
+if 1:
+	def send_response(conn, ret, out, err, exc):
 		if out or err or exc:
 			data = (out, err, exc)
 			data = cPickle.dumps(data, -1)
@@ -82,12 +64,12 @@ class req(SocketServer.StreamRequestHandler):
 		params = [RES, str(ret), str(len(data))]
 
 		# no need for the cookie in the response
-		self.wfile.write(make_header(params))
+		conn.send(make_header(params))
 		if data:
-			self.wfile.write(data)
+			conn.send(data)
 
-	def process_command(self):
-		query = self.rfile.read(HEADER_SIZE)
+	def process_command(conn):
+		query = conn.recv(HEADER_SIZE)
 		if not query:
 			return
 		#print(len(query))
@@ -95,32 +77,24 @@ class req(SocketServer.StreamRequestHandler):
 		if sys.hexversion > 0x3000000:
 			query = query.decode('iso8859-1')
 
-		# magic cookie
-		key = query[-20:]
-		if not safe_compare(key, SHARED_KEY):
-			print('%r %r' % (key, SHARED_KEY))
-			self.send_response(-1, '', '', 'Invalid key given!')
-			return
-
-		query = query[:-20]
 		#print "%r" % query
 		if not re_valid_query.match(query):
-			self.send_response(-1, '', '', 'Invalid query %r' % query)
+			send_response(conn, -1, '', '', 'Invalid query %r' % query)
 			raise ValueError('Invalid query %r' % query)
 
 		query = query.strip().split(',')
 
 		if query[0] == REQ:
-			self.run_command(query[1:])
+			run_command(conn, query[1:])
 		elif query[0] == BYE:
 			raise ValueError('Exit')
 		else:
 			raise ValueError('Invalid query %r' % query)
 
-	def run_command(self, query):
+	def run_command(conn, query):
 
 		size = int(query[0])
-		data = self.rfile.read(size)
+		data = conn.recv(size)
 		assert(len(data) == size)
 		kw = cPickle.loads(data)
 
@@ -143,32 +117,9 @@ class req(SocketServer.StreamRequestHandler):
 			ret = -1
 			exc = str(e) + traceback.format_exc()
 
-		self.send_response(ret, out, err, exc)
+		send_response(conn, ret, out, err, exc)
 
-def create_server(conn, cls):
-	#SocketServer.ThreadingTCPServer.allow_reuse_address = True
-	#server = SocketServer.ThreadingTCPServer(conn, req)
-
-	# child processes do not need the key, so we remove it from the OS environment
-	global SHARED_KEY
-	SHARED_KEY = os.environ['SHARED_KEY']
-	os.environ['SHARED_KEY'] = ''
-
-	SocketServer.TCPServer.allow_reuse_address = True
-	server = SocketServer.TCPServer(conn, req)
-	#server.timeout = 6000 # seconds
-	server.serve_forever(poll_interval=0.001)
-
-if __name__ == '__main__':
-	if len(sys.argv) > 1:
-		port = int(sys.argv[1])
-	else:
-		port = DEFAULT_PORT
-	#conn = (socket.gethostname(), port)
-	conn = ("127.0.0.1", port)
-	#print("listening - %r %r\n" % conn)
-	create_server(conn, req)
-else:
+if 1:
 
 	from waflib import Logs, Utils, Runner, Errors
 
@@ -191,27 +142,22 @@ else:
 		return pool
 	Runner.Parallel.init_task_pool = init_task_pool
 
-	PORT = 51200
-
-	def make_server(bld, idx):
-		port = PORT + idx
-		cmd = [sys.executable, os.path.abspath(__file__), str(port)]
-		proc = subprocess.Popen(cmd)
-		proc.port = port
-		return proc
-
-	def make_conn(bld, srv):
-		#port = PORT + idx
-		port = srv.port
-		conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		conn.connect(('127.0.0.1', port))
-		return conn
-
+	def make_conn(bld):
+		child_socket, parent_socket = socket.socketpair(socket.AF_UNIX)
+		pid = os.fork()
+		if pid == 0:
+			parent_socket.close()
+			# write to child_socket only
+			while 1:
+				process_command(child_socket)
+		else:
+			child_socket.close()
+			return (pid, parent_socket)
 
 	SERVERS = []
 	CONNS = []
 	def close_all():
-		global SERVERS, CONNS
+		global SERVERS, CONS
 		while CONNS:
 			conn = CONNS.pop()
 			try:
@@ -219,9 +165,9 @@ else:
 			except:
 				pass
 		while SERVERS:
-			srv = SERVERS.pop()
+			pid = SERVERS.pop()
 			try:
-				srv.kill()
+				os.kill(pid, 9)
 			except:
 				pass
 	atexit.register(close_all)
@@ -269,7 +215,7 @@ else:
 
 		data = cPickle.dumps(kw, -1)
 		params = [REQ, str(len(data))]
-		header = make_header(params, self.SHARED_KEY)
+		header = make_header(params)
 
 		conn = CONNS[idx]
 
@@ -312,44 +258,20 @@ else:
 
 		return ret
 
-	def init_key(ctx):
-		try:
-			key = ctx.SHARED_KEY = os.environ['SHARED_KEY']
-		except KeyError:
-			key = "".join([chr(random.SystemRandom().randint(40, 126)) for x in range(20)])
-			os.environ['SHARED_KEY'] = ctx.SHARED_KEY = key
-		return key
-
-	def init_servers(ctx, maxval):
-		while len(SERVERS) < maxval:
-			i = len(SERVERS)
-			srv = make_server(ctx, i)
-			SERVERS.append(srv)
-		while len(CONNS) < maxval:
-			i = len(CONNS)
-			srv = SERVERS[i]
-			conn = None
-			for x in range(30):
-				try:
-					conn = make_conn(ctx, srv)
-					break
-				except socket.error:
-					time.sleep(0.01)
-			if not conn:
-				raise ValueError('Could not start the server!')
-			CONNS.append(conn)
-
 	def options(opt):
-		init_key(opt)
-		init_servers(opt, 40)
+		# memory consumption might be at the lowest point while processing options
+		while len(CONNS) < 30:
+			(pid, conn) = make_conn(opt)
+			SERVERS.append(pid)
+			CONNS.append(conn)
 
 	def build(bld):
 		if bld.cmd == 'clean':
 			return
-
-		init_key(bld)
-		init_servers(bld, bld.jobs)
-
+		while len(CONNS) < bld.jobs:
+			(pid, conn) = make_conn(bld)
+			SERVERS.append(pid)
+			CONNS.append(conn)
 		bld.__class__.exec_command_old = bld.__class__.exec_command
 		bld.__class__.exec_command = exec_command
 
