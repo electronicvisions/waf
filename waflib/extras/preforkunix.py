@@ -19,11 +19,7 @@ To use::
         more code
 """
 
-import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random
-try:
-	import SocketServer
-except ImportError:
-	import socketserver as SocketServer
+import os, re, socket, threading, sys, subprocess, atexit, traceback
 try:
 	from queue import Queue
 except ImportError:
@@ -173,17 +169,26 @@ if 1:
 	atexit.register(close_all)
 
 	def put_data(conn, data):
-		conn.send(data)
+		cnt = 0
+		while cnt < len(data):
+			sent = conn.send(data[cnt:])
+			if sent == 0:
+				raise RuntimeError('connection ended')
+			cnt += sent
 
 	def read_data(conn, siz):
-		ret = conn.recv(siz)
-		#if not ret:
-		#	print("closed connection?")
-		assert(len(ret) == siz)
+		cnt = 0
+		buf = []
+		while cnt < siz:
+			data = conn.recv(min(siz - cnt, 1024))
+			if not data:
+				raise RuntimeError('connection ended %r %r' % (cnt, siz))
+			buf.append(data)
+			cnt += len(data)
+		ret = ''.join(buf)
 		return ret
 
 	def exec_command(self, cmd, **kw):
-
 		if 'stdout' in kw:
 			if kw['stdout'] not in (None, subprocess.PIPE):
 				return self.exec_command_old(cmd, **kw)

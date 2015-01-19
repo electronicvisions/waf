@@ -56,10 +56,11 @@ if 1:
 	PORT = 51200
 
 	def make_server(bld, idx):
-		wd = os.path.dirname(os.path.abspath('__file__'))
+		#wd = os.path.dirname(os.path.abspath('__file__'))
+		wd = "/home/tnagy/"
 		port = PORT + idx
 		cmd = "java -cp %s/minimal-json-0.9.3-SNAPSHOT.jar:. Prefork %d" % (wd, PORT)
-		proc = subprocess.Popen(cmd.split(), shell=False, cwd=d)
+		proc = subprocess.Popen(cmd.split(), shell=False, cwd=wd)
 		proc.port = port
 		return proc
 
@@ -84,17 +85,26 @@ if 1:
 	atexit.register(close_all)
 
 	def put_data(conn, data):
-		conn.send(data)
+		cnt = 0
+		while cnt < len(data):
+			sent = conn.send(data[cnt:])
+			if sent == 0:
+				raise RuntimeError('connection ended')
+			cnt += sent
 
 	def read_data(conn, siz):
-		ret = conn.recv(siz)
-		#if not ret:
-		#	print("closed connection?")
-		assert(len(ret) == siz)
+		cnt = 0
+		buf = []
+		while cnt < siz:
+			data = conn.recv(min(siz - cnt, 1024))
+			if not data:
+				raise RuntimeError('connection ended %r %r' % (cnt, siz))
+			buf.append(data)
+			cnt += len(data)
+		ret = ''.join(buf)
 		return ret
 
 	def exec_command(self, cmd, **kw):
-
 		if 'stdout' in kw:
 			if kw['stdout'] not in (None, subprocess.PIPE):
 				return self.exec_command_old(cmd, **kw)
