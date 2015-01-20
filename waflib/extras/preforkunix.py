@@ -44,10 +44,6 @@ def make_header(params, cookie=''):
 		header = header.encode('iso8859-1')
 	return header
 
-def safe_compare(x, y):
-	vec = [abs(ord(a) - ord(b)) for (a, b) in zip(x, y)]
-	return not sum(vec)
-
 re_valid_query = re.compile('^[a-zA-Z0-9_, ]+$')
 if 1:
 	def send_response(conn, ret, out, err, exc):
@@ -265,26 +261,30 @@ if 1:
 
 		return ret
 
-	def options(opt):
-		# memory consumption might be at the lowest point while processing options
-		while len(CONNS) < 30:
-			(pid, conn) = make_conn(opt)
-			SERVERS.append(pid)
-			CONNS.append(conn)
-
 	def init_smp(self):
 		if not self.smp:
 			return
 		if Utils.unversioned_sys_platform() in ('freebsd',):
 			pid = os.getpid()
-			cmd = ['cpuset', '-l', '0', str(pid)]
+			cmd = ['cpuset', '-l', '0', '-p', str(pid)]
 		elif Utils.unversioned_sys_platform() in ('linux',):
 			pid = os.getpid()
 			cmd = ['taskset', '-pc', '0', str(pid)]
 		if cmd:
 			self.cmd_and_log(cmd, quiet=0)
 
+	def options(opt):
+		# memory consumption might be at the lowest point while processing options
+		if Utils.is_win32 or os.sep != '/':
+			return
+		while len(CONNS) < 30:
+			(pid, conn) = make_conn(opt)
+			SERVERS.append(pid)
+			CONNS.append(conn)
+
 	def build(bld):
+		if Utils.is_win32 or os.sep != '/':
+			return
 		if bld.cmd == 'clean':
 			return
 		while len(CONNS) < bld.jobs:

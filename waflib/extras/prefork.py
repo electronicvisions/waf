@@ -361,7 +361,7 @@ else:
 			return
 		if Utils.unversioned_sys_platform() in ('freebsd',):
 			pid = os.getpid()
-			cmd = ['cpuset', '-l', '0', str(pid)]
+			cmd = ['cpuset', '-l', '0', '-p', str(pid)]
 		elif Utils.unversioned_sys_platform() in ('linux',):
 			pid = os.getpid()
 			cmd = ['taskset', '-pc', '0', str(pid)]
