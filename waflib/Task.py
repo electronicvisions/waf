@@ -254,6 +254,9 @@ class TaskBase(evil):
 
 	def log_display(self, bld):
 		"Write the execution status on the context logger"
+		if self.generator.bld.progress_bar == 3:
+			return
+
 		s = self.display()
 		if s:
 			if bld.logger:
