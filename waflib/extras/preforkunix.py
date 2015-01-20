@@ -185,7 +185,10 @@ if 1:
 				raise RuntimeError('connection ended %r %r' % (cnt, siz))
 			buf.append(data)
 			cnt += len(data)
-		ret = ''.join(buf)
+		if sys.hexversion > 0x3000000:
+			ret = ''.encode('iso8859-1').join(buf)
+		else:
+			ret = ''.join(buf)
 		return ret
 
 	def exec_command(self, cmd, **kw):
@@ -224,8 +227,7 @@ if 1:
 
 		conn = CONNS[idx]
 
-		put_data(conn, header)
-		put_data(conn, data)
+		put_data(conn, header + data)
 
 		#print("running %r %r" % (idx, cmd))
 		#print("read from %r %r" % (idx, cmd))

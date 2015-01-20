@@ -56,8 +56,7 @@ if 1:
 	PORT = 51200
 
 	def make_server(bld, idx):
-		#wd = os.path.dirname(os.path.abspath('__file__'))
-		wd = "/home/tnagy/"
+		wd = os.path.dirname(os.path.abspath('__file__'))
 		port = PORT + idx
 		cmd = "java -cp %s/minimal-json-0.9.3-SNAPSHOT.jar:. Prefork %d" % (wd, PORT)
 		proc = subprocess.Popen(cmd.split(), shell=False, cwd=wd)
@@ -68,6 +67,7 @@ if 1:
 		#port = PORT + idx
 		port = srv.port
 		conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 		conn.connect(('127.0.0.1', port))
 		return conn
 
@@ -101,7 +101,10 @@ if 1:
 				raise RuntimeError('connection ended %r %r' % (cnt, siz))
 			buf.append(data)
 			cnt += len(data)
-		ret = ''.join(buf)
+		if sys.hexversion > 0x3000000:
+			ret = ''.encode('iso8859-1').join(buf)
+		else:
+			ret = ''.join(buf)
 		return ret
 
 	def exec_command(self, cmd, **kw):
@@ -136,8 +139,9 @@ if 1:
 
 		conn = CONNS[idx]
 
-		put_data(conn, header)
-		put_data(conn, data)
+		if sys.hexversion > 0x3000000:
+			data = data.encode('iso8859-1')
+		put_data(conn, header + data)
 
 		data = read_data(conn, HEADER_SIZE)
 		if sys.hexversion > 0x3000000:

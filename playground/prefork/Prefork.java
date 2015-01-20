@@ -94,7 +94,9 @@ public class Prefork implements Runnable, Comparator<Object[]> {
 				ServerSocket server = new ServerSocket(port);
 				server.setReuseAddress(true);
 				while (true) {
-					Prefork tmp = new Prefork(server.accept(), port);
+					Socket conn = server.accept();
+					conn.setTcpNoDelay(true);
+					Prefork tmp = new Prefork(conn, port);
 					Thread t = new Thread(tmp);
 					t.start();
 				}

@@ -160,6 +160,7 @@ def create_server(conn, cls):
 	SocketServer.TCPServer.allow_reuse_address = True
 	server = SocketServer.TCPServer(conn, req)
 	#server.timeout = 6000 # seconds
+	server.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 	server.serve_forever(poll_interval=0.001)
 
 if __name__ == '__main__':
@@ -207,6 +208,7 @@ else:
 		#port = PORT + idx
 		port = srv.port
 		conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 		conn.connect(('127.0.0.1', port))
 		return conn
 
@@ -246,7 +248,10 @@ else:
 				raise RuntimeError('connection ended %r %r' % (cnt, siz))
 			buf.append(data)
 			cnt += len(data)
-		ret = ''.join(buf)
+		if sys.hexversion > 0x3000000:
+			ret = ''.encode('iso8859-1').join(buf)
+		else:
+			ret = ''.join(buf)
 		return ret
 
 	def exec_command(self, cmd, **kw):
@@ -285,8 +290,8 @@ else:
 
 		conn = CONNS[idx]
 
-		put_data(conn, header)
-		put_data(conn, data)
+		put_data(conn, header + data)
+		#put_data(conn, data)
 
 		#print("running %r %r" % (idx, cmd))
 		#print("read from %r %r" % (idx, cmd))
