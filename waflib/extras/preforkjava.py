@@ -31,7 +31,7 @@ def make_header(params, cookie=''):
 	return header
 
 if 1:
-	from waflib import Logs, Utils, Runner, Errors
+	from waflib import Logs, Utils, Runner, Errors, Options
 
 	def init_task_pool(self):
 		# lazy creation, and set a common pool for all task consumers
@@ -209,7 +209,7 @@ if 1:
 			CONNS.append(conn)
 
 	def init_smp(self):
-		if not self.smp:
+		if not getattr(Options.options, 'smp', getattr(self, 'smp', None)):
 			return
 		if Utils.unversioned_sys_platform() in ('freebsd',):
 			pid = os.getpid()
@@ -221,6 +221,7 @@ if 1:
 			self.cmd_and_log(cmd, quiet=0)
 
 	def options(opt):
+		opt.add_option('--pin-process', action='store_true', dest='smp', default=False)
 		init_key(opt)
 		init_servers(opt, 40)
 
