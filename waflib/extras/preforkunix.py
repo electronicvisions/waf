@@ -272,6 +272,18 @@ if 1:
 			SERVERS.append(pid)
 			CONNS.append(conn)
 
+	def init_smp(self):
+		if not self.smp:
+			return
+		if Utils.unversioned_sys_platform() in ('freebsd',):
+			pid = os.getpid()
+			cmd = ['cpuset', '-l', '0', str(pid)]
+		elif Utils.unversioned_sys_platform() in ('linux',):
+			pid = os.getpid()
+			cmd = ['taskset', '-pc', '0', str(pid)]
+		if cmd:
+			self.cmd_and_log(cmd, quiet=0)
+
 	def build(bld):
 		if bld.cmd == 'clean':
 			return
@@ -279,6 +291,7 @@ if 1:
 			(pid, conn) = make_conn(bld)
 			SERVERS.append(pid)
 			CONNS.append(conn)
+		init_smp(bld)
 		bld.__class__.exec_command_old = bld.__class__.exec_command
 		bld.__class__.exec_command = exec_command
 

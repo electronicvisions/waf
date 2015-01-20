@@ -14,7 +14,6 @@ except ImportError:
 
 import json as pickle
 
-DEFAULT_PORT = 51200
 SHARED_KEY = None
 HEADER_SIZE = 64
 
@@ -53,13 +52,19 @@ if 1:
 		return pool
 	Runner.Parallel.init_task_pool = init_task_pool
 
-	PORT = 51200
-
 	def make_server(bld, idx):
-		wd = os.path.dirname(os.path.abspath('__file__'))
-		port = PORT + idx
-		cmd = "java -cp %s/minimal-json-0.9.3-SNAPSHOT.jar:. Prefork %d" % (wd, PORT)
-		proc = subprocess.Popen(cmd.split(), shell=False, cwd=wd)
+		top = getattr(bld, 'preforkjava_top', os.path.dirname(os.path.abspath('__file__')))
+		cp = getattr(bld, 'preforkjava_cp', os.path.join(top, 'minimal-json-0.9.3-SNAPSHOT.jar') + os.pathsep + top)
+
+		for x in cp.split(os.pathsep):
+			if x and not os.path.exists(x):
+				Logs.warn('Invalid classpath: %r' % cp)
+				Logs.warn('Set for example bld.preforkjava_cp to /path/to/minimal-json:/path/to/Prefork.class/')
+
+		cwd = getattr(bld, 'preforkjava_cwd', top)
+		port = getattr(bld, 'preforkjava_port', 51200)
+		cmd = getattr(bld, 'preforkjava_cmd', 'java -cp %s%s Prefork %d' % (cp, os.pathsep, port))
+		proc = subprocess.Popen(cmd.split(), shell=False, cwd=cwd)
 		proc.port = port
 		return proc
 
@@ -203,6 +208,18 @@ if 1:
 				raise ValueError('Could not start the server!')
 			CONNS.append(conn)
 
+	def init_smp(self):
+		if not self.smp:
+			return
+		if Utils.unversioned_sys_platform() in ('freebsd',):
+			pid = os.getpid()
+			cmd = ['cpuset', '-l', '0', str(pid)]
+		elif Utils.unversioned_sys_platform() in ('linux',):
+			pid = os.getpid()
+			cmd = ['taskset', '-pc', '0', str(pid)]
+		if cmd:
+			self.cmd_and_log(cmd, quiet=0)
+
 	def options(opt):
 		init_key(opt)
 		init_servers(opt, 40)
@@ -213,6 +230,7 @@ if 1:
 
 		init_key(bld)
 		init_servers(bld, bld.jobs)
+		init_smp(bld)
 
 		bld.__class__.exec_command_old = bld.__class__.exec_command
 		bld.__class__.exec_command = exec_command

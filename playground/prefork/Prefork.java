@@ -111,7 +111,7 @@ public class Prefork implements Runnable, Comparator<Object[]> {
 	public String make_out(Socket sock, String stdout, String stderr, String exc) {
 		if ((stdout == null || stdout.length() == 0) && (stderr == null || stderr.length() == 0) && (exc == null || exc.length() == 0))
 		{
-			return "";
+			return null;
 		}
 
 		JsonArray ret = new JsonArray();
@@ -201,9 +201,11 @@ public class Prefork implements Runnable, Comparator<Object[]> {
 		String msg = make_out(sock, stdout, stderr, exc);
 
 		// RES, status, ret size
-		String ret = String.format("%-64s", String.format("RES,%d,%d", status, msg.length()));
+		int len = msg != null ? msg.length() : 0;
+
+		String ret = String.format("%-64s", String.format("RES,%d,%d", status, len));
 		out.write(ret.getBytes());
-		if (msg.length() > 0)
+		if (len > 0)
 		{
 			out.write(msg.getBytes());
 		}

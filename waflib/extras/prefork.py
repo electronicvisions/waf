@@ -356,6 +356,18 @@ else:
 				raise ValueError('Could not start the server!')
 			CONNS.append(conn)
 
+	def init_smp(self):
+		if not self.smp:
+			return
+		if Utils.unversioned_sys_platform() in ('freebsd',):
+			pid = os.getpid()
+			cmd = ['cpuset', '-l', '0', str(pid)]
+		elif Utils.unversioned_sys_platform() in ('linux',):
+			pid = os.getpid()
+			cmd = ['taskset', '-pc', '0', str(pid)]
+		if cmd:
+			self.cmd_and_log(cmd, quiet=0)
+
 	def options(opt):
 		init_key(opt)
 		init_servers(opt, 40)
@@ -366,6 +378,7 @@ else:
 
 		init_key(bld)
 		init_servers(bld, bld.jobs)
+		init_smp(bld)
 
 		bld.__class__.exec_command_old = bld.__class__.exec_command
 		bld.__class__.exec_command = exec_command
