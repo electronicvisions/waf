@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2011 (ita)
+# Thomas Nagy, 2011-2015 (ita)
 
 """
 A client for the network cache (playground/netcache/). Launch the server with:
 ./netcache_server, then use it for the builds by adding the following:
 
-	def options(opt):
-		opt.load('netcache_client')
+	def build(bld):
+		bld.load('netcache_client')
 
 The parameters should be present in the environment in the form:
 	NETCACHE=host:port@mode waf configure build
@@ -15,17 +15,11 @@ The parameters should be present in the environment in the form:
 where:
 	mode: PUSH, PULL, PUSH_PULL
 	host: host where the server resides, for example 127.0.0.1
-	port: by default the server runs on port 51200
-
-The cache can be enabled for the build only:
-	def options(opt):
-		opt.load('netcache_client', funs=[])
-	def build(bld):
-		bld.setup_netcache('localhost', 51200, 'PUSH_PULL')
+	port: by default the java server receives files on 11001 and returns data on 12001
 """
 
-import os, socket, time, atexit
-from waflib import Task, Logs, Utils, Build, Options, Runner
+import os, socket, time, atexit, sys
+from waflib import Task, Logs, Utils, Build, Runner
 from waflib.Configure import conf
 
 BUF = 8192 * 16
@@ -39,6 +33,16 @@ LST = 'LST'
 BYE = 'BYE'
 
 all_sigs_in_cache = (0.0, [])
+
+def put_data(conn, data):
+	if sys.hexversion > 0x3000000:
+		data = data.encode('iso8859-1')
+	cnt = 0
+	while cnt < len(data):
+		sent = conn.send(data[cnt:])
+		if sent == 0:
+			raise RuntimeError('connection ended')
+		cnt += sent
 
 active_connections = Runner.Queue(0)
 def get_connection():
@@ -58,7 +62,7 @@ def close_connection(conn, msg=''):
 	if conn:
 		data = '%s,%s' % (BYE, msg)
 		try:
-			conn.send(data.ljust(HEADER_SIZE))
+			put_data(conn, data.ljust(HEADER_SIZE))
 		except:
 			pass
 		try:
@@ -86,7 +90,12 @@ def read_header(conn):
 			raise ValueError('connection ended when reading a header %r' % buf)
 		buf.append(data)
 		cnt += len(data)
-	return ''.join(buf)
+	if sys.hexversion > 0x3000000:
+		ret = ''.encode('iso8859-1').join(buf)
+		ret = ret.decode('iso8859-1')
+	else:
+		ret = ''.join(buf)
+	return ret
 
 def check_cache(conn, ssig):
 	"""
@@ -99,7 +108,7 @@ def check_cache(conn, ssig):
 	if time.time() - all_sigs_in_cache[0] > STALE_TIME:
 
 		params = (LST,'')
-		conn.send(','.join(params).ljust(HEADER_SIZE))
+		put_data(conn, ','.join(params).ljust(HEADER_SIZE))
 
 		# read what is coming back
 		ret = read_header(conn)
@@ -113,7 +122,14 @@ def check_cache(conn, ssig):
 				raise ValueError('connection ended %r %r' % (cnt, size))
 			buf.append(data)
 			cnt += len(data)
-		all_sigs_in_cache = (time.time(), ''.join(buf).split('\n'))
+
+		if sys.hexversion > 0x3000000:
+			ret = ''.encode('iso8859-1').join(buf)
+			ret = ret.decode('iso8859-1')
+		else:
+			ret = ''.join(buf)
+
+		all_sigs_in_cache = (time.time(), ret.splitlines())
 		Logs.debug('netcache: server cache has %r entries' % len(all_sigs_in_cache[1]))
 
 	if not ssig in all_sigs_in_cache[1]:
@@ -126,7 +142,7 @@ def recv_file(conn, ssig, count, p):
 	check_cache(conn, ssig)
 
 	params = (GET, ssig, str(count))
-	conn.send(','.join(params).ljust(HEADER_SIZE))
+	put_data(conn, ','.join(params).ljust(HEADER_SIZE))
 	data = read_header(conn)
 
 	size = int(data.split(',')[0])
@@ -146,11 +162,11 @@ def recv_file(conn, ssig, count, p):
 		cnt += len(data)
 	f.close()
 
-def put_data(conn, ssig, cnt, p):
+def sock_send(conn, ssig, cnt, p):
 	#print "pushing %r %r %r" % (ssig, cnt, p)
 	size = os.stat(p).st_size
 	params = (PUT, ssig, str(cnt), str(size))
-	conn.send(','.join(params).ljust(HEADER_SIZE))
+	put_data(conn, ','.join(params).ljust(HEADER_SIZE))
 	f = open(p, 'rb')
 	cnt = 0
 	while cnt < size:
@@ -161,14 +177,6 @@ def put_data(conn, ssig, cnt, p):
 				raise ValueError('connection ended')
 			cnt += k
 			r = r[k:]
-
-#def put_data(conn, ssig, cnt, p):
-#	size = os.stat(p).st_size
-#	params = (PUT, ssig, str(cnt), str(size))
-#	conn.send(','.join(params).ljust(HEADER_SIZE))
-#	conn.send(','*size)
-#	params = (BYE, 'he')
-#	conn.send(','.join(params).ljust(HEADER_SIZE))
 
 def can_retrieve_cache(self):
 	if not Task.net_cache:
@@ -181,7 +189,7 @@ def can_retrieve_cache(self):
 
 	cnt = 0
 	sig = self.signature()
-	ssig = self.uid().encode('hex') + sig.encode('hex')
+	ssig = Utils.to_hex(self.uid() + sig)
 
 	conn = None
 	err = False
@@ -230,7 +238,7 @@ def put_files_cache(self):
 	#print "called put_files_cache", id(self)
 	bld = self.generator.bld
 	sig = self.signature()
-	ssig = self.uid().encode('hex') + sig.encode('hex')
+	ssig = Utils.to_hex(self.uid() + sig)
 
 	conn = None
 	cnt = 0
@@ -242,7 +250,7 @@ def put_files_cache(self):
 			try:
 				if not conn:
 					conn = get_connection()
-				put_data(conn, ssig, cnt, node.abspath())
+				sock_send(conn, ssig, cnt, node.abspath())
 			except Exception as e:
 				Logs.debug("netcache: could not push the files %r" % e)
 
@@ -297,6 +305,28 @@ def uid(self):
 		self.uid_ = m.digest()
 		return self.uid_
 
+
+def make_cached(cls):
+	if getattr(cls, 'nocache', None):
+		return
+
+	m1 = cls.run
+	def run(self):
+		bld = self.generator.bld
+		if self.can_retrieve_cache():
+			return 0
+		return m1(self)
+	cls.run = run
+
+	m2 = cls.post_run
+	def post_run(self):
+		bld = self.generator.bld
+		ret = m2(self)
+		if bld.cache_global:
+			self.put_files_cache()
+		return ret
+	cls.post_run = post_run
+
 @conf
 def setup_netcache(ctx, host, port, mode):
 	Logs.warn('Using the network cache %s, %s, %s' % (host, port, mode))
@@ -305,11 +335,15 @@ def setup_netcache(ctx, host, port, mode):
 	Task.Task.put_files_cache = put_files_cache
 	Task.Task.uid = uid
 	Build.BuildContext.hash_env_vars = hash_env_vars
-	ctx.cache_global = Options.cache_global = True
+	ctx.cache_global = True
 
-def options(opt):
+	for x in Task.classes.values():
+		make_cached(x)
+
+def build(bld):
 	if not 'NETCACHE' in os.environ:
-		Logs.warn('the network cache is disabled, set NETCACHE=host:port@mode to enable')
+		Logs.warn('The network cache is disabled, set NETCACHE=host:port@mode to enable, eg:')
+		Logs.warn(' export NETCACHE=localhost:51200@PUSH_PULL')
 	else:
 		v = os.environ['NETCACHE']
 		if v in MODES:
@@ -323,6 +357,6 @@ def options(opt):
 				port, mode = port.split('@')
 			port = int(port)
 			if not mode in MODES:
-				opt.fatal('Invalid mode %s not in %r' % (mode, MODES))
-		setup_netcache(opt, host, port, mode)
+				bld.fatal('Invalid mode %s not in %r' % (mode, MODES))
+		setup_netcache(bld, host, port, mode)
 
