@@ -18,6 +18,8 @@ from waflib import Task, Utils, Logs, Errors, ConfigSet, Node
 feats = Utils.defaultdict(set)
 """remember the methods declaring features"""
 
+HEADER_EXTS = ['.h', '.hpp', '.hxx', '.hh']
+
 class task_gen(object):
 	"""
 	Instances of this class create :py:class:`waflib.Task.TaskBase` when
@@ -815,8 +817,12 @@ def process_subst(self):
 				setattr(tsk, k, val)
 
 		# paranoid safety measure for the general case foo.in->foo.h with ambiguous dependencies
-		if not has_constraints and b.name.endswith('.h'):
-			tsk.before = [k for k in ('c', 'cxx') if k in Task.classes]
+		if not has_constraints:
+			global HEADER_EXTS
+			for xt in HEADER_EXTS:
+				if b.name.endswith(xt):
+					tsk.before = [k for k in ('c', 'cxx') if k in Task.classes]
+					break
 
 		inst_to = getattr(self, 'install_path', None)
 		if inst_to:
