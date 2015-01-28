@@ -10,12 +10,16 @@ A client for the network cache (playground/netcache/). Launch the server with:
 		bld.load('netcache_client')
 
 The parameters should be present in the environment in the form:
-	NETCACHE=host:port@mode waf configure build
+	NETCACHE=host:port waf configure build
+
+Or in a more detailed way:
+	NETCACHE_PUSH=host:port NETCACHE_PULL=host:port waf configure build
 
 where:
-	mode: PUSH, PULL, PUSH_PULL
-	host: host where the server resides, for example 127.0.0.1
-	port: by default the java server receives files on 11001 and returns data on 12001
+	host: host where the server resides, by default localhost
+	port: by default push on 11001 and pull on 12001
+
+Use the server provided in playground/netcache/Netcache.java
 """
 
 import os, socket, time, atexit, sys
@@ -44,19 +48,29 @@ def put_data(conn, data):
 			raise RuntimeError('connection ended')
 		cnt += sent
 
-active_connections = Runner.Queue(0)
-def get_connection():
+push_connections = Runner.Queue(0)
+pull_connections = Runner.Queue(0)
+def get_connection(push=False):
 	# return a new connection... do not forget to release it!
 	try:
-		ret = active_connections.get(block=False)
+		if push:
+			ret = push_connections.get(block=False)
+		else:
+			ret = pull_connections.get(block=False)
 	except Exception:
 		ret = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ret.connect(Task.net_cache[:2])
+		if push:
+			ret.connect(Task.push_addr)
+		else:
+			ret.connect(Task.pull_addr)
 	return ret
 
-def release_connection(conn, msg=''):
+def release_connection(conn, msg='', push=False):
 	if conn:
-		active_connections.put(conn)
+		if push:
+			push_connections.put(conn)
+		else:
+			pull_connections.put(conn)
 
 def close_connection(conn, msg=''):
 	if conn:
@@ -71,12 +85,14 @@ def close_connection(conn, msg=''):
 			pass
 
 def close_all():
-	while active_connections.qsize():
-		conn = active_connections.get()
-		try:
-			close_connection(conn)
-		except:
-			pass
+	for q in (push_connections, pull_connections):
+		while q.qsize():
+			conn = q.get()
+			try:
+				close_connection(conn)
+			except:
+				# ignore errors when cleaning up
+				pass
 atexit.register(close_all)
 
 def read_header(conn):
@@ -179,12 +195,10 @@ def sock_send(conn, ssig, cnt, p):
 			r = r[k:]
 
 def can_retrieve_cache(self):
-	if not Task.net_cache:
+	if not Task.pull_addr:
 		return False
 	if not self.outputs:
 		return False
-	if Task.net_cache[-1] == 'PUSH':
-		return
 	self.cached = False
 
 	cnt = 0
@@ -226,11 +240,9 @@ def can_retrieve_cache(self):
 
 @Utils.run_once
 def put_files_cache(self):
-	if not Task.net_cache:
+	if not Task.push_addr:
 		return
 	if not self.outputs:
-		return
-	if Task.net_cache[-1] == 'PULL':
 		return
 	if getattr(self, 'cached', None):
 		return
@@ -249,7 +261,7 @@ def put_files_cache(self):
 			# this is unnecessary
 			try:
 				if not conn:
-					conn = get_connection()
+					conn = get_connection(push=True)
 				sock_send(conn, ssig, cnt, node.abspath())
 			except Exception as e:
 				Logs.debug("netcache: could not push the files %r" % e)
@@ -259,11 +271,12 @@ def put_files_cache(self):
 				conn = None
 			cnt += 1
 	finally:
-		release_connection(conn)
+		release_connection(conn, push=True)
 
 	bld.task_sigs[self.uid()] = self.cache_sig
 
 def hash_env_vars(self, env, vars_lst):
+	# reimplement so that the resulting hash does not depend on local paths
 	if not env.table:
 		env = env.parent
 		if not env:
@@ -293,6 +306,7 @@ def hash_env_vars(self, env, vars_lst):
 	return ret
 
 def uid(self):
+	# reimplement so that the signature does not depend on local paths
 	try:
 		return self.uid_
 	except AttributeError:
@@ -312,7 +326,6 @@ def make_cached(cls):
 
 	m1 = cls.run
 	def run(self):
-		bld = self.generator.bld
 		if self.can_retrieve_cache():
 			return 0
 		return m1(self)
@@ -328,12 +341,12 @@ def make_cached(cls):
 	cls.post_run = post_run
 
 @conf
-def setup_netcache(ctx, host, port, mode):
-	Logs.warn('Using the network cache %s, %s, %s' % (host, port, mode))
-	Task.net_cache = (host, port, mode)
+def setup_netcache(ctx, push_addr, pull_addr):
 	Task.Task.can_retrieve_cache = can_retrieve_cache
 	Task.Task.put_files_cache = put_files_cache
 	Task.Task.uid = uid
+	Task.push_addr = push_addr
+	Task.pull_addr = pull_addr
 	Build.BuildContext.hash_env_vars = hash_env_vars
 	ctx.cache_global = True
 
@@ -341,22 +354,30 @@ def setup_netcache(ctx, host, port, mode):
 		make_cached(x)
 
 def build(bld):
-	if not 'NETCACHE' in os.environ:
-		Logs.warn('The network cache is disabled, set NETCACHE=host:port@mode to enable, eg:')
-		Logs.warn(' export NETCACHE=localhost:51200@PUSH_PULL')
+	if not 'NETCACHE' in os.environ and not 'NETCACHE_PULL' in os.environ and not 'NETCACHE_PUSH' in os.environ:
+		Logs.warn('Setting  NETCACHE_PULL=127.0.0.1:11001 and NETCACHE_PUSH=127.0.0.1:12001')
+		os.environ['NETCACHE_PULL'] = '127.0.0.1:12001'
+		os.environ['NETCACHE_PUSH'] = '127.0.0.1:11001'
+
+	if 'NETCACHE' in os.environ:
+		if not 'NETCACHE_PUSH' in os.environ:
+			os.environ['NETCACHE_PUSH'] = os.environ['NETCACHE']
+		if not 'NETCACHE_PULL' in os.environ:
+			os.environ['NETCACHE_PULL'] = os.environ['NETCACHE']
+
+	v = os.environ['NETCACHE_PULL']
+	if v:
+		h, p = v.split(':')
+		pull_addr = (h, int(p))
 	else:
-		v = os.environ['NETCACHE']
-		if v in MODES:
-			host = socket.gethostname()
-			port = 51200
-			mode = v
-		else:
-			mode = 'PUSH_PULL'
-			host, port = v.split(':')
-			if port.find('@'):
-				port, mode = port.split('@')
-			port = int(port)
-			if not mode in MODES:
-				bld.fatal('Invalid mode %s not in %r' % (mode, MODES))
-		setup_netcache(bld, host, port, mode)
+		pull_addr = None
+
+	v = os.environ['NETCACHE_PUSH']
+	if v:
+		h, p = v.split(':')
+		push_addr = (h, int(p))
+	else:
+		push_addr = None
+
+	setup_netcache(bld, push_addr, pull_addr)
 
