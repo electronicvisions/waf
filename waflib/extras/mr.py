@@ -460,11 +460,12 @@ class MR(object):
         # Check if the project folder exists, in this case the repo
         # needs only to be registered
         if os.path.isdir(p.node.abspath()):
-            self.mr_print('Register existing repository %s..' % p, sep = '')
+            self.mr_print("Registering pre-existing repository '%s'..." % p, sep = '')
             self.call_mr('register', path)
         else:
             do_checkout = True
-            self.mr_print('Trying to check out repository %s..' % p, sep = '')
+            self.mr_print("Checking out repository %s {%s} to '%s'..."
+                % (self.db.get_url(p.name), p.required_branch, p.name), sep = '')
 
         args = ['config', p.name,
                 p.mr_checkout_cmd(self.base, self.db.get_url(p.name)),
