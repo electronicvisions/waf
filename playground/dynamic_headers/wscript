@@ -1,77 +1,109 @@
 #! /usr/bin/env python
-# encoding: utf-8
-# Thomas Nagy, 2010 (ita)
 
-VERSION='0.0.1'
-APPNAME='dynamic_header_test'
-
-top = '.'
-out = 'build'
+from waflib import Task, Errors
+from waflib.Tools import c
 
 def options(opt):
-	opt.load('compiler_cxx')
+	opt.load('compiler_c')
+
 
 def configure(conf):
-	conf.load('compiler_cxx')
+	conf.load('compiler_c')
+
 
 def build(bld):
-	bld.program(source='main.cpp', target='app', includes='.')
+	bld(features = 'c cprogram',
+		target   = 'test',
+		source   = 'src/main.c src/test.c',
+		includes = 'src')
 
-# --------------------------------------------------------------------
-# Dynamic header creation, the file "a.h" from main.cpp is created
-# during the build. You may use this code sample to create more complicated
-# dynamic header generators
+class mock(Task.Task):
+	run_str = 'cp ${SRC} ${TGT}'
+	color   = 'BLUE'
 
-from waflib import Task
-from waflib.Tools.cxx import cxx
 
-class test(Task.Task):
-	run_str = 'touch ${TGT}'
+# it would be better to replace the scan() method, but this is doable too
 
 def runnable_status(self):
-	ret = super(cxx, self).runnable_status()
 
-	try:
-		shared = self.generator.bld.shared_tasks
-	except AttributeError:
-		shared = self.generator.bld.shared_tasks = {}
+	ret = self.runnable_status_dynamic_headers2()
 
-	if ret != Task.ASK_LATER:
+	if ret != Task.ASK_LATER and not getattr(self, 'all_mock_done', False):
+		self.all_mock_done = True # run once
+
+
+		bld = self.generator.bld
 		add = False
 
-		# first pass over the unresolved files found by the scanner
-		for x in self.generator.bld.raw_deps[self.uid()]:
-			if x == 'a.h':
-				tgt = self.generator.path.find_or_declare(x)
+		try:
+			mock_tasks = bld.mock_tasks
+		except AttributeError:
+			mock_tasks = bld.mock_tasks = {}
+
+		for x in bld.raw_deps[self.uid()]:
+			if x.startswith('mock_'):
+				h_file = x[5:]
+				for k in [self.inputs[0].parent] + self.generator.includes_nodes:
+					h_node = k.find_node(h_file)
+					if h_node:
+						break
+
+				if not h_node:
+					raise Errors.WafError('no header for %s' % x)
+
+				m_node = h_node.parent.find_or_declare(x)
 				try:
-					tsk = shared[tgt]
+					tsk = mock_tasks[m_node]
 				except KeyError:
-					tsk = shared[tgt] = self.generator.create_task('test', [], tgt)
-					self.set_run_after(tsk)
-					self.generator.bld.producer.outstanding.append(tsk)
-					add = True
+					tsk = mock_tasks[m_node] = self.generator.create_task('mock', [h_node], [m_node])
+					bld.producer.outstanding.insert(0, tsk)
+					bld.producer.total += 1
+
+					# preprocessor cache :-/
+					try:
+						for key in list(bld.cache_nd.keys()):
+							if key[1] == x:
+								del bld.cache_nd[key]
+					except (KeyError, AttributeError):
+						pass
+
+				add = True
+				self.set_run_after(tsk)
+
 		if add:
-			# remove cache entries to force a clean scanner execution
+			# recompute the task signature
 			delattr(self, 'cache_sig')
-			self.generator.bld.cache_nd = {}
-			del self.generator.bld.task_sigs[(self.uid(), 'imp')] # will have to rescan the C file
+			del bld.task_sigs[(self.uid(), 'imp')]
 			return self.runnable_status()
 
-		# second pass over the existing nodes - corresponding tasks are still necessary
-		for x in self.generator.bld.node_deps[self.uid()]:
-			if x.name == 'a.h':
+		for x in bld.node_deps[self.uid()]:
+			if x.name.startswith('mock_'):
+				h_node = x.parent.get_src().find_node(x.name[5:])
+				if not h_node:
+					raise Errors.WafError('no header for %s' % x.name)
+
 				try:
-					tsk = shared[x]
+					tsk = mock_tasks[x]
 				except KeyError:
-					tsk = shared[x] = self.generator.create_task('test', [], x)
-					self.set_run_after(tsk)
-					self.generator.bld.producer.outstanding.append(tsk)
-					add = True
+					tsk = mock_tasks[x] = self.generator.create_task('mock', [h_node], [x])
+					bld.producer.outstanding.insert(0, tsk)
+					bld.producer.total += 1
+
+				add = True
+				self.set_run_after(tsk)
+
+				# node get_bld_sig cache :-/
+				try:
+					delattr(x, 'cache_sig')
+				except AttributeError:
+					pass
 		if add:
-			# no need to rescan anything, but recompute the signature after the dependent task is executed
+			# recompute the task signature
 			delattr(self, 'cache_sig')
 			return self.runnable_status()
+
 	return ret
 
-cxx.runnable_status = runnable_status
+c.c.runnable_status_dynamic_headers2 = c.c.runnable_status
+c.c.runnable_status = runnable_status
 
