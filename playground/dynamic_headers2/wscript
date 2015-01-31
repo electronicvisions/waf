@@ -26,7 +26,7 @@ class mock(Task.Task):
 
 def runnable_status(self):
 
-	ret = super(c.c, self).runnable_status()
+	ret = self.runnable_status_dynamic_headers2()
 
 	if ret != Task.ASK_LATER and not getattr(self, 'all_mock_done', False):
 		self.all_mock_done = True # run once
@@ -88,14 +88,14 @@ def runnable_status(self):
 					tsk = mock_tasks[x] = self.generator.create_task('mock', [h_node], [x])
 					bld.producer.outstanding.insert(0, tsk)
 					bld.producer.total += 1
-	
+
 				add = True
 				self.set_run_after(tsk)
 
 				# node get_bld_sig cache :-/
 				try:
-					del bld.hash_cache[id(x)]
-				except KeyError:
+					delattr(x, 'cache_sig')
+				except AttributeError:
 					pass
 		if add:
 			# recompute the task signature
@@ -104,5 +104,6 @@ def runnable_status(self):
 
 	return ret
 
+c.c.runnable_status_dynamic_headers2 = c.c.runnable_status
 c.c.runnable_status = runnable_status
 
