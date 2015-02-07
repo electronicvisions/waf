@@ -701,8 +701,12 @@ class subst_pc(Task.Task):
 		except AttributeError:
 			d = {}
 			for x in lst:
-				tmp = getattr(self.generator, x, '') or self.env.get_flat(x) or self.env.get_flat(x.upper())
-				d[x] = str(tmp)
+				tmp = getattr(self.generator, x, '') or self.env[x] or self.env[x.upper()]
+				try:
+					tmp = ''.join(tmp)
+				except TypeError:
+					tmp = str(tmp)
+				d[x] = tmp
 
 		code = code % d
 		self.outputs[0].write(code, encoding=getattr(self.generator, 'encoding', 'ISO8859-1'))
