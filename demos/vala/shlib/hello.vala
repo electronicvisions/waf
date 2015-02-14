@@ -1,3 +1,5 @@
+
+namespace wth {
 public class Hello : Object {
         public Hello() {
         }
@@ -5,4 +7,4 @@ public class Hello : Object {
                 stdout.printf("Hello world");
         }
 }
-
+}
