@@ -39,7 +39,6 @@ try:
 except ImportError:
 	import pickle as cPickle
 
-DEFAULT_PORT = 51200
 SHARED_KEY = None
 HEADER_SIZE = 64
 
@@ -149,9 +148,6 @@ class req(SocketServer.StreamRequestHandler):
 		self.send_response(ret, out, err, exc)
 
 def create_server(conn, cls):
-	#SocketServer.ThreadingTCPServer.allow_reuse_address = True
-	#server = SocketServer.ThreadingTCPServer(conn, req)
-
 	# child processes do not need the key, so we remove it from the OS environment
 	global SHARED_KEY
 	SHARED_KEY = os.environ['SHARED_KEY']
@@ -174,8 +170,9 @@ def create_server(conn, cls):
 	t.setDaemon(True)
 	t.start()
 
-	SocketServer.TCPServer.allow_reuse_address = True
 	server = SocketServer.TCPServer(conn, req)
+	print(server.server_address[1])
+	sys.stdout.flush()
 	#server.timeout = 6000 # seconds
 	server.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 	try:
@@ -184,12 +181,7 @@ def create_server(conn, cls):
 		pass
 
 if __name__ == '__main__':
-	if len(sys.argv) > 1:
-		port = int(sys.argv[1])
-	else:
-		port = DEFAULT_PORT
-	#conn = (socket.gethostname(), port)
-	conn = ("127.0.0.1", port)
+	conn = ("127.0.0.1", 0)
 	#print("listening - %r %r\n" % conn)
 	create_server(conn, req)
 else:
@@ -215,17 +207,12 @@ else:
 		return pool
 	Runner.Parallel.init_task_pool = init_task_pool
 
-	PORT = 51200
-
 	def make_server(bld, idx):
-		port = PORT + idx
-		cmd = [sys.executable, os.path.abspath(__file__), str(port)]
-		proc = subprocess.Popen(cmd)
-		proc.port = port
+		cmd = [sys.executable, os.path.abspath(__file__)]
+		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 		return proc
 
 	def make_conn(bld, srv):
-		#port = PORT + idx
 		port = srv.port
 		conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -367,6 +354,10 @@ else:
 		while len(CONNS) < maxval:
 			i = len(CONNS)
 			srv = SERVERS[i]
+
+			# postpone the connection
+			srv.port = int(srv.stdout.readline())
+
 			conn = None
 			for x in range(30):
 				try:
