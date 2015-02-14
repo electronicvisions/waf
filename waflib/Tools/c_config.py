@@ -1107,6 +1107,7 @@ def get_suncc_version(conf, cc):
 def add_as_needed(self):
 	"""
 	Add ``--as-needed`` to the *LINKFLAGS*
+	On some platforms, it is a default flag.  In some cases (e.g., in NS-3) it is necessary to explicitly disable this feature with `-Wl,--no-as-needed` flag.
 	"""
 	if self.env.DEST_BINFMT == 'elf' and 'gcc' in (self.env.CXX_NAME, self.env.CC_NAME):
 		self.env.append_unique('LINKFLAGS', '-Wl,--as-needed')
