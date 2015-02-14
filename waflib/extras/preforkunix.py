@@ -19,7 +19,7 @@ To use::
         more code
 """
 
-import os, re, socket, threading, sys, subprocess, atexit, traceback
+import os, re, socket, threading, sys, subprocess, atexit, traceback, signal, time
 try:
 	from queue import Queue
 except ImportError:
@@ -136,9 +136,25 @@ if 1:
 
 	def make_conn(bld):
 		child_socket, parent_socket = socket.socketpair(socket.AF_UNIX)
+		ppid = os.getpid()
 		pid = os.fork()
 		if pid == 0:
 			parent_socket.close()
+
+			# if the parent crashes, try to exit cleanly
+			def reap():
+				while 1:
+					try:
+						os.kill(ppid, 0)
+					except OSError:
+						break
+					else:
+						time.sleep(1)
+				os.kill(os.getpid(), signal.SIGKILL)
+			t = threading.Thread(target=reap)
+			t.setDaemon(True)
+			t.start()
+
 			# write to child_socket only
 			try:
 				while 1:

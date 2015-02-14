@@ -2,6 +2,8 @@
 # encoding: utf-8
 # Thomas Nagy, 2015 (ita)
 
+# TODO: have the child process terminate if the parent is killed abruptly
+
 import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random
 try:
 	import SocketServer
@@ -187,6 +189,7 @@ if 1:
 		except KeyError:
 			key = "".join([chr(random.SystemRandom().randint(40, 126)) for x in range(20)])
 			os.environ['SHARED_KEY'] = ctx.SHARED_KEY = key
+		os.environ['PREFORKPID'] = str(os.getpid())
 		return key
 
 	def init_servers(ctx, maxval):

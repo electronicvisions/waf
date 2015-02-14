@@ -25,7 +25,7 @@ To use::
 The servers and the build process are using a shared nonce to prevent undesirable external connections.
 """
 
-import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random
+import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random, signal
 try:
 	import SocketServer
 except ImportError:
@@ -156,6 +156,23 @@ def create_server(conn, cls):
 	global SHARED_KEY
 	SHARED_KEY = os.environ['SHARED_KEY']
 	os.environ['SHARED_KEY'] = ''
+
+	ppid = int(os.environ['PREFORKPID'])
+	def reap():
+		if os.sep != '/':
+			os.waitpid(ppid, 0)
+		else:
+			while 1:
+				try:
+					os.kill(ppid, 0)
+				except OSError:
+					break
+				else:
+					time.sleep(1)
+		os.kill(os.getpid(), signal.SIGKILL)
+	t = threading.Thread(target=reap)
+	t.setDaemon(True)
+	t.start()
 
 	SocketServer.TCPServer.allow_reuse_address = True
 	server = SocketServer.TCPServer(conn, req)
@@ -338,6 +355,8 @@ else:
 		except KeyError:
 			key = "".join([chr(random.SystemRandom().randint(40, 126)) for x in range(20)])
 			os.environ['SHARED_KEY'] = ctx.SHARED_KEY = key
+
+		os.environ['PREFORKPID'] = str(os.getpid())
 		return key
 
 	def init_servers(ctx, maxval):
@@ -357,6 +376,9 @@ else:
 					time.sleep(0.01)
 			if not conn:
 				raise ValueError('Could not start the server!')
+			if srv.poll() is not None:
+				Logs.warn('Looks like it it not our server process - concurrent builds are unsupported at this stage')
+				raise ValueError('Could not start the server')
 			CONNS.append(conn)
 
 	def init_smp(self):
