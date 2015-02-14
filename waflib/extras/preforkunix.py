@@ -104,7 +104,7 @@ if 1:
 			else:
 				ret = subprocess.Popen(cmd, **kw).wait()
 		except KeyboardInterrupt:
-			return
+			raise
 		except Exception as e:
 			ret = -1
 			exc = str(e) + traceback.format_exc()
@@ -140,8 +140,11 @@ if 1:
 		if pid == 0:
 			parent_socket.close()
 			# write to child_socket only
-			while 1:
-				process_command(child_socket)
+			try:
+				while 1:
+					process_command(child_socket)
+			except KeyboardInterrupt:
+				sys.exit(2)
 		else:
 			child_socket.close()
 			return (pid, parent_socket)

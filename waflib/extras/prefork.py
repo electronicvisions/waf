@@ -141,7 +141,7 @@ class req(SocketServer.StreamRequestHandler):
 			else:
 				ret = subprocess.Popen(cmd, **kw).wait()
 		except KeyboardInterrupt:
-			return
+			raise
 		except Exception as e:
 			ret = -1
 			exc = str(e) + traceback.format_exc()
@@ -161,7 +161,10 @@ def create_server(conn, cls):
 	server = SocketServer.TCPServer(conn, req)
 	#server.timeout = 6000 # seconds
 	server.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-	server.serve_forever(poll_interval=0.001)
+	try:
+		server.serve_forever(poll_interval=0.001)
+	except KeyboardInterrupt:
+		pass
 
 if __name__ == '__main__':
 	if len(sys.argv) > 1:
