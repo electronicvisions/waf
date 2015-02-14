@@ -53,7 +53,7 @@ def build(bld):
 	bld(features='subst', fun=hlink, source='wscript', target='wscript3')
 
 	# this one is just a reminder that simple files can be created (and a test too)
-	bld(rule='echo "การไฟ่" > ${TGT}', target='foo.txt')
+	bld(rule='echo "การไฟ่" > ${TGT}', target='uni.txt')
 
 	# and this is an alternate syntax
 	#@bld.rule(source='wscript', target='wscript2')
