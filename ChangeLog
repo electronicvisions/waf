@@ -1,3 +1,21 @@
+NEW IN WAF 1.8.6
+----------------
+* Python file installation fixes
+* Fix for classes containing utf-8 names
+* Hide the progress bar when running waf -ppp
+* Support more header extensions in subst/is_copy
+* Handle non-string and non-list values in substitutions (subst)
+* Show how to track build files timestamps to force partial rebuilds (build_file_tracker.py)
+* Added a new extension to detect blender libraries
+* Added extras/prefork.py, extras/preforkunix.py and extras/preforkjava.py
+* Updated demos/d
+* Updated demos/vala
+* Updated playground/protobuf
+* Updated playground/cython
+* Updated playground/dynamic_headers
+* Updated playground/netcache
+* Qt5 detection improvements
+
 NEW IN WAF 1.8.5
 ----------------
 * Enhanced Sun compiler detection #1510

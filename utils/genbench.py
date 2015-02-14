@@ -6,14 +6,15 @@ import os.path
 from random import Random
 random = Random(0) # initialise with seed to have reproductible benches
 
-# for example: ./genbench.py /tmp/build 50 100 15 5
-
 HELP_USAGE = """Usage: generate_libs.py root libs classes internal external.
     root     - Root directory where to create libs.
     libs     - Number of libraries (libraries only depend on those with smaller numbers)
     classes  - Number of classes per library
     internal - Number of includes per file referring to that same library
     external - Number of includes per file pointing to other libraries
+
+For example:
+./genbench.py /tmp/build 200 100 15 5
 
 To try the waf part, do:
 waf configure build -p -j5

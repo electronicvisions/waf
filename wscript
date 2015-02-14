@@ -10,7 +10,7 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 """
 
 
-VERSION="1.8.5"
+VERSION="1.8.6"
 APPNAME='waf'
 REVISION=''
 
@@ -249,7 +249,7 @@ def sfilter(path):
 		return (io.BytesIO(cnt.encode('utf-8')), len(cnt.encode('utf-8')), cnt)
 	return (io.BytesIO(cnt), len(cnt), cnt)
 
-def create_waf(*k, **kw):
+def create_waf(self, *k, **kw):
 	mw = 'tmp-waf-'+VERSION
 	print("-> preparing %r" % mw)
 
@@ -320,12 +320,20 @@ def create_waf(*k, **kw):
 		f.close()
 
 	# now store the revision unique number in waf
-	#compute_revision()
-	#reg = re.compile('^REVISION=(.*)', re.M)
-	#code1 = reg.sub(r'REVISION="%s"' % REVISION, code1)
 	code1 = code1.replace("if sys.hexversion<0x206000f:\n\traise ImportError('Python >= 2.6 is required to create the waf file')\n", '')
 	code1 = code1.replace('\t#import waflib.extras.compat15#PRELUDE', Options.options.prelude)
 
+	# when possible, set the git revision in the waf file
+	bld = self.generator.bld
+	try:
+		rev = bld.cmd_and_log("git rev-parse HEAD").strip()
+	except Exception:
+		pass
+	else:
+		reg = re.compile('^GIT(.*)', re.M)
+		code1 = reg.sub('GIT="%s"' % rev, code1)
+
+	# if the waf file is installed somewhere... but do not do that
 	prefix = ''
 	reg = re.compile('^INSTALL=(.*)', re.M)
 	code1 = reg.sub(r'INSTALL=%r' % prefix, code1)

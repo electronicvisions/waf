@@ -11,14 +11,14 @@ from waflib import Utils, Errors, Logs
 import waflib.Node
 
 # the following 3 constants are updated on each new release (do not touch)
-HEXVERSION=0x1080500
+HEXVERSION=0x1080600
 """Constant updated on new releases"""
 
-WAFVERSION="1.8.5"
+WAFVERSION="1.8.6"
 """Constant updated on new releases"""
 
-WAFREVISION="b694c0da84f1a3f6b27b9d4a07c9f5cb2116d831"
-"""Constant updated on new releases"""
+WAFREVISION="cc875ba2c2a7bd78d7a84b038f542339d6f34ce3"
+"""Git revision when the waf version is updated"""
 
 ABI = 98
 """Version of the build data cache file format (used in :py:const:`waflib.Context.DBFILE`)"""
