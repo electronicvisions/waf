@@ -12,7 +12,7 @@ APPNAME='cc_test'
 top = '.'
 
 from waflib import Configure, Logs, Utils
-#Configure.autoconfig = True
+#Configure.autoconfig = True # True/False/'clobber'
 
 def options(opt):
 	opt.load('compiler_c gnu_dirs')
