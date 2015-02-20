@@ -63,7 +63,11 @@ public class Prefork implements Runnable, Comparator<Object[]> {
 					byte b[] = new byte[HEADER_SIZE];
 					int off = 0;
 					while (off < b.length) {
-						off += in.read(b, off, b.length - off);
+						int c = in.read(b, off, b.length - off);
+						if (c <= 0) {
+							throw new RuntimeException("Connection closed too early");
+						}
+						off += c;
 					}
 
 					String line = new String(b);
@@ -136,7 +140,7 @@ public class Prefork implements Runnable, Comparator<Object[]> {
 		long cnt = 0;
 		while (cnt < size) {
 			int c = in.read(buf, 0, (int) Math.min(BUF, size-cnt));
-			if (c == 0) {
+			if (c <= 0) {
 				throw new RuntimeException("Connection closed too early");
 			}
 			sb.append(new String(buf, 0, c));
@@ -193,10 +197,13 @@ public class Prefork implements Runnable, Comparator<Object[]> {
 		if (olog.length() != 0) {
 			stdout = readFile(olog);
 		}
+		olog.delete();
 
 		if (elog.length() != 0) {
 			stderr = readFile(elog);
 		}
+		elog.delete();
+
 		OutputStream out = sock.getOutputStream();
 		String msg = make_out(sock, stdout, stderr, exc);
 

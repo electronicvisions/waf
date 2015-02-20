@@ -1,3 +1,11 @@
+NEW IN WAF 1.8.7
+----------------
+* Fixed the libdir suffix on Redhat 64-bit systems
+* Enabled gccdeps to work with clang
+* Fixed the detection of clang from the gcc tools
+* Added orig_run_str to help subclasses (do not use Task.hcode)
+* Fixed the detection of older clang compilers versions
+
 NEW IN WAF 1.8.6
 ----------------
 * Python file installation fixes
