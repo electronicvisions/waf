@@ -337,6 +337,7 @@ def configure(conf):
     conf.load('gxx')
     conf.load('python')
     conf.load('boost')
+    conf.find_program('gccxml')
     conf.check_python_version(minver=(2,5))
     conf.check_python_headers()
 
