@@ -257,8 +257,11 @@ APPNAME = 'build_bench'
 top  = '.'
 out  = 'out'
 
+def options(opt):
+	opt.load('compiler_cxx')
+
 def configure(conf):
-	conf.load('g++')
+	conf.load('compiler_cxx')
 
 def build(bld):
 	for i in range(%d):
