@@ -8,12 +8,11 @@ def options(opt):
 	opt.load('compiler_cxx unity')
 """
 
-import re
-from waflib import Task, Options, Logs
+from waflib import Task, Options
 from waflib.Tools import ccroot, cxx, c_preproc
 from waflib.TaskGen import extension, taskgen_method
 
-MAX_BATCH = 20
+MAX_BATCH = 50
 
 def options(opt):
 	global MAX_BATCH
