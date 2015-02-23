@@ -212,12 +212,12 @@ class ConfigurationContext(Context.Context):
 			else:
 				env.PREFIX = ''
 		if not env.BINDIR:
-			if Options.options.bindir or Utils.is_win32:
+			if Options.options.bindir:
 				env.BINDIR = os.path.abspath(os.path.expanduser(Options.options.bindir))
 			else:
 				env.BINDIR = Utils.subst_vars('${PREFIX}/bin', env)
 		if not env.LIBDIR:
-			if Options.options.libdir or Utils.is_win32:
+			if Options.options.libdir:
 				env.LIBDIR = os.path.abspath(os.path.expanduser(Options.options.libdir))
 			else:
 				env.LIBDIR = Utils.subst_vars('${PREFIX}/lib%s' % Utils.lib64(), env)
