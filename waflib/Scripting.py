@@ -377,7 +377,7 @@ class Dist(Context.Context):
 				zip.write(x.abspath(), archive_name, zipfile.ZIP_DEFLATED)
 			zip.close()
 		else:
-			self.fatal('Valid algo types are tar.bz2, tar.gz or zip')
+			self.fatal('Valid algo types are tar.bz2, tar.gz, tar.xz or zip')
 
 		try:
 			from hashlib import sha1 as sha
