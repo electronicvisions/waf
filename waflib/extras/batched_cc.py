@@ -126,7 +126,7 @@ def hook(cls_type):
 
 		def fix_path(tsk):
 			if self.env.CC_NAME == 'msvc':
-				tsk.env.append_unique('CXX_TGT_F_BATCHED', '/Fo%s' % outdir.abspath())
+				tsk.env.append_unique('CXX_TGT_F_BATCHED', '/Fo%s\\' % outdir.abspath())
 
 		if not node.parent in self.masters:
 			m = self.masters[node.parent] = self.master = self.create_task('batch')
