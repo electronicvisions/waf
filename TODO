@@ -1,3 +1,11 @@
+Waf 1.9
+-------
+
+* Reduce the key size in bld.task_sigs
+* Provide a more efficient ConfigSet implementation
+* Remove the split functions from Utils
+* Ensure _cache.py are valid python files
+
 Waf 1.8.x
 ---------
 
