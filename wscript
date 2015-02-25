@@ -18,7 +18,7 @@ top = '.'
 out = 'build'
 
 demos = ['cpp', 'qt4', 'tex', 'ocaml', 'kde3', 'adv', 'cc', 'idl', 'docbook', 'xmlwaf', 'gnome']
-zip_types = ['bz2', 'gz']
+zip_types = ['bz2', 'gz', 'xz']
 
 PRELUDE = ''
 
@@ -342,6 +342,8 @@ def create_waf(self, *k, **kw):
 	code1 = reg.sub(zipType, code1)
 	if zipType == 'gz':
 		code1 = code1.replace('bunzip2', 'gzip -d')
+	elif zipType == 'xz':
+		code1 = code1.replace('bunzip2', 'xz -d')
 
 	f = open('%s.tar.%s' % (mw, zipType), 'rb')
 	try:
