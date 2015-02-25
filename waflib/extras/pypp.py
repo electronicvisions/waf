@@ -73,7 +73,7 @@ def get_manual_module_dependencies(ctx):
             path = os.path.abspath(path.strip())
             assert os.path.isdir(path)
         except Errors.WafError as e:
-            err = e.stdout + e.stderr
+            err = getattr(e, 'stdout', e.msg) + getattr(e, 'stderr', '')
             ctx.fatal("pypp: Manual dependency module '%s' could not be imported:" % module + err)
         except AssertionError:
             ctx.fatal("pypp: Could not find manual dependency module '%s'" % module)
