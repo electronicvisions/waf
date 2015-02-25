@@ -16,7 +16,7 @@ def find_sxf90(conf):
 	fc = conf.find_program(['sxf90'], var='FC')
 	conf.get_sxf90_version(fc)
 	conf.env.FC_NAME = 'NEC'
-	conf.env.FC_MOD_CAPITALIZATION = 'UPPER.mod'
+	conf.env.FC_MOD_CAPITALIZATION = 'lower'
 
 @conf
 def sxf90_flags(conf):
