@@ -26,7 +26,7 @@ TRACECALLS = 'trace=process,file'
 BANNED = ('/tmp', '/proc', '/sys', '/dev')
 
 s_process = r'(?:clone|fork|vfork)\(.*?(?P<npid>\d+)'
-s_file = r'(?P<call>\w+)\("(?P<path>.*?[^\\])"(.*)'
+s_file = r'(?P<call>\w+)\("(?P<path>([^"\\]|\\.)*)"(.*)'
 re_lines = re.compile(r'^(?P<pid>\d+)\s+(?:(?:%s)|(?:%s))\r*$' % (s_file, s_process), re.IGNORECASE | re.MULTILINE)
 strace_lock = threading.Lock()
 
@@ -43,7 +43,7 @@ def task_method(func):
 	except AttributeError:
 		pass
 	setattr(Task.Task, func.__name__, func)
-        return func
+	return func
 
 @task_method
 def get_strace_file(self):
@@ -123,7 +123,7 @@ def parse_strace_deps(self, path, cwd):
 			pid_to_cwd[npid] = pid_to_cwd.get(pid, cwd)
 			continue
 
-		p = m.group('path')
+		p = m.group('path').replace('\\"', '"')
 
 		if p == '.' or m.group().find('= -1 ENOENT') > -1:
 			# just to speed it up a bit
