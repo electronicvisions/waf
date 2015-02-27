@@ -223,7 +223,7 @@ def get_python_variables(self, variables, imports=None):
 	return return_values
 
 @conf
-def check_python_headers(conf):
+def check_python_headers(conf, features='pyembed pyext'):
 	"""
 	Check for headers and libraries necessary to extend or embed python by using the module *distutils*.
 	On success the environment variables xxx_PYEXT and xxx_PYEMBED are added:
@@ -231,6 +231,7 @@ def check_python_headers(conf):
 	* PYEXT: for compiling python extensions
 	* PYEMBED: for embedding a python interpreter
 	"""
+	assert ('pyembed' in features) or ('pyext' in features), "check_python_headers features must include 'pyembed' and/or 'pyext'"
 	env = conf.env
 	if not env['CC_NAME'] and not env['CXX_NAME']:
 		conf.fatal('load a compiler first (gcc, g++, ..)')
@@ -264,25 +265,27 @@ def check_python_headers(conf):
 	conf.find_program([''.join(pybin) + '-config', 'python%s-config' % num, 'python-config-%s' % num, 'python%sm-config' % num], var='PYTHON_CONFIG', msg="python-config", mandatory=False)
 
 	if env.PYTHON_CONFIG:
-		# python2.5-config requires 3 runs
+		# python2.6-config requires 3 runs
 		all_flags = [['--cflags', '--libs', '--ldflags']]
-		if sys.hexversion < 0x2060000:
+		if sys.hexversion < 0x2070000:
 			all_flags = [[k] for k in all_flags[0]]
 
 		xx = env.CXX_NAME and 'cxx' or 'c'
 
-		for flags in all_flags:
-			conf.check_cfg(msg='Asking python-config for pyembed %r flags' % ' '.join(flags), path=env.PYTHON_CONFIG, package='', uselib_store='PYEMBED', args=flags)
+		if 'pyembed' in features:
+			for flags in all_flags:
+				conf.check_cfg(msg='Asking python-config for pyembed %r flags' % ' '.join(flags), path=env.PYTHON_CONFIG, package='', uselib_store='PYEMBED', args=flags)
 
-		conf.check(header_name='Python.h', define_name='HAVE_PYEMBED', msg='Getting pyembed flags from python-config',
-			fragment=FRAG, errmsg='Could not build a python embedded interpreter',
-			features='%s %sprogram pyembed' % (xx, xx))
+			conf.check(header_name='Python.h', define_name='HAVE_PYEMBED', msg='Getting pyembed flags from python-config',
+				fragment=FRAG, errmsg='Could not build a python embedded interpreter',
+				features='%s %sprogram pyembed' % (xx, xx))
 
-		for flags in all_flags:
-			conf.check_cfg(msg='Asking python-config for pyext %r flags' % ' '.join(flags), path=env.PYTHON_CONFIG, package='', uselib_store='PYEXT', args=flags)
+		if 'pyext' in features:
+			for flags in all_flags:
+				conf.check_cfg(msg='Asking python-config for pyext %r flags' % ' '.join(flags), path=env.PYTHON_CONFIG, package='', uselib_store='PYEXT', args=flags)
 
-		conf.check(header_name='Python.h', define_name='HAVE_PYEXT', msg='Getting pyext flags from python-config',
-			features='%s %sshlib pyext' % (xx, xx), fragment=FRAG, errmsg='Could not build python extensions')
+			conf.check(header_name='Python.h', define_name='HAVE_PYEXT', msg='Getting pyext flags from python-config',
+				features='%s %sshlib pyext' % (xx, xx), fragment=FRAG, errmsg='Could not build python extensions')
 
 		conf.define('HAVE_PYTHON_H', 1)
 		return

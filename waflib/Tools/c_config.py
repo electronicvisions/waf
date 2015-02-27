@@ -321,7 +321,7 @@ def exec_cfg(self, kw):
 	for key, val in defi.items():
 		lst.append('--define-variable=%s=%s' % (key, val))
 
-	static = False
+	static = kw.get('force_static', False)
 	if 'args' in kw:
 		args = Utils.to_list(kw['args'])
 		if '--static' in args or '--static-libs' in args:
