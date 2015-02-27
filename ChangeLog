@@ -1,10 +1,17 @@
 NEW IN WAF 1.8.7
 ----------------
-* Fixed the libdir suffix on Redhat 64-bit systems
+* Fixed the default libdir installation suffix on Redhat 64-bit systems #1536
+* Fixed the Python 2.6 detection on Redhat systems #1538
 * Enabled gccdeps to work with clang
 * Fixed the detection of clang from the gcc tools
 * Added orig_run_str to help subclasses (do not use Task.hcode)
 * Fixed the detection of older clang compilers versions
+* NEC compiler support
+* Enabled batched_cc.py to work with msvc too
+* Enabled unity.py to process c files
+* Faster dependency calculation in c_dumbpreproc
+* New stracedeps example (cfg blog entry)
+* Added support for xz compression in waf and waf dist (Python 3.5)
 
 NEW IN WAF 1.8.6
 ----------------

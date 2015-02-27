@@ -5,6 +5,7 @@ Waf 1.9
 * Provide a more efficient ConfigSet implementation
 * Remove the split functions from Utils
 * Ensure _cache.py are valid python files
+* Include the tool 'nobuild' by default
 
 Waf 1.8.x
 ---------
