@@ -73,7 +73,7 @@ def init(ctx):
 			rev = ctx.cmd_and_log("git rev-parse HEAD").strip()
 			pats.append(('^WAFREVISION(.*)', 'WAFREVISION="%s"' % rev))
 		except Exception:
-			pass
+			rev = ''
 
 		sub_file('waflib/Context.py', pats)
 
@@ -326,9 +326,9 @@ def create_waf(self, *k, **kw):
 	# when possible, set the git revision in the waf file
 	bld = self.generator.bld
 	try:
-		rev = bld.cmd_and_log("git rev-parse HEAD").strip()
+		rev = bld.cmd_and_log("git rev-parse HEAD", quiet=0).strip()
 	except Exception:
-		pass
+		rev = ''
 	else:
 		reg = re.compile('^GIT(.*)', re.M)
 		code1 = reg.sub('GIT="%s"' % rev, code1)
