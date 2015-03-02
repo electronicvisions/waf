@@ -37,6 +37,10 @@ import os, binascii
 
 from waflib import Task, Utils, TaskGen, Errors
 
+
+def filename_c_escape(x):
+	return x.replace("\\", "\\\\")
+
 class file_to_object_s(Task.Task):
 	color = 'CYAN'
 	dep_vars = ('DEST_CPU', 'DEST_BINFMT')
@@ -59,6 +63,7 @@ class file_to_object_s(Task.Task):
 		else:
 			raise Errors.WafError("Unsupported DEST_CPU, please report bug!")
 
+		file = filename_c_escape(file)
 		name = "_binary_" + "".join(name)
 		rodata = ".section .rodata"
 		if self.env.DEST_BINFMT == "mac-o":
