@@ -22,7 +22,7 @@ file = open(name, 'r')
 txt = file.read()
 file.close()
 
-lst = txt.split('\n')
+lst = txt.splitlines()
 for line in lst:
 	source_filename = line.strip()
 	if not source_filename: continue

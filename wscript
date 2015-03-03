@@ -188,7 +188,7 @@ def process_tokens(tokens):
 
 deco_re = re.compile('(def|class)\\s+(\w+)\\(.*')
 def process_decorators(body):
-	lst = body.split('\n')
+	lst = body.splitlines()
 	accu = []
 	all_deco = []
 	buf = [] # put the decorator lines

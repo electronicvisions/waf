@@ -57,7 +57,7 @@ class protoc(Task):
 			if node in seen:
 				return
 			seen.append(node)
-			code = node.read().split("\n")
+			code = node.read().splitlines()
 			for line in code:
 				m = re.search(r'^import\s+"(.*)";.*(//)?.*', line)
 				if m:

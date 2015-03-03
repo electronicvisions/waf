@@ -35,7 +35,7 @@ def gtest_results(bld):
 
         # uncomment if you want to see what's happening
         # print(str(out, 'utf-8'))
-        output = str(out, 'utf-8').split('\n')
+        output = str(out, 'utf-8').splitlines()
         for i, line in enumerate(output):
             if '[ RUN      ]' in line and code:
                 i += 1
