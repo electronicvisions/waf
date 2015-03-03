@@ -693,7 +693,7 @@ class mr_push(MRContext):
     cmd = 'repos-push'
 
 class mr_log(MRContext):
-    '''push all changes (using MR tool)'''
+    '''call log for all repositories (using MR tool)'''
     cmd = 'repos-log'
 
 class mr_lstag(MRContext):
