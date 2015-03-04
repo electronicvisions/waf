@@ -99,7 +99,7 @@ class doxygen(Task.Task):
 					if os.path.isabs(i):
 						node = self.generator.bld.root.find_node(i)
 					else:
-						node = self.generator.path.find_node(i)
+						node = self.inputs[0].parent.find_node(i)
 					if not node:
 						self.generator.bld.fatal('Could not find the doxygen input %r' % i)
 					self.doxy_inputs.append(node)
