@@ -70,7 +70,7 @@ MACRO_TO_DESTOS = {
 '__sgi'                                          : 'irix',
 '_AIX'                                           : 'aix',
 '__CYGWIN__'                                     : 'cygwin',
-'__MSYS__'                                       : 'msys',
+'__MSYS__'                                       : 'cygwin',
 '_UWIN'                                          : 'uwin',
 '_WIN64'                                         : 'win32',
 '_WIN32'                                         : 'win32',
