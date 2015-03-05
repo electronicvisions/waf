@@ -30,20 +30,11 @@ def configure(conf):
 #
 
 def build(bld):
+	# if the documentation is to packed, simply set doxy_tar to the filename
 	bld(
 		features='doxygen',
 		doxyfile='test.conf',
-		doxy_tar='docs.tar.bz2')
-
-	# if the documentation is to be installed
-	bld.add_group()
-	bld.post_mode = Build.POST_LAZY
-	bld(features='special_doxygen_stuff')
-
-	@TaskGen.feature('special_doxygen_stuff')
-	def special_doxygen_stuff(self):
-		node = self.path.get_bld().make_node('html')
-		self.bld.install_files('${PREFIX}/doc/html', node.ant_glob('**', remove=False))
+		install_path='${PREFIX}/doc')
 
 	# and additional targets
 	bld(features='cxx cxxshlib', source='subdir/c.cpp', target='somelib')
