@@ -46,7 +46,7 @@ def enable_colors(use):
 	if use == 1:
 		if not (sys.stderr.isatty() or sys.stdout.isatty()):
 			use = 0
-		if Utils.is_win32:
+		if Utils.is_win32 and os.name != 'java':
 			term = os.environ.get('TERM', '') # has ansiterm
 		else:
 			term = os.environ.get('TERM', 'dumb')
