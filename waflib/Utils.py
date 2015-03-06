@@ -114,6 +114,8 @@ except ImportError:
 			return self.lst
 
 is_win32 = sys.platform in ('win32', 'cli', 'os2')
+if os.name == 'java' and os.sep == '\\':
+	is_win32 = True
 
 def readf(fname, m='r', encoding='ISO8859-1'):
 	"""
@@ -573,7 +575,7 @@ def unversioned_sys_platform():
 	:return: Unversioned platform name
 	"""
 	s = sys.platform
-	if s == 'java':
+	if s.startswith('java'):
 		# The real OS is hidden under the JVM.
 		from java.lang import System
 		s = System.getProperty('os.name')
