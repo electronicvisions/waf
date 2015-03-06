@@ -74,10 +74,15 @@ def build(bld):
 		vnum = '1.2.3',
 		use  = 'mylib')
 
+
+	# Swig forces a dynamic build therefore a build group is necessary
+	from waflib import Build
+	bld.post_mode = Build.POST_LAZY
 	bld.add_group()
-        python_site_package = '${PREFIX}/lib/python%s/site-packages' % bld.env.PYTHON_VERSION
-        bld.install_files(python_site_package, bld.path.find_or_declare('extend/python/test_swig_waf.py'))
-        bld.install_files(python_site_package, bld.path.find_or_declare('embed/swigdemo.py'))
+	python_site_package = '${PREFIX}/lib/python%s/site-packages' % bld.env.PYTHON_VERSION
+	generated_py = bld.path.find_or_declare('extend/python/test_swig_waf.py')
+	bld(feature='py', source=generated_py, install_path=python_site_package, install_from=bld.path.get_bld())
+
 
 	bld.add_post_fun(exec_test_python)
 
