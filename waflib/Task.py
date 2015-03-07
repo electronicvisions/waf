@@ -633,7 +633,7 @@ class Task(TaskBase):
 				raise Errors.WafError(self.err_msg)
 
 			# important, store the signature for the next run
-			node.sig = sig
+			node.sig = node.cache_sig = sig
 
 		bld.task_sigs[self.uid()] = self.cache_sig
 
@@ -1149,7 +1149,7 @@ def update_outputs(cls):
 	def post_run(self):
 		old_post_run(self)
 		for node in self.outputs:
-			node.sig = Utils.h_file(node.abspath())
+			node.sig = node.cache_sig = Utils.h_file(node.abspath())
 			self.generator.bld.task_sigs[node.abspath()] = self.uid() # issue #1017
 	cls.post_run = post_run
 
