@@ -370,7 +370,7 @@ class Node(object):
 			for i in range(up):
 				lst.append('..')
 		else:
-			if os.sep == '/' and lst:
+			if lst and not Utils.is_win32:
 				lst.append('')
 		lst.reverse()
 		return os.sep.join(lst) or '.'
@@ -385,23 +385,29 @@ class Node(object):
 			pass
 		# think twice before touching this (performance + complexity + correctness)
 
-		if os.sep == '/':
-			if not self.parent:
-				val = os.sep
-			elif not self.parent.name:
-				val = os.sep + self.name
-			else:
-				val = self.parent.abspath() + os.sep + self.name
+		if not self.parent:
+			val = os.sep
+		elif not self.parent.name:
+			val = os.sep + self.name
 		else:
+			val = self.parent.abspath() + os.sep + self.name
+		self.cache_abspath = val
+		return val
+
+	if Utils.is_win32:
+		def abspath(self):
+			try:
+				return self.cache_abspath
+			except AttributeError:
+				pass
 			if not self.parent:
 				val = ''
 			elif not self.parent.name:
 				val = self.name + os.sep
 			else:
 				val = self.parent.abspath().rstrip(os.sep) + os.sep + self.name
-
-		self.cache_abspath = val
-		return val
+			self.cache_abspath = val
+			return val
 
 	def is_child_of(self, node):
 		"""

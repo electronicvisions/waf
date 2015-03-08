@@ -113,9 +113,7 @@ except ImportError:
 		def keys(self):
 			return self.lst
 
-is_win32 = sys.platform in ('win32', 'cli', 'os2')
-if os.name == 'java' and os.sep == '\\':
-	is_win32 = True
+is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 
 def readf(fname, m='r', encoding='ISO8859-1'):
 	"""
