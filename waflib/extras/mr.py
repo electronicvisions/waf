@@ -545,8 +545,9 @@ class MR(object):
 # and serves better my purpose
 
 class MRContext(Configure.ConfigurationContext):
-    '''check status of the repositories (using MR tool)'''
-    cmd = 'repos-status'
+    '''MR adapter for symwaf2ic'''
+    cmd = None
+    cmd_prefix_args = None
     debug=False # set to True to print the command prior execution.
 
     # KHS: this is a noop
@@ -560,11 +561,16 @@ class MRContext(Configure.ConfigurationContext):
         self.mr = get_repo_tool()
 
         cmd, kw = self.mr.format_cmd(*self.get_args())
-        if self.debug: Logs.info(cmd)
+        if self.debug:
+            Logs.info(cmd)
         subprocess.call(cmd, **kw)
 
     def get_args(self):
-        return Utils.to_list(getattr(self, 'mr_cmd', self.cmd.replace('repos-','')))
+        ret = []
+        if self.cmd_prefix_args:
+            ret += Utils.to_list(self.cmd_prefix_args)
+        ret += Utils.to_list(getattr(self, 'mr_cmd', self.cmd.replace('repos-','')))
+        return ret
 
 class mr_run(MRContext):
     '''runs rargs in all repositories (./waf mr-run <your commands>)'''
@@ -670,6 +676,12 @@ class mr_tag(mr_xrun):
         return [ 'run', self.getMrCmdFile(), tag ]
 
 
+class mr_status(MRContext):
+    '''check status of the repositories (using MR tool)'''
+    cmd = 'repos-status'
+    # reduce verbosity (no empty lines)
+    cmd_prefix_args = '--minimal'
+
 class mr_fetch(MRContext):
     '''updates origin in all repositories (git fetch --no-progress)'''
     cmd = 'repos-fetch'
@@ -683,6 +695,7 @@ class mr_up(MRContext):
 class mr_diff(MRContext):
     '''diff all repositories (using MR tool)'''
     cmd = 'repos-diff'
+    cmd_prefix_args = '--minimal'
 
 class mr_commit(MRContext):
     '''commit all changes (using MR tool)'''
