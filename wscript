@@ -10,14 +10,13 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 """
 
 
-VERSION="1.8.7"
+VERSION="1.8.8"
 APPNAME='waf'
 REVISION=''
 
 top = '.'
 out = 'build'
 
-demos = ['cpp', 'qt4', 'tex', 'ocaml', 'kde3', 'adv', 'cc', 'idl', 'docbook', 'xmlwaf', 'gnome']
 zip_types = ['bz2', 'gz', 'xz']
 
 PRELUDE = ''
@@ -117,29 +116,6 @@ def options(opt):
 		dest='coretools', default='default')
 	opt.add_option('--prelude', action='store', help='Code to execute before calling waf', dest='prelude', default=PRELUDE)
 	opt.load('python')
-
-def compute_revision():
-	global REVISION
-
-	def visit(arg, dirname, names):
-		for pos, name in enumerate(names):
-			if name[0] == '.' or name in ('_build_', 'build'):
-				del names[pos]
-			elif name.endswith('.py'):
-				arg.append(os.path.join(dirname, name))
-	sources = []
-	os.path.walk('waflib', visit, sources)
-	sources.sort()
-	m = md5()
-	for source in sources:
-		f = open(source,'rb')
-		readBytes = 100000
-		while (readBytes):
-			readString = f.read(readBytes)
-			m.update(readString)
-			readBytes = len(readString)
-		f.close()
-	REVISION = m.hexdigest()
 
 def process_tokens(tokens):
 	accu = []
@@ -369,7 +345,7 @@ def create_waf(self, *k, **kw):
 					return (kd.replace(ch.encode(), s.encode()), s)
 		raise
 
-	# The reverse order prevent collisions
+	# The reverse order prevents collisions
 	(cnt, C3) = find_unused(cnt, '\x00')
 	(cnt, C2) = find_unused(cnt, '\r')
 	(cnt, C1) = find_unused(cnt, '\n')

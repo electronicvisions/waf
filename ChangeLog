@@ -1,3 +1,8 @@
+NEW IN WAF 1.8.8
+----------------
+* Fixed a regression in Fortran builds #1546
+* Doxygen tool enhancements
+
 NEW IN WAF 1.8.7
 ----------------
 * Fixed the default libdir installation suffix on Redhat 64-bit systems #1536
