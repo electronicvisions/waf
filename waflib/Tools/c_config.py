@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 	void *p;
 	(void)argc; (void)argv;
 	p=(void*)(%s);
-	return 0;
+	return (int)p;
 }
 '''
 """Code template for checking for functions"""
