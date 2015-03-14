@@ -585,7 +585,7 @@ def unversioned_sys_platform():
 		elif s == 'OS/2':
 			return 'os2'
 		elif s == 'HP-UX':
-			return 'hpux'
+			return 'hp-ux'
 		elif s in ('SunOS', 'Solaris'):
 			return 'sunos'
 		else: s = s.lower()

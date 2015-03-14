@@ -682,3 +682,19 @@ def read_object(self, obj):
 	if not isinstance(obj, self.path.__class__):
 		obj = self.path.find_resource(obj)
 	return self(features='fake_obj', source=obj, name=obj.name)
+
+@feature('cxxprogram', 'cprogram')
+@after_method('apply_link', 'process_use')
+def set_full_paths_hpux(self):
+	if self.env.DEST_OS != 'hp-ux':
+		return
+	base = self.bld.bldnode.abspath()
+	for var in ['LIBPATH', 'STLIBPATH']:
+		lst = []
+		for x in self.env[var]:
+			if x.startswith('/'):
+				lst.append(x)
+			else:
+				lst.append(os.path.normpath(os.path.join(base, x)))
+		self.env[var] = lst
+

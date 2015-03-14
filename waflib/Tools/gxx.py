@@ -122,13 +122,19 @@ def gxx_modifier_aix(conf):
 def gxx_modifier_hpux(conf):
 	v = conf.env
 	v['SHLIB_MARKER']        = []
-	v['STLIB_MARKER']        = '-Bstatic'
+	v['STLIB_MARKER']        = []
 	v['CFLAGS_cxxshlib']     = ['-fPIC','-DPIC']
 	v['cxxshlib_PATTERN']    = 'lib%s.sl'
 
 @conf
 def gxx_modifier_openbsd(conf):
 	conf.env.SONAME_ST = []
+
+@conf
+def gcc_modifier_osf1V(conf):
+	v['SHLIB_MARKER']        = []
+	v['STLIB_MARKER']        = []
+	v['SONAME_ST']           = []
 
 @conf
 def gxx_modifier_platform(conf):
