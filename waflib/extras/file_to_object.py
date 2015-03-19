@@ -130,19 +130,19 @@ char const %(name)s_end[] = {
 @TaskGen.before_method('process_source')
 def tg_file_to_object(self):
 	bld = self.bld
-	src = self.to_nodes(self.source)
-	assert len(src) == 1
-	src = src[0]
-	if bld.env.F2O_METHOD == ["asm"]:
-		tgt = src.parent.find_or_declare(src.name + '.f2o.s')
-		task = self.create_task('file_to_object_s',
-		 src, tgt, cwd=src.parent.abspath())
-		self.source = [tgt]
-	else:
-		tgt = src.parent.find_or_declare(src.name + '.f2o.c')
-		task = self.create_task('file_to_object_c',
-		 src, tgt, cwd=src.parent.abspath())
-		self.source = [tgt]
+	sources = self.to_nodes(self.source)
+	targets = []
+	for src in sources:
+		if bld.env.F2O_METHOD == ["asm"]:
+			tgt = src.parent.find_or_declare(src.name + '.f2o.s')
+			task = self.create_task('file_to_object_s',
+			 src, tgt, cwd=src.parent.abspath())
+		else:
+			tgt = src.parent.find_or_declare(src.name + '.f2o.c')
+			task = self.create_task('file_to_object_c',
+			 src, tgt, cwd=src.parent.abspath())
+		targets.append(tgt)
+	self.source = targets
 
 def configure(conf):
 	conf.load('gas')
