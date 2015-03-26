@@ -140,6 +140,7 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 	app = env.append_value
 	appu = env.append_unique
 	uselib = uselib_store
+	static = False
 	while lst:
 		x = lst.pop(0)
 		st = x[:2]
@@ -157,13 +158,15 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			app('DEFINES_' + uselib, [ot])
 		elif st == '-l':
 			if not ot: ot = lst.pop(0)
-			prefix = force_static and 'STLIB_' or 'LIB_'
+			prefix = (force_static or static) and 'STLIB_' or 'LIB_'
 			appu(prefix + uselib, [ot])
 		elif st == '-L':
 			if not ot: ot = lst.pop(0)
-			appu('LIBPATH_' + uselib, [ot])
+			prefix = (force_static or static) and 'STLIBPATH_' or 'LIBPATH_'
+			appu(prefix + uselib, [ot])
 		elif x.startswith('/LIBPATH:'):
-			appu('LIBPATH_' + uselib, [x.replace('/LIBPATH:', '')])
+			prefix = (force_static or static) and 'STLIBPATH_' or 'LIBPATH_'
+			appu(prefix + uselib, [x.replace('/LIBPATH:', '')])
 		elif x == '-pthread' or x.startswith('+') or x.startswith('-std'):
 			app('CFLAGS_' + uselib, [x])
 			app('CXXFLAGS_' + uselib, [x])
@@ -178,6 +181,10 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			app('RPATH_' + uselib, x[6:])
 		elif x.startswith('-Wl,-rpath,'):
 			app('RPATH_' + uselib, x[11:])
+		elif x == '-Wl,-Bstatic' or x == '-Bstatic':
+			static = True
+		elif x == '-Wl,-Bdynamic' or x == '-Bdynamic':
+			static = False
 		elif x.startswith('-Wl'):
 			app('LINKFLAGS_' + uselib, [x])
 		elif x.startswith('-m') or x.startswith('-f') or x.startswith('-dynamic'):
