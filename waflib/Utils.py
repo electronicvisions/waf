@@ -725,11 +725,8 @@ def get_registry_app_path(key, filename):
 def lib64():
 	# default settings for /usr/lib
 	if os.sep == '/':
-		is_64 = platform.architecture()[0] == '64bit'
-		if os.path.exists('/usr/lib64') and not os.path.exists('/usr/lib32'):
-			# redhat
-			return '64' if is_64 else ''
-		else:
-			return '' if is_64 else '32'
+		if platform.architecture()[0] == '64bit':
+			if os.path.exists('/usr/lib64') and not os.path.exists('/usr/lib32'):
+				return '64'
 	return ''
 
