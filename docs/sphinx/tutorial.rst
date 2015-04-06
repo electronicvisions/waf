@@ -30,14 +30,14 @@ Let's start with a new wscript file in the directory '/tmp/myproject'::
 	def build(bld):
 		print("build!")
 
-We will also use a Waf binary file, for example http://waf.googlecode.com/files/waf-1.6.1, which we will copy in the project directory::
+We will also use a Waf binary file, for example waf-1.8.8, which we will copy in the project directory::
 
 	$ cd /tmp/myproject
-	$ wget http://waf.googlecode.com/files/waf-1.6.1
+	$ wget https://waf.io/waf-1.8.8
 
 To execute the project, we will simply call the command as an argument to ``waf``::
 
-	$ ./waf-1.6.1 configure build
+	$ ./waf-1.8.8 configure build
 	configure!
 	build!
 
@@ -165,7 +165,7 @@ The declaration can be made more user-friendly by binding new methods to the con
 		bld.enterprise_program(source='main.c', target='app')
 
 The support code may be turned into a Waf tool by moving it to a separate file.
-To ease the deployment, the new Waf tool can even be added to the waf file (see http://code.google.com/p/waf/source/browse/trunk/README).
+To ease the deployment, the new Waf tool can even be added to the waf file (see https://github.com/waf-project/waf/blob/master/README#L10).
 
 Conclusion
 ----------

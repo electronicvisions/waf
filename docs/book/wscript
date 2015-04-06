@@ -135,18 +135,18 @@ def build(bld):
 	bld.add_group() # separator, the documents may require any of the pictures from above
 
 	bld(rule='${ADOC} -a icons=true -a stylesheet=${SRC[1].abspath()} -a iconsdir=. -a toc -d book -o ${TGT} ${SRC[0].abspath()}',
-		source='waf.txt waf.css', target='single.html', scan=ascii_doc_scan)
+		source='waf.txt waf.css', target='index.html', scan=ascii_doc_scan)
 
-	#bld(rule='${A2X} -L -a toc --icons-dir=. --icons -D ${gen.path.get_bld().abspath()} \
-        #        -d book -f pdf --dblatex-opts "-s ${SRC[1].abspath()} -p ${SRC[2].abspath()}" ${SRC[0].bldpath()}',
-	#	shell=True,
-	#	source='waf.txt asciidoc-dblatex.sty asciidoc-dblatex.xsl', target='waf.pdf', scan=ascii_doc_scan)
+	bld(rule='${A2X} -L -a toc --icons-dir=. --icons -D ${gen.path.get_bld().abspath()} \
+                -d book -f pdf --dblatex-opts "-s ${SRC[1].abspath()} -p ${SRC[2].abspath()}" ${SRC[0].bldpath()}',
+		shell=True,
+		source='waf.txt asciidoc-dblatex.sty asciidoc-dblatex.xsl', target='waf.pdf', scan=ascii_doc_scan)
 
-	bld(rule='ln -sf single.html index.html', shell=True)
+	#bld(rule='ln -sf single.html index.html', shell=True)
 
 	if bld.options.exe:
 		def exe(ctx):
-			bld.exec_command('firefox build/single.html')
+			bld.exec_command('firefox build/index.html')
 		bld.add_post_fun(exe)
 
 @TaskGen.feature('sizer')

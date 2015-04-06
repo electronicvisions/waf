@@ -206,11 +206,11 @@ USELIB_VARS['cprogram'] = USELIB_VARS['cxxprogram'] = \
 
 ==== Setting up a Waf directory for development
 
-Waf is hosted on http://code.google.com/p/waf/source[Google code], and uses Subversion for source control. To obtain the development copy, use:
+Waf is hosted on https://github.com/waf-project/waf[Github], and uses Git for source control. To obtain the development copy, use:
 
 [source,shishell]
 ---------------
-$ git clone http://code.google.com/p/waf/ wafdir
+$ git clone https://github.com/waf-project/waf.git wafdir
 $ cd wafdir
 $ ./waf-light --make-waf
 ---------------

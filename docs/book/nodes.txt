@@ -143,7 +143,7 @@ some text
 ['.lock-wafbuild', 'foo.txt', 'build', 'wscript', '.git']
 ---------------
 
-NOTE: More methods may be found in the http://docs.waf.googlecode.com/git/apidocs_17/index.html[API documentation]
+NOTE: More methods may be found in the https://waf.io/apidocs/index.html[API documentation]
 
 WARNING: The Node methods are not meant to be safe for concurrent access. The code executed in parallel (method run() of task objects for example) must avoid modifying the Node object data structure.
 

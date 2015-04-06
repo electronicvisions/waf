@@ -1,11 +1,11 @@
 WHAT YOU WILL FIND HERE
 -----------------------
 
-Waf 1.8 - for Waf 1.7 use the branch waf-1.7
+Waf 1.8 - Recently moved to https://github.com/waf-project/waf
 
-For the manual: http://docs.waf.googlecode.com/git/book_16/single.html
-For the api docs: http://docs.waf.googlecode.com/git/apidocs_16/index.html
-For the examples: see the folder demos/
+For the manual: https://waf.io/book/
+For the API documentation: https://waf.io/apidocs/
+For the examples: see the folder demos/ and the folder playground/
 
 HOW TO CREATE THE WAF SCRIPT
 ----------------------------
@@ -37,16 +37,6 @@ Try this:
 $ cp waf demos/c/
 $ cd demos/c/
 $ ./waf configure build
-
-USING GIT
----------
-
-$ git clone https://code.google.com/p/waf/
-set $HOME/.netrc to read:
-machine code.google.com login user@gmail.com password pass
-$ git remote add code https://code.google.com/p/waf.docs/
-... make a few changes
-$ git push code
 
 ---------------------------
 Thomas Nagy, 2014-2015 (ita)
