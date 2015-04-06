@@ -1,7 +1,12 @@
 NEW IN WAF 1.8.8
 ----------------
 * Fixed a regression in Fortran builds #1546
+* Fixed a regression in the libdir installation path on 32-bit ubuntu #1552
+* Process -Bstatic and -Bdynamic in parse_flags (pkg-config tools)
+* Fortran compiler detection to cover the sxf03 as well as the sxf90
+* Jython detection enhancements
 * Doxygen tool enhancements
+* Moved the project to Github/waf.io and updated the documentation
 
 NEW IN WAF 1.8.7
 ----------------
