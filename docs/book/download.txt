@@ -11,7 +11,7 @@ The Waf binary is a python script which does not require any installation whatso
 
 [source,shishell]
 ---------------
-$ wget http://ftp.waf.io/pub/release/waf-1.8.8
+$ wget https://waf.io/waf-1.8.8
 $ mv waf-1.8.8 waf
 $ python waf --version
 waf 1.8.8 (54dc13ba5f51bfe2ae277451ec5ac1d0a91c7aaf)
@@ -33,7 +33,7 @@ Building Waf requires a Python interpreter having a version number in the range 
 
 [source,shishell]
 ---------------
-$ wget http://ftp.waf.io/pub/release/waf-1.8.8.tar.bz2
+$ wget https://waf.io/waf-1.8.8.tar.bz2
 $ tar xjvf waf-1.8.8.tar.bz2
 $ cd waf-1.8.8
 $ python waf-light
