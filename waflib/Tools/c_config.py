@@ -7,7 +7,7 @@ C/C++/D configuration helpers
 """
 
 import os, re, shlex, sys
-from waflib import Build, Utils, Task, Options, Logs, Errors, ConfigSet, Runner
+from waflib import Build, Utils, Task, Options, Logs, Errors, Runner
 from waflib.TaskGen import after_method, feature
 from waflib.Configure import conf
 
@@ -175,8 +175,10 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			appu('FRAMEWORK_' + uselib, [lst.pop(0)])
 		elif x.startswith('-F'):
 			appu('FRAMEWORKPATH_' + uselib, [x[2:]])
-		elif x == '-Wl,-rpath':
-			app('RPATH_' + uselib, lst.pop(0))
+		elif x == '-Wl,-rpath' or x == '-Wl,-R':
+			app('RPATH_' + uselib, lst.pop(0).lstrip('-Wl,'))
+		elif x.startswith('-Wl,-R,'):
+			app('RPATH_' + uselib, x[7:])
 		elif x.startswith('-Wl,-R'):
 			app('RPATH_' + uselib, x[6:])
 		elif x.startswith('-Wl,-rpath,'):
