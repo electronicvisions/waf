@@ -206,6 +206,10 @@ class MainContext(Symwaf2icContext):
         Logs.init_log()
 
         if cmdopts.zones:
+            # KHS for some reason zones type is now a string in a one-element list *shrug*
+            if isinstance(cmdopts.zones, list):
+                assert len(cmdopts.zones) == 1      # assert that zones are not split already
+                cmdopts.zones = cmdopts.zones[0]    # return to the expected behaviour (or better just set Logs.zones?)
             Logs.zones = cmdopts.zones.split(',')
             if not Logs.verbose:
                 Logs.verbose = 1
