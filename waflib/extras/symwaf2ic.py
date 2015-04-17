@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 "Symwaf2ic package"
-# waf --zones=symwaf2ic
+# waf --zones=symwaf2ic, symwaf2ic_options, dependency
 
 import os
 import sys
@@ -197,6 +197,8 @@ class MainContext(Symwaf2icContext):
     def get_config(self):
         """ Load the config from storage config
         """
+        Logs.debug("symwaf2ic: load config from storage and superseed with commandline")
+
         storage.config_node = self.toplevel.make_node(CFGFOLDER)
         storage.config_node.mkdir()
 
@@ -221,11 +223,13 @@ class MainContext(Symwaf2icContext):
             setattr(storage, k, v)
 
         if not SETUP_CMD in sys.argv:
+            # TODO KHS shouldn't we compare with cmdopts instead of sys.argv, --verbose/-v for example?
             args = [o for o in storage.preserved_options if not o in sys.argv]
             if args:
                 Logs.info("symwaf2ic: Using options from setup call: " + " ".join(args))
             sys.argv += args
 
+        # TODO KHS: is this correct, what are the current options, those on the commandline, or the "total" of options?
         storage.current_options = vars(cmdopts)
 
         self.repo_db_url = cmdopts.repo_db_url
@@ -266,6 +270,7 @@ class MainContext(Symwaf2icContext):
 
 
     def setup_repo_tool(self):
+        Logs.debug("symwaf2ic: Setup repo tool (mr)")
         repoconf = storage.config_node.make_node( "mr_conf" )
         repoconf.mkdir()
         storage.repo_tool = mr.MR(self, self.repo_db_url, self.repo_db_type, top=self.toplevel, cfg=repoconf, clear_log=True)
@@ -282,7 +287,7 @@ class OptionParserContext(Symwaf2icContext):
         parsername=kw.get("parsername", "unnamed symwaf2ic parser")
         self.parsername = parsername
         self.parse_cnt = 0
-        Logs.debug("symwaf2ic: initializing options parser: %s" % self.parsername)
+        Logs.debug("symwaf2ic_options: initializing options parser: %s" % self.parsername)
 
         self.parser = argparse.ArgumentParser()
         self._add_waf_options()
@@ -337,7 +342,7 @@ class OptionParserContext(Symwaf2icContext):
         self.parser.add_withargument(*k, **kw)
 
     # Since we are only interested in the arguments themselves and provide no output
-    # in the depdency system, optparse's OptionGropus are irrelevent, since they only
+    # in the dependency system, optparse's OptionGroups are irrelevent, since they only
     # serve to produce nicer help messages.
     def add_option_group(self, *k, **kw):
         return self
@@ -354,7 +359,7 @@ class OptionParserContext(Symwaf2icContext):
 
         """
         self.parse_cnt = self.parse_cnt + 1
-        Logs.debug("symwaf2ic_deb: parsing args for %s: %d" % (self.parsername, self.parse_cnt))
+        Logs.debug("symwaf2ic_options: parsing args for %s: %d" % (self.parsername, self.parse_cnt))
 
         if argv is None:
             argv = sys.argv
@@ -454,7 +459,7 @@ class DependencyContext(Symwaf2icContext):
         self.to_recurse = deque()
 
     def __call__(self, project, subfolder="", branch=None):
-        Logs.debug("symwaf2ic: Required by {script}: {project}{branch}{subfolder}".format(
+        Logs.debug("dependency: Required by {script}: {project}{branch}{subfolder}".format(
                     project=project,
                     subfolder="" if len(subfolder) == 0 else " ({0})".format(subfolder),
                     branch="" if branch is None else "@{0}".format(branch),
@@ -478,7 +483,7 @@ class DependencyContext(Symwaf2icContext):
         self._first_recursion = False
 
         info = [str(p) for p in get_projects()]
-        Logs.debug("symwaf2ic: Required from toplevel: {0}".format( ", ".join(info)))
+        Logs.debug("dependency: Required from toplevel: {0}".format( ", ".join(info)))
 
         # Color map for topological sort
         self.visited = defaultdict(lambda: self.NOT_VISITED)
