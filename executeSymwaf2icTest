@@ -1,0 +1,45 @@
+#!/bin/bash -e
+
+# File:         executeSymwaf2icTest
+# Author:       Kai Husmann <kai.husmann@kip.uni-heidelberg.de> (KHS)
+# Changelog:    [2015-04-17 15:02:21]   created/released (KHS)
+#               [2015-04-17 15:02:37]   now hiding make (KHS)
+# --- chlog insert above ---
+
+
+# PREREQUISITES
+TEST=${1:-"1"}
+test -f "waf-light" || { echo "ERR: looks like we're executed in the wrong directory."; exit 1; }
+mkdir -p Test
+ln -sf ../waf Test/waf
+
+
+# TEST FUNCTIONS
+function test_1 { # DEFAULT
+    ./waf setup --project halbe --zones symwaf2ic
+}
+function test_2 {
+   ./waf setup --project halbe --zones symwaf2ic --with-ess
+}
+
+
+# BUILDING SYMWAF2IC
+function build {
+    make > Test/make.log 2> Test/make.err
+    ERR=$?
+    if [ $ERR -ne 0 ]
+    then
+        cat Test/make.log
+        cat Test/make.err
+        return 1
+    fi
+}
+
+build || { echo "ERR: make failed, aborting test!"; exit 1; }
+
+
+# TESTING
+cd Test
+set -o xtrace
+test_$TEST
+
