@@ -26,7 +26,7 @@ def waf_entry_point(current_directory, version, wafdir):
 	:type wafdir: string
 	"""
 
-	Logs.init_log()
+	Logs.init_log() # Necessary for Logs.{info,error}.
 
 	if Context.WAFVERSION != version:
 		Logs.error('Waf script %r and library %r do not match (directory %r)' % (version, Context.WAFVERSION, wafdir))
@@ -70,7 +70,7 @@ def waf_entry_point(current_directory, version, wafdir):
 		if Options.lockfile in lst:
 			env = ConfigSet.ConfigSet()
 			try:
-				env.load(os.path.join(cur, Options.lockfile))
+				env.load(os.path.join(cur, Options.lockfile)) # produces a log message that will never be shown
 				ino = os.stat(cur)[stat.ST_INO]
 			except Exception:
 				pass
@@ -112,6 +112,12 @@ def waf_entry_point(current_directory, version, wafdir):
 
 		if no_climb:
 			break
+
+	# Setting initial logs verbosity. Otherwise early Logs.debug messages will never be shown, as
+	# verbosity from commandline is set later -> better show them all to indicate that one should
+	# not use Logs.debug prior initializing Logs verbosity in setup_logging. Anyways there is a waf
+	# legacy log message earlier which is why I've moved this further down. (KHS)
+	Logs.verbose=3
 
 	if not Context.run_dir:
 		if '-h' in sys.argv or '--help' in sys.argv:
@@ -208,8 +214,19 @@ def parse_options():
 		Options.commands = [default_cmd]
 	Options.commands = [x for x in Options.commands if x != 'options'] # issue 1076
 
-	# process some internal Waf options (KHS: verbose and zones)
-	# KHS moved to symwaf2ic.py options
+	# process some internal Waf options
+	Logs.verbose = Options.options.verbose
+	Logs.init_log()
+
+	if Options.options.zones:
+		Logs.zones = Options.options.zones.split(',')
+		if not Logs.verbose:
+			Logs.verbose = 1
+	elif Logs.verbose > 0:
+		Logs.zones = ['runner']
+
+	if Logs.verbose > 2:
+		Logs.zones = ['*']
 
 def run_command(cmd_name):
 	"""

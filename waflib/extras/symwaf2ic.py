@@ -184,6 +184,9 @@ class MainContext(Symwaf2icContext):
 
     cmd = "_symwaf2ic"
 
+    def __init__(self, *k, **kw):
+        super(Symwaf2icContext, self).__init__(*k, **kw)
+
     def execute(self):
         Logs.debug("symwaf2ic: Starting up symwaf2ic")
 
@@ -200,26 +203,6 @@ class MainContext(Symwaf2icContext):
         # projects are only set during setup phase
         options = OptionParserContext(parsername="Symwaf2icSetupParser")
         cmdopts = options.parse_args()
-
-        # KHS: reused from Scripting.parse_args()
-        Logs.verbose = cmdopts.verbose
-        Logs.init_log()
-
-        if cmdopts.zones:
-            # KHS for some reason zones type is now a string in a one-element list *shrug*
-            if isinstance(cmdopts.zones, list):
-                assert len(cmdopts.zones) == 1      # assert that zones are not split already
-                cmdopts.zones = cmdopts.zones[0]    # return to the expected behaviour (or better just set Logs.zones?)
-            Logs.zones = cmdopts.zones.split(',')
-            if not Logs.verbose:
-                Logs.verbose = 1
-        elif Logs.verbose > 0:
-            Logs.zones = ['runner']
-
-        if Logs.verbose > 2:
-            Logs.zones = ['*']
-        # end snip
-
 
         if SETUP_CMD in sys.argv:
             # already write projects to store

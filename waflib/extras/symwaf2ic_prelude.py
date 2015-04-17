@@ -176,11 +176,15 @@ def assert_toplevel_wscript():
             sys.exit(1)
 
 
+def setup_logging():
+    Scripting.parse_options() # will setup Logs and configure verbosity and zones.
+
 def entry_point():
     "Entry point for symwaf2ic code execution before waf workflow."
     symwaf2ic.init_storage()
 
-    Logs.debug("Reached entry point.")
+    setup_logging()
+    Logs.debug("symwaf2ic: Symwaf2ic Entry Point; logging initialized.")
 
     Scripting.run_command("_symwaf2ic")
     Scripting.run_command("_dependency_resolution")
