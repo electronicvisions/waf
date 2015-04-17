@@ -198,7 +198,7 @@ class MainContext(Symwaf2icContext):
         storage.config_node.mkdir()
 
         # projects are only set during setup phase
-        options = OptionParserContext()
+        options = OptionParserContext(parsername="Symwaf2icSetupParser")
         cmdopts = options.parse_args()
 
         # KHS: reused from Scripting.parse_args()
@@ -294,6 +294,13 @@ class OptionParserContext(Symwaf2icContext):
 
     def __init__(self, *k, **kw):
         super(OptionParserContext, self).__init__(*k, **kw)
+
+        # KHS this is called multiple times... The following might help improving/debugging that.
+        parsername=kw.get("parsername", "unnamed symwaf2ic parser")
+        self.parsername = parsername
+        self.parse_cnt = 0
+        Logs.debug("symwaf2ic: initializing options parser: %s" % self.parsername)
+
         self.parser = argparse.ArgumentParser()
         self._add_waf_options()
         self._first_recursion = False # disable symwaf2ic recursion
@@ -363,6 +370,9 @@ class OptionParserContext(Symwaf2icContext):
         affect the dependency resolution.
 
         """
+        self.parse_cnt = self.parse_cnt + 1
+        Logs.debug("symwaf2ic_deb: parsing args for %s: %d" % (self.parsername, self.parse_cnt))
+
         if argv is None:
             argv = sys.argv
 
@@ -452,7 +462,7 @@ class DependencyContext(Symwaf2icContext):
 
     def __init__(self, *k, **kw):
         super(DependencyContext, self).__init__(*k, **kw)
-        self.options_parser = OptionParserContext()
+        self.options_parser = OptionParserContext(parsername="DependencyParser")
         self.update_branches = SETUP_CMD in sys.argv and storage.setup_options["update_branches"]
         self.write_dot_file  = storage.current_options["write_dot_file"]
         # Dependency graph
