@@ -21,7 +21,20 @@ function test_1 { # DEFAULT
 function test_2 {
    ./waf setup --project halbe --zones symwaf2ic --with-ess
 }
+function test_reset {
+    test -d halbe && { pushd halbe; git checkout -f ess_trafo; echo "fu" >> project.prj; popd; }
+   ./waf setup --project halbe --update-branches force --zones symwaf2ic,symwaf2ic_deb,mr
+}
 
+function test_super {
+    for t in 1 2 reset
+    do
+        set -o xtrace
+        test_$t
+        set +o xtrace
+        echo -e "\n\n############################################################\n\n"
+    done
+}
 
 # BUILDING SYMWAF2IC
 function build {
@@ -40,6 +53,7 @@ build || { echo "ERR: make failed, aborting test!"; exit 1; }
 
 # TESTING
 cd Test
+rm -rf .waf-*
 set -o xtrace
 test_$TEST
 
