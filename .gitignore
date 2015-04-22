@@ -9,8 +9,4 @@ demos/*/build*
 playground/*/build*
 .waf-*
 *.log
-
-# for testing
-/.myrepos/
-/.symwaf2ic*
 Test
