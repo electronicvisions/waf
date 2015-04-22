@@ -7,11 +7,9 @@
 fortran support
 """
 
-import re
-
-from waflib import Utils, Task, TaskGen, Logs
+from waflib import Utils, Task, Logs
 from waflib.Tools import ccroot, fc_config, fc_scan
-from waflib.TaskGen import feature, before_method, after_method, extension
+from waflib.TaskGen import feature, extension
 from waflib.Configure import conf
 
 ccroot.USELIB_VARS['fc'] = set(['FCFLAGS', 'DEFINES', 'INCLUDES'])
@@ -152,7 +150,7 @@ class fc(Task.Task):
 class fcprogram(ccroot.link_task):
 	"""Link fortran programs"""
 	color = 'YELLOW'
-	run_str = '${FC} ${LINKFLAGS} ${FCLNK_SRC_F}${SRC} ${FCLNK_TGT_F}${TGT[0].abspath()} ${RPATH_ST:RPATH} ${FCSTLIB_MARKER} ${FCSTLIBPATH_ST:STLIBPATH} ${FCSTLIB_ST:STLIB} ${FCSHLIB_MARKER} ${FCLIBPATH_ST:LIBPATH} ${FCLIB_ST:LIB}'
+	run_str = '${FC} ${LINKFLAGS} ${FCLNK_SRC_F}${SRC} ${FCLNK_TGT_F}${TGT[0].abspath()} ${RPATH_ST:RPATH} ${FCSTLIB_MARKER} ${FCSTLIBPATH_ST:STLIBPATH} ${FCSTLIB_ST:STLIB} ${FCSHLIB_MARKER} ${FCLIBPATH_ST:LIBPATH} ${FCLIB_ST:LIB} ${LDFLAGS}'
 	inst_to = '${BINDIR}'
 
 class fcshlib(fcprogram):
@@ -183,7 +181,7 @@ class fcprogram_test(fcprogram):
 		kw['output'] = 0
 		try:
 			(bld.out, bld.err) = bld.cmd_and_log(cmd, **kw)
-		except Exception as e:
+		except Exception:
 			return -1
 
 		if bld.out:

@@ -929,7 +929,7 @@ def get_config_header(self, defines=True, headers=False, define_prefix=''):
 @conf
 def cc_add_flags(conf):
 	"""
-	Read the CFLAGS/CPPFLAGS from os.environ and add to conf.env.CFLAGS
+	Add CFLAGS / CPPFLAGS from os.environ to conf.env
 	"""
 	conf.add_os_flags('CPPFLAGS', 'CFLAGS')
 	conf.add_os_flags('CFLAGS')
@@ -937,7 +937,7 @@ def cc_add_flags(conf):
 @conf
 def cxx_add_flags(conf):
 	"""
-	Read the CXXFLAGS/CPPFLAGS and add to conf.env.CXXFLAGS
+	Add CXXFLAGS / CPPFLAGS from os.environ to conf.env
 	"""
 	conf.add_os_flags('CPPFLAGS', 'CXXFLAGS')
 	conf.add_os_flags('CXXFLAGS')
@@ -945,10 +945,10 @@ def cxx_add_flags(conf):
 @conf
 def link_add_flags(conf):
 	"""
-	Read the LINKFLAGS/LDFLAGS and add to conf.env.LDFLAGS
+	Add LINKFLAGS / LDFLAGS from os.environ to conf.env
 	"""
 	conf.add_os_flags('LINKFLAGS')
-	conf.add_os_flags('LDFLAGS', 'LINKFLAGS')
+	conf.add_os_flags('LDFLAGS')
 
 @conf
 def cc_load_tools(conf):

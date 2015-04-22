@@ -49,10 +49,11 @@ def fc_flags(conf):
 @conf
 def fc_add_flags(conf):
 	"""
-	FCFLAGS?
+	Add FCFLAGS / LDFLAGS / LINKFLAGS from os.environ to conf.env
 	"""
 	conf.add_os_flags('FCFLAGS')
-	conf.add_os_flags('LDFLAGS', 'LINKFLAGS')
+	conf.add_os_flags('LINKFLAGS')
+	conf.add_os_flags('LDFLAGS')
 
 @conf
 def check_fortran(self, *k, **kw):
