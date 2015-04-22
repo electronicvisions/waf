@@ -132,7 +132,7 @@ class Project(object):
     @property
     def required_branch(self):
         if self._branch is None:
-            raise BranchError, "required branch unkown"
+            raise BranchError, "required branch unknown"
         return self._branch
 
     @required_branch.setter
@@ -161,8 +161,8 @@ class Project(object):
             self._real_branch =  stdout.strip()
         return self._real_branch
 
-    def update_branch(self):
-        ret, stdout, stderr = self.exec_cmd(self.set_branch_cmd())
+    def update_branch(self, force = False):
+        ret, stdout, stderr = self.exec_cmd(self.reset_branch_cmd() if force else self.set_branch_cmd())
         if ret != 0:
             raise BranchError(stdout + stderr)
         self._real_branch = None
@@ -200,6 +200,9 @@ class GitProject(Project):
 
     def set_branch_cmd(self, branch = None):
         return ['git', 'checkout', branch if branch else self.required_branch]
+
+    def reset_branch_cmd(self, branch = None):
+        return ['git', 'checkout', '--force', branch if branch else self.required_branch]
 
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
@@ -294,7 +297,7 @@ class MR(object):
         db_node = self.cfg_node.make_node(self.DB_FOLDER)
         db_path = db_node.path_from(self.base)
         if db_type == "wget":
-            # TODO: implement download via wget
+            # TODO: implement download via wget # KHS: should I do this?
             raise Errors.WafError("wget support not implemented yet. Poke obreitwi!")
         else:
             # see if db repository is already checked out, if not, add it
@@ -317,7 +320,9 @@ class MR(object):
         for name, p in self.projects.iteritems():
             if not os.path.isdir(p.node.abspath()):
                 not_on_filesystem.append(name)
-        self.remove_projects(not_on_filesystem)
+        if not_on_filesystem:
+            Logs.debug("mr: Projects not on file system: " + str(not_on_filesystem))
+            self.remove_projects(not_on_filesystem)
 
     def init_default_config(self):
         parser = self.load_config()
@@ -325,6 +330,7 @@ class MR(object):
         self.save_config(parser)
 
     def mr_log(self, msg, sep = "\n"):
+        Logs.debug('mr:' + msg)
         self.log.write(msg + sep, 'a')
 
     def mr_print(self, msg, color = None, sep = '\n'):
@@ -438,7 +444,7 @@ class MR(object):
                 self.mr_print('Switching branch of repository %s from %s to %s..' % \
                         ( project, p.real_branch, p.required_branch), sep = '')
                 try:
-                    p.update_branch()
+                    p.update_branch(force = bool(update_branch=='force'))
                 except BranchError as e:
                     self.mr_print('')
                     self.ctx.fatal(str(e))
