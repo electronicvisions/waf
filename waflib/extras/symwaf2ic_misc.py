@@ -131,3 +131,8 @@ def fix_boost_paths(self):
             kw['libs'] = libs
         self.orig_check_boost(*k, **kw)
     self.check_boost = my_check_boost
+
+def bool_or_string(string):
+    if string.lower() == "true": return True
+    if string.lower() == "false": return False
+    return string

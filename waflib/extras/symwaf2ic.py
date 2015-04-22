@@ -138,10 +138,21 @@ def options(opt):
             "--directory", dest="projects", action="append",
             type=Project.from_dir_opt if is_symwaf2ic else str,
             metavar="PATH",
-            help="Make waf to recurse into the given folders. (Can be specified several times.)")
+            help="Make waf to recurse into the given folders. (Can be specified several times.)"
+    )
+
+    # KHS wanted behaviour: but not supported by waf optparse legacy.
+    #gr.add_option(
+    #        "--update-branches", dest="update_branches", nargs='?',
+    #        default=False, const=True, type=misc.bool_or_string, choices = [ False, True, 'force' ],
+    #        help="Activate branch tracking (e.g., when updating repositories). Set 'force' to force branch update."
+    #)
     gr.add_option(
-            "--update-branches", dest="update_branches", action="store_true",
-            help="Activate branch tracking (e.g., when updating repositories)")
+            "--update-branches", dest="update_branches",
+            default=False, type='choice', choices="soft force".split(), # false is not a choice, its the default and bool('false') is true
+            help="Activate branch tracking (e.g., when updating repositories). If specified set to soft or force (the latter deletes local changes)."
+    )
+
     gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
             help="URL for the repository containing the database with information about all other repositories.",
