@@ -23,7 +23,10 @@ function test_2 {
 }
 function test_reset {
     test -d halbe && { pushd halbe; git checkout -f ess_trafo; echo "fu" >> project.prj; popd; }
-   ./waf setup --project halbe --update-branches force --zones symwaf2ic,symwaf2ic_deb,mr
+    ./waf setup --project halbe --update-branches soft --zones symwaf2ic,symwaf2ic_deb,mr \
+        && { echo "SHOULD HAVE FAILED"; exit 1; } \
+        || { echo -e "FAILURE EXPECTED AND GOOD\n\n"; }
+    ./waf setup --project halbe --update-branches force --zones symwaf2ic,symwaf2ic_deb,mr
 }
 
 function test_super {
