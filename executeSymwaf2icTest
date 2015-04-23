@@ -8,55 +8,68 @@
 
 
 # PREREQUISITES
-TEST=${1:-"1"}
+TESTS="$@"
+TESTS=${TESTS:-"default"}
+#TESTFOLDER="/tmp/symtest" # TODO: does not work -> waf is loosing some leading slash...
+TESTFOLDER="$HOME/test/symtest"
+OUR_ZONES="symwaf2ic,symwaf2ic_options,dependency,mr"
+
+
 test -f "waf-light" || { echo "ERR: looks like we're executed in the wrong directory."; exit 1; }
-mkdir -p Test
-ln -sf ../waf Test/waf
+
+mkdir -p $TESTFOLDER
+ln -sf $PWD/waf $TESTFOLDER/waf
 
 
 # TEST FUNCTIONS
-function test_1 { # DEFAULT
-    ./waf setup --project halbe --zones symwaf2ic
+function test_default { # just t
+    ./waf setup --project hicann-system --zones $OUR_ZONES
 }
-function test_2 {
-   ./waf setup --project halbe --zones symwaf2ic --with-ess
+function test_dependency {
+   ./waf setup --project halbe --zones symwaf2ic,symwaf2ic_dependency --with-ess
 }
 function test_reset {
     test -d halbe && { pushd halbe; git checkout -f ess_trafo; echo "fu" >> project.prj; popd; }
-    ./waf setup --project halbe --update-branches soft --zones symwaf2ic,symwaf2ic_deb,mr \
+    ./waf setup --project halbe --update-branches soft --zones symwaf2ic,mr \
         && { echo "SHOULD HAVE FAILED"; exit 1; } \
         || { echo -e "FAILURE EXPECTED AND GOOD\n\n"; }
-    ./waf setup --project halbe --update-branches force --zones symwaf2ic,symwaf2ic_deb,mr
+    ./waf setup --project halbe --update-branches force --zones symwaf2ic,mr
 }
 
+# COMBI TESTS
 function test_super {
-    for t in 1 2 reset
-    do
-        set -o xtrace
-        test_$t
-        set +o xtrace
-        echo -e "\n\n############################################################\n\n"
-    done
+    run_tests default dependency reset
 }
 
 # BUILDING SYMWAF2IC
-function build {
-    make > Test/make.log 2> Test/make.err
+function run_build {
+    make > $TESTFOLDER/make.log 2> $TESTFOLDER/make.err
     ERR=$?
     if [ $ERR -ne 0 ]
     then
-        cat Test/make.log
-        cat Test/make.err
+        cat $TESTFOLDER/make.log
+        cat $TESTFOLDER/make.err
         return 1
     fi
+    echo "BUILD: symwaf2ic-waf rebuild successfully."
+    echo
 }
 
-build || { echo "ERR: make failed, aborting test!"; exit 1; }
+# TESTING SYMWAF2IC
+function run_tests {
+    set +o xtrace
+    for i in "$@"
+    do
+        echo -e "\nEXECUTING TEST $i"
+        cd $TESTFOLDER
 
+        set -o xtrace
+        test_$i
+        set +o xtrace
+        echo -e "\n############################################################\n"
+    done
+}
 
-# TESTING
-cd Test
-rm -rf .waf-*
-set -o xtrace
-test_$TEST
+run_build || { echo "ERR: make failed, aborting test!"; exit 1; }
 
+run_tests $TESTS
