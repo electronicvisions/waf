@@ -422,6 +422,16 @@ class MR(object):
             path = tmpfile_lines[header_idx].strip()[1:-1]
             Logs.debug("mr: originally registered path: " + str(path))
             node = self.ctx.root.find_node(path)
+
+            # KHS: Fixing weird behaviour of mr register. If executed in a subdir of /tmp or outside
+            # of $HOME -- not sure what exactly the cause is, it registers repos as
+            # [toplevel/repodir] instead of [/root/path/to/repodir].
+            if not node:
+                assert path.startswith(str(self.ctx.path))
+                node=self.ctx.path.parent.find_node(path)
+                Logs.debug('mr: wierd mr-register-behaviour-fix applied.')
+                assert node # or fix failed
+
             tmpfile_lines[header_idx] = "[{0}]\n".format(node.path_from(self.base))
             Logs.debug("mr: registered {}".format(tmpfile_lines[header_idx]))
             self.config.write("".join(tmpfile_lines), 'a')
