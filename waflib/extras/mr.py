@@ -330,11 +330,11 @@ class MR(object):
         self.save_config(parser)
 
     def mr_log(self, msg, sep = "\n"):
-        Logs.debug('mr:' + msg)
+        for m in msg.split('\n'): Logs.debug('mr: ' + m)
         self.log.write(msg + sep, 'a')
 
     def mr_print(self, msg, color = None, sep = '\n'):
-        self.mr_log(msg, sep = sep)
+        self.mr_log(msg, '\n')
         Logs.pprint(color if color else self.LOG_COLOR, msg, sep = sep)
 
     def load_config(self):
@@ -371,11 +371,10 @@ class MR(object):
         kw['env']    = env
         return cmd, kw
 
-
     def call_mr(self, *args, **kw):
+        self.mr_log("dispatching mr command: " + str(args) + " -- " + str(kw))
 
         tmpfile = None
-
         if args and args[0] == "register":
             # because mr seems to have a bug not trusting any config file
             # during "register" we write the config to a tempfile and append manually .. ¬_¬
@@ -391,12 +390,13 @@ class MR(object):
         kw['output'] = Context.BOTH
         kw['env'] = self.get_mr_env()
         try:
+            Logs.debug("mr: executing in: " + kw['cwd'] + " -- with first PATH segment set to: " + kw['env']['PATH'].split(':')[0])
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
             stdout = getattr(e, 'stdout', "")
             stderr = getattr(e, 'stderr', "")
-            # self.mr_log('stdout: "%s"\nstderr: "%s"\n' % (stdout, stderr))
-            Logs.warn('stdout: \n"%s"\nstderr: \n"%s"\n' % (stdout, stderr))
+            self.mr_log('command:\n"%s"\nstdout:\n"%s"\nstderr:\n"%s"\n' % (' '.join(cmd), stdout, stderr))
+            Logs.error('command:\n"%s"\nstdout:\n"%s"\nstderr:\n"%s"\n' % (' '.join(cmd), stdout, stderr))
             if stderr:
                 e.msg += ':\n\n' + stderr
             if tmpfile is not None:
@@ -405,21 +405,25 @@ class MR(object):
 
         msg = 'stdout:\n"' + stdout + '"\n'
         msg += 'stderr:\n"' + stderr + '"\n'
-        # self.mr_log(msg)
+        self.mr_log(msg)
+
         if tmpfile is not None:
             # write config to repo conf
             tmpfile.seek(0)
             tmpfile_lines = tmpfile.file.readlines()
             tmpfile.close()
+            #for i,v in enumerate(tmpfile_lines):
+            #    Logs.debug("mr: tmpfile {}: {}".format(i,v))
 
             # make sure path in header is relative (as if we had registered it without
             # all the 'security' shennanigans from mr)
             header_idx = 1
             path = tmpfile_lines[header_idx].strip()[1:-1]
+            Logs.debug("mr: originally registered path: " + str(path))
             node = self.ctx.root.find_node(path)
             tmpfile_lines[header_idx] = "[{0}]\n".format(node.path_from(self.base))
+            Logs.debug("mr: registered {}".format(tmpfile_lines[header_idx]))
             self.config.write("".join(tmpfile_lines), 'a')
-        Logs.debug(msg)
 
         return cmd, stdout, stderr
 
@@ -467,6 +471,7 @@ class MR(object):
         # needs only to be registered
         if os.path.isdir(p.node.abspath()):
             self.mr_print("Registering pre-existing repository '%s'..." % p, sep = '')
+            Logs.debug('mr: ') # better output if mr zone is active
             self.call_mr('register', path)
         else:
             do_checkout = True
