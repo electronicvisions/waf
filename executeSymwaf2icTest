@@ -10,8 +10,8 @@
 # PREREQUISITES
 TESTS="$@"
 TESTS=${TESTS:-"default"}
-#TESTFOLDER="/tmp/symtest" # TODO: does not work -> waf is loosing some leading slash...
-TESTFOLDER="$HOME/test/symtest"
+#TESTFOLDER="$HOME/tmp/symtest"
+TESTFOLDER="/tmp/symtest"
 OUR_ZONES="symwaf2ic,symwaf2ic_options,dependency,mr"
 
 
@@ -23,10 +23,10 @@ ln -sf $PWD/waf $TESTFOLDER/waf
 
 # TEST FUNCTIONS
 function test_default { # just t
-    ./waf setup --project hicann-system --zones $OUR_ZONES
+    ./waf setup --project lib-rcf --zones $OUR_ZONES
 }
 function test_dependency {
-   ./waf setup --project halbe --zones symwaf2ic,symwaf2ic_dependency --with-ess
+   ./waf setup --project halbe --zones symwaf2ic,symwaf2ic_dependency,mr --with-ess
 }
 function test_reset {
     test -d halbe && { pushd halbe; git checkout -f ess_trafo; echo "fu" >> project.prj; popd; }
@@ -58,6 +58,7 @@ function run_build {
 # TESTING SYMWAF2IC
 function run_tests {
     set +o xtrace
+    local i
     for i in "$@"
     do
         echo -e "\nEXECUTING TEST $i"
@@ -66,7 +67,7 @@ function run_tests {
         set -o xtrace
         test_$i
         set +o xtrace
-        echo -e "\n############################################################\n"
+        echo -e "### [END $i] ###################################################\n"
     done
 }
 
