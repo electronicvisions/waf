@@ -350,7 +350,7 @@ class MR(object):
 
     def format_cmd(self, *args, **kw):
         """ use _conf_file to override config file destination """
-        env = kw.get('env', os.environ.copy())
+        #env = kw.get('env', os.environ.copy()) # KHS it's never used
         # if args and args[0] == 'register':
             # env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
 
@@ -362,13 +362,15 @@ class MR(object):
         if custom_conf_file:
             del kw["_conf_file"]
 
-        cmd = [self.mr_tool.abspath(), '-t', '-c', conf_file]
+        # like this (env mr instead of absolute path) we can assert that the environment has been
+        # passed correctly (i.e. PATH with our-mr inserted - mr sometimes calles itself).
+        cmd = ['env', 'mr', '-t', '-c', conf_file] # self.mr_tool.abspath()
         cmd.extend(args)
 
         self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
 
         kw['cwd']    = self.base.abspath()
-        kw['env']    = env
+        kw['env']    = self.get_mr_env()
         return cmd, kw
 
     def call_mr(self, *args, **kw):
@@ -388,7 +390,6 @@ class MR(object):
         cmd, kw = self.format_cmd(*args, **kw)
         kw['quiet']  = Context.BOTH
         kw['output'] = Context.BOTH
-        kw['env'] = self.get_mr_env()
         try:
             Logs.debug("mr: executing in: " + kw['cwd'] + " -- with first PATH segment set to: " + kw['env']['PATH'].split(':')[0])
             stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
@@ -432,6 +433,7 @@ class MR(object):
         path = env["PATH"].split(os.pathsep)
         path.insert(0, self.mr_tool.parent.abspath())
         env["PATH"] = os.pathsep.join(path)
+        return env # KHS: jihaa function was a noop (return statement was missing)
 
 
     def checkout_project(self, project, parent_path, branch = None, update_branch = False):
