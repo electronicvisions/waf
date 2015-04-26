@@ -131,6 +131,7 @@ def gcc_modifier_openbsd(conf):
 
 @conf
 def gcc_modifier_osf1V(conf):
+	v = conf.env
 	v['SHLIB_MARKER']        = []
 	v['STLIB_MARKER']        = []
 	v['SONAME_ST']           = []
