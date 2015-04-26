@@ -1,3 +1,9 @@
+NEW IN WAF 1.8.9
+----------------
+* VS 2013 supports cross-compiling for x86 and arm from amd64
+* Perl detection enhancements on Redhat systems
+* More accurate rpath parsing in check_cfg
+
 NEW IN WAF 1.8.8
 ----------------
 * Fixed a regression in Fortran builds #1546

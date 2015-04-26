@@ -6,7 +6,7 @@ Waf 1.9
 * Remove the split functions from Utils
 * Ensure _cache.py are valid python files
 * Include the tool 'nobuild' by default
-* Support for linkflags/cflags at the end of commands
+* cflags in the beginning / cppflags at the end
 
 Waf 1.8.x
 ---------
