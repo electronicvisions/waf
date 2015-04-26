@@ -95,6 +95,7 @@ def configure(conf):
 	conf.find_program('convert', var='CONVERT')
 	conf.find_program('source-highlight', var='SOURCE_HIGHLIGHT')
 	conf.find_program('dot')
+	conf.find_program('dblatex')
 	try:
 		conf.find_program('semantik-d')
 	except conf.errors.ConfigurationError:
