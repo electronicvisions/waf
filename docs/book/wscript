@@ -132,15 +132,23 @@ def build(bld):
 	for x in 'shishell.lang symbols.lang default.style lang.map waf.css'.split():
 		bld(features='subst', source=x, target=x, is_copy=True)
 
+
+
+	with open('../../waflib/Context.py', 'r') as f:
+		version = re.compile('WAFVERSION=[\'"]([^\'"]+)', re.M).search(f.read()).group(1)
+	def sfun(tsk, text):
+		return text.replace('{version}', version)
+	for x in bld.path.ant_glob('*.txt'):
+		bld(features='subst', source=x, target=x.change_ext('_.txt'), subst_fun=sfun)
+
 	bld.add_group() # separator, the documents may require any of the pictures from above
 
 	bld(rule='${ADOC} -a icons=true -a stylesheet=${SRC[1].abspath()} -a iconsdir=. -a toc -d book -o ${TGT} ${SRC[0].abspath()}',
-		source='waf.txt waf.css', target='index.html', scan=ascii_doc_scan)
+		source='waf_.txt waf.css', target='index.html', scan=ascii_doc_scan)
 
-	bld(rule='${A2X} -L -a toc --icons-dir=. --icons -D ${gen.path.get_bld().abspath()} \
-                -d book -f pdf --dblatex-opts "-s ${SRC[1].abspath()} -p ${SRC[2].abspath()}" ${SRC[0].bldpath()}',
+	bld(rule='${A2X} -L -a toc --icons-dir=. --icons -d book -f pdf --dblatex-opts "-s ${SRC[1].abspath()} -p ${SRC[2].abspath()} -o ${TGT}" ${SRC[0].bldpath()}',
 		shell=True,
-		source='waf.txt asciidoc-dblatex.sty asciidoc-dblatex.xsl', target='waf.pdf', scan=ascii_doc_scan)
+		source='waf_.txt asciidoc-dblatex.sty asciidoc-dblatex.xsl', target='waf.pdf', scan=ascii_doc_scan)
 
 	#bld(rule='ln -sf single.html index.html', shell=True)
 
