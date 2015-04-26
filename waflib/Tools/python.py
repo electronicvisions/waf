@@ -162,6 +162,7 @@ def init_pyext(self):
 @feature('pyext')
 @before_method('apply_link', 'apply_bundle')
 def set_bundle(self):
+	"""Mac-specific pyext extension that enables bundles from c_osx.py"""
 	if Utils.unversioned_sys_platform() == 'darwin':
 		self.mac_bundle = True
 

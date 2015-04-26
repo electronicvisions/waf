@@ -686,6 +686,9 @@ def read_object(self, obj):
 @feature('cxxprogram', 'cprogram')
 @after_method('apply_link', 'process_use')
 def set_full_paths_hpux(self):
+	"""
+	On hp-ux, extend the libpaths and static library paths to absolute paths
+	"""
 	if self.env.DEST_OS != 'hp-ux':
 		return
 	base = self.bld.bldnode.abspath()

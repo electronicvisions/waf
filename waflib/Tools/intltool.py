@@ -47,6 +47,9 @@ _style_flags = {
 
 @taskgen_method
 def ensure_localedir(self):
+	"""
+	Expand LOCALEDIR from DATAROOTDIR/locale if possible, or fallback to PREFIX/share/locale
+	"""
 	# use the tool gnu_dirs to provide options to define this
 	if not self.env.LOCALEDIR:
 		if self.env.DATAROOTDIR:

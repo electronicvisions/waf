@@ -1050,6 +1050,9 @@ def make_winapp(self, family):
 @after_method('process_use')
 @after_method('propagate_uselib_vars')
 def make_winphone_app(self):
+	"""
+	Insert configuration flags for windows phone applications (adds /ZW, /TP...)
+	"""
 	make_winapp(self, 'WINAPI_FAMILY_PHONE_APP')
 	conf.env.append_unique('LINKFLAGS', '/NODEFAULTLIB:ole32.lib')
 	conf.env.append_unique('LINKFLAGS', 'PhoneAppModelHost.lib')
@@ -1059,4 +1062,7 @@ def make_winphone_app(self):
 @after_method('process_use')
 @after_method('propagate_uselib_vars')
 def make_windows_app(self):
+	"""
+	Insert configuration flags for windows applications (adds /ZW, /TP...)
+	"""
 	make_winapp(self, 'WINAPI_FAMILY_DESKTOP_APP')

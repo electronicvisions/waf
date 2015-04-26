@@ -43,6 +43,9 @@ valac = Task.update_outputs(valac) # no decorators for python2 classes
 
 @taskgen_method
 def init_vala_task(self):
+	"""
+	Initializes the vala task with the relevant data (acts as a constructor)
+	"""
 	self.profile = getattr(self, 'profile', 'gobject')
 
 	if self.profile == 'gobject':

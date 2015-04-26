@@ -19,6 +19,9 @@ ccroot.USELIB_VARS['fcstlib'] = set(['ARFLAGS', 'LINKDEPS'])
 
 @feature('fcprogram', 'fcshlib', 'fcstlib', 'fcprogram_test')
 def dummy(self):
+	"""
+	Unused function that does nothing (TODO: remove in waf 1.9)
+	"""
 	pass
 
 @extension('.f', '.f90', '.F', '.F90', '.for', '.FOR')
