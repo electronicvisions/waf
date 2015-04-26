@@ -568,29 +568,31 @@ waf_config_files = ['/compilation/waf/demos/adv/build/config.h']
 
 ==== Advanced tests
 
-The methods 'conf.check' create a build context and a task generator internally. This means that the attributes 'includes', 'defines', 'cxxflags' may be used (not all shown here). Advanced tests may be created by passing feature arguments:
+The methods 'conf.check' create a build context and a task generator internally. This means that the attributes 'includes', 'defines', 'cxxflags' may be used (not all shown here). Yet some tests can be require several targets at once. In order to faciliate this, a custom build function can be passed directly, for example:
 
-// cprog_cfg_advanced
 [source,python]
 ---------------
-from waflib.TaskGen import feature, before_method
-
-@feature('special_test')
-@before_method('process_source')
-def my_special_test(self):
-	self.bld(rule='touch ${TGT}', target='foo') <1>
-	self.bld(rule='cp ${SRC} ${TGT}', source='foo', target='bar')
-	self.source = [] <2>
-
-def configure(conf):
-	conf.check_cc(features='special_test', msg='my test!') <3>
+def build(bld):
+	lib_node = bld.srcnode.make_node('libdir/iotest.c')
+	lib_node.parent.mkdir()
+	lib_node.write('#include <stdio.h>\nint lib_func(void) { FILE *f = fopen("foo", "r");}\n', 'w')
+	bld(features='c cshlib', source=[lib_node], linkflags=['-g3'], target='mylib')
+conf.check(build_fun=build, msg='Custom test')
 ---------------
 
-<1> Create a task generator from another task generator
-<2> Disable the compilation of +test.c+ by setting no source files
-<3> Use the feature special_test
+As a result, tests can also be written for other programming languages and compilers. Here is for example a custom test for LaTeX packages:
 
-==== Creating configuration headers
+[source,python]
+---------------
+def build_latex_test(bld):
+	def write_tex(tsk):
+		tsk.outputs[0].write(r'''\documentclass[a4paper,12pt]{article}  \usepackage{ucs}  \begin{document} test \end{document} ''')
+	bld(rule=write_tex, target='main.tex')
+	bld(features='tex', type='pdflatex', source='main.tex', prompt=0)
+conf.test(build_fun=build_latex_test, msg='Checking for UCS', okmsg='ok', errmsg='ucs.sty is missing install latex-extras')
+---------------
+
+==== Configuration headers
 
 Adding lots of command-line define values increases the size of the command-line and makes it harder to review the flags when errors occur. Besides that, the defines passed on the command-line may fail unexpectedly with different compilers and command execution contexts. For example, define values containing quotes may be misinterpreted in Visual Studio response files. It is therefore a best practice to use configuration headers whenever possible.
 
@@ -683,7 +685,7 @@ The outputs are written in the build directory into the file 'config.log':
 [source,shishell]
 ------------------
 # project  configured on Tue Aug 31 17:30:21 2010 by
-# waf 1.8.8 (abi 98, python 20605f0 on linux2)
+# waf 1.8.9 (abi 98, python 20605f0 on linux2)
 # using /home/waf/bin/waf configure
 #
 ---
