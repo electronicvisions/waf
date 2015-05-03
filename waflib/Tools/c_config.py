@@ -384,7 +384,7 @@ def check_cfg(self, *k, **kw):
 			conf.check_cfg(path='mpicc', args='--showme:compile --showme:link',
 				package='', uselib_store='OPEN_MPI', mandatory=False)
 			# variables
-			conf.check_cfg(package='gtk+-2.0', variables='includedir', uselib_store='FOO')
+			conf.check_cfg(package='gtk+-2.0', variables=['includedir', 'prefix'], uselib_store='FOO')
 			print(conf.env.FOO_includedir)
 	"""
 	if k:
