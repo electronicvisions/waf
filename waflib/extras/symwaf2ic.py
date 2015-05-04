@@ -105,9 +105,9 @@ class Project(object):
 
     @staticmethod
     def from_project_opt(arg):
-        if '/' in arg:
-            Logs.warn("The project specification 'repo/branch' is deprecated, please use 'repo@branch' instead. I.e. no more slashes!") # \nYou can now even use repo@branch@subdir") Does not work
-            arg=arg.replace('/','@')
+        #if '/' in arg:
+        #    Logs.warn("The project specification 'repo/branch' is deprecated, please use 'repo@branch' instead. I.e. no more slashes!") # \nYou can now even use repo@branch@subdir") Does not work
+        #    arg=arg.replace('/','@')
         def splitprj(arg):
             r = arg.split('@') # prj, branch, dir
             if not r[0]: raise # default opt parse message
