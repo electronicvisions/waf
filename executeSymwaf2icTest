@@ -35,6 +35,18 @@ function test_reset {
         || { echo -e "FAILURE EXPECTED AND GOOD\n\n"; }
     ./waf setup --project halbe --update-branches force --zones symwaf2ic,mr
 }
+function test_marocco {
+    ./waf setup --project marocco --with-ess
+    ./waf configure
+}
+function test_jenkins {
+    ./waf setup --project hicann-system #--zones jenkins
+    cd hicann-system
+    git reset --hard HEAD^^
+    git status
+    cd ..
+    WORKSPACE=$PWD ./waf jenkins getAuthors --zones jenkins,mr
+}
 
 # COMBI TESTS
 function test_super {
