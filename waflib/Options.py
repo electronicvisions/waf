@@ -41,6 +41,11 @@ List of environment variable declarations placed after the Waf executable name.
 These are detected by searching for "=" in the rest arguments.
 """
 
+rargs = ""
+"""
+Arguments after a free standing "--". They can be used as positional arguments to be passed to subcommands.
+"""
+
 lockfile = os.environ.get('WAFLOCK', '.lock-waf_%s_build' % sys.platform)
 platform = Utils.unversioned_sys_platform()
 
@@ -243,9 +248,26 @@ class OptionsContext(Context.Context):
 		:param _args: arguments
 		:type _args: list of strings
 		"""
-		global options, commands, envvars
-		(options, leftover_args) = self.parser.parse_args(args=_args)
+		global options, commands, envvars, rargs
 
+		# KHS: we call parse_args mutliple times, so we must reset (XXX: there should be a better fix)
+		envvars=[]
+		commands=[]
+		rargs=[]
+
+		# The new envvars-feature kills our sometimes used
+		# rargs=Options.commands; Options.commands=[] snip to pass positional
+		# args to subcommands. Now we need "--" to separate command-specific
+		# positional args from waf options/commands/envvars.
+		assert _args == None # KHS other cases not handled jet - probably just replace sys.argv with _args.
+		try:
+			idx = sys.argv.index('--')
+			_args = sys.argv[1:idx]
+			rargs = sys.argv[idx+1:]
+		except:
+			pass
+
+		(options, leftover_args) = self.parser.parse_args(args=_args)
 		for arg in leftover_args:
 			if '=' in arg:
 				envvars.append(arg)
@@ -257,6 +279,12 @@ class OptionsContext(Context.Context):
 
 		if options.verbose >= 1:
 			self.load('errcheck')
+
+		# cannot use --zones/-v here -> it has not been set jet
+		#Logs.info("options: o->" + str(options))
+		#Logs.info("options: c->" + str(commands))
+		#Logs.info("options: e->" + str(envvars))
+		#Logs.info("options: r->" + str(rargs))
 
 		colors = {'yes' : 2, 'auto' : 1, 'no' : 0}[options.colors]
 		Logs.enable_colors(colors)
