@@ -396,8 +396,9 @@ class OptionParserContext(Symwaf2icContext):
         return self.unused_args
 
     def _add_waf_options(self):
+        Logs.debug("symwaf2ic_options: add waf options")
         ctx = Options.OptionsContext()
-        opt = Options.opt_parser(ctx)
+        opt = ctx.parser
 
         def copy_option(argparser, opt):
             args = dict((a, getattr(opt, a)) for a in opt.ATTRS if getattr(opt, a))
@@ -409,9 +410,11 @@ class OptionParserContext(Symwaf2icContext):
             argparser.add_argument(*opt_names, **args)
 
         for option in opt.option_list:
+            Logs.debug("symwaf2ic_options: waf opt: " + str(option))
             copy_option(self.parser, option)
 
         for group in opt.option_groups:
+            Logs.debug("symwaf2ic_options: waf grp: " + str(group.title))
             arg_group = self.parser.add_argument_group(
                 group.title, group.description)
             for option in group.option_list:
