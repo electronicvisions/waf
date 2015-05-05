@@ -598,13 +598,11 @@ class MRContext(Configure.ConfigurationContext):
 class mr_run(MRContext):
     '''runs rargs in all repositories (./waf mr-run <your commands>)'''
     cmd = 'mr-run'
-    mr_cmd = 'run'      # + Options.commands
+    mr_cmd = 'run'      # + Options.rargs
 
     def get_args(self):
-        #if not Options.commands:
-        #    self.fatal("expecting further commands for mr run: ./waf mr-run -- <your commands>")
-        ret = [ 'run' ] + Options.commands
-        Options.commands = []
+        ret = [ 'run' ] + Options.rargs
+        Options.rargs=[]
         self.mr_cmd = ' '.join(ret)
         return ret
 
@@ -612,7 +610,7 @@ class mr_xrun(MRContext):
     '''create shell script from rargs and run this in every repository (./waf mr-xrun "line1" "line2" ...)'''
     cmd = 'mr-xrun'
     mr_cmd = 'run'      # run <path_to_mrcmd_node>
-    mr_cmds = []        # ie. read from Options.commands, override this in subclasses
+    mr_cmds = []        # ie. read from Options.rargs, override this in subclasses
 
     def __init__(self, **kw):
         super(mr_xrun, self).__init__(**kw)
@@ -624,8 +622,9 @@ class mr_xrun(MRContext):
 
     def getMrCmdFile(self):
         if not self.mr_cmds:
-            self.mr_cmds = Options.commands[:]
-            Options.commands = []
+            Logs.debug('mr: get commands' + str(Options.rargs))
+            self.mr_cmds = Options.rargs
+            Options.rargs=[]
 
         # name of the command file (with hash of the commands to specify)
         fn = self.cmd + '.' + Utils.to_hex(Utils.h_list(self.mr_cmds))
@@ -660,9 +659,9 @@ class mr_origin_log(mr_xrun):
     ]
 
     def get_args(self):
-        if Options.commands:
-            logformat = ' '.join(Options.commands)
-            Options.commands=[]
+        if Options.rargs:
+            logformat = ' '.join(Options.rargs)
+            Options.rargs=[]
         else:
             logformat = "-n1 --pretty=oneline"
 
@@ -683,9 +682,9 @@ class mr_tag(mr_xrun):
     ]
 
     def get_args(self):
-        if Options.commands:
-            tag = Options.commands[0]
-            Options.commands=[]
+        if Options.rargs:
+            tag = Options.rargs[0]
+            Options.rargs=[]
         else:
             self.fatal("You must specify a tag; it will be prefixed with 'symwaf2ic-'")
 
