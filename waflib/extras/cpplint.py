@@ -49,9 +49,12 @@ import logging
 import threading
 from waflib import Task, Build, TaskGen, Logs, Utils
 try:
-    from cpplint import ProcessFile, _cpplint_state
+    from cpplint.cpplint import ProcessFile, _cpplint_state
 except ImportError:
-    pass
+    try:
+        from cpplint import ProcessFile, _cpplint_state
+    except ImportError:
+        pass
 
 
 critical_errors = 0
