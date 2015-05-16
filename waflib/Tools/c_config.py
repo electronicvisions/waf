@@ -933,24 +933,24 @@ def cc_add_flags(conf):
 	"""
 	Add CFLAGS / CPPFLAGS from os.environ to conf.env
 	"""
-	conf.add_os_flags('CPPFLAGS', 'CFLAGS')
-	conf.add_os_flags('CFLAGS')
+	conf.add_os_flags('CPPFLAGS', dup=False)
+	conf.add_os_flags('CFLAGS', dup=False)
 
 @conf
 def cxx_add_flags(conf):
 	"""
 	Add CXXFLAGS / CPPFLAGS from os.environ to conf.env
 	"""
-	conf.add_os_flags('CPPFLAGS', 'CXXFLAGS')
-	conf.add_os_flags('CXXFLAGS')
+	conf.add_os_flags('CPPFLAGS', dup=False)
+	conf.add_os_flags('CXXFLAGS', dup=False)
 
 @conf
 def link_add_flags(conf):
 	"""
 	Add LINKFLAGS / LDFLAGS from os.environ to conf.env
 	"""
-	conf.add_os_flags('LINKFLAGS')
-	conf.add_os_flags('LDFLAGS')
+	conf.add_os_flags('LINKFLAGS', dup=False)
+	conf.add_os_flags('LDFLAGS', dup=False)
 
 @conf
 def cc_load_tools(conf):

@@ -352,7 +352,7 @@ def conf(f):
 	return f
 
 @conf
-def add_os_flags(self, var, dest=None):
+def add_os_flags(self, var, dest=None, dup=True):
 	"""
 	Import operating system environment values into ``conf.env`` dict::
 
@@ -363,10 +363,16 @@ def add_os_flags(self, var, dest=None):
 	:type var: string
 	:param dest: destination variable, by default the same as var
 	:type dest: string
+	:param dup: add the same set of flags again
+	:type dup: bool
 	"""
-	# do not use 'get' to make certain the variable is not defined
-	try: self.env.append_value(dest or var, shlex.split(self.environ[var]))
-	except KeyError: pass
+	try:
+		flags = shlex.split(self.environ[var])
+	except KeyError:
+		return
+	# TODO: in waf 1.9, make dup=False the default
+	if dup or ''.join(flags) not in ''.join(Utils.to_list(self.env[dest or var])):
+		self.env.append_value(dest or var, flags)
 
 @conf
 def cmd_to_list(self, cmd):

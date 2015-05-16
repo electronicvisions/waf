@@ -4,6 +4,8 @@ NEW IN WAF 1.8.10
 * Fixed the hcode in why.py - https://github.com/waf-project/waf/issues/1561
 * Enabled execution from any folder: "waf configure --top=/arbitrary/folder --out=/tmp/build"
 * Enabled stateless out-of-tree builds by default: "waf configure --no-lock-in-top --no-lock-in-run"
+* Fixed the waf file generation on windows in Waf 1.8.9
+* Add OS flags such as LDFLAGS only once - https://github.com/waf-project/waf/issues/1574
 
 NEW IN WAF 1.8.9
 ----------------
