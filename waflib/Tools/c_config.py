@@ -1167,6 +1167,7 @@ def multicheck(self, *k, **kw):
 			self.keep = False
 			self.returned_tasks = []
 			self.task_sigs = {}
+			self.progress_bar = 0
 		def total(self):
 			return len(tasks)
 		def to_log(self, *k, **kw):
@@ -1197,10 +1198,17 @@ def multicheck(self, *k, **kw):
 	for x in tasks:
 		x.logger.memhandler.flush()
 
+	if p.error:
+		for x in p.error:
+			if getattr(x, 'err_msg', None):
+				self.to_log(x.err_msg)
+				self.end_msg('fail', color='RED')
+				raise Errors.WafError('There is an error in the library, read config.log for more information')
+
 	for x in tasks:
 		if x.hasrun != Task.SUCCESS:
 			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW', **kw)
-			self.fatal(kw.get('fatalmsg', None) or 'One of the tests has failed, see the config.log for more information')
+			self.fatal(kw.get('fatalmsg', None) or 'One of the tests has failed, read config.log for more information')
 
 	self.end_msg('ok', **kw)
 
