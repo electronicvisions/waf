@@ -6,6 +6,7 @@ NEW IN WAF 1.8.10
 * Enabled stateless out-of-tree builds by default: "waf configure --no-lock-in-top --no-lock-in-run"
 * Fixed the waf file generation on windows in Waf 1.8.9
 * Add OS flags such as LDFLAGS only once - https://github.com/waf-project/waf/issues/1574
+* Fixed conf.multicheck error handling
 
 NEW IN WAF 1.8.9
 ----------------
