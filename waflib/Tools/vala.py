@@ -59,17 +59,17 @@ def init_vala_task(self):
 	if self.profile:
 		addflags('--profile=%s' % self.profile)
 
-	if hasattr(self, 'threading'):
+	if hasattr(self, 'thread'):
 		if self.profile == 'gobject':
 			if not 'GTHREAD' in self.uselib:
 				self.uselib.append('GTHREAD')
 		else:
 			#Vala doesn't have threading support for dova nor posix
 			Logs.warn("Profile %s means no threading support" % self.profile)
-			self.threading = False
+			self.thread = False
 
-		if self.threading:
-			addflags('--threading')
+		if self.thread:
+			addflags('--thread')
 
 	valatask = self.valatask
 
@@ -223,7 +223,7 @@ def vala_file(self, node):
 				#install_binding = False
 
 				# profile     = 'xyz' # adds --profile=<xyz> to enable profiling
-				# threading   = True, # add --threading, except if profile is on or not on 'gobject'
+				# thread      = True, # adds --thread, except if profile is on or not on 'gobject'
 				# vala_target_glib = 'xyz' # adds --target-glib=<xyz>, can be given through the command-line option --vala-target-glib=<xyz>
 			)
 
