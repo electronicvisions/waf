@@ -51,8 +51,6 @@ class protoc(Task):
 
 		if not node: return (nodes, names)
 
-		search_paths = [self.generator.path.find_node(x) for x in self.generator.includes]
-
 		def parse_node(node):
 			if node in seen:
 				return
@@ -62,7 +60,7 @@ class protoc(Task):
 				m = re.search(r'^import\s+"(.*)";.*(//)?.*', line)
 				if m:
 					dep = m.groups()[0]
-					for incpath in search_paths:
+					for incpath in self.env.INCPATHS:
 						found = incpath.find_resource(dep)
 						if found:
 							nodes.append(found)
