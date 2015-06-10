@@ -252,7 +252,7 @@ class ConfigurationContext(Context.Context):
 			# avoid loading the same tool more than once with the same functions
 			# used by composite projects
 
-			mag = (tool, id(self.env), funs)
+			mag = (tool, id(self.env), tooldir, funs)
 			if mag in self.tool_cache:
 				self.to_log('(tool %s is already loaded, skipping)' % tool)
 				continue
