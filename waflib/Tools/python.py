@@ -79,7 +79,6 @@ def process_py(self, node):
 	"""
 	Add signature of .py file, so it will be byte-compiled when necessary
 	"""
-	assert(node.get_bld_sig())
 	assert(getattr(self, 'install_path')), 'add features="py"'
 
 	# where to install the python file
