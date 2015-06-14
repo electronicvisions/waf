@@ -24,7 +24,7 @@ app_info = '''
 	<key>NOTE</key>
 	<string>THIS IS A GENERATED FILE, DO NOT MODIFY</string>
 	<key>CFBundleExecutable</key>
-	<string>%s</string>
+	<string>{app_name}</string>
 </dict>
 </plist>
 '''
@@ -127,6 +127,14 @@ def create_task_macplist(self):
 		dir = self.create_bundle_dirs(name, out)
 		n1 = dir.find_or_declare(['Contents', 'Info.plist'])
 		self.plisttask = plisttask = self.create_task('macplist', [], n1)
+		plisttask.context = {
+			'app_name': self.link_task.outputs[0].name,
+			'env': self.env
+		}
+
+		plist_ctx = getattr(self, 'plist_context', None)
+		if (plist_ctx):
+			plisttask.context.update(plist_ctx)
 
 		if getattr(self, 'mac_plist', False):
 			node = self.path.find_resource(self.mac_plist)
@@ -135,7 +143,7 @@ def create_task_macplist(self):
 			else:
 				plisttask.code = self.mac_plist
 		else:
-			plisttask.code = app_info % self.link_task.outputs[0].name
+			plisttask.code = app_info
 
 		inst_to = getattr(self, 'install_path', '/Applications') + '/%s/Contents/' % name
 		self.bld.install_files(inst_to, n1)
@@ -184,5 +192,6 @@ class macplist(Task.Task):
 			txt = self.code
 		else:
 			txt = self.inputs[0].read()
+		context = getattr(self, 'context', {})
+		txt = txt.format(**context)
 		self.outputs[0].write(txt)
-
