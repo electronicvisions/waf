@@ -1,3 +1,10 @@
+NEW IN WAF 1.8.11
+-----------------
+* Fortran fixes https://github.com/waf-project/waf/issues/1580
+* Enabled installation of generated .py files
+* Fixed the '--threading' option for valac https://github.com/waf-project/waf/issues/1577
+* Shared library compatibility version handling on OSX
+
 NEW IN WAF 1.8.10
 -----------------
 * Replace cygwin paths in solution files - https://github.com/waf-project/waf/issues/1562
