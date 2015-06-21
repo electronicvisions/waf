@@ -11,6 +11,6 @@ Waf is a Python-based framework for configuring, compiling and installing applic
 
 Waf is used in particular by innovative companies such as [Avalanche Studios](http://www.avalanchestudios.se) and by open-source projects such as [the Samba project](https://www.samba.org/). Learn more about Waf by reading [The Waf Book](https://waf.io/book/).
 
-For researchers and build system writers, Waf also provides a framework for creating [custom build systems](http://code.google.com/p/waf/source/browse/build_system_kit/) and [package distribution systems](http://code.google.com/p/waf/source/browse/playground/distnet/README.rst).
+For researchers and build system writers, Waf also provides a framework for creating [custom build systems](https://github.com/waf-project/waf/tree/master/build_system_kit) and [package distribution systems](https://github.com/waf-project/waf/tree/master/playground/distnet/README.rst).
 
 Download the project from our page on [waf.io](https://waf.io/) or from the mirror on [freehackers.org](http://www.freehackers.org/~tnagy/release/).

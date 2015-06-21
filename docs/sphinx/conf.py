@@ -348,7 +348,7 @@ copyright = u'2005-2015, Thomas Nagy'
 # built documents.
 #
 # The short X.Y version.
-#version = '1.8.9'
+#version = '1.8.10'
 # The full version, including alpha/beta/rc tags.
 #release = version
 #
