@@ -21,7 +21,8 @@ from waflib import Logs, Errors
 PYTHONS = "2.5 2.6 2.7 3.0 3.1 3.2 3.3 3.4".split()
 
 DIRS = ['c', 'python']
-#DIRS = [x for x in os.listdir('.') if os.path.isdir(x) and x not in ('variants', 'build', 'mac_app', 'precious')]
+if os.environ.get('BUILDFARM', None):
+	DIRS = [x for x in os.listdir('.') if os.path.isdir(x) and x not in ('variants', 'build', 'mac_app', 'precious')]
 
 def options(opt):
 	for d in opt.path.ant_glob(DIRS, excl=['build', 'variants'], src=False, dir=True):
