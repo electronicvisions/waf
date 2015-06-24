@@ -71,7 +71,7 @@ def waf_entry_point(current_directory, version, wafdir):
 	# try to find a lock file (if the project was configured)
 	# at the same time, store the first wscript file seen
 	cur = current_directory
-	while cur and not Context.run_dir:
+	while cur and not Context.top_dir:
 		lst = os.listdir(cur)
 		if Options.lockfile in lst:
 			env = ConfigSet.ConfigSet()
