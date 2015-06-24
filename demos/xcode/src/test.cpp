@@ -1,6 +1,9 @@
 #include <iostream>
+#include "MyLib/TestClass.h"
+
 int main(int argc, char const *argv[])
 {
-	std::cout << "Hello World!";
+	TestClass a;
+	std::cout << a.message();
 	return 0;
 }

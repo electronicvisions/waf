@@ -235,7 +235,20 @@ class PBXShellScriptBuildPhase(XCodeNode):
 class PBXNativeTarget(XCodeNode):
 	def __init__(self, action, target, node, buildphases, env, product_type=PRODUCT_TYPE_APPLICATION):
 		XCodeNode.__init__(self)
-		conf = XCBuildConfiguration('Debug', {'PRODUCT_NAME':target, 'CONFIGURATION_BUILD_DIR':node.parent.abspath()}, env)
+
+		buildsettings = env.get_merged_dict()
+		print env
+		buildsettings.update({
+			'FRAMEWORK_VERSION': env.VERSION,
+			'PRODUCT_NAME':target,
+			'CONFIGURATION_BUILD_DIR':node.parent.abspath(),
+			'HEADER_SEARCH_PATHS': ' '.join(env.HEADER_SEARCH_PATHS)
+		})
+
+		# if not isinstance(buildsettings['HEADER_SEARCH_PATHS'], str):
+		# 	buildsettings['HEADER_SEARCH_PATHS'] = ' '.join(buildsettings['HEADER_SEARCH_PATHS'])
+
+		conf = XCBuildConfiguration(env.CONFIG_NAME, buildsettings, env)
 		self.buildConfigurationList = XCConfigurationList([conf])
 		self.buildPhases = buildphases #[PBXShellScriptBuildPhase(action, target)]
 		self.buildRules = []
@@ -299,6 +312,8 @@ class xcode(Build.BuildContext):
 				lst = [y for y in d.ant_glob(HEADERS_GLOB, flat=False)]
 				include_files.extend(lst)
 
+		tg.env.append_value('HEADER_SEARCH_PATHS', [node.parent.abspath() for node in include_files])
+
 		# remove duplicates
 		source = list(set(source_files + plist_files + resource_files + include_files))
 		source.sort(key=lambda x: x.abspath())
@@ -336,7 +351,6 @@ class xcode(Build.BuildContext):
 				# if not getattr(tg, 'mac_app', False):
 				# 	self.targets.append(PBXLegacyTarget('build', tg.name))
 				if getattr(tg, 'framework', False):
-					print "Building framework"
 					node = tg.path.find_or_declare(tg.name+'.framework')
 					buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
 					compilesources = PBXSourcesBuildPhase(buildfiles)
