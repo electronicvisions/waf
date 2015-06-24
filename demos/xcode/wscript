@@ -1,0 +1,13 @@
+from waflib import Task, TaskGen
+
+top = '.'
+out = 'build'
+
+def configure(opt):
+	opt.load('cxx')
+	opt.load('xcode')
+
+def build(bld):
+	bld.load('xcode')
+	bld(source=bld.path.ant_glob('**/*.cpp'), target='Avocada', mac_app=True)
+	bld(source=bld.path.ant_glob('**/*.cpp'), target='AvocadaFramework', framework=True)
