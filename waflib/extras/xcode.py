@@ -126,6 +126,11 @@ class XCodeNode:
 				w("\t\t%s = %s;\n" % (attribute, self.tostring(value)))
 		w("\t};\n\n")
 
+class XCID(XCodeNode):
+	def __init__(self, id):
+	    self._id = id
+	def write(self, file):
+		pass
 
 
 # Configurations
@@ -159,20 +164,13 @@ class PBXFileReference(XCodeNode):
 		self.path = path
 		self.sourceTree = sourcetree
 
-	# i = 0
-	# def write(self, f):
-	# 	if self.name == 'MyLib' and self.i == 1:
-	# 		pass
-	# 	print "HEJ %s" % self.name
-	# 	self.i += 1
-
 class PBXBuildFile(XCodeNode):
 	""" This element indicate a file reference that is used in a PBXBuildPhase (either as an include or resource). """
 	def __init__(self, fileRef, settings={}):
 		XCodeNode.__init__(self)
 		
 		# fileRef is a reference to a PBXFileReference object
-		self.fileRef = fileRef._id
+		self.fileRef = XCID(fileRef._id)
 
 		# A map of key/value pairs for additionnal settings.
 		self.settings = settings
@@ -308,7 +306,7 @@ class PBXProject(XCodeNode):
 
 	def add_task_gen(self, target):
 		self.targets.append(target)
-		self._output.children.append(target.productReference._id)
+		# self._output.children.append(target.productReference._id)
 
 class xcode(Build.BuildContext):
 	cmd = 'xcode'
@@ -374,8 +372,8 @@ class xcode(Build.BuildContext):
 					compilesources = PBXSourcesBuildPhase(buildfiles)
 					framework = PBXFrameworksBuildPhase(buildfiles)
 					target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env, tg.target_type)
-					# p.mainGroup.children.append(PBXBuildFile(target.productReference))
 					p.add_task_gen(target)
+					# p.mainGroup.children.append(PBXBuildFile(target.productReference))
 				# else:
 				# 	node = tg.path.find_or_declare(tg.name+file_ext)
 				# 	buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
@@ -386,7 +384,6 @@ class xcode(Build.BuildContext):
 		node = self.bldnode.make_node('%s.xcodeproj' % appname)
 		node.mkdir()
 		node = node.make_node('project.pbxproj')
-		print "POP"
 		p.write(open(node.abspath(), 'w'))
 
 
