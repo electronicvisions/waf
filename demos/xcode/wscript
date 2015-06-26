@@ -1,5 +1,5 @@
 from waflib import Task, TaskGen
-
+from waflib.extras import xcode
 top = '.'
 out = 'build'
 APPNAME = 'Avocada'
@@ -18,6 +18,11 @@ def build(bld):
 	bld.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
 	bld.env.SDKROOT = 'macosx10.9'
 
-	bld(source=bld.path.ant_glob('src/MyLib/*.cpp'), includes=bld.path.ant_glob('include/**/*.h', 'include/'), target='MyLib', framework=True)
-
-	bld(source=bld.path.ant_glob('**/*.cpp|'), target='MyApp', mac_app=True)
+	tg = bld(source=bld.path.ant_glob('src/MyLib/*.cpp'),
+		includes=bld.path.ant_glob('include/**/*.h', 'include/'),
+		target='MyLib',
+		target_type=xcode.TARGET_TYPE_FRAMEWORK
+	)
+	# print tg.get_outputs()
+	# bld(source=bld.path.ant_glob('**/*.cpp|'), includes='include', target='MyApp', target_type=xcode.TARGET_TYPE_APPLICATION, link_framework=['MyLib'])
+	# print bld.targets

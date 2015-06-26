@@ -52,6 +52,7 @@ MAP_EXT = {
 	".xib":   "text.xib",
 }
 
+# Used in PBXNativeTarget elements
 PRODUCT_TYPE_APPLICATION = 'com.apple.product-type.application'
 PRODUCT_TYPE_FRAMEWORK = 'com.apple.product-type.framework'
 PRODUCT_TYPE_TOOL = 'com.apple.product-type.tool'
@@ -59,6 +60,15 @@ PRODUCT_TYPE_LIB_STATIC = 'com.apple.product-type.library.static'
 PRODUCT_TYPE_LIB_DYNAMIC = 'com.apple.product-type.library.dynamic'
 PRODUCT_TYPE_EXTENSION = 'com.apple.product-type.kernel-extension'
 PRODUCT_TYPE_IOKIT = 'com.apple.product-type.kernel-extension.iokit'
+
+# Used in PBXFileReference elements
+FILE_TYPE_APPLICATION = 'wrapper.cfbundle'
+FILE_TYPE_FRAMEWORK = 'wrapper.framework'
+
+TARGET_TYPE_FRAMEWORK = (PRODUCT_TYPE_FRAMEWORK, FILE_TYPE_FRAMEWORK, '.framework')
+TARGET_TYPE_APPLICATION = (PRODUCT_TYPE_APPLICATION, FILE_TYPE_APPLICATION, '.app')
+
+import sys, traceback
 
 part1 = 0
 part2 = 10000
@@ -149,13 +159,20 @@ class PBXFileReference(XCodeNode):
 		self.path = path
 		self.sourceTree = sourcetree
 
+	# i = 0
+	# def write(self, f):
+	# 	if self.name == 'MyLib' and self.i == 1:
+	# 		pass
+	# 	print "HEJ %s" % self.name
+	# 	self.i += 1
+
 class PBXBuildFile(XCodeNode):
 	""" This element indicate a file reference that is used in a PBXBuildPhase (either as an include or resource). """
 	def __init__(self, fileRef, settings={}):
 		XCodeNode.__init__(self)
 		
 		# fileRef is a reference to a PBXFileReference object
-		self.fileRef = fileRef
+		self.fileRef = fileRef._id
 
 		# A map of key/value pairs for additionnal settings.
 		self.settings = settings
@@ -183,6 +200,7 @@ class PBXGroup(XCodeNode):
 				return f
 		for s in sources:
 			# f = folder(s.parent)
+
 			source = PBXFileReference(s.name, s.abspath())
 			self.children.append(source)
 			# f.children.append(source)
@@ -233,11 +251,10 @@ class PBXShellScriptBuildPhase(XCodeNode):
 		self.shellScript = "%s %s %s --targets=%s" % (sys.executable, sys.argv[0], action, target)
 
 class PBXNativeTarget(XCodeNode):
-	def __init__(self, action, target, node, buildphases, env, product_type=PRODUCT_TYPE_APPLICATION):
+	def __init__(self, action, target, node, buildphases, env, target_type=TARGET_TYPE_APPLICATION):
 		XCodeNode.__init__(self)
 
 		buildsettings = env.get_merged_dict()
-		print env
 		buildsettings.update({
 			'FRAMEWORK_VERSION': env.VERSION,
 			'PRODUCT_NAME':target,
@@ -245,8 +262,8 @@ class PBXNativeTarget(XCodeNode):
 			'HEADER_SEARCH_PATHS': ' '.join(env.HEADER_SEARCH_PATHS)
 		})
 
-		# if not isinstance(buildsettings['HEADER_SEARCH_PATHS'], str):
-		# 	buildsettings['HEADER_SEARCH_PATHS'] = ' '.join(buildsettings['HEADER_SEARCH_PATHS'])
+		product_type = target_type[0]
+		file_type = target_type[1]
 
 		conf = XCBuildConfiguration(env.CONFIG_NAME, buildsettings, env)
 		self.buildConfigurationList = XCConfigurationList([conf])
@@ -255,8 +272,8 @@ class PBXNativeTarget(XCodeNode):
 		self.dependencies = []
 		self.name = target
 		self.productName = target
-		self.productType = product_type
-		self.productReference = PBXFileReference(target, node.abspath(), 'wrapper.application', 'CONFIGURATION_BUILD_DIR')
+		self.productType = product_type # See TARGET_TYPE_ tuples constants
+		self.productReference = PBXFileReference(target, node.abspath(), file_type, 'CONFIGURATION_BUILD_DIR')
 
 # Root project object
 class PBXProject(XCodeNode):
@@ -291,7 +308,7 @@ class PBXProject(XCodeNode):
 
 	def add_task_gen(self, target):
 		self.targets.append(target)
-		self._output.children.append(target.productReference)
+		self._output.children.append(target.productReference._id)
 
 class xcode(Build.BuildContext):
 	cmd = 'xcode'
@@ -350,23 +367,26 @@ class xcode(Build.BuildContext):
 
 				# if not getattr(tg, 'mac_app', False):
 				# 	self.targets.append(PBXLegacyTarget('build', tg.name))
-				if getattr(tg, 'framework', False):
-					node = tg.path.find_or_declare(tg.name+'.framework')
+				if hasattr(tg, 'target_type'):
+					file_ext = tg.target_type[2]
+					node = tg.path.find_or_declare(tg.name+file_ext)
 					buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
 					compilesources = PBXSourcesBuildPhase(buildfiles)
 					framework = PBXFrameworksBuildPhase(buildfiles)
-					target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env, PRODUCT_TYPE_FRAMEWORK)
+					target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env, tg.target_type)
+					# p.mainGroup.children.append(PBXBuildFile(target.productReference))
 					p.add_task_gen(target)
-				else:
-					node = tg.path.find_or_declare(tg.name+'.app')
-					buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
-					compilesources = PBXSourcesBuildPhase(buildfiles)
-					target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env)
-					p.add_task_gen(target)
+				# else:
+				# 	node = tg.path.find_or_declare(tg.name+file_ext)
+				# 	buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
+				# 	compilesources = PBXSourcesBuildPhase(buildfiles)
+				# 	target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env)
+				# 	p.add_task_gen(target)
 
 		node = self.bldnode.make_node('%s.xcodeproj' % appname)
 		node.mkdir()
 		node = node.make_node('project.pbxproj')
+		print "POP"
 		p.write(open(node.abspath(), 'w'))
 
 
