@@ -71,7 +71,7 @@ def create_task_macapp(self):
 	To compile an executable into a Mac application (a .app), set its *mac_app* attribute::
 
 		def build(bld):
-			bld.shlib(source='a.c', target='foo', mac_app = True)
+			bld.shlib(source='a.c', target='foo', mac_app=True)
 
 	To force *all* executables to be transformed into Mac applications::
 
@@ -91,7 +91,22 @@ def create_task_macapp(self):
 		inst_to = getattr(self, 'install_path', '/Applications') + '/%s/Contents/MacOS/' % name
 		self.bld.install_files(inst_to, n1, chmod=Utils.O755)
 
+		if getattr(self, 'mac_files', None):
+			# this only accepts files; they will be installed as seen from mac_files_root
+			mac_files_root = getattr(self, 'mac_files_root', None)
+			if isinstance(mac_files_root, str):
+				mac_files_root = self.path.find_node(mac_files_root)
+				if not mac_files_root:
+					self.bld.fatal('Invalid mac_files_root %r' % self.mac_files_root)
+			res_dir = n1.parent.parent.make_node('Resources')
+			inst_to = getattr(self, 'install_path', '/Applications') + '/%s/Resources' % name
+			for node in self.to_nodes(self.mac_files):
+				relpath = node.path_from(mac_files_root or node.parent)
+				tsk = self.create_task('macapp', node, res_dir.make_node(relpath))
+				self.bld.install_as(os.path.join(inst_to, relpath), node)
+
 		if getattr(self, 'mac_resources', None):
+			# TODO remove in waf 1.9
 			res_dir = n1.parent.parent.make_node('Resources')
 			inst_to = getattr(self, 'install_path', '/Applications') + '/%s/Resources' % name
 			for x in self.to_list(self.mac_resources):

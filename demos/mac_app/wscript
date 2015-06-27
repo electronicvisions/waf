@@ -25,14 +25,15 @@ def configure(conf):
 
 def build(bld):
 	bld.program(
-		features      = 'c cprogram',
-		target        = 'MacApp',
-		source        = 'sources/main.m',
-		mac_app       = True,
-		mac_plist     = 'Info.plist',
-		mac_resources = 'resources/MainMenu.nib resources/MacApp.icns',
-		use           = 'COCOA',
-		install_path  = '${PREFIX}',
+		features       = 'c cprogram',
+		target         = 'MacApp',
+		source         = 'sources/main.m',
+		mac_app        = True,
+		mac_plist      = 'Info.plist',
+		mac_files      = bld.path.ant_glob('resources/**'),
+		mac_files_root = 'resources',
+		use            = 'COCOA',
+		install_path   = '${PREFIX}',
 	)
 
 	return
