@@ -325,7 +325,7 @@ class Context(ctx):
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r' % cmd)
+		Logs.debug('runner: %r' % (cmd,))
 		Logs.debug('runner_env: kw=%s' % kw)
 
 		if self.logger:
@@ -386,7 +386,7 @@ class Context(ctx):
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r' % cmd)
+		Logs.debug('runner: %r' % (cmd,))
 
 		if 'quiet' in kw:
 			quiet = kw['quiet']
