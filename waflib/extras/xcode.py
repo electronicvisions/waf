@@ -68,8 +68,6 @@ FILE_TYPE_FRAMEWORK = 'wrapper.framework'
 TARGET_TYPE_FRAMEWORK = (PRODUCT_TYPE_FRAMEWORK, FILE_TYPE_FRAMEWORK, '.framework')
 TARGET_TYPE_APPLICATION = (PRODUCT_TYPE_APPLICATION, FILE_TYPE_APPLICATION, '.app')
 
-import sys, traceback
-
 part1 = 0
 part2 = 10000
 part3 = 0
@@ -114,9 +112,9 @@ class XCodeNode:
 			value.write(file)
 
 	def write(self, file):
-		for attribute,value in self.__dict__.items():
-			if attribute[0] != '_':
-				self.write_recursive(value, file)
+		# for attribute,value in self.__dict__.items():
+		# 	if attribute[0] != '_':
+		# 		self.write_recursive(value, file)
 
 		w = file.write
 		w("\t%s = {\n" % self._id)
@@ -196,6 +194,8 @@ class PBXGroup(XCodeNode):
 				folders[n] = f
 				p.children.append(f)
 				return f
+		self.children.extend(sources)
+		return
 		for s in sources:
 			# f = folder(s.parent)
 
@@ -277,7 +277,8 @@ class PBXNativeTarget(XCodeNode):
 class PBXProject(XCodeNode):
 	def __init__(self, name, version):
 		XCodeNode.__init__(self)
-		self.buildConfigurationList = XCConfigurationList([XCBuildConfiguration('waf', {})])
+		build_config = XCBuildConfiguration('waf', {})
+		self.buildConfigurationList = XCConfigurationList([build_config])
 		self.compatibilityVersion = version[0]
 		self.hasScannedForEncodings = 1;
 		self.mainGroup = PBXGroup(name)
@@ -286,7 +287,15 @@ class PBXProject(XCodeNode):
 		self.targets = []
 		self._objectVersion = version[1]
 		self._output = PBXGroup('Products')
+		self._XCNodes_to_write = [self.mainGroup, self._output, build_config, self.buildConfigurationList]
 		self.mainGroup.children.append(self._output)
+
+	def write_xnode(self, node):
+		if isinstance(node, list):
+			for node_ in node:
+				self._XCNodes_to_write.append(node_)
+		else:
+			self._XCNodes_to_write.append(node)
 
 	def write(self, file):
 		w = file.write
@@ -298,6 +307,9 @@ class PBXProject(XCodeNode):
 		w("\tobjectVersion = %d;\n" % self._objectVersion)
 		w("\tobjects = {\n\n")
 
+		for n in self._XCNodes_to_write:
+			n.write(file)
+
 		XCodeNode.write(self, file)
 
 		w("\t};\n")
@@ -306,6 +318,7 @@ class PBXProject(XCodeNode):
 
 	def add_task_gen(self, target):
 		self.targets.append(target)
+		self.write_xnode(target)
 		# self._output.children.append(target.productReference._id)
 
 class xcode(Build.BuildContext):
@@ -355,10 +368,12 @@ class xcode(Build.BuildContext):
 
 				#features = Utils.to_list(getattr(tg, 'features', ''))
 
-
+				sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
 				group = PBXGroup(tg.name)
-				group.add(tg.path, self.collect_source(tg))
+				group.add(tg.path, sources)
 				p.mainGroup.children.append(group)
+				p.write_xnode(group)
+				p.write_xnode(sources)
 
 			#	if ('cprogram' in features) or ('cxxprogram' in features):
 			#	p.add_task_gen(tg)
@@ -370,6 +385,8 @@ class xcode(Build.BuildContext):
 					node = tg.path.find_or_declare(tg.name+file_ext)
 					buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
 					compilesources = PBXSourcesBuildPhase(buildfiles)
+					p.write_xnode(buildfiles)
+					p.write_xnode(compilesources)
 					framework = PBXFrameworksBuildPhase(buildfiles)
 					target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env, tg.target_type)
 					p.add_task_gen(target)
