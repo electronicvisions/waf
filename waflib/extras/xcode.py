@@ -16,7 +16,7 @@ $ waf configure xcode
 
 # TODO: support iOS projects
 
-from waflib import Context, TaskGen, Build, Utils
+from waflib import Context, TaskGen, Build, Utils, ConfigSet
 import os, sys, random, time
 
 HEADERS_GLOB = '**/(*.h|*.hpp|*.H|*.inl)'
@@ -80,6 +80,7 @@ def newid():
 class XCodeNode:
 	def __init__(self):
 		self._id = newid()
+		self._been_written = False
 
 	def tostring(self, value):
 		if isinstance(value, dict):
@@ -112,17 +113,18 @@ class XCodeNode:
 			value.write(file)
 
 	def write(self, file):
-		# for attribute,value in self.__dict__.items():
-		# 	if attribute[0] != '_':
-		# 		self.write_recursive(value, file)
-
-		w = file.write
-		w("\t%s = {\n" % self._id)
-		w("\t\tisa = %s;\n" % self.__class__.__name__)
 		for attribute,value in self.__dict__.items():
 			if attribute[0] != '_':
-				w("\t\t%s = %s;\n" % (attribute, self.tostring(value)))
-		w("\t};\n\n")
+				self.write_recursive(value, file)
+		if not self._been_written:
+			w = file.write
+			w("\t%s = {\n" % self._id)
+			w("\t\tisa = %s;\n" % self.__class__.__name__)
+			for attribute,value in self.__dict__.items():
+				if attribute[0] != '_':
+					w("\t\t%s = %s;\n" % (attribute, self.tostring(value)))
+			w("\t};\n\n")
+			self._been_written = True
 
 class XCID(XCodeNode):
 	def __init__(self, id):
@@ -168,7 +170,7 @@ class PBXBuildFile(XCodeNode):
 		XCodeNode.__init__(self)
 		
 		# fileRef is a reference to a PBXFileReference object
-		self.fileRef = XCID(fileRef._id)
+		self.fileRef = fileRef
 
 		# A map of key/value pairs for additionnal settings.
 		self.settings = settings
@@ -249,36 +251,30 @@ class PBXShellScriptBuildPhase(XCodeNode):
 		self.shellScript = "%s %s %s --targets=%s" % (sys.executable, sys.argv[0], action, target)
 
 class PBXNativeTarget(XCodeNode):
-	def __init__(self, action, target, node, buildphases, env, target_type=TARGET_TYPE_APPLICATION):
+	def __init__(self, action, target, node, buildphases, configlist, target_type=TARGET_TYPE_APPLICATION):
 		XCodeNode.__init__(self)
-
-		buildsettings = env.get_merged_dict()
-		buildsettings.update({
-			'FRAMEWORK_VERSION': env.VERSION,
-			'PRODUCT_NAME':target,
-			'CONFIGURATION_BUILD_DIR':node.parent.abspath(),
-			'HEADER_SEARCH_PATHS': ' '.join(env.HEADER_SEARCH_PATHS)
-		})
 
 		product_type = target_type[0]
 		file_type = target_type[1]
 
-		conf = XCBuildConfiguration(env.CONFIG_NAME, buildsettings, env)
-		self.buildConfigurationList = XCConfigurationList([conf])
+		# conf = XCBuildConfiguration(env.CONFIG_NAME, env.get_merged_dict(), env)
+		self.buildConfigurationList = configlist
 		self.buildPhases = buildphases #[PBXShellScriptBuildPhase(action, target)]
 		self.buildRules = []
 		self.dependencies = []
 		self.name = target
 		self.productName = target
 		self.productType = product_type # See TARGET_TYPE_ tuples constants
-		self.productReference = PBXFileReference(target, node.abspath(), file_type, 'CONFIGURATION_BUILD_DIR')
+		print node.abspath()
+		self.productReference = PBXFileReference(target, node.abspath(), file_type, '')
 
 # Root project object
 class PBXProject(XCodeNode):
-	def __init__(self, name, version):
+	def __init__(self, name, version, buildsettings):
 		XCodeNode.__init__(self)
-		build_config = XCBuildConfiguration('waf', {})
-		self.buildConfigurationList = XCConfigurationList([build_config])
+		cf_debug = XCBuildConfiguration('Debug', buildsettings)
+		cf_release = XCBuildConfiguration('Release', buildsettings)
+		self.buildConfigurationList = XCConfigurationList([cf_debug, cf_release])
 		self.compatibilityVersion = version[0]
 		self.hasScannedForEncodings = 1;
 		self.mainGroup = PBXGroup(name)
@@ -286,16 +282,8 @@ class PBXProject(XCodeNode):
 		self.projectDirPath = ""
 		self.targets = []
 		self._objectVersion = version[1]
-		self._output = PBXGroup('Products')
-		self._XCNodes_to_write = [self.mainGroup, self._output, build_config, self.buildConfigurationList]
-		self.mainGroup.children.append(self._output)
-
-	def write_xnode(self, node):
-		if isinstance(node, list):
-			for node_ in node:
-				self._XCNodes_to_write.append(node_)
-		else:
-			self._XCNodes_to_write.append(node)
+		self._output = {}
+		# self.mainGroup.children.append(self._output)
 
 	def write(self, file):
 		w = file.write
@@ -307,9 +295,6 @@ class PBXProject(XCodeNode):
 		w("\tobjectVersion = %d;\n" % self._objectVersion)
 		w("\tobjects = {\n\n")
 
-		for n in self._XCNodes_to_write:
-			n.write(file)
-
 		XCodeNode.write(self, file)
 
 		w("\t};\n")
@@ -318,7 +303,7 @@ class PBXProject(XCodeNode):
 
 	def add_task_gen(self, target):
 		self.targets.append(target)
-		self.write_xnode(target)
+		self._output[target.name] = PBXBuildFile(target.productReference)
 		# self._output.children.append(target.productReference._id)
 
 class xcode(Build.BuildContext):
@@ -340,7 +325,7 @@ class xcode(Build.BuildContext):
 				lst = [y for y in d.ant_glob(HEADERS_GLOB, flat=False)]
 				include_files.extend(lst)
 
-		tg.env.append_value('HEADER_SEARCH_PATHS', [node.parent.abspath() for node in include_files])
+		# tg.env.append_value('HEADER_SEARCH_PATHS', [node.parent.abspath() for node in include_files])
 
 		# remove duplicates
 		source = list(set(source_files + plist_files + resource_files + include_files))
@@ -357,7 +342,11 @@ class xcode(Build.BuildContext):
 		self.recurse([self.run_dir])
 
 		appname = getattr(Context.g_module, Context.APPNAME, os.path.basename(self.srcnode.abspath()))
-		p = PBXProject(appname, ('Xcode 3.2', 46))
+
+		buildsettings = self.env.get_merged_dict()
+		buildsettings.update()
+
+		p = PBXProject(appname, ('Xcode 3.2', 46), buildsettings)
 
 		for g in self.groups:
 			for tg in g:
@@ -366,38 +355,52 @@ class xcode(Build.BuildContext):
 
 				tg.post()
 
-				#features = Utils.to_list(getattr(tg, 'features', ''))
+				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
+				include_dirs_ = []
+				for x in include_dirs:
+					if not isinstance(x, str):
+						d = x
+					else:
+						d = tg.path.find_node(x)
+					include_dirs_.append(d.parent.abspath())
+				tg.env.append_value('HEADER_SEARCH_PATHS', include_dirs_)
 
 				sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
 				group = PBXGroup(tg.name)
 				group.add(tg.path, sources)
 				p.mainGroup.children.append(group)
-				p.write_xnode(group)
-				p.write_xnode(sources)
 
-			#	if ('cprogram' in features) or ('cxxprogram' in features):
-			#	p.add_task_gen(tg)
+				buildsettings = tg.env.get_merged_dict()
+				buildsettings.update({
+					'FRAMEWORK_VERSION': self.env.VERSION,
+					'PRODUCT_NAME':tg.name
+				})
+				
+				if hasattr(tg, 'settings') and isinstance(tg.settings, dict):
+					buildsettings.update(buildsettings)
 
-				# if not getattr(tg, 'mac_app', False):
-				# 	self.targets.append(PBXLegacyTarget('build', tg.name))
+				target_type = TARGET_TYPE_APPLICATION
 				if hasattr(tg, 'target_type'):
 					file_ext = tg.target_type[2]
 					node = tg.path.find_or_declare(tg.name+file_ext)
 					buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
 					compilesources = PBXSourcesBuildPhase(buildfiles)
-					p.write_xnode(buildfiles)
-					p.write_xnode(compilesources)
-					framework = PBXFrameworksBuildPhase(buildfiles)
-					target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env, tg.target_type)
-					p.add_task_gen(target)
-					# p.mainGroup.children.append(PBXBuildFile(target.productReference))
-				# else:
-				# 	node = tg.path.find_or_declare(tg.name+file_ext)
-				# 	buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
-				# 	compilesources = PBXSourcesBuildPhase(buildfiles)
-				# 	target = PBXNativeTarget('build', tg.name, node, [compilesources], tg.env)
-				# 	p.add_task_gen(target)
 
+					buildphases = [compilesources]
+
+					framework = getattr(tg, 'link_framework', [])
+					for fw in framework:
+						if fw and fw in p._output:
+							print tg
+							fw = PBXFrameworksBuildPhase([p._output[fw]])
+							buildphases.append(fw)
+
+				cf = XCBuildConfiguration('Debug', {"CONFIG_NAME": "Fitta"})
+				cflst = XCConfigurationList([cf])
+				target = PBXNativeTarget('build', tg.name, node, buildphases, cflst, tg.target_type)
+
+				p.add_task_gen(target)
+				
 		node = self.bldnode.make_node('%s.xcodeproj' % appname)
 		node.mkdir()
 		node = node.make_node('project.pbxproj')

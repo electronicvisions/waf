@@ -13,16 +13,18 @@ def build(bld):
 	bld.load('xcode')
 
 	bld.env.VERSION = '1.0'
-	bld.env.CONFIG_NAME = 'Debug'
+	bld.env.FRAMEWORK_VERSION = '1.0'
+	bld.env.CONFIG_NAME = 'Kuk'
 	bld.env.ARCHS = 'x86_64'
 	bld.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
 	bld.env.SDKROOT = 'macosx10.9'
+	# bld.env.CONFIGURATION_BUILD_DIR = '/test/path'
 
 	tg = bld(source=bld.path.ant_glob('src/MyLib/*.cpp'),
 		includes=bld.path.ant_glob('include/**/*.h', 'include/'),
 		target='MyLib',
 		target_type=xcode.TARGET_TYPE_FRAMEWORK
 	)
-	# print tg.get_outputs()
-	# bld(source=bld.path.ant_glob('**/*.cpp|'), includes='include', target='MyApp', target_type=xcode.TARGET_TYPE_APPLICATION, link_framework=['MyLib'])
-	# print bld.targets
+	
+	bld(source=bld.path.ant_glob('**/*.cpp|'), includes='include', target='MyApp', target_type=xcode.TARGET_TYPE_APPLICATION, link_framework=['MyLib'])
+	
