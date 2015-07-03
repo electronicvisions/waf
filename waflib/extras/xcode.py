@@ -251,21 +251,19 @@ class PBXShellScriptBuildPhase(XCodeNode):
 		self.shellScript = "%s %s %s --targets=%s" % (sys.executable, sys.argv[0], action, target)
 
 class PBXNativeTarget(XCodeNode):
-	def __init__(self, action, target, node, buildphases, configlist, target_type=TARGET_TYPE_APPLICATION):
+	def __init__(self, target, node, buildphases, configlist, target_type=TARGET_TYPE_APPLICATION):
 		XCodeNode.__init__(self)
 
 		product_type = target_type[0]
 		file_type = target_type[1]
 
-		# conf = XCBuildConfiguration(env.CONFIG_NAME, env.get_merged_dict(), env)
 		self.buildConfigurationList = configlist
-		self.buildPhases = buildphases #[PBXShellScriptBuildPhase(action, target)]
+		self.buildPhases = buildphases
 		self.buildRules = []
 		self.dependencies = []
 		self.name = target
 		self.productName = target
 		self.productType = product_type # See TARGET_TYPE_ tuples constants
-		print node.abspath()
 		self.productReference = PBXFileReference(target, node.abspath(), file_type, '')
 
 # Root project object
@@ -283,7 +281,6 @@ class PBXProject(XCodeNode):
 		self.targets = []
 		self._objectVersion = version[1]
 		self._output = {}
-		# self.mainGroup.children.append(self._output)
 
 	def write(self, file):
 		w = file.write
@@ -304,7 +301,6 @@ class PBXProject(XCodeNode):
 	def add_task_gen(self, target):
 		self.targets.append(target)
 		self._output[target.name] = PBXBuildFile(target.productReference)
-		# self._output.children.append(target.productReference._id)
 
 class xcode(Build.BuildContext):
 	cmd = 'xcode'
@@ -324,8 +320,6 @@ class xcode(Build.BuildContext):
 			if d:
 				lst = [y for y in d.ant_glob(HEADERS_GLOB, flat=False)]
 				include_files.extend(lst)
-
-		# tg.env.append_value('HEADER_SEARCH_PATHS', [node.parent.abspath() for node in include_files])
 
 		# remove duplicates
 		source = list(set(source_files + plist_files + resource_files + include_files))
@@ -355,6 +349,39 @@ class xcode(Build.BuildContext):
 
 				tg.post()
 
+
+				sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
+				group = PBXGroup(tg.name)
+				group.add(tg.path, sources)
+				p.mainGroup.children.append(group)
+				
+				buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
+				compilesources = PBXSourcesBuildPhase(buildfiles)
+				buildphases = [compilesources]
+
+				settings = {
+					"Debug": {},
+					"Release": {}
+				}
+				if hasattr(tg, 'settings'):
+					isinstance(tg.settings, dict)
+					settings.update(tg.settings)
+
+				target_type = getattr(tg, 'target_type', TARGET_TYPE_APPLICATION)
+				file_ext = target_type[2]
+				target_node = tg.path.find_or_declare(tg.name+file_ext)
+
+				framework = getattr(tg, 'link_framework', [])
+				for fw in framework:
+					if fw and fw in p._output:
+						fw = PBXFrameworksBuildPhase([p._output[fw]])
+						buildphases.append(fw)
+
+				cflst = []
+				for k,v in settings.items():
+					cflst.append(XCBuildConfiguration(k, v))
+				cflst = XCConfigurationList(cflst)
+				
 				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
 				include_dirs_ = []
 				for x in include_dirs:
@@ -362,42 +389,12 @@ class xcode(Build.BuildContext):
 						d = x
 					else:
 						d = tg.path.find_node(x)
-					include_dirs_.append(d.parent.abspath())
-				tg.env.append_value('HEADER_SEARCH_PATHS', include_dirs_)
+					include_dirs_.append(d.abspath())
+				print include_dirs_
+				for k,v in settings.items():
+					v['HEADER_SEARCH_PATHS'] = ' '.join(include_dirs_)
 
-				sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
-				group = PBXGroup(tg.name)
-				group.add(tg.path, sources)
-				p.mainGroup.children.append(group)
-
-				buildsettings = tg.env.get_merged_dict()
-				buildsettings.update({
-					'FRAMEWORK_VERSION': self.env.VERSION,
-					'PRODUCT_NAME':tg.name
-				})
-				
-				if hasattr(tg, 'settings') and isinstance(tg.settings, dict):
-					buildsettings.update(buildsettings)
-
-				target_type = TARGET_TYPE_APPLICATION
-				if hasattr(tg, 'target_type'):
-					file_ext = tg.target_type[2]
-					node = tg.path.find_or_declare(tg.name+file_ext)
-					buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
-					compilesources = PBXSourcesBuildPhase(buildfiles)
-
-					buildphases = [compilesources]
-
-					framework = getattr(tg, 'link_framework', [])
-					for fw in framework:
-						if fw and fw in p._output:
-							print tg
-							fw = PBXFrameworksBuildPhase([p._output[fw]])
-							buildphases.append(fw)
-
-				cf = XCBuildConfiguration('Debug', {"CONFIG_NAME": "Fitta"})
-				cflst = XCConfigurationList([cf])
-				target = PBXNativeTarget('build', tg.name, node, buildphases, cflst, tg.target_type)
+				target = PBXNativeTarget(tg.name, target_node, buildphases, cflst, target_type)
 
 				p.add_task_gen(target)
 				
