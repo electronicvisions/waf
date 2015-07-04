@@ -25,7 +25,8 @@ def build(bld):
 		target_type=xcode.TARGET_TYPE_FRAMEWORK
 	)
 	
-	bld(source=bld.path.ant_glob('src/*.cpp|'),
+	bld(
+		source=bld.path.ant_glob('src/*.cpp|'),
 		includes=tg.includes,
 		target='MyApp',
 		target_type=xcode.TARGET_TYPE_APPLICATION,

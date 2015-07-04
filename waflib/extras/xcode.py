@@ -113,10 +113,11 @@ class XCodeNode:
 			value.write(file)
 
 	def write(self, file):
-		for attribute,value in self.__dict__.items():
-			if attribute[0] != '_':
-				self.write_recursive(value, file)
 		if not self._been_written:
+			self._been_written = True
+			for attribute,value in self.__dict__.items():
+				if attribute[0] != '_':
+					self.write_recursive(value, file)
 			w = file.write
 			w("\t%s = {\n" % self._id)
 			w("\t\tisa = %s;\n" % self.__class__.__name__)
@@ -124,7 +125,6 @@ class XCodeNode:
 				if attribute[0] != '_':
 					w("\t\t%s = %s;\n" % (attribute, self.tostring(value)))
 			w("\t};\n\n")
-			self._been_written = True
 
 class XCID(XCodeNode):
 	def __init__(self, id):
@@ -205,6 +205,24 @@ class PBXGroup(XCodeNode):
 			self.children.append(source)
 			# f.children.append(source)
 
+class PBXContainerItemProxy(XCodeNode):
+	""" This is the element for to decorate a target item. """
+	def __init__(self, containerPortal, remoteGlobalIDString, remoteInfo='', proxyType=1):
+		XCodeNode.__init__(self)
+		self.containerPortal = containerPortal # PBXProject
+		self.remoteGlobalIDString = remoteGlobalIDString # PBXNativeTarget
+		self.remoteInfo = remoteInfo # Target name
+		self.proxyType = proxyType
+		
+
+class PBXTargetDependency(XCodeNode):
+	""" This is the element for referencing other target through content proxies. """
+	def __init__(self, native_target, proxy):
+		XCodeNode.__init__(self)
+		self.target = native_target
+		self.targetProxy = proxy
+		
+
 # Framework sources
 class PBXFrameworksBuildPhase(XCodeNode):
 	""" This is the element for the framework link build phase, i.e. linking to frameworks """
@@ -283,6 +301,8 @@ class PBXProject(XCodeNode):
 		self._output = {}
 
 	def write(self, file):
+		if self._been_written:
+			return
 		w = file.write
 		w("// !$*UTF8*$!\n")
 		w("{\n")
@@ -300,7 +320,7 @@ class PBXProject(XCodeNode):
 
 	def add_task_gen(self, target):
 		self.targets.append(target)
-		self._output[target.name] = PBXBuildFile(target.productReference)
+		self._output[target.name] = target
 
 class xcode(Build.BuildContext):
 	cmd = 'xcode'
@@ -348,6 +368,7 @@ class xcode(Build.BuildContext):
 					continue
 
 				tg.post()
+				print tg.name
 
 
 				sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
@@ -358,6 +379,7 @@ class xcode(Build.BuildContext):
 				buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
 				compilesources = PBXSourcesBuildPhase(buildfiles)
 				buildphases = [compilesources]
+				dependency_targets = []
 
 				settings = {
 					"Debug": {},
@@ -374,8 +396,13 @@ class xcode(Build.BuildContext):
 				framework = getattr(tg, 'link_framework', [])
 				for fw in framework:
 					if fw and fw in p._output:
-						fw = PBXFrameworksBuildPhase([p._output[fw]])
+						target = p._output[fw]
+						product = PBXBuildFile(target.productReference)
+						fw = PBXFrameworksBuildPhase([product])
 						buildphases.append(fw)
+						proxy = PBXContainerItemProxy(p, target, target.name)
+						dependecy = PBXTargetDependency(target, proxy)
+						dependency_targets.append(dependecy)
 
 				cflst = []
 				for k,v in settings.items():
@@ -395,6 +422,7 @@ class xcode(Build.BuildContext):
 					v['HEADER_SEARCH_PATHS'] = ' '.join(include_dirs_)
 
 				target = PBXNativeTarget(tg.name, target_node, buildphases, cflst, target_type)
+				target.dependencies.extend(dependency_targets)
 
 				p.add_task_gen(target)
 				
