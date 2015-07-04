@@ -16,7 +16,7 @@ $ waf configure xcode
 
 # TODO: support iOS projects
 
-from waflib import Context, TaskGen, Build, Utils, ConfigSet
+from waflib import Context, TaskGen, Build, Utils, ConfigSet, Configure, Errors
 import os, sys, random, time
 
 HEADERS_GLOB = '**/(*.h|*.hpp|*.H|*.inl)'
@@ -67,6 +67,36 @@ FILE_TYPE_FRAMEWORK = 'wrapper.framework'
 
 TARGET_TYPE_FRAMEWORK = (PRODUCT_TYPE_FRAMEWORK, FILE_TYPE_FRAMEWORK, '.framework')
 TARGET_TYPE_APPLICATION = (PRODUCT_TYPE_APPLICATION, FILE_TYPE_APPLICATION, '.app')
+
+class XcodeConfiguration(Configure.ConfigurationContext):
+	""" Configuration of the project """
+	def __init__(self):
+		Configure.ConfigurationContext.__init__(self)
+
+	def execute(self):
+
+		# Run user configure()
+		Context.Context.execute(self)
+		
+		if not self.env.PROJ_CONFIGURATION:
+			self.to_log("A default project configuration was created since no custom one was given in the configure(ctx) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
+
+		# Create default project configuration?
+		# if 'PROJ_CONFIGURATION' not in self.env.keys():
+		self.env.PROJ_CONFIGURATION = {
+			"Debug": self.env.get_merged_dict(),
+			"Release": self.env.get_merged_dict(),
+		}
+
+
+		# Run user configuration(ctx) for customization
+		Configure.ConfigurationContext.execute(self)
+
+		# Error check customization
+		if not isinstance(self.env.PROJ_CONFIGURATION, dict):
+			raise Errors.ConfigurationError("The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.")
+
+
 
 part1 = 0
 part2 = 10000
@@ -286,11 +316,16 @@ class PBXNativeTarget(XCodeNode):
 
 # Root project object
 class PBXProject(XCodeNode):
-	def __init__(self, name, version, buildsettings):
+	def __init__(self, name, version, env):
 		XCodeNode.__init__(self)
-		cf_debug = XCBuildConfiguration('Debug', buildsettings)
-		cf_release = XCBuildConfiguration('Release', buildsettings)
-		self.buildConfigurationList = XCConfigurationList([cf_debug, cf_release])
+
+		# Retreive project configuration
+		configurations = []
+		for config_name, settings in env.PROJ_CONFIGURATION.items():
+			cf = XCBuildConfiguration(config_name, settings)
+			configurations.append(cf)
+
+		self.buildConfigurationList = XCConfigurationList(configurations)
 		self.compatibilityVersion = version[0]
 		self.hasScannedForEncodings = 1;
 		self.mainGroup = PBXGroup(name)
@@ -360,7 +395,7 @@ class xcode(Build.BuildContext):
 		buildsettings = self.env.get_merged_dict()
 		buildsettings.update()
 
-		p = PBXProject(appname, ('Xcode 3.2', 46), buildsettings)
+		p = PBXProject(appname, ('Xcode 3.2', 46), self.env)
 
 		for g in self.groups:
 			for tg in g:
@@ -368,8 +403,6 @@ class xcode(Build.BuildContext):
 					continue
 
 				tg.post()
-				print tg.name
-
 
 				sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
 				group = PBXGroup(tg.name)
@@ -417,7 +450,6 @@ class xcode(Build.BuildContext):
 					else:
 						d = tg.path.find_node(x)
 					include_dirs_.append(d.abspath())
-				print include_dirs_
 				for k,v in settings.items():
 					v['HEADER_SEARCH_PATHS'] = ' '.join(include_dirs_)
 
@@ -430,5 +462,6 @@ class xcode(Build.BuildContext):
 		node.mkdir()
 		node = node.make_node('project.pbxproj')
 		p.write(open(node.abspath(), 'w'))
+		
 
 

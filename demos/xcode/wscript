@@ -7,7 +7,7 @@ VERSION = '1.0'
 
 def configure(opt):
 	opt.load('cxx')
-	opt.load('xcode')
+	# opt.load('xcode')
 	opt.env.FRAMEWORK_VERSION = '1.0'
 	opt.env.CONFIG_NAME = 'Kuk'
 	opt.env.ARCHS = 'x86_64'
@@ -16,8 +16,8 @@ def configure(opt):
 	opt.env.PRODUCT_NAME = '$(TARGET_NAME)'
 
 def build(bld):
-	bld.load('xcode')
-
+	# bld.load('xcode')
+	# bld.load('cxx')
 	tg = bld(
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
 		includes=['include'],
