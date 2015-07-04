@@ -413,13 +413,7 @@ class xcode(Build.BuildContext):
 				buildphases = [compilesources]
 				dependency_targets = []
 
-				settings = {
-					"Debug": {},
-					"Release": {}
-				}
-				if hasattr(tg, 'settings'):
-					isinstance(tg.settings, dict)
-					settings.update(tg.settings)
+				settings = getattr(tg, 'settings', {})
 
 				target_type = getattr(tg, 'target_type', TARGET_TYPE_APPLICATION)
 				file_ext = target_type[2]
