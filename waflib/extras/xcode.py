@@ -369,7 +369,7 @@ class xcode(Build.BuildContext):
 	fun = 'build'
 
 	def collect_source(self, tg):
-		source_files = tg.to_nodes(getattr(tg, 'source', []))
+		source_files = tg.to_nodes(getattr(tg, 'source', {}))
 		plist_files = tg.to_nodes(getattr(tg, 'mac_plist', []))
 		resource_files = [tg.path.find_node(i) for i in Utils.to_list(getattr(tg, 'mac_resources', []))]
 		include_dirs = Utils.to_list(getattr(tg, 'includes', [])) + Utils.to_list(getattr(tg, 'export_dirs', []))
@@ -387,6 +387,22 @@ class xcode(Build.BuildContext):
 		source = list(set(source_files + plist_files + resource_files + include_files))
 		source.sort(key=lambda x: x.abspath())
 		return source
+
+	def as_nodes(self, files):
+		nodes = []
+		for x in files:
+			if not isinstance(x, str):
+				d = x
+			else:
+				d = tg.path.find_node(x)
+			nodes.append(d)
+		return nodes
+
+	def create_group(self, name, files):
+		group = PBXGroup(name)
+		files = [PBXFileReference(d.name, d.abspath()) for d in self.as_nodes(files)]
+		group.children.extend(files)
+		return group
 
 	def execute(self):
 		"""
@@ -415,6 +431,14 @@ class xcode(Build.BuildContext):
 				group = PBXGroup(tg.name)
 				group.add(tg.path, sources)
 				p.mainGroup.children.append(group)
+
+				if isinstance(getattr(tg, 'sources', None), dict):
+					for grpname,files in tg.sources.items():
+						g = self.create_group(grpname, files)
+						group.children.append(g)
+				else:
+					g1 = self.create_group('Source', getattr(tg, 'source', []))
+					group.children.append(g1)
 				
 				buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
 				compilesources = PBXSourcesBuildPhase(buildfiles)
