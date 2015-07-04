@@ -68,6 +68,11 @@ FILE_TYPE_FRAMEWORK = 'wrapper.framework'
 TARGET_TYPE_FRAMEWORK = (PRODUCT_TYPE_FRAMEWORK, FILE_TYPE_FRAMEWORK, '.framework')
 TARGET_TYPE_APPLICATION = (PRODUCT_TYPE_APPLICATION, FILE_TYPE_APPLICATION, '.app')
 
+TARGET_TYPES = {
+	'framework': TARGET_TYPE_FRAMEWORK,
+	'app': TARGET_TYPE_APPLICATION
+}
+
 class XcodeConfiguration(Configure.ConfigurationContext):
 	""" Configuration of the project """
 	def __init__(self):
@@ -318,6 +323,9 @@ class PBXProject(XCodeNode):
 	def __init__(self, name, version, env):
 		XCodeNode.__init__(self)
 
+		if not isinstance(env.PROJ_CONFIGURATION, dict):
+			raise Errors.WafError("env.PROJ_CONFIGURATION is not a dictionary. Did you import the xcode module in your wscript?")
+
 		# Retreive project configuration
 		configurations = []
 		for config_name, settings in env.PROJ_CONFIGURATION.items():
@@ -411,30 +419,40 @@ class xcode(Build.BuildContext):
 				buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
 				compilesources = PBXSourcesBuildPhase(buildfiles)
 				buildphases = [compilesources]
-				dependency_targets = []
 
-				settings = getattr(tg, 'settings', {})
 
-				target_type = getattr(tg, 'target_type', TARGET_TYPE_APPLICATION)
+				target_type = getattr(tg, 'target_type', '')
+				if target_type not in TARGET_TYPES:
+					raise Errors.WafError("Target type %s does not exists. Available options are %s. In target %s" % (target_type, ', '.join(TARGET_TYPES.keys()), tg.name))
 				file_ext = target_type[2]
 				target_node = tg.path.find_or_declare(tg.name+file_ext)
 
+				# Check if any framework to link against is some other target we've made
+				dependency_targets = []
 				framework = getattr(tg, 'link_framework', [])
 				for fw in framework:
 					if fw and fw in p._output:
+						# Target framework found. Make a build file of it
 						target = p._output[fw]
 						product = PBXBuildFile(target.productReference)
 						fw = PBXFrameworksBuildPhase([product])
 						buildphases.append(fw)
+
+						# Create an XCode dependency so that it knows to build that framework before this target
 						proxy = PBXContainerItemProxy(p, target, target.name)
 						dependecy = PBXTargetDependency(target, proxy)
 						dependency_targets.append(dependecy)
 
+				
+				# Create settings which can override the project settings. Defaults to none if user
+				# did not pass argument.
+				settings = getattr(tg, 'settings', {})
 				cflst = []
 				for k,v in settings.items():
 					cflst.append(XCBuildConfiguration(k, v))
 				cflst = XCConfigurationList(cflst)
 				
+				# Setup include search paths
 				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
 				include_dirs_ = []
 				for x in include_dirs:

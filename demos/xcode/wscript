@@ -5,31 +5,28 @@ out = 'build'
 APPNAME = 'Avocada'
 VERSION = '1.0'
 
-def configure(opt):
-	opt.load('cxx')
-	# opt.load('xcode')
-	opt.env.FRAMEWORK_VERSION = '1.0'
-	opt.env.CONFIG_NAME = 'Kuk'
-	opt.env.ARCHS = 'x86_64'
-	opt.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
-	opt.env.SDKROOT = 'macosx10.9'
-	opt.env.PRODUCT_NAME = '$(TARGET_NAME)'
+def configure(conf):
+	conf.load('cxx')
+	conf.env.FRAMEWORK_VERSION = '1.0'
+	conf.env.CONFIG_NAME = 'Kuk'
+	conf.env.ARCHS = 'x86_64'
+	conf.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
+	conf.env.SDKROOT = 'macosx10.9'
+	conf.env.PRODUCT_NAME = '$(TARGET_NAME)'
 
 def build(bld):
-	# bld.load('xcode')
-	# bld.load('cxx')
 	tg = bld(
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
 		includes=['include'],
 		target='MyLib',
-		target_type=xcode.TARGET_TYPE_FRAMEWORK
+		target_type='framework'
 	)
 	
 	bld(
 		source=bld.path.ant_glob('src/*.cpp|'),
 		includes=tg.includes,
 		target='MyApp',
-		target_type=xcode.TARGET_TYPE_APPLICATION,
+		target_type='app',
 		link_framework=['MyLib'],
 		settings={"Debug": {"CONFIG_NAME": 'Debug'}}
 	)
