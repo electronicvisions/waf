@@ -88,7 +88,6 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 			"Release": self.env.get_merged_dict(),
 		}
 
-
 		# Run user configuration(ctx) for customization
 		Configure.ConfigurationContext.execute(self)
 
