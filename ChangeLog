@@ -1,6 +1,8 @@
 NEW IN WAF 1.8.12
 -----------------
 * Fixed a regression when building in sub-folders - https://github.com/waf-project/waf/issues/1590
+* New mac_files attribute which is expected to replace mac_resources in waf 1.9 (demos/mac_app/)
+* env = env.derive().detach() to simplify deep copies
 
 NEW IN WAF 1.8.11
 -----------------
