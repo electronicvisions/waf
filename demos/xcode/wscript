@@ -16,8 +16,12 @@ def configure(conf):
 
 def build(bld):
 	tg = bld(
-		sources={'MySources': bld.path.ant_glob('src/MyLib/*.cpp')},
-		includes={'Important': bld.path.ant_glob('include/**/*.h')},
+		source=bld.path.ant_glob('src/MyLib/*.cpp'),
+		source_grpname='Fucker',
+		includes='include',
+		group_files={
+			'Include': bld.path.ant_glob('include/MyLib/*.h')
+		},
 		target='MyLib',
 		target_type='framework'
 	)

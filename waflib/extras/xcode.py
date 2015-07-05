@@ -427,42 +427,27 @@ class xcode(Build.BuildContext):
 
 				tg.post()
 
-				# sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
 				group = PBXGroup(tg.name)
-				# group.add(tg.path, sources)
 				p.mainGroup.children.append(group)
 
-				source_files = []
-				if hasattr(tg, 'sources'):
-					if isinstance(tg.sources, dict):
-						for grpname,files in tg.sources.items():
-							sources = self.create_group(grpname, files)
-							group.children.append(sources)
-							source_files.append(sources)
-					elif isinstance(tg.sources, list):
-							sources = self.create_group('Source', tg.sources)
-							group.children.append(sources)
-							source_files.append(sources)
+				extra_groups = []
+				if hasattr(tg, 'group_files'):
+					if isinstance(tg.group_files, dict):
+						for grpname,files in tg.group_files.items():
+							group_files = self.create_group(grpname, files)
+							group.children.append(group_files)
+							extra_groups.append(group_files)
 					else:
 						self.to_log("Argument 'sources' passed to target '%s' was not a list nor a dictionary. Hence, some source files may not be included. Please provide a list of source files, or a dictionary with group name as key and list of source files as value.\n" % tg.name)
-				if hasattr(tg, 'source') and (len(tg.source) > 0):
-					sources = self.create_group('Source', getattr(tg, 'source', []))
-					group.children.append(sources)
-					source_files.append(sources)
-				
-				if isinstance(getattr(tg, 'includes', None), dict):
-					for grpname,files in tg.includes.items():
-						g = self.create_group(grpname, files)
-						group.children.append(g)
-				else:
-					g = self.create_group('Includes', getattr(tg, 'includes', []))
+
+				buildphases = []
+			
+				if len(tg.source) > 0:
+					g = self.create_group(getattr(tg, 'source_grpname', 'Source'), tg.source)
+					buildfiles = [PBXBuildFile(fileref) for fileref in g.children]
+					compilesources = PBXSourcesBuildPhase(buildfiles)
+					buildphases.append(compilesources)
 					group.children.append(g)
-
-				for sourcegrp in source_files:
-					buildfiles = [PBXBuildFile(fileref) for fileref in sourcegrp.children]
-
-				compilesources = PBXSourcesBuildPhase(buildfiles)
-				buildphases = [compilesources]
 
 
 				target_type = getattr(tg, 'target_type', '')
@@ -495,21 +480,25 @@ class xcode(Build.BuildContext):
 				# Create settings which can override the project settings. Defaults to none if user
 				# did not pass argument.
 				settings = getattr(tg, 'settings', {})
+
+				# Setup include search paths
+				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
+				include_dirs = [x.abspath() for x in self.as_nodes(include_dirs)]
+
+				# Set the HEADER_SEARCH_PATHS for all configurations
+				keys = set(settings.keys() + self.env.PROJ_CONFIGURATION.keys())
+				paths = ' '.join(include_dirs)
+				for k in keys:
+					if k in settings:
+						settings[k]['HEADER_SEARCH_PATHS'] = paths
+					else:
+						settings[k] = {'HEADER_SEARCH_PATHS': paths}
+
 				cflst = []
 				for k,v in settings.items():
 					cflst.append(XCBuildConfiguration(k, v))
 				cflst = XCConfigurationList(cflst)
 				
-				# Setup include search paths
-				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
-				if isinstance(include_dirs, dict):
-					tmp = []
-					map(lambda lst: tmp.extend(lst), include_dirs.values())
-					include_dirs = tmp
-	
-				include_dirs = [x.abspath() for x in self.as_nodes(include_dirs)]
-				for k,v in settings.items():
-					v['HEADER_SEARCH_PATHS'] = ' '.join(include_dirs)
 
 				target = PBXNativeTarget(tg.name, target_node, buildphases, cflst, target_type)
 				target.dependencies.extend(dependency_targets)
