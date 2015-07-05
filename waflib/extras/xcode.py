@@ -65,16 +65,32 @@ PRODUCT_TYPE_IOKIT = 'com.apple.product-type.kernel-extension.iokit'
 FILE_TYPE_APPLICATION = 'wrapper.cfbundle'
 FILE_TYPE_FRAMEWORK = 'wrapper.framework'
 
+# Tuple packs of the above
 TARGET_TYPE_FRAMEWORK = (PRODUCT_TYPE_FRAMEWORK, FILE_TYPE_FRAMEWORK, '.framework')
 TARGET_TYPE_APPLICATION = (PRODUCT_TYPE_APPLICATION, FILE_TYPE_APPLICATION, '.app')
 
+# Maps a target type as a string to its data
 TARGET_TYPES = {
 	'framework': TARGET_TYPE_FRAMEWORK,
 	'app': TARGET_TYPE_APPLICATION
 }
 
 class XcodeConfiguration(Configure.ConfigurationContext):
-	""" Configuration of the project """
+	""" Configuration of the global project settings. Sets a environment variable 'PROJ_CONFIGURATION'
+	which is a dictionary of configuration name and buildsettings pair.
+	E.g.:
+	{
+		'Debug': {
+			'ARCHS': 'x86',
+			...
+		}
+		'Release': {
+			'ARCHS' x86_64'
+			...
+		}
+	}
+	The user can define a completely customized dictionary in configure() stage. Otherwise a default Debug/Release will be created
+	based on env variable """
 	def __init__(self):
 		Configure.ConfigurationContext.__init__(self)
 
@@ -160,13 +176,6 @@ class XCodeNode:
 					w("\t\t%s = %s;\n" % (attribute, self.tostring(value)))
 			w("\t};\n\n")
 
-class XCID(XCodeNode):
-	def __init__(self, id):
-	    self._id = id
-	def write(self, file):
-		pass
-
-
 # Configurations
 class XCBuildConfiguration(XCodeNode):
 	def __init__(self, name, settings = {}, env=None):
@@ -217,27 +226,9 @@ class PBXGroup(XCodeNode):
 		self.name = name
 		self.sourceTree = sourcetree
 
-	def add(self, root, sources):
-		folders = {}
-		def folder(n):
-			if not n.is_child_of(root):
-				return self
-			try:
-				return folders[n]
-			except KeyError:
-				f = PBXGroup(n.name)
-				p = folder(n.parent)
-				folders[n] = f
-				p.children.append(f)
-				return f
+	def add(self, sources):
+		""" sources param should be a list of PBXFileReference objects """
 		self.children.extend(sources)
-		return
-		for s in sources:
-			# f = folder(s.parent)
-
-			source = PBXFileReference(s.name, s.abspath())
-			self.children.append(source)
-			# f.children.append(source)
 
 class PBXContainerItemProxy(XCodeNode):
 	""" This is the element for to decorate a target item. """
@@ -256,8 +247,6 @@ class PBXTargetDependency(XCodeNode):
 		self.target = native_target
 		self.targetProxy = proxy
 		
-
-# Framework sources
 class PBXFrameworksBuildPhase(XCodeNode):
 	""" This is the element for the framework link build phase, i.e. linking to frameworks """
 	def __init__(self, pbxbuildfiles):
@@ -266,15 +255,12 @@ class PBXFrameworksBuildPhase(XCodeNode):
 		self.runOnlyForDeploymentPostprocessing = 0
 		self.files = pbxbuildfiles #List of PBXBuildFile (.o, .framework, .dylib)
 
-
-# Compile Sources
 class PBXSourcesBuildPhase(XCodeNode):
 	""" Represents the 'Compile Sources' build phase in a Xcode target """
 	def __init__(self, buildfiles):
 		XCodeNode.__init__(self)
 		self.files = buildfiles # List of PBXBuildFile objects
 
-# Targets
 class PBXLegacyTarget(XCodeNode):
 	def __init__(self, action, target=''):
 		XCodeNode.__init__(self)
@@ -343,8 +329,11 @@ class PBXProject(XCodeNode):
 		self._output = {}
 
 	def write(self, file):
+
+		# Make sure this is written only once
 		if self._been_written:
 			return
+			
 		w = file.write
 		w("// !$*UTF8*$!\n")
 		w("{\n")
@@ -418,7 +407,7 @@ class xcode(Build.BuildContext):
 		buildsettings = self.env.get_merged_dict()
 		buildsettings.update()
 
-		p = PBXProject(appname, ('Xcode 3.2', 46), self.env)
+		p = PBXProject(appname, ('Xcode 6.0', 46), self.env)
 
 		for g in self.groups:
 			for tg in g:
