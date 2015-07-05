@@ -17,7 +17,7 @@ def configure(conf):
 def build(bld):
 	tg = bld(
 		sources={'MySources': bld.path.ant_glob('src/MyLib/*.cpp')},
-		includes=['include'],
+		includes={'Important': bld.path.ant_glob('include/**/*.h')},
 		target='MyLib',
 		target_type='framework'
 	)

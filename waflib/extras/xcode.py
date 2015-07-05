@@ -394,7 +394,7 @@ class xcode(Build.BuildContext):
 			if not isinstance(x, str):
 				d = x
 			else:
-				d = tg.path.find_node(x)
+				d = self.srcnode.find_node(x)
 			nodes.append(d)
 		return nodes
 
@@ -427,20 +427,40 @@ class xcode(Build.BuildContext):
 
 				tg.post()
 
-				sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
+				# sources = [PBXFileReference(n.name, n.abspath()) for n in self.collect_source(tg)]
 				group = PBXGroup(tg.name)
-				group.add(tg.path, sources)
+				# group.add(tg.path, sources)
 				p.mainGroup.children.append(group)
 
-				if isinstance(getattr(tg, 'sources', None), dict):
-					for grpname,files in tg.sources.items():
+				source_files = []
+				if hasattr(tg, 'sources'):
+					if isinstance(tg.sources, dict):
+						for grpname,files in tg.sources.items():
+							sources = self.create_group(grpname, files)
+							group.children.append(sources)
+							source_files.append(sources)
+					elif isinstance(tg.sources, list):
+							sources = self.create_group('Source', tg.sources)
+							group.children.append(sources)
+							source_files.append(sources)
+					else:
+						self.to_log("Argument 'sources' passed to target '%s' was not a list nor a dictionary. Hence, some source files may not be included. Please provide a list of source files, or a dictionary with group name as key and list of source files as value.\n" % tg.name)
+				if hasattr(tg, 'source') and (len(tg.source) > 0):
+					sources = self.create_group('Source', getattr(tg, 'source', []))
+					group.children.append(sources)
+					source_files.append(sources)
+				
+				if isinstance(getattr(tg, 'includes', None), dict):
+					for grpname,files in tg.includes.items():
 						g = self.create_group(grpname, files)
 						group.children.append(g)
 				else:
-					g1 = self.create_group('Source', getattr(tg, 'source', []))
-					group.children.append(g1)
-				
-				buildfiles = [PBXBuildFile(fileref) for fileref in group.children]
+					g = self.create_group('Includes', getattr(tg, 'includes', []))
+					group.children.append(g)
+
+				for sourcegrp in source_files:
+					buildfiles = [PBXBuildFile(fileref) for fileref in sourcegrp.children]
+
 				compilesources = PBXSourcesBuildPhase(buildfiles)
 				buildphases = [compilesources]
 
@@ -448,8 +468,12 @@ class xcode(Build.BuildContext):
 				target_type = getattr(tg, 'target_type', '')
 				if target_type not in TARGET_TYPES:
 					raise Errors.WafError("Target type %s does not exists. Available options are %s. In target %s" % (target_type, ', '.join(TARGET_TYPES.keys()), tg.name))
+				else:
+					target_type = TARGET_TYPES[target_type]
+
 				file_ext = target_type[2]
 				target_node = tg.path.find_or_declare(tg.name+file_ext)
+				
 
 				# Check if any framework to link against is some other target we've made
 				dependency_targets = []
@@ -478,15 +502,14 @@ class xcode(Build.BuildContext):
 				
 				# Setup include search paths
 				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
-				include_dirs_ = []
-				for x in include_dirs:
-					if not isinstance(x, str):
-						d = x
-					else:
-						d = tg.path.find_node(x)
-					include_dirs_.append(d.abspath())
+				if isinstance(include_dirs, dict):
+					tmp = []
+					map(lambda lst: tmp.extend(lst), include_dirs.values())
+					include_dirs = tmp
+	
+				include_dirs = [x.abspath() for x in self.as_nodes(include_dirs)]
 				for k,v in settings.items():
-					v['HEADER_SEARCH_PATHS'] = ' '.join(include_dirs_)
+					v['HEADER_SEARCH_PATHS'] = ' '.join(include_dirs)
 
 				target = PBXNativeTarget(tg.name, target_node, buildphases, cflst, target_type)
 				target.dependencies.extend(dependency_targets)
