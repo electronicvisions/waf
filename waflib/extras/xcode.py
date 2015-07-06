@@ -93,6 +93,7 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 	based on env variable """
 	def __init__(self):
 		Configure.ConfigurationContext.__init__(self)
+		self.init_dirs()
 
 	def execute(self):
 
@@ -101,6 +102,16 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 		
 		if not self.env.PROJ_CONFIGURATION:
 			self.to_log("A default project configuration was created since no custom one was given in the configure(ctx) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
+
+		# Set include dir variable
+		if 'HEADER_SEARCH_PATHS' not in self.env:
+			self.env.HEADER_SEARCH_PATHS = ['$(inherited)']
+		else:
+			self.env.HEADER_SEARCH_PATHS = [self.srcnode.make_node(f).abspath() for f in Utils.to_list(self.env.HEADER_SEARCH_PATHS)]
+
+		# Check for any added config files added by the tool 'c_config'.
+		if 'cfg_files' in self.env:
+			self.env.HEADER_SEARCH_PATHS.extend([os.path.abspath(os.path.dirname(f)) for f in self.env.cfg_files])
 
 		# Create default project configuration?
 		# if 'PROJ_CONFIGURATION' not in self.env.keys():
@@ -333,7 +344,7 @@ class PBXProject(XCodeNode):
 		# Make sure this is written only once
 		if self._been_written:
 			return
-			
+
 		w = file.write
 		w("// !$*UTF8*$!\n")
 		w("{\n")
@@ -351,33 +362,17 @@ class PBXProject(XCodeNode):
 
 	def add_task_gen(self, target):
 		self.targets.append(target)
+
+		# Collect all targets the project produces. If any other target
+		# depends on this target, we can retreive it from here later.
 		self._output[target.name] = target
 
 class xcode(Build.BuildContext):
 	cmd = 'xcode'
 	fun = 'build'
 
-	def collect_source(self, tg):
-		source_files = tg.to_nodes(getattr(tg, 'source', {}))
-		plist_files = tg.to_nodes(getattr(tg, 'mac_plist', []))
-		resource_files = [tg.path.find_node(i) for i in Utils.to_list(getattr(tg, 'mac_resources', []))]
-		include_dirs = Utils.to_list(getattr(tg, 'includes', [])) + Utils.to_list(getattr(tg, 'export_dirs', []))
-		include_files = []
-		for x in include_dirs:
-			if not isinstance(x, str):
-				include_files.append(x)
-				continue
-			d = tg.path.find_node(x)
-			if d:
-				lst = [y for y in d.ant_glob(HEADERS_GLOB, flat=False)]
-				include_files.extend(lst)
-
-		# remove duplicates
-		source = list(set(source_files + plist_files + resource_files + include_files))
-		source.sort(key=lambda x: x.abspath())
-		return source
-
 	def as_nodes(self, files):
+		""" Returns a list of waflib.Nodes from a list of string of file paths """
 		nodes = []
 		for x in files:
 			if not isinstance(x, str):
@@ -388,6 +383,7 @@ class xcode(Build.BuildContext):
 		return nodes
 
 	def create_group(self, name, files):
+		""" Returns a new PBXGroup containing the files (paths) passed in the files arg """
 		group = PBXGroup(name)
 		files = [PBXFileReference(d.name, d.abspath()) for d in self.as_nodes(files)]
 		group.children.extend(files)
@@ -404,9 +400,6 @@ class xcode(Build.BuildContext):
 
 		appname = getattr(Context.g_module, Context.APPNAME, os.path.basename(self.srcnode.abspath()))
 
-		buildsettings = self.env.get_merged_dict()
-		buildsettings.update()
-
 		p = PBXProject(appname, ('Xcode 6.0', 46), self.env)
 
 		for g in self.groups:
@@ -416,18 +409,16 @@ class xcode(Build.BuildContext):
 
 				tg.post()
 
-				group = PBXGroup(tg.name)
-				p.mainGroup.children.append(group)
+				target_group = PBXGroup(tg.name)
+				p.mainGroup.children.append(target_group)
 
-				extra_groups = []
 				if hasattr(tg, 'group_files'):
 					if isinstance(tg.group_files, dict):
 						for grpname,files in tg.group_files.items():
 							group_files = self.create_group(grpname, files)
-							group.children.append(group_files)
-							extra_groups.append(group_files)
+							target_group.children.append(group_files)
 					else:
-						self.to_log("Argument 'sources' passed to target '%s' was not a list nor a dictionary. Hence, some source files may not be included. Please provide a list of source files, or a dictionary with group name as key and list of source files as value.\n" % tg.name)
+						self.to_log("Argument 'group_files' passed to target '%s' was not a dictionary. Hence, some source files may not be included. Please provide a dict of source files, with group name as key and list of source files as value.\n" % tg.name)
 
 				buildphases = []
 			
@@ -436,19 +427,19 @@ class xcode(Build.BuildContext):
 					buildfiles = [PBXBuildFile(fileref) for fileref in g.children]
 					compilesources = PBXSourcesBuildPhase(buildfiles)
 					buildphases.append(compilesources)
-					group.children.append(g)
+					target_group.children.append(g)
 
-
-				target_type = getattr(tg, 'target_type', '')
+				# Determine what type to build - framework, app bundle etc.
+				target_type = getattr(tg, 'target_type', 'app')
 				if target_type not in TARGET_TYPES:
-					raise Errors.WafError("Target type %s does not exists. Available options are %s. In target %s" % (target_type, ', '.join(TARGET_TYPES.keys()), tg.name))
+					raise Errors.WafError("Target type '%s' does not exists. Available options are '%s'. In target '%s'" % (target_type, "', '".join(TARGET_TYPES.keys()), tg.name))
 				else:
 					target_type = TARGET_TYPES[target_type]
-
 				file_ext = target_type[2]
+
+				# Create the output node
 				target_node = tg.path.find_or_declare(tg.name+file_ext)
 				
-
 				# Check if any framework to link against is some other target we've made
 				dependency_targets = []
 				framework = getattr(tg, 'link_framework', [])
@@ -460,7 +451,7 @@ class xcode(Build.BuildContext):
 						fw = PBXFrameworksBuildPhase([product])
 						buildphases.append(fw)
 
-						# Create an XCode dependency so that it knows to build that framework before this target
+						# Create an XCode dependency so that XCode knows to build that framework before this target
 						proxy = PBXContainerItemProxy(p, target, target.name)
 						dependecy = PBXTargetDependency(target, proxy)
 						dependency_targets.append(dependecy)
@@ -473,22 +464,22 @@ class xcode(Build.BuildContext):
 				# Setup include search paths
 				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
 				include_dirs = [x.abspath() for x in self.as_nodes(include_dirs)]
+				includes_dirs_dict = {'HEADER_SEARCH_PATHS': ['$(inherited)'] + include_dirs}
 
 				# Set the HEADER_SEARCH_PATHS for all configurations
 				keys = set(settings.keys() + self.env.PROJ_CONFIGURATION.keys())
-				paths = ' '.join(include_dirs)
 				for k in keys:
 					if k in settings:
-						settings[k]['HEADER_SEARCH_PATHS'] = paths
+						settings[k].update(includes_dirs_dict)
 					else:
-						settings[k] = {'HEADER_SEARCH_PATHS': paths}
+						settings[k] = includes_dirs_dict
 
+				# Create the config lists
 				cflst = []
 				for k,v in settings.items():
 					cflst.append(XCBuildConfiguration(k, v))
 				cflst = XCConfigurationList(cflst)
 				
-
 				target = PBXNativeTarget(tg.name, target_node, buildphases, cflst, target_type)
 				target.dependencies.extend(dependency_targets)
 
