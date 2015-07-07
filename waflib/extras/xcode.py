@@ -427,6 +427,7 @@ class xcode(Build.BuildContext):
 			self.load_envs()
 		self.recurse([self.run_dir])
 
+
 		appname = getattr(Context.g_module, Context.APPNAME, os.path.basename(self.srcnode.abspath()))
 
 		p = PBXProject(appname, ('Xcode 6.0', 46), self.env)
@@ -465,9 +466,9 @@ class xcode(Build.BuildContext):
 				settings = getattr(tg, 'settings', {})
 
 				# Setup include search paths
-				include_dirs = Utils.to_list(getattr(tg, 'includes', []))
-				include_dirs = [x.abspath() for x in self.as_nodes(include_dirs)]
-				includes_dirs_dict = {'HEADER_SEARCH_PATHS': ['$(inherited)'] + include_dirs}
+				# include_dirs = Utils.to_list(getattr(tg, 'includes', []))
+				# include_dirs = [x.abspath() for x in self.as_nodes(include_dirs)]
+				includes_dirs_dict = {'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS']}
 
 				# Set the HEADER_SEARCH_PATHS for all configurations
 				keys = set(settings.keys() + self.env.PROJ_CONFIGURATION.keys())
