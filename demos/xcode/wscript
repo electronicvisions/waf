@@ -15,7 +15,9 @@ def configure(conf):
 	conf.env.PRODUCT_NAME = '$(TARGET_NAME)'
 
 def build(bld):
+	bld.load('cxx')
 	tg = bld(
+		features='cxx',
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
 		source_grpname='Fucker',
 		includes='include',
@@ -26,12 +28,19 @@ def build(bld):
 		target_type='framework'
 	)
 	
-	bld(
+	tg2 = bld(
+		features='cxx',
 		source=bld.path.ant_glob('src/*.cpp|'),
 		includes=tg.includes,
 		target='MyApp',
 		target_type='app',
 		link_framework=['MyLib'],
+		use='MyLib Olle',
 		settings={"Debug": {"CONFIG_NAME": 'Debug'}}
 	)
+
+	# print tg2.env
+	# tg2.process_use()
+	# print bld.get_targets()
+
 	

@@ -315,6 +315,20 @@ class PBXNativeTarget(XCodeNode):
 		self.productType = product_type # See TARGET_TYPE_ tuples constants
 		self.productReference = PBXFileReference(target, node.abspath(), file_type, '')
 
+	def add_build_phase(self, phase):
+		# Some build phase types may appear only once. If a phase type already exists, then merge them.
+		if ( phase.__name__ == PBXFrameworksBuildPhase.__name__
+			or phase.__name__ == PBXSourcesBuildPhase.__name__):
+			for b in self.buildPhases:
+				if b.__name__ == phase.__name__:
+					b.files.extend(phase.files)
+					break
+		else:
+			self.buildPhases.append(phase)
+
+	def add_dependency(self, depnd):
+		self.dependencies.append(dep)
+
 # Root project object
 class PBXProject(XCodeNode):
 	def __init__(self, name, version, env):
@@ -337,7 +351,15 @@ class PBXProject(XCodeNode):
 		self.projectDirPath = ""
 		self.targets = []
 		self._objectVersion = version[1]
-		self._output = {}
+		# self._output = {}
+
+	def create_build_file(self, fileref, settings={}):
+		return PBXBuildFile(fileref, settings)
+
+	def create_target_dependency(self, target, name):
+		proxy = PBXContainerItemProxy(self, target, name)
+		dependecy = PBXTargetDependency(target, proxy)
+		return dependecy
 
 	def write(self, file):
 
@@ -360,12 +382,18 @@ class PBXProject(XCodeNode):
 		w("\trootObject = %s;\n" % self._id)
 		w("}\n")
 
-	def add_task_gen(self, target):
+	def add_target(self, target):
 		self.targets.append(target)
 
 		# Collect all targets the project produces. If any other target
 		# depends on this target, we can retreive it from here later.
-		self._output[target.name] = target
+		# self._output[target.name] = target
+
+	def get_target(self, name):
+		for t in self.targets:
+			if t.name == name:
+				return t
+		return None
 
 class xcode(Build.BuildContext):
 	cmd = 'xcode'
@@ -388,6 +416,12 @@ class xcode(Build.BuildContext):
 		files = [PBXFileReference(d.name, d.abspath()) for d in self.as_nodes(files)]
 		group.children.extend(files)
 		return group
+
+	def get_target(self, name):
+		for tg in self.get_all_task_gen():
+			if tg.name == name:
+				return tg
+		return None
 
 	def execute(self):
 		"""
@@ -443,13 +477,17 @@ class xcode(Build.BuildContext):
 				# Check if any framework to link against is some other target we've made
 				dependency_targets = []
 				framework = getattr(tg, 'link_framework', [])
+
 				for fw in framework:
-					if fw and fw in p._output:
+					target = p.get_target(fw)
+					if target:
 						# Target framework found. Make a build file of it
-						target = p._output[fw]
+						# target = p._output[fw]
 						product = PBXBuildFile(target.productReference)
 						fw = PBXFrameworksBuildPhase([product])
 						buildphases.append(fw)
+
+						print Utils.to_list(tg.use)
 
 						# Create an XCode dependency so that XCode knows to build that framework before this target
 						proxy = PBXContainerItemProxy(p, target, target.name)
@@ -483,7 +521,7 @@ class xcode(Build.BuildContext):
 				target = PBXNativeTarget(tg.name, target_node, buildphases, cflst, target_type)
 				target.dependencies.extend(dependency_targets)
 
-				p.add_task_gen(target)
+				p.add_target(target)
 				
 		node = self.bldnode.make_node('%s.xcodeproj' % appname)
 		node.mkdir()
