@@ -199,11 +199,12 @@ class XCBuildConfiguration(XCodeNode):
 
 
 class XCConfigurationList(XCodeNode):
-	def __init__(self, settings):
+	def __init__(self, configlst):
+		""" :param configlst: list of XCConfigurationList """
 		XCodeNode.__init__(self)
-		self.buildConfigurations = settings
+		self.buildConfigurations = configlst
 		self.defaultConfigurationIsVisible = 0
-		self.defaultConfigurationName = settings and settings[0].name or ""
+		self.defaultConfigurationName = configlst and configlst[0].name or ""
 
 # Group/Files
 class PBXFileReference(XCodeNode):
@@ -300,12 +301,12 @@ class PBXShellScriptBuildPhase(XCodeNode):
 		self.shellScript = "%s %s %s --targets=%s" % (sys.executable, sys.argv[0], action, target)
 
 class PBXNativeTarget(XCodeNode):
-	def __init__(self, target, node, configlist, target_type=TARGET_TYPE_APPLICATION, buildphases=[]):
+	def __init__(self, target, node, target_type=TARGET_TYPE_APPLICATION, configlist=[], buildphases=[]):
 		XCodeNode.__init__(self)
 		product_type = target_type[0]
 		file_type = target_type[1]
 
-		self.buildConfigurationList = configlist
+		self.buildConfigurationList = XCConfigurationList(configlist)
 		self.buildPhases = buildphases
 		self.buildRules = []
 		self.dependencies = []
@@ -313,6 +314,10 @@ class PBXNativeTarget(XCodeNode):
 		self.productName = target
 		self.productType = product_type # See TARGET_TYPE_ tuples constants
 		self.productReference = PBXFileReference(node.name, node.abspath(), file_type, '')
+
+	def add_configuration(self, cf):
+		""" :type cf: XCBuildConfiguration """
+		self.buildConfigurationList.buildConfigurations.append(cf)
 
 	def add_build_phase(self, phase):
 		# Some build phase types may appear only once. If a phase type already exists, then merge them.
@@ -466,8 +471,6 @@ class xcode(Build.BuildContext):
 				settings = getattr(tg, 'settings', {})
 
 				# Setup include search paths
-				# include_dirs = Utils.to_list(getattr(tg, 'includes', []))
-				# include_dirs = [x.abspath() for x in self.as_nodes(include_dirs)]
 				includes_dirs_dict = {'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS']}
 
 				# Set the HEADER_SEARCH_PATHS for all configurations
@@ -478,13 +481,12 @@ class xcode(Build.BuildContext):
 					else:
 						settings[k] = includes_dirs_dict
 
-				# Create the config lists
-				cflst = []
-				for k,v in settings.items():
-					cflst.append(XCBuildConfiguration(k, v))
-				cflst = XCConfigurationList(cflst)
 				
-				target = PBXNativeTarget(tg.name, target_node, cflst, target_type, [])
+				target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
+
+				# Add the configs
+				for k,v in settings.items():
+					target.add_configuration(XCBuildConfiguration(k, v))
 
 				if len(tg.source) > 0:
 					g = self.create_group(getattr(tg, 'source_grpname', 'Source'), tg.source)
