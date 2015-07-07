@@ -300,9 +300,8 @@ class PBXShellScriptBuildPhase(XCodeNode):
 		self.shellScript = "%s %s %s --targets=%s" % (sys.executable, sys.argv[0], action, target)
 
 class PBXNativeTarget(XCodeNode):
-	def __init__(self, target, node, buildphases, configlist, target_type=TARGET_TYPE_APPLICATION):
+	def __init__(self, target, node, configlist, target_type=TARGET_TYPE_APPLICATION, buildphases=[]):
 		XCodeNode.__init__(self)
-
 		product_type = target_type[0]
 		file_type = target_type[1]
 
@@ -313,21 +312,20 @@ class PBXNativeTarget(XCodeNode):
 		self.name = target
 		self.productName = target
 		self.productType = product_type # See TARGET_TYPE_ tuples constants
-		self.productReference = PBXFileReference(target, node.abspath(), file_type, '')
+		self.productReference = PBXFileReference(node.name, node.abspath(), file_type, '')
 
 	def add_build_phase(self, phase):
 		# Some build phase types may appear only once. If a phase type already exists, then merge them.
-		if ( phase.__name__ == PBXFrameworksBuildPhase.__name__
-			or phase.__name__ == PBXSourcesBuildPhase.__name__):
+		if ( (phase.__class__ == PBXFrameworksBuildPhase)
+			or (phase.__class__ == PBXSourcesBuildPhase) ):
 			for b in self.buildPhases:
-				if b.__name__ == phase.__name__:
+				if b.__class__ == phase.__class__:
 					b.files.extend(phase.files)
-					break
-		else:
-			self.buildPhases.append(phase)
+					return
+		self.buildPhases.append(phase)
 
 	def add_dependency(self, depnd):
-		self.dependencies.append(dep)
+		self.dependencies.append(depnd)
 
 # Root project object
 class PBXProject(XCodeNode):
@@ -352,9 +350,6 @@ class PBXProject(XCodeNode):
 		self.targets = []
 		self._objectVersion = version[1]
 		# self._output = {}
-
-	def create_build_file(self, fileref, settings={}):
-		return PBXBuildFile(fileref, settings)
 
 	def create_target_dependency(self, target, name):
 		proxy = PBXContainerItemProxy(self, target, name)
@@ -454,15 +449,6 @@ class xcode(Build.BuildContext):
 					else:
 						self.to_log("Argument 'group_files' passed to target '%s' was not a dictionary. Hence, some source files may not be included. Please provide a dict of source files, with group name as key and list of source files as value.\n" % tg.name)
 
-				buildphases = []
-			
-				if len(tg.source) > 0:
-					g = self.create_group(getattr(tg, 'source_grpname', 'Source'), tg.source)
-					buildfiles = [PBXBuildFile(fileref) for fileref in g.children]
-					compilesources = PBXSourcesBuildPhase(buildfiles)
-					buildphases.append(compilesources)
-					target_group.children.append(g)
-
 				# Determine what type to build - framework, app bundle etc.
 				target_type = getattr(tg, 'target_type', 'app')
 				if target_type not in TARGET_TYPES:
@@ -473,27 +459,6 @@ class xcode(Build.BuildContext):
 
 				# Create the output node
 				target_node = tg.path.find_or_declare(tg.name+file_ext)
-				
-				# Check if any framework to link against is some other target we've made
-				dependency_targets = []
-				framework = getattr(tg, 'link_framework', [])
-
-				for fw in framework:
-					target = p.get_target(fw)
-					if target:
-						# Target framework found. Make a build file of it
-						# target = p._output[fw]
-						product = PBXBuildFile(target.productReference)
-						fw = PBXFrameworksBuildPhase([product])
-						buildphases.append(fw)
-
-						print Utils.to_list(tg.use)
-
-						# Create an XCode dependency so that XCode knows to build that framework before this target
-						proxy = PBXContainerItemProxy(p, target, target.name)
-						dependecy = PBXTargetDependency(target, proxy)
-						dependency_targets.append(dependecy)
-
 				
 				# Create settings which can override the project settings. Defaults to none if user
 				# did not pass argument.
@@ -518,8 +483,24 @@ class xcode(Build.BuildContext):
 					cflst.append(XCBuildConfiguration(k, v))
 				cflst = XCConfigurationList(cflst)
 				
-				target = PBXNativeTarget(tg.name, target_node, buildphases, cflst, target_type)
-				target.dependencies.extend(dependency_targets)
+				target = PBXNativeTarget(tg.name, target_node, cflst, target_type, [])
+
+				if len(tg.source) > 0:
+					g = self.create_group(getattr(tg, 'source_grpname', 'Source'), tg.source)
+					buildfiles = [PBXBuildFile(fileref) for fileref in g.children]
+					target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
+					target_group.children.append(g)
+
+				# Check if any framework to link against is some other target we've made
+				framework = getattr(tg, 'link_framework', [])
+
+				for fw in framework:
+					use_target = p.get_target(fw)
+					if use_target:
+						# Target framework found. Make a build file of it
+						# Create an XCode dependency so that XCode knows to build that framework before this target
+						target.add_dependency(p.create_target_dependency(use_target, use_target.name))
+						target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
 
 				p.add_target(target)
 				

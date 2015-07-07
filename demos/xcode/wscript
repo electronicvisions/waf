@@ -19,7 +19,6 @@ def build(bld):
 	tg = bld(
 		features='cxx',
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
-		source_grpname='Fucker',
 		includes='include',
 		group_files={
 			'Include': bld.path.ant_glob('include/MyLib/*.h')
