@@ -663,6 +663,16 @@ def check(self, *k, **kw):
 	Perform a configuration test by calling :py:func:`waflib.Configure.run_build`.
 	For the complete list of parameters, see :py:func:`waflib.Tools.c_config.validate_c`.
 	To force a specific compiler, pass "compiler='c'" or "compiler='cxx'" in the arguments
+
+	Besides build targets, complete builds can be given though a build function. All files will
+	be written to a temporary directory::
+
+		def build(bld):
+			lib_node = bld.srcnode.make_node('libdir/liblc1.c')
+			lib_node.parent.mkdir()
+			lib_node.write('#include <stdio.h>\\nint lib_func(void) { FILE *f = fopen("foo", "r");}\\n', 'w')
+			bld(features='c cshlib', source=[lib_node], linkflags=conf.env.EXTRA_LDFLAGS, target='liblc')
+		conf.check(build_fun=build, msg=msg)
 	"""
 	self.validate_c(kw)
 	self.start_msg(kw['msg'], **kw)
