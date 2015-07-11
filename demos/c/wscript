@@ -66,7 +66,7 @@ def build(bld):
 
 	bld.env.FOO =['m', 'ncurses']
 	bld.env.ST = '-L%s'
-	bld(rule='echo ${ST:FOO}', always=True, shell=1)
+	bld(rule='echo ${ST:FOO} ${ST:SRC}', always=True, source='wscript', shell=1)
 
 	# illustrate how to add a command 'foo' and to execute things in it
 	if bld.cmd == 'foo':
