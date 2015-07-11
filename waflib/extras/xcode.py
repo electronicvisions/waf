@@ -357,6 +357,7 @@ class PBXProject(XCodeNode):
 		# self._output = {}
 
 	def create_target_dependency(self, target, name):
+		""" : param target : PXBNativeTarget """
 		proxy = PBXContainerItemProxy(self, target, name)
 		dependecy = PBXTargetDependency(target, proxy)
 		return dependecy
@@ -384,10 +385,6 @@ class PBXProject(XCodeNode):
 
 	def add_target(self, target):
 		self.targets.append(target)
-
-		# Collect all targets the project produces. If any other target
-		# depends on this target, we can retreive it from here later.
-		# self._output[target.name] = target
 
 	def get_target(self, name):
 		for t in self.targets:
@@ -418,10 +415,7 @@ class xcode(Build.BuildContext):
 		return group
 
 	def get_target(self, name):
-		for tg in self.get_all_task_gen():
-			if tg.name == name:
-				return tg
-		return None
+		return self.get_tgen_by_name(name)
 
 	def execute(self):
 		"""
@@ -495,13 +489,13 @@ class xcode(Build.BuildContext):
 					target_group.children.append(g)
 
 				# Check if any framework to link against is some other target we've made
-				framework = getattr(tg, 'link_framework', [])
-
-				for fw in framework:
-					use_target = p.get_target(fw)
+				libs = getattr(tg, 'tmp_use_seen', [])
+				print tg.tmp_use_seen
+				for lib in libs:
+					use_target = p.get_target(lib)
 					if use_target:
-						# Target framework found. Make a build file of it
-						# Create an XCode dependency so that XCode knows to build that framework before this target
+						# Target libs found. Make a build file of it
+						# Create an XCode dependency so that XCode knows to build that libs before this target
 						target.add_dependency(p.create_target_dependency(use_target, use_target.name))
 						target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
 

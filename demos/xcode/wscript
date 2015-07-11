@@ -14,6 +14,7 @@ def configure(conf):
 	conf.env.SDKROOT = 'macosx10.9'
 	conf.env.PRODUCT_NAME = '$(TARGET_NAME)'
 
+
 def build(bld):
 	bld.load('cxx')
 	tg = bld(
@@ -34,12 +35,11 @@ def build(bld):
 		includes=tg.includes,
 		target='MyApp',
 		target_type='app',
-		link_framework=['MyLib'],
-		use='MyLib Olle',
+		use='MyLib',
 		settings={"Debug": {"CONFIG_NAME": 'Debug'}}
 	)
-
-	# print tg2.env
+	#tg2.propagate_uselib_vars()
+	# print tg2.tmp_use_seen
 	# tg2.process_use()
 	# print bld.get_targets()
 
