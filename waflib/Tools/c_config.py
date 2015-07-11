@@ -867,7 +867,10 @@ def write_config_header(self, configfile='', guard='', top=False, defines=True, 
 			cnf.define('A', 1)
 			cnf.write_config_header('config.h')
 
-	:param configfile: relative path to the file to create
+	This function only adds include guards (if necessary), consult
+	:py:func:`waflib.Tools.c_config.get_config_header` for details on the body.
+
+	:param configfile: path to the file to create (relative or absolute)
 	:type configfile: string
 	:param guard: include guard name to add, by default it is computed from the file name
 	:type guard: string
@@ -896,7 +899,7 @@ def write_config_header(self, configfile='', guard='', top=False, defines=True, 
 
 	node.write('\n'.join(lst))
 
-	# config files are not removed on "waf clean"
+	# config files must not be removed on "waf clean"
 	self.env.append_unique(Build.CFG_FILES, [node.abspath()])
 
 	if remove:
@@ -910,9 +913,16 @@ def get_config_header(self, defines=True, headers=False, define_prefix=''):
 	Create the contents of a ``config.h`` file from the defines and includes
 	set in conf.env.define_key / conf.env.include_key. No include guards are added.
 
+	A prelude will be added from the variable env.WAF_CONFIG_H_PRELUDE if provided. This
+	can be used to insert complex macros or include guards::
+
+		def configure(conf):
+			conf.env.WAF_CONFIG_H_PRELUDE = '#include <unistd.h>\\n'
+			conf.write_config_header('config.h')
+
 	:param defines: write the defines values
 	:type defines: bool
-	:param headers: write the headers
+	:param headers: write include entries for each element in self.env.INCKEYS
 	:type headers: bool
 	:type define_prefix: string
 	:param define_prefix: prefix all the defines with a particular prefix
@@ -920,6 +930,10 @@ def get_config_header(self, defines=True, headers=False, define_prefix=''):
 	:rtype: string
 	"""
 	lst = []
+
+	if self.env.WAF_CONFIG_H_PRELUDE:
+		lst.append(self.env.WAF_CONFIG_H_PRELUDE)
+
 	if headers:
 		for x in self.env[INCKEYS]:
 			lst.append('#include <%s>' % x)
