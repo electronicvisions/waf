@@ -69,17 +69,17 @@ FILE_TYPE_FRAMEWORK = 'wrapper.framework'
 TARGET_TYPE_FRAMEWORK = (PRODUCT_TYPE_FRAMEWORK, FILE_TYPE_FRAMEWORK, '.framework')
 TARGET_TYPE_APPLICATION = (PRODUCT_TYPE_APPLICATION, FILE_TYPE_APPLICATION, '.app')
 
-# Maps a target type as a string to its data
+# Maps target type string to its data
 TARGET_TYPES = {
 	'framework': TARGET_TYPE_FRAMEWORK,
 	'app': TARGET_TYPE_APPLICATION
 }
 
 class XcodeConfiguration(Configure.ConfigurationContext):
-	""" Configuration of the global project settings. Sets a environment variable 'PROJ_CONFIGURATION'
+	""" Configuration of the global project settings. Sets an environment variable 'PROJ_CONFIGURATION'
 	which is a dictionary of configuration name and buildsettings pair.
 	E.g.:
-	{
+	env.PROJ_CONFIGURATION = {
 		'Debug': {
 			'ARCHS': 'x86',
 			...
@@ -101,13 +101,13 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 		Context.Context.execute(self)
 		
 		if not self.env.PROJ_CONFIGURATION:
-			self.to_log("A default project configuration was created since no custom one was given in the configure(ctx) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
+			self.to_log("A default project configuration was created since no custom one was given in the configure(conf) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
 
 		# Set include dir variable
 		if 'HEADER_SEARCH_PATHS' not in self.env:
 			self.env.HEADER_SEARCH_PATHS = ['$(inherited)']
 		else:
-			self.env.HEADER_SEARCH_PATHS = [self.srcnode.make_node(f).abspath() for f in Utils.to_list(self.env.HEADER_SEARCH_PATHS)]
+			self.env.HEADER_SEARCH_PATHS = [self.srcnode.make_node(f).abspath() for f in Utils.to_list(self.env.INCLUDES)]
 
 		# Check for any added config files added by the tool 'c_config'.
 		if 'cfg_files' in self.env:
@@ -120,14 +120,9 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 			"Release": self.env.get_merged_dict(),
 		}
 
-		# Run user configuration(ctx) for customization
-		Configure.ConfigurationContext.execute(self)
-
 		# Error check customization
 		if not isinstance(self.env.PROJ_CONFIGURATION, dict):
 			raise Errors.ConfigurationError("The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.")
-
-
 
 part1 = 0
 part2 = 10000
