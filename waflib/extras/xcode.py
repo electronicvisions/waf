@@ -19,6 +19,10 @@ $ waf configure xcode
 from waflib import Context, TaskGen, Build, Utils, ConfigSet, Configure, Errors
 import os, sys, random, time
 
+@TaskGen.extension('.m', '.mm')
+def dummy(self, node):
+	pass
+
 HEADERS_GLOB = '**/(*.h|*.hpp|*.H|*.inl)'
 
 MAP_EXT = {
@@ -98,7 +102,8 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 	def execute(self):
 
 		# Run user configure()
-		Context.Context.execute(self)
+		Configure.ConfigurationContext.execute(self)
+
 		
 		if not self.env.PROJ_CONFIGURATION:
 			self.to_log("A default project configuration was created since no custom one was given in the configure(conf) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
@@ -114,15 +119,17 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 			self.env.HEADER_SEARCH_PATHS.extend([os.path.abspath(os.path.dirname(f)) for f in self.env.cfg_files])
 
 		# Create default project configuration?
-		# if 'PROJ_CONFIGURATION' not in self.env.keys():
-		self.env.PROJ_CONFIGURATION = {
-			"Debug": self.env.get_merged_dict(),
-			"Release": self.env.get_merged_dict(),
-		}
+		if 'PROJ_CONFIGURATION' not in self.env:
+			self.env.PROJ_CONFIGURATION = {
+				"Debug": self.env.get_merged_dict(),
+				"Release": self.env.get_merged_dict(),
+			}
 
 		# Error check customization
 		if not isinstance(self.env.PROJ_CONFIGURATION, dict):
 			raise Errors.ConfigurationError("The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.")
+
+		self.store()
 
 part1 = 0
 part2 = 10000
