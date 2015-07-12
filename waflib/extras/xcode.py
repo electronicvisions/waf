@@ -426,7 +426,6 @@ class xcode(Build.BuildContext):
 			self.load_envs()
 		self.recurse([self.run_dir])
 
-
 		appname = getattr(Context.g_module, Context.APPNAME, os.path.basename(self.srcnode.abspath()))
 
 		p = PBXProject(appname, ('Xcode 6.0', 46), self.env)
@@ -462,53 +461,48 @@ class xcode(Build.BuildContext):
 				
 				target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
 
-				# Create settings which can override the project settings. Defaults to none if user
-				# did not pass argument.
-				settings = getattr(tg, 'settings', {})
-
-				print tg.env
-				print getattr(tg, 'use', '')
-				print getattr(tg, 'uselib', '')
-
-
+				# Collect source and put them in a group with name set to 'Source', which can be overriden
 				if len(tg.source) > 0:
 					g = self.create_group(getattr(tg, 'source_grpname', 'Source'), tg.source)
 					buildfiles = [PBXBuildFile(fileref) for fileref in g.children]
 					target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
 					target_group.children.append(g)
 
+				# Create build settings which can override the project settings. Defaults to none if user
+				# did not pass argument. However, this will be filled up further below with target specfic
+				# search paths, libs to link etc.
+				settings = getattr(tg, 'settings', {})
+
 				# Check if any framework to link against is some other target we've made
 				libs = getattr(tg, 'tmp_use_seen', [])
 				for lib in libs:
 					use_target = p.get_target(lib)
 					if use_target:
-						# Target libs found. Make a build file of it
-						# Create an XCode dependency so that XCode knows to build that libs before this target
+						# Create an XCode dependency so that XCode knows to build the other target before this target
 						target.add_dependency(p.create_target_dependency(use_target, use_target.name))
 						target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
 
-				# Check for libs to link
-				libs = Utils.to_list(tg.env.FRAMEWORK)
-				ld_flags = ['-framework %s' % lib for lib in libs]
+				# Merge frameworks and libs into one list, and prefix the frameworks
+				ld_flags = ['-framework %s' % lib for lib in Utils.to_list(tg.env.FRAMEWORK)]
 				ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
 
-				# Setup include search paths
-				includes_dirs_dict = {
+				# Override target specfic build settings
+				bldsettings = {
 					'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
 					'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.LIBPATH) + Utils.to_list(tg.env.STLIBPATH),
 					'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.FRAMEWORKPATH),
 					'OTHER_LDFLAGS': r'\n'.join(ld_flags)
 				}
 
-				# Set the HEADER_SEARCH_PATHS for all configurations
+				# The keys represents different build configuration, e.g. Debug, Release and so on..
+				# Insert our generated build settings to all configuration names
 				keys = set(settings.keys() + self.env.PROJ_CONFIGURATION.keys())
 				for k in keys:
 					if k in settings:
-						settings[k].update(includes_dirs_dict)
+						settings[k].update(bldsettings)
 					else:
-						settings[k] = includes_dirs_dict
+						settings[k] = bldsettings
 
-				# Add the configs
 				for k,v in settings.items():
 					target.add_configuration(XCBuildConfiguration(k, v))
 
@@ -518,6 +512,3 @@ class xcode(Build.BuildContext):
 		node.mkdir()
 		node = node.make_node('project.pbxproj')
 		p.write(open(node.abspath(), 'w'))
-		
-
-

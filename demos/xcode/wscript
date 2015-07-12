@@ -13,7 +13,6 @@ def configure(conf):
 	conf.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
 	conf.env.SDKROOT = 'macosx10.9'
 	conf.env.PRODUCT_NAME = '$(TARGET_NAME)'
-	# conf.env.FRAMEWORK_SDL2 = '/Library/Frameworks/SDL2.framework'
 
 def build(bld):
 	bld.load('cxx')
