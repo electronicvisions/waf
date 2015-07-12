@@ -13,7 +13,7 @@ def configure(conf):
 	conf.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
 	conf.env.SDKROOT = 'macosx10.9'
 	conf.env.PRODUCT_NAME = '$(TARGET_NAME)'
-
+	# conf.env.FRAMEWORK_SDL2 = '/Library/Frameworks/SDL2.framework'
 
 def build(bld):
 	bld.load('cxx')
@@ -28,19 +28,17 @@ def build(bld):
 		target_type='framework'
 	)
 
-	
+	bld.env.LIB_SDL2 = '/Library/Frameworks/SDL2.framework/SDL2'
 	tg2 = bld(
-		features='cxx',
+		features='cxx cxxprogram',
 		source=bld.path.ant_glob('src/*.cpp|'),
 		includes=tg.includes,
 		target='MyApp',
 		target_type='app',
-		use='MyLib',
+		use='MyLib Yolo',
+		uselib='SDL2',
+		cxxflags='-O3',
+		framework='Cocoa',
 		settings={"Debug": {"CONFIG_NAME": 'Debug'}}
 	)
-	#tg2.propagate_uselib_vars()
-	# print tg2.tmp_use_seen
-	# tg2.process_use()
-	# print bld.get_targets()
-
 	

@@ -460,27 +460,16 @@ class xcode(Build.BuildContext):
 				# Create the output node
 				target_node = tg.path.find_or_declare(tg.name+file_ext)
 				
+				target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
+
 				# Create settings which can override the project settings. Defaults to none if user
 				# did not pass argument.
 				settings = getattr(tg, 'settings', {})
 
-				# Setup include search paths
-				includes_dirs_dict = {'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS']}
+				print tg.env
+				print getattr(tg, 'use', '')
+				print getattr(tg, 'uselib', '')
 
-				# Set the HEADER_SEARCH_PATHS for all configurations
-				keys = set(settings.keys() + self.env.PROJ_CONFIGURATION.keys())
-				for k in keys:
-					if k in settings:
-						settings[k].update(includes_dirs_dict)
-					else:
-						settings[k] = includes_dirs_dict
-
-				
-				target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
-
-				# Add the configs
-				for k,v in settings.items():
-					target.add_configuration(XCBuildConfiguration(k, v))
 
 				if len(tg.source) > 0:
 					g = self.create_group(getattr(tg, 'source_grpname', 'Source'), tg.source)
@@ -490,7 +479,6 @@ class xcode(Build.BuildContext):
 
 				# Check if any framework to link against is some other target we've made
 				libs = getattr(tg, 'tmp_use_seen', [])
-				print tg.tmp_use_seen
 				for lib in libs:
 					use_target = p.get_target(lib)
 					if use_target:
@@ -498,6 +486,31 @@ class xcode(Build.BuildContext):
 						# Create an XCode dependency so that XCode knows to build that libs before this target
 						target.add_dependency(p.create_target_dependency(use_target, use_target.name))
 						target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
+
+				# Check for libs to link
+				libs = Utils.to_list(tg.env.FRAMEWORK)
+				ld_flags = ['-framework %s' % lib for lib in libs]
+				ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
+
+				# Setup include search paths
+				includes_dirs_dict = {
+					'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
+					'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.LIBPATH) + Utils.to_list(tg.env.STLIBPATH),
+					'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.FRAMEWORKPATH),
+					'OTHER_LDFLAGS': r'\n'.join(ld_flags)
+				}
+
+				# Set the HEADER_SEARCH_PATHS for all configurations
+				keys = set(settings.keys() + self.env.PROJ_CONFIGURATION.keys())
+				for k in keys:
+					if k in settings:
+						settings[k].update(includes_dirs_dict)
+					else:
+						settings[k] = includes_dirs_dict
+
+				# Add the configs
+				for k,v in settings.items():
+					target.add_configuration(XCBuildConfiguration(k, v))
 
 				p.add_target(target)
 				
