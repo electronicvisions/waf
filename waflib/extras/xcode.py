@@ -17,6 +17,7 @@ $ waf configure xcode
 # TODO: support iOS projects
 
 from waflib import Context, TaskGen, Build, Utils, ConfigSet, Configure, Errors
+from waflib.Build import BuildContext
 import os, sys, random, time
 
 @TaskGen.extension('.m', '.mm')
@@ -59,7 +60,7 @@ MAP_EXT = {
 # Used in PBXNativeTarget elements
 PRODUCT_TYPE_APPLICATION = 'com.apple.product-type.application'
 PRODUCT_TYPE_FRAMEWORK = 'com.apple.product-type.framework'
-PRODUCT_TYPE_TOOL = 'com.apple.product-type.tool'
+PRODUCT_TYPE_EXECUTABLE = 'com.apple.product-type.tool'
 PRODUCT_TYPE_LIB_STATIC = 'com.apple.product-type.library.static'
 PRODUCT_TYPE_LIB_DYNAMIC = 'com.apple.product-type.library.dynamic'
 PRODUCT_TYPE_EXTENSION = 'com.apple.product-type.kernel-extension'
@@ -68,16 +69,41 @@ PRODUCT_TYPE_IOKIT = 'com.apple.product-type.kernel-extension.iokit'
 # Used in PBXFileReference elements
 FILE_TYPE_APPLICATION = 'wrapper.cfbundle'
 FILE_TYPE_FRAMEWORK = 'wrapper.framework'
+FILE_TYPE_LIB_DYNAMIC = 'compiled.mach-o.dylib'
+FILE_TYPE_LIB_STATIC = 'archive.ar'
+FILE_TYPE_EXECUTABLE = 'compiled.mach-o.executable'
 
 # Tuple packs of the above
 TARGET_TYPE_FRAMEWORK = (PRODUCT_TYPE_FRAMEWORK, FILE_TYPE_FRAMEWORK, '.framework')
 TARGET_TYPE_APPLICATION = (PRODUCT_TYPE_APPLICATION, FILE_TYPE_APPLICATION, '.app')
+TARGET_TYPE_DYNAMIC_LIB = (PRODUCT_TYPE_LIB_DYNAMIC, FILE_TYPE_LIB_DYNAMIC, '.dylib')
+TARGET_TYPE_STATIC_LIB = (PRODUCT_TYPE_LIB_STATIC, FILE_TYPE_LIB_STATIC, '.a')
+TARGET_TYPE_EXECUTABLE = (PRODUCT_TYPE_EXECUTABLE, FILE_TYPE_EXECUTABLE, '')
 
 # Maps target type string to its data
 TARGET_TYPES = {
 	'framework': TARGET_TYPE_FRAMEWORK,
-	'app': TARGET_TYPE_APPLICATION
+	'app': TARGET_TYPE_APPLICATION,
+	'dylib': TARGET_TYPE_DYNAMIC_LIB,
+	'stlib': TARGET_TYPE_STATIC_LIB,
+	'exe' :TARGET_TYPE_EXECUTABLE,
 }
+
+""" Provide user-friendly methods to build different target types
+		E.g. bld.framework(source='..', ...) to build a Framework target.
+		E.g. bld.dylib(source='..', ...) to build a Dynamic library target.
+		etc...
+"""
+def build_target(self, tgtype, *k, **kw):
+	kw['features'] = 'cxx cxxprogram'
+	kw['target_type'] = tgtype
+	return self(*k, **kw)
+
+BuildContext.app = lambda self, *k, **kw: build_target(self, 'app', *k, **kw)
+BuildContext.framework = lambda self, *k, **kw: build_target(self, 'framework', *k, **kw)
+BuildContext.dylib = lambda self, *k, **kw: build_target(self, 'dylib', *k, **kw)
+BuildContext.stlib = lambda self, *k, **kw: build_target(self, 'stlib', *k, **kw)
+BuildContext.exe = lambda self, *k, **kw: build_target(self, 'exe', *k, **kw)
 
 class XcodeConfiguration(Configure.ConfigurationContext):
 	""" Configuration of the global project settings. Sets an environment variable 'PROJ_CONFIGURATION'
@@ -100,11 +126,9 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 		self.init_dirs()
 
 	def execute(self):
-
 		# Run user configure()
 		Configure.ConfigurationContext.execute(self)
 
-		
 		if not self.env.PROJ_CONFIGURATION:
 			self.to_log("A default project configuration was created since no custom one was given in the configure(conf) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
 
@@ -348,7 +372,7 @@ class PBXProject(XCodeNode):
 		XCodeNode.__init__(self)
 
 		if not isinstance(env.PROJ_CONFIGURATION, dict):
-			raise Errors.WafError("env.PROJ_CONFIGURATION is not a dictionary. Did you import the xcode module in your wscript?")
+			raise Errors.WafError("Error: env.PROJ_CONFIGURATION must be a dictionary. This is done for you if you do not define one yourself. However, did you load the xcode module in your wscript configure() ?")
 
 		# Retreive project configuration
 		configurations = []

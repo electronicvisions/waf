@@ -39,4 +39,23 @@ def build(bld):
 		framework='Cocoa',
 		settings={"Debug": {"CONFIG_NAME": 'Debug'}}
 	)
+
+	bld.dylib(
+		source=tg.source,
+		includes=tg.includes,
+		target='MyDynLibYo',
+	)
+
+	bld.exe(
+		source=tg.source,
+		includes=tg.includes,
+		target='MyExe',
+	)
+
+	bld.program(
+		source=tg.source,
+		includes=tg.includes,
+		target='MyStaticLib',
+		target_type='stlib'
+	)
 	
