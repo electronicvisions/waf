@@ -125,6 +125,14 @@ class XcodeConfiguration(Configure.ConfigurationContext):
 				"Release": self.env.get_merged_dict(),
 			}
 
+		# Some build settings are required to be present by XCode. We will supply default values
+		# if user hasn't defined any.
+		defaults_required = [('PRODUCT_NAME', '$(TARGET_NAME')]
+		for cfgname,settings in self.env.PROJ_CONFIGURATION.iteritems():
+			for default_var, default_val in defaults_required:
+				if default_var not in settings:
+					settings[default_var] = default_val
+
 		# Error check customization
 		if not isinstance(self.env.PROJ_CONFIGURATION, dict):
 			raise Errors.ConfigurationError("The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.")
@@ -430,7 +438,7 @@ class xcode(Build.BuildContext):
 
 		appname = getattr(Context.g_module, Context.APPNAME, os.path.basename(self.srcnode.abspath()))
 
-		p = PBXProject(appname, ('Xcode 6.0', 46), self.env)
+		p = PBXProject(appname, ('Xcode 3.2', 46), self.env)
 
 		for g in self.groups:
 			for tg in g:

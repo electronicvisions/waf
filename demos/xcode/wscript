@@ -12,7 +12,6 @@ def configure(conf):
 	conf.env.ARCHS = 'x86_64'
 	conf.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
 	conf.env.SDKROOT = 'macosx10.9'
-	conf.env.PRODUCT_NAME = '$(TARGET_NAME)'
 
 def build(bld):
 	bld.load('cxx')
