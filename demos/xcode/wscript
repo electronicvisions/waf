@@ -6,15 +6,17 @@ APPNAME = 'Avocada'
 VERSION = '1.0'
 
 def configure(conf):
-	conf.load('cxx')
+	
 	conf.env.FRAMEWORK_VERSION = '1.0'
 	conf.env.CONFIG_NAME = 'Kuk'
 	conf.env.ARCHS = 'x86_64'
 	conf.env.MACOSX_DEPLOYMENT_TARGET = '10.9'
 	conf.env.SDKROOT = 'macosx10.9'
 
+	conf.load('xcode')
+
 def build(bld):
-	bld.load('cxx')
+	
 	tg = bld(
 		features='cxx',
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
@@ -52,7 +54,7 @@ def build(bld):
 		target='MyExe',
 	)
 
-	bld.program(
+	bld.stlib(
 		source=tg.source,
 		includes=tg.includes,
 		target='MyStaticLib',

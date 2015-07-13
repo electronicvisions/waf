@@ -20,7 +20,7 @@ from waflib import Context, TaskGen, Build, Utils, ConfigSet, Configure, Errors
 from waflib.Build import BuildContext
 import os, sys, random, time
 
-@TaskGen.extension('.m', '.mm')
+@TaskGen.extension('.m', '.mm', '.cpp','.cc','.cxx','.C','.c++', '.c')
 def dummy(self, node):
 	pass
 
@@ -95,6 +95,7 @@ TARGET_TYPES = {
 		etc...
 """
 def build_target(self, tgtype, *k, **kw):
+	self.load('ccroot')
 	kw['features'] = 'cxx cxxprogram'
 	kw['target_type'] = tgtype
 	return self(*k, **kw)
@@ -105,63 +106,47 @@ BuildContext.dylib = lambda self, *k, **kw: build_target(self, 'dylib', *k, **kw
 BuildContext.stlib = lambda self, *k, **kw: build_target(self, 'stlib', *k, **kw)
 BuildContext.exe = lambda self, *k, **kw: build_target(self, 'exe', *k, **kw)
 
-class XcodeConfiguration(Configure.ConfigurationContext):
-	""" Configuration of the global project settings. Sets an environment variable 'PROJ_CONFIGURATION'
-	which is a dictionary of configuration name and buildsettings pair.
-	E.g.:
-	env.PROJ_CONFIGURATION = {
-		'Debug': {
-			'ARCHS': 'x86',
-			...
-		}
-		'Release': {
-			'ARCHS' x86_64'
-			...
-		}
+""" Configuration of the global project settings. Sets an environment variable 'PROJ_CONFIGURATION'
+which is a dictionary of configuration name and buildsettings pair.
+E.g.:
+env.PROJ_CONFIGURATION = {
+	'Debug': {
+		'ARCHS': 'x86',
+		...
 	}
-	The user can define a completely customized dictionary in configure() stage. Otherwise a default Debug/Release will be created
-	based on env variable """
-	def __init__(self):
-		Configure.ConfigurationContext.__init__(self)
-		self.init_dirs()
+	'Release': {
+		'ARCHS' x86_64'
+		...
+	}
+}
+The user can define a completely customized dictionary in configure() stage. Otherwise a default Debug/Release will be created
+based on env variable """
+def configure(self):
+	if not self.env.PROJ_CONFIGURATION:
+		self.to_log("A default project configuration was created since no custom one was given in the configure(conf) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
 
-	def execute(self):
-		# Run user configure()
-		Configure.ConfigurationContext.execute(self)
+	# Check for any added config files added by the tool 'c_config'.
+	if 'cfg_files' in self.env:
+		self.env.INCLUDES = Utils.to_list(self.env.INCLUDES) + [os.path.abspath(os.path.dirname(f)) for f in self.env.cfg_files]
 
-		if not self.env.PROJ_CONFIGURATION:
-			self.to_log("A default project configuration was created since no custom one was given in the configure(conf) stage. Define your custom project settings by adding PROJ_CONFIGURATION to env. The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.\n")
+	# Create default project configuration?
+	if 'PROJ_CONFIGURATION' not in self.env:
+		self.env.PROJ_CONFIGURATION = {
+			"Debug": self.env.get_merged_dict(),
+			"Release": self.env.get_merged_dict(),
+		}
 
-		# Set include dir variable
-		if 'HEADER_SEARCH_PATHS' not in self.env:
-			self.env.HEADER_SEARCH_PATHS = ['$(inherited)']
-		else:
-			self.env.HEADER_SEARCH_PATHS = [self.srcnode.make_node(f).abspath() for f in Utils.to_list(self.env.INCLUDES)]
+	# Some build settings are required to be present by XCode. We will supply default values
+	# if user hasn't defined any.
+	defaults_required = [('PRODUCT_NAME', '$(TARGET_NAME')]
+	for cfgname,settings in self.env.PROJ_CONFIGURATION.iteritems():
+		for default_var, default_val in defaults_required:
+			if default_var not in settings:
+				settings[default_var] = default_val
 
-		# Check for any added config files added by the tool 'c_config'.
-		if 'cfg_files' in self.env:
-			self.env.HEADER_SEARCH_PATHS.extend([os.path.abspath(os.path.dirname(f)) for f in self.env.cfg_files])
-
-		# Create default project configuration?
-		if 'PROJ_CONFIGURATION' not in self.env:
-			self.env.PROJ_CONFIGURATION = {
-				"Debug": self.env.get_merged_dict(),
-				"Release": self.env.get_merged_dict(),
-			}
-
-		# Some build settings are required to be present by XCode. We will supply default values
-		# if user hasn't defined any.
-		defaults_required = [('PRODUCT_NAME', '$(TARGET_NAME')]
-		for cfgname,settings in self.env.PROJ_CONFIGURATION.iteritems():
-			for default_var, default_val in defaults_required:
-				if default_var not in settings:
-					settings[default_var] = default_val
-
-		# Error check customization
-		if not isinstance(self.env.PROJ_CONFIGURATION, dict):
-			raise Errors.ConfigurationError("The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.")
-
-		self.store()
+	# Error check customization
+	if not isinstance(self.env.PROJ_CONFIGURATION, dict):
+		raise Errors.ConfigurationError("The env.PROJ_CONFIGURATION must be a dictionary with at least one key, where each key is the configuration name, and the value is a dictionary of key/value settings.")
 
 part1 = 0
 part2 = 10000
@@ -372,7 +357,7 @@ class PBXProject(XCodeNode):
 		XCodeNode.__init__(self)
 
 		if not isinstance(env.PROJ_CONFIGURATION, dict):
-			raise Errors.WafError("Error: env.PROJ_CONFIGURATION must be a dictionary. This is done for you if you do not define one yourself. However, did you load the xcode module in your wscript configure() ?")
+			raise Errors.WafError("Error: env.PROJ_CONFIGURATION must be a dictionary. This is done for you if you do not define one yourself. However, did you load the xcode module at the end of your wscript configure() ?")
 
 		# Retreive project configuration
 		configurations = []
