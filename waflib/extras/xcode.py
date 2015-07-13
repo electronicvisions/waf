@@ -426,10 +426,6 @@ class xcode(Build.BuildContext):
 		group.children.extend(files)
 		return group
 
-	def get_target(self, name):
-		""" Get TaskGen by name. TODO remove """
-		return self.get_tgen_by_name(name)
-
 	def execute(self):
 		"""
 		Entry point
