@@ -364,7 +364,6 @@ class PBXProject(XCodeNode):
 		self.projectDirPath = ""
 		self.targets = []
 		self._objectVersion = version[1]
-		# self._output = {}
 
 	def create_target_dependency(self, target, name):
 		""" : param target : PXBNativeTarget """
@@ -397,6 +396,7 @@ class PBXProject(XCodeNode):
 		self.targets.append(target)
 
 	def get_target(self, name):
+		""" Get a reference to PBXNativeTarget if it exists """
 		for t in self.targets:
 			if t.name == name:
 				return t
@@ -418,13 +418,16 @@ class xcode(Build.BuildContext):
 		return nodes
 
 	def create_group(self, name, files):
-		""" Returns a new PBXGroup containing the files (paths) passed in the files arg """
+		""" Returns a new PBXGroup containing the files (paths) passed in the files arg 
+			:type files: string
+		"""
 		group = PBXGroup(name)
 		files = [PBXFileReference(d.name, d.abspath()) for d in self.as_nodes(files)]
 		group.children.extend(files)
 		return group
 
 	def get_target(self, name):
+		""" Get TaskGen by name. TODO remove """
 		return self.get_tgen_by_name(name)
 
 	def execute(self):
