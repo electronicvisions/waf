@@ -1,5 +1,4 @@
 from waflib import Task, TaskGen
-from waflib.extras import xcode
 top = '.'
 out = 'build'
 APPNAME = 'Avocada'
