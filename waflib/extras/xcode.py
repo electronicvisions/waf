@@ -20,9 +20,8 @@ from waflib import Context, TaskGen, Build, Utils, ConfigSet, Configure, Errors
 from waflib.Build import BuildContext
 import os, sys, random, time
 
-@TaskGen.extension('.m', '.mm', '.cpp','.cc','.cxx','.C','.c++', '.c')
-def dummy(self, node):
-	pass
+def options(opt):
+	opt.load('cxx')
 
 HEADERS_GLOB = '**/(*.h|*.hpp|*.H|*.inl)'
 
@@ -88,23 +87,6 @@ TARGET_TYPES = {
 	'stlib': TARGET_TYPE_STATIC_LIB,
 	'exe' :TARGET_TYPE_EXECUTABLE,
 }
-
-""" Provide user-friendly methods to build different target types
-		E.g. bld.framework(source='..', ...) to build a Framework target.
-		E.g. bld.dylib(source='..', ...) to build a Dynamic library target.
-		etc...
-"""
-def build_target(self, tgtype, *k, **kw):
-	self.load('ccroot')
-	kw['features'] = 'cxx cxxprogram'
-	kw['target_type'] = tgtype
-	return self(*k, **kw)
-
-BuildContext.app = lambda self, *k, **kw: build_target(self, 'app', *k, **kw)
-BuildContext.framework = lambda self, *k, **kw: build_target(self, 'framework', *k, **kw)
-BuildContext.dylib = lambda self, *k, **kw: build_target(self, 'dylib', *k, **kw)
-BuildContext.stlib = lambda self, *k, **kw: build_target(self, 'stlib', *k, **kw)
-BuildContext.exe = lambda self, *k, **kw: build_target(self, 'exe', *k, **kw)
 
 """ Configuration of the global project settings. Sets an environment variable 'PROJ_CONFIGURATION'
 which is a dictionary of configuration name and buildsettings pair.
@@ -530,3 +512,20 @@ class xcode(Build.BuildContext):
 		node.mkdir()
 		node = node.make_node('project.pbxproj')
 		p.write(open(node.abspath(), 'w'))
+	
+	def build_target(self, tgtype, *k, **kw):
+		""" Provide user-friendly methods to build different target types
+				E.g. bld.framework(source='..', ...) to build a Framework target.
+				E.g. bld.dylib(source='..', ...) to build a Dynamic library target.
+				etc...
+		"""
+		self.load('ccroot')
+		kw['features'] = 'cxx cxxprogram'
+		kw['target_type'] = tgtype
+		return self(*k, **kw)
+
+	def app(self, *k, **kw): return self.build_target('app', *k, **kw)
+	def framework(self, *k, **kw): return self.build_target('framework', *k, **kw)
+	def dylib(self, *k, **kw): return self.build_target('dylib', *k, **kw)
+	def stlib(self, *k, **kw): return self.build_target('stlib', *k, **kw)
+	def exe(self, *k, **kw): return self.build_target('exe', *k, **kw)
