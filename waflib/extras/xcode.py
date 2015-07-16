@@ -220,6 +220,12 @@ class PBXFileReference(XCodeNode):
 		self.path = path
 		self.sourceTree = sourcetree
 
+	def __hash__(self):
+		return (self.path+self.name).__hash__()
+
+	def __eq__(self, other):
+		return (self.path, self.name) == (other.path, other.name)
+
 class PBXBuildFile(XCodeNode):
 	""" This element indicate a file reference that is used in a PBXBuildPhase (either as an include or resource). """
 	def __init__(self, fileRef, settings={}):
@@ -262,6 +268,14 @@ class PBXTargetDependency(XCodeNode):
 		
 class PBXFrameworksBuildPhase(XCodeNode):
 	""" This is the element for the framework link build phase, i.e. linking to frameworks """
+	def __init__(self, pbxbuildfiles):
+		XCodeNode.__init__(self)
+		self.buildActionMask = 2147483647
+		self.runOnlyForDeploymentPostprocessing = 0
+		self.files = pbxbuildfiles #List of PBXBuildFile (.o, .framework, .dylib)
+
+class PBXHeadersBuildPhase(XCodeNode):
+	""" This is the element for adding header files to be packaged into the .framework """
 	def __init__(self, pbxbuildfiles):
 		XCodeNode.__init__(self)
 		self.buildActionMask = 2147483647
@@ -397,6 +411,8 @@ class xcode(Build.BuildContext):
 	cmd = 'xcode'
 	fun = 'build'
 
+	file_refs = dict()
+
 	def as_nodes(self, files):
 		""" Returns a list of waflib.Nodes from a list of string of file paths """
 		nodes = []
@@ -413,9 +429,14 @@ class xcode(Build.BuildContext):
 			:type files: string
 		"""
 		group = PBXGroup(name)
-		files = [PBXFileReference(d.name, d.abspath()) for d in self.as_nodes(files)]
+		files = [self.unique_filereference(PBXFileReference(d.name, d.abspath())) for d in self.as_nodes(files)]
 		group.children.extend(files)
 		return group
+
+	def unique_filereference(self, fileref):
+		if fileref not in self.file_refs:
+			self.file_refs[fileref] = fileref
+		return self.file_refs[fileref]
 
 	def execute(self):
 		"""
@@ -481,6 +502,11 @@ class xcode(Build.BuildContext):
 						# Create an XCode dependency so that XCode knows to build the other target before this target
 						target.add_dependency(p.create_target_dependency(use_target, use_target.name))
 						target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
+
+				hdrs = self.as_nodes(Utils.to_list(getattr(tg, 'export_headers', [])))
+				files = [self.unique_filereference(PBXFileReference(n.name, n.abspath())) for n in hdrs]
+				target.add_build_phase(PBXHeadersBuildPhase([PBXBuildFile(f, {'ATTRIBUTES': ('Public',)}) for f in files]))
+
 
 				# Merge frameworks and libs into one list, and prefix the frameworks
 				ld_flags = ['-framework %s' % lib for lib in Utils.to_list(tg.env.FRAMEWORK)]
