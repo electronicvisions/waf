@@ -210,9 +210,10 @@ class Context(ctx):
 		"""
 		tools = Utils.to_list(tool_list)
 		path = Utils.to_list(kw.get('tooldir', ''))
+		loadFromSysPath = kw.get('loadFromSysPath', True)
 
 		for t in tools:
-			module = load_tool(t, path)
+			module = load_tool(t, path, loadFromSysPath=loadFromSysPath)
 			fun = getattr(module, kw.get('name', self.fun), None)
 			if fun:
 				fun(self)
@@ -627,7 +628,7 @@ def load_module(path, encoding=None):
 
 	return module
 
-def load_tool(tool, tooldir=None, ctx=None):
+def load_tool(tool, tooldir=None, ctx=None, loadFromSysPath=True):
 	"""
 	Import a Waf tool (python module), and store it in the dict :py:const:`waflib.Context.Context.tools`
 
@@ -635,33 +636,44 @@ def load_tool(tool, tooldir=None, ctx=None):
 	:param tool: Name of the tool
 	:type  tooldir: list
 	:param tooldir: List of directories to search for the tool module
+	:type  loadFromSysPath: boolean
+	:param loadFromSysPath: whether or not to search the regular sys.path, besides waf_dir and potentially given tooldirs
 	"""
 	if tool == 'java':
 		tool = 'javaw' # jython
 	else:
 		tool = tool.replace('++', 'xx')
 
-	if tooldir:
-		assert isinstance(tooldir, list)
-		sys.path = tooldir + sys.path
-		try:
-			__import__(tool)
+	origSysPath = sys.path
+	if not loadFromSysPath: sys.path = []
+	try:
+		if tooldir:
+			assert isinstance(tooldir, list)
+			sys.path = tooldir + sys.path
+			try:
+				__import__(tool)
+			finally:
+				for d in tooldir:
+					sys.path.remove(d)
 			ret = sys.modules[tool]
 			Context.tools[tool] = ret
 			return ret
-		finally:
-			for d in tooldir:
-				sys.path.remove(d)
-	else:
-		for x in ('waflib.Tools.%s', 'waflib.extras.%s', 'waflib.%s', '%s'):
+		else:
+			if not loadFromSysPath: sys.path.insert(0, waf_dir)
 			try:
-				__import__(x % tool)
-				break
-			except ImportError:
-				x = None
-		if x is None: # raise an exception
-			__import__(tool)
-		ret = sys.modules[x % tool]
-		Context.tools[tool] = ret
-		return ret
+				for x in ('waflib.Tools.%s', 'waflib.extras.%s', 'waflib.%s', '%s'):
+					try:
+						__import__(x % tool)
+						break
+					except ImportError:
+						x = None
+				if x is None: # raise an exception
+					__import__(tool)
+			finally:
+				if not loadFromSysPath: sys.path.remove(waf_dir)
+			ret = sys.modules[x % tool]
+			Context.tools[tool] = ret
+			return ret
+	finally:
+		if not loadFromSysPath: sys.path += origSysPath
 
