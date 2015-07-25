@@ -621,8 +621,8 @@ def load_module(path, encoding=None):
 	module_dir = os.path.dirname(path)
 	sys.path.insert(0, module_dir)
 
-	exec(compile(code, path, 'exec'), module.__dict__)
-	sys.path.remove(module_dir)
+	try    : exec(compile(code, path, 'exec'), module.__dict__)
+	finally: sys.path.remove(module_dir)
 
 	cache_modules[path] = module
 
