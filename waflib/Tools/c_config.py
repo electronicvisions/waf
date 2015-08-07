@@ -1076,13 +1076,10 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 			ver = k['__INTEL_COMPILER']
 			conf.env['CC_VERSION'] = (ver[:-2], ver[-2], ver[-1])
 		else:
-			if isD('__clang__'):
-				try:
-					conf.env['CC_VERSION'] = (k['__clang_major__'], k['__clang_minor__'], k['__clang_patchlevel__'])
-				except KeyError:
-					# Some versions of OSX have a faux-gcc "clang" without clang version defines
-					conf.env['CC_VERSION'] = (k['__GNUC__'], k['__GNUC_MINOR__'], k['__GNUC_PATCHLEVEL__'])
+			if isD('__clang__') and isD('__clang_major__'):
+				conf.env['CC_VERSION'] = (k['__clang_major__'], k['__clang_minor__'], k['__clang_patchlevel__'])
 			else:
+				# older clang versions and gcc
 				conf.env['CC_VERSION'] = (k['__GNUC__'], k['__GNUC_MINOR__'], k.get('__GNUC_PATCHLEVEL__', '0'))
 	return k
 
