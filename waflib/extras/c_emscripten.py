@@ -4,7 +4,7 @@
 import os, subprocess, shlex
 
 from waflib import Logs
-from waflib.Tools import ccroot, ar, gcc, gxx
+from waflib.Tools import ccroot, gcc, gxx
 from waflib.Configure import conf
 from waflib.TaskGen import after_method, feature
 
@@ -62,6 +62,7 @@ def find_emscripten(conf):
 	cxx = conf.find_program(['em++'], var='CXX')
 	conf.env.CXX = cxx
 	conf.env.CXX_NAME = 'emscripten'
+	conf.find_program(['emar'], var='AR')
 
 def configure(conf):
 	conf.find_emscripten()
@@ -73,6 +74,7 @@ def configure(conf):
 	conf.cxx_load_tools()
 	conf.cxx_add_flags()
 	conf.link_add_flags()
+	conf.env.ARFLAGS = ['rcs']
 	conf.env.cshlib_PATTERN = '%s.js'
 	conf.env.cxxshlib_PATTERN = '%s.js'
 	conf.env.cstlib_PATTERN = '%s.bc'
