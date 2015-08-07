@@ -1040,9 +1040,6 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 		def isD(var):
 			return var in k
 
-		def isT(var):
-			return var in k and k[var] != '0'
-
 		# Some documentation is available at http://predef.sourceforge.net
 		# The names given to DEST_OS must match what Utils.unversioned_sys_platform() returns.
 		if not conf.env.DEST_OS:
