@@ -1083,10 +1083,7 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 					# Some versions of OSX have a faux-gcc "clang" without clang version defines
 					conf.env['CC_VERSION'] = (k['__GNUC__'], k['__GNUC_MINOR__'], k['__GNUC_PATCHLEVEL__'])
 			else:
-				try:
-					conf.env['CC_VERSION'] = (k['__GNUC__'], k['__GNUC_MINOR__'], k['__GNUC_PATCHLEVEL__'])
-				except KeyError:
-					conf.env['CC_VERSION'] = (k['__GNUC__'], k['__GNUC_MINOR__'], 0)
+				conf.env['CC_VERSION'] = (k['__GNUC__'], k['__GNUC_MINOR__'], k.get('__GNUC_PATCHLEVEL__', '0'))
 	return k
 
 @conf
