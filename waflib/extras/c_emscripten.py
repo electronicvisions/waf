@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 vi:ts=4:noexpandtab
 
-import os, subprocess, shlex
+import subprocess, shlex, sys
 
-from waflib import Logs
 from waflib.Tools import ccroot, gcc, gxx
 from waflib.Configure import conf
 from waflib.TaskGen import after_method, feature
