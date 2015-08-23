@@ -335,23 +335,19 @@ def check_fortran_clib(self, autoadd=True, *k, **kw):
 def getoutput(conf, cmd, stdin=False):
 	"""
 	TODO a bit redundant, can be removed anytime
+	TODO waf 1.9
 	"""
+	wargs = {'env': conf.env.env or None, 'output': 0}
 	if stdin:
+		wargs['stdin'] = Utils.subprocess.PIPE
+		wargs['input'] = '\n'.encode()
 		stdin = Utils.subprocess.PIPE
 	else:
 		stdin = None
-	env = conf.env.env or None
 	try:
-		p = Utils.subprocess.Popen(cmd, stdin=stdin, stdout=Utils.subprocess.PIPE, stderr=Utils.subprocess.PIPE, env=env)
-		if stdin:
-			p.stdin.write('\n'.encode())
-		out, err = p.communicate()
+		out, err = conf.cmd_and_log(cmd, **wargs)
 	except Exception:
 		conf.fatal('could not determine the compiler version %r' % cmd)
-	if not isinstance(out, str):
-		out = out.decode(sys.stdout.encoding or 'iso8859-1')
-	if not isinstance(err, str):
-		err = err.decode(sys.stdout.encoding or 'iso8859-1')
 	return (out, err)
 
 # ------------------------------------------------------------------------
