@@ -322,7 +322,7 @@ class Context(ctx):
 		unlike :py:meth:`waflib.Context.Context.cmd_and_log`
 
 		:param cmd: command argument for subprocess.Popen
-		:param kw: keyword arguments for subprocess.Popen
+		:param kw: keyword arguments for subprocess.Popen. The parameters input/timeout will be passed to wait/communicate.
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
@@ -340,14 +340,22 @@ class Context(ctx):
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
 			raise Errors.WafError("Program %s not found!" % cmd[0])
 
+		wargs = {}
+		if 'timeout' in kw:
+			wargs['timeout'] = kw['timeout']
+			del kw['timeout']
+		if 'input' in kw:
+			wargs['input'] = kw['input']
+			del kw['input']
+
 		try:
 			if kw['stdout'] or kw['stderr']:
 				p = subprocess.Popen(cmd, **kw)
-				(out, err) = p.communicate()
+				(out, err) = p.communicate(**wargs)
 				ret = p.returncode
 			else:
 				out, err = (None, None)
-				ret = subprocess.Popen(cmd, **kw).wait()
+				ret = subprocess.Popen(cmd, **kw).wait(**wargs)
 		except Exception as e:
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
@@ -370,20 +378,21 @@ class Context(ctx):
 
 	def cmd_and_log(self, cmd, **kw):
 		"""
-		Execute a command and return stdout if the execution is successful.
+		Execute a command and return stdout/stderr if the execution is successful.
 		An exception is thrown when the exit status is non-0. In that case, both stderr and stdout
 		will be bound to the WafError object::
 
 			def configure(conf):
 				out = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.STDOUT, quiet=waflib.Context.BOTH)
 				(out, err) = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.BOTH)
+				(out, err) = conf.cmd_and_log(cmd, input='\n'.encode(), stdin=waflib.Utils.subprocess.PIPE, output=waflib.Context.STDOUT)
 				try:
 					conf.cmd_and_log(['which', 'someapp'], output=waflib.Context.BOTH)
 				except Exception as e:
 					print(e.stdout, e.stderr)
 
 		:param cmd: args for subprocess.Popen
-		:param kw: keyword arguments for subprocess.Popen
+		:param kw: keyword arguments for subprocess.Popen. The parameters input/timeout will be passed to wait/communicate.
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
@@ -407,9 +416,18 @@ class Context(ctx):
 		kw['stdout'] = kw['stderr'] = subprocess.PIPE
 		if quiet is None:
 			self.to_log(cmd)
+
+		wargs = {}
+		if 'timeout' in kw:
+			wargs['timeout'] = kw['timeout']
+			del kw['timeout']
+		if 'input' in kw:
+			wargs['input'] = kw['input']
+			del kw['input']
+
 		try:
 			p = subprocess.Popen(cmd, **kw)
-			(out, err) = p.communicate()
+			(out, err) = p.communicate(**wargs)
 		except Exception as e:
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
