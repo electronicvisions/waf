@@ -341,12 +341,14 @@ class Context(ctx):
 			raise Errors.WafError("Program %s not found!" % cmd[0])
 
 		wargs = {}
-		if kw.get('timeout', None):
-			wargs['timeout'] = kw['timeout']
+		if 'timeout' in kw:
+			if kw['timeout'] is not None:
+				wargs['timeout'] = kw['timeout']
 			del kw['timeout']
-		if kw.get('input', None) is not None:
-			wargs['input'] = kw['input']
-			kw['stdin'] = Utils.subprocess.PIPE
+		if 'input' in kw:
+			if kw['input']:
+				wargs['input'] = kw['input']
+				kw['stdin'] = Utils.subprocess.PIPE
 			del kw['input']
 
 		try:
@@ -419,12 +421,14 @@ class Context(ctx):
 			self.to_log(cmd)
 
 		wargs = {}
-		if kw.get('timeout', None):
-			wargs['timeout'] = kw['timeout']
+		if 'timeout' in kw:
+			if kw['timeout'] is not None:
+				wargs['timeout'] = kw['timeout']
 			del kw['timeout']
 		if 'input' in kw:
-			wargs['input'] = kw['input']
-			kw['stdin'] = Utils.subprocess.PIPE
+			if kw['input']:
+				wargs['input'] = kw['input']
+				kw['stdin'] = Utils.subprocess.PIPE
 			del kw['input']
 
 		try:
