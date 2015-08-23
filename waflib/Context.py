@@ -385,7 +385,7 @@ class Context(ctx):
 			def configure(conf):
 				out = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.STDOUT, quiet=waflib.Context.BOTH)
 				(out, err) = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.BOTH)
-				(out, err) = conf.cmd_and_log(cmd, input='\n'.encode(), stdin=waflib.Utils.subprocess.PIPE, output=waflib.Context.STDOUT)
+				(out, err) = conf.cmd_and_log(cmd, input='\\n'.encode(), stdin=waflib.Utils.subprocess.PIPE, output=waflib.Context.STDOUT)
 				try:
 					conf.cmd_and_log(['which', 'someapp'], output=waflib.Context.BOTH)
 				except Exception as e:
