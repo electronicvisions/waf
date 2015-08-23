@@ -337,15 +337,9 @@ def getoutput(conf, cmd, stdin=False):
 	TODO a bit redundant, can be removed anytime
 	TODO waf 1.9
 	"""
-	wargs = {'env': conf.env.env or None, 'output': 0}
-	if stdin:
-		wargs['stdin'] = Utils.subprocess.PIPE
-		wargs['input'] = '\n'.encode()
-		stdin = Utils.subprocess.PIPE
-	else:
-		stdin = None
+	input = stdin and '\n'.encode() or None
 	try:
-		out, err = conf.cmd_and_log(cmd, **wargs)
+		out, err = conf.cmd_and_log(cmd, env=conf.env.env or None, output=0, input=input)
 	except Exception:
 		conf.fatal('could not determine the compiler version %r' % cmd)
 	return (out, err)

@@ -341,11 +341,12 @@ class Context(ctx):
 			raise Errors.WafError("Program %s not found!" % cmd[0])
 
 		wargs = {}
-		if 'timeout' in kw:
+		if kw.get('timeout', None):
 			wargs['timeout'] = kw['timeout']
 			del kw['timeout']
-		if 'input' in kw:
+		if kw.get('input', None) is not None:
 			wargs['input'] = kw['input']
+			kw['stdin'] = Utils.subprocess.PIPE
 			del kw['input']
 
 		try:
@@ -385,7 +386,7 @@ class Context(ctx):
 			def configure(conf):
 				out = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.STDOUT, quiet=waflib.Context.BOTH)
 				(out, err) = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.BOTH)
-				(out, err) = conf.cmd_and_log(cmd, input='\\n'.encode(), stdin=waflib.Utils.subprocess.PIPE, output=waflib.Context.STDOUT)
+				(out, err) = conf.cmd_and_log(cmd, input='\\n'.encode(), output=waflib.Context.STDOUT)
 				try:
 					conf.cmd_and_log(['which', 'someapp'], output=waflib.Context.BOTH)
 				except Exception as e:
@@ -418,11 +419,12 @@ class Context(ctx):
 			self.to_log(cmd)
 
 		wargs = {}
-		if 'timeout' in kw:
+		if kw.get('timeout', None):
 			wargs['timeout'] = kw['timeout']
 			del kw['timeout']
 		if 'input' in kw:
 			wargs['input'] = kw['input']
+			kw['stdin'] = Utils.subprocess.PIPE
 			del kw['input']
 
 		try:
