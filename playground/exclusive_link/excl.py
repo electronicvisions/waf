@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2011 (ita)
+# Thomas Nagy, 2011-2015 (ita)
 
 """
 Prevents link tasks from executing in parallel. This can be used to
@@ -31,8 +31,12 @@ def make_exclusive(cls):
 		ret = Task.ASK_LATER
 		if count >= MAX:
 			return ret
+
+		self.m1_excl = getattr(self, 'm1_excl', 0) + 1
 		ret = old_runnable_status(self)
-		if ret == Task.RUN_ME:
+		self.m1_excl -= 1
+
+		if ret == Task.RUN_ME and not self.m1_excl:
 			lock.acquire()
 			count += 1
 			lock.release()
@@ -43,11 +47,14 @@ def make_exclusive(cls):
 	def run(self):
 		global count, lock
 		try:
+			self.m2_excl = getattr(self, 'm2_excl', 0) + 1
 			ret = old_run(self)
 		finally:
-			lock.acquire()
-			count -= 1
-			lock.release()
+			self.m2_excl -= 1
+			if not self.m2_excl:
+				lock.acquire()
+				count -= 1
+				lock.release()
 		return ret
 	cls.run = run
 
