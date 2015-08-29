@@ -55,7 +55,7 @@ waf_dir = ''
 
 local_repo = ''
 """Local repository containing additional Waf tools (plugins)"""
-remote_repo = 'http://waf.googlecode.com/git/'
+remote_repo = 'https://raw.githubusercontent.com/waf-project/waf/master/'
 """
 Remote directory containing downloadable waf tools. The missing tools can be downloaded by using::
 

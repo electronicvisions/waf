@@ -130,9 +130,9 @@ def download_tool(tool, force=False, ctx=None):
 
 	raise Errors.WafError('Could not load the Waf tool')
 
-def load_tool(tool, tooldir=None, ctx=None):
+def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 	try:
-		module = Context.load_tool_default(tool, tooldir)
+		module = Context.load_tool_default(tool, tooldir, ctx, with_sys_path)
 	except ImportError as e:
 		if Options.options.download:
 			module = download_tool(tool, ctx=ctx)

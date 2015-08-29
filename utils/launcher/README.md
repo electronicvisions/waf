@@ -1,6 +1,6 @@
 #Waf-launcher
 This is a simple wrapper for the 
-[waf build system](http://code.google.com/p/waf/)
+[waf build system](https://waf.io/)
 
 Since many windows users does not have python installed by default, 
 the exe file from this project can be included along with the copy of 
