@@ -1,3 +1,10 @@
+NEW IN WAF 1.8.13
+-----------------
+* Exposed the Popen parameters input/timeout to cmd_and_log/exec_command (timeout is for Python >= 3.3)
+* Added an option to skip searching the regular sys.path when loading waf tools
+* Changed gccdeps so that it handle .. within paths
+* env = conf.env.derive().detach()
+
 NEW IN WAF 1.8.12
 -----------------
 * Fixed a regression when building in sub-folders - https://github.com/waf-project/waf/issues/1590

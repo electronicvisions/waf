@@ -58,7 +58,7 @@ else:
 	urlopen = request.urlopen
 
 
-from waflib import Errors, Context, Logs, Utils, Options
+from waflib import Errors, Context, Logs, Utils, Options, Configure
 
 try:
 	from urllib.parse import urlparse
@@ -144,7 +144,7 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 
 Context.load_tool_default = Context.load_tool
 Context.load_tool = load_tool
-
+Configure.download_tool = download_tool
 
 def configure(self):
 	opts = self.options
