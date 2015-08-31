@@ -108,10 +108,10 @@ def dosomething(ctx):
 	nd1 = ctx.path.make_node('foo.txt') <2>
 	print(nd1)
 
-	nd2 = ctx.path.search('foo.txt') <3>
+	nd2 = ctx.path.search_node('foo.txt') <3>
 	print(nd2)
 
-	nd3 = ctx.path.search('bar.txt') <4>
+	nd3 = ctx.path.search_node('bar.txt') <4>
 	print(nd3)
 
 	nd2.write('some text') <5>
