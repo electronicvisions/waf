@@ -121,14 +121,14 @@ def setup_msvc(conf, versions, arch = False):
 			for target in platforms:
 				try:
 					try:
-						arch,(p1,p2,p3) = targets[target]
+						realtarget,(p1,p2,p3) = targets[target]
 					except conf.errors.ConfigurationError:
 						# lazytup target evaluation errors
 						del(targets[target])
 					else:
 						compiler,revision = version.rsplit(' ', 1)
 						if arch:
-							return compiler,revision,p1,p2,p3,arch
+							return compiler,revision,p1,p2,p3,realtarget
 						else:
 							return compiler,revision,p1,p2,p3
 				except KeyError: continue
