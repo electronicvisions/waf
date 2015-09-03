@@ -589,6 +589,7 @@ def validate_c(self, kw):
 		kw['execute'] = False
 	if kw['execute']:
 		kw['features'].append('test_exec')
+		kw['chmod'] = 493
 
 	if not 'errmsg' in kw:
 		kw['errmsg'] = 'not found'
