@@ -31,7 +31,7 @@ def options(opt):
 
 		try:
 			opt.recurse(d.name)
-		except:
+		except Exception:
 			pass
 	# one sub-project uses autoconfig, but i do not want it here
 	from waflib import Configure
@@ -60,10 +60,11 @@ def configure(conf):
 	for d in conf.path.ant_glob(DIRS, excl=['build', 'variants', 'precious'], src=False, dir=True):
 		if d.name[0] == '.':
 			continue
-
+		conf.env.stash()
 		try:
 			conf.recurse(d.name)
 		except Exception:
+			conf.env.revert()
 			node = conf.path.find_node('%s/build/config.log' % d.name)
 			if node:
 				Logs.info("-- BEGIN %s config.log --\n%s-- END %s config.log --" % (d.name, node.read(), d.name))
@@ -74,6 +75,7 @@ def configure(conf):
 			except Exception:
 				pass
 		else:
+			conf.env.revert()
 			conf.env.append_value('CFG', [d.name])
 
 	print("The configurations enabled are %r" % conf.env.CFG)
