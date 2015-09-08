@@ -25,10 +25,10 @@ cfg_ver = {
 
 SNIP_FUNCTION = '''
 int main(int argc, char **argv) {
-	void *p;
+	void (*p)();
 	(void)argc; (void)argv;
-	p=(void*)(%s);
-	return (int)p;
+	p=(void(*)())(%s);
+	return !p;
 }
 '''
 """Code template for checking for functions"""
