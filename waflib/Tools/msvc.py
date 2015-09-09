@@ -601,22 +601,33 @@ def gather_intel_composer_versions(conf, versions):
 		versions.append(('intel ' + major, targets))
 
 @conf
-def get_msvc_versions(conf):
+def get_msvc_versions(conf, eval_and_save=True):
 	"""
 	:return: list of compilers installed
 	:rtype: list of string
 	"""
 	if conf.env['MSVC_INSTALLED_VERSIONS']:
 		return conf.env['MSVC_INSTALLED_VERSIONS']
-
+	
+	# Gather all the compiler versions and targets. This phase can be lazy
+	# per lazy detection settings.
 	lst = []
 	conf.gather_icl_versions(lst)
 	conf.gather_intel_composer_versions(lst)
 	conf.gather_wsdk_versions(lst)
 	conf.gather_msvc_versions(lst)
 
-	lazy = getattr(Options.options, 'msvc_lazy_autodetect', False) or conf.env['MSVC_LAZY_AUTODETECT']
-	if not lazy:
+	# Override lazy detection by evaluating after the fact.
+	if eval_and_save:
+		def checked_target(t):
+			target,(arch,paths) = t
+			try:
+				paths.evaluate()
+			except conf.errors.ConfigurationError:
+				return None
+			else:
+				return t
+		lst = [(version,filter(checked_target, targets)) for version, targets in lst]
 		conf.env['MSVC_INSTALLED_VERSIONS'] = lst
 
 	return lst
@@ -633,7 +644,9 @@ def print_all_msvc_detected(conf):
 
 @conf
 def detect_msvc(conf, arch = False):
-	versions = get_msvc_versions(conf)
+	# Save installed versions only if lazy detection is disabled.
+	lazy_detect = getattr(Options.options, 'msvc_lazy_autodetect', False) or conf.env['MSVC_LAZY_AUTODETECT']
+	versions = get_msvc_versions(conf, not lazy_detect)
 	return setup_msvc(conf, versions, arch)
 
 @conf
