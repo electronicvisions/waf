@@ -283,12 +283,12 @@ def gather_wince_supported_platforms():
 		path,device = os.path.split(path)
 		if not device:
 			path,device = os.path.split(path)
+		platforms = []
 		for arch,compiler in all_wince_platforms:
-			platforms = []
 			if os.path.isdir(os.path.join(path, device, 'Lib', arch)):
 				platforms.append((arch, compiler, os.path.join(path, device, 'Include', arch), os.path.join(path, device, 'Lib', arch)))
-			if platforms:
-				supported_wince_platforms.append((device, platforms))
+		if platforms:
+			supported_wince_platforms.append((device, platforms))
 	return supported_wince_platforms
 
 def gather_msvc_detected_versions():
