@@ -467,9 +467,14 @@ def gather_msvc_versions(conf, versions):
 		if wince_supported_platforms and os.path.isfile(vsvars):
 			conf.gather_wince_targets(versions, version, vc_path, vsvars, wince_supported_platforms)
 
+	# WP80 works with 11.0Exp and 11.0, both of which resolve to the same vc_path.
+	# Stop after one is found.
+	for version,vc_path in vc_paths:
+		vs_path = os.path.dirname(vc_path)
 		vsvars = os.path.join(vs_path, 'VC', 'WPSDK', 'WP80', 'vcvarsphoneall.bat')
 		if os.path.isfile(vsvars):
 			conf.gather_winphone_targets(versions, '8.0', vc_path, vsvars)
+			break
 
 	for version,vc_path in vc_paths:
 		vs_path = os.path.dirname(vc_path)
