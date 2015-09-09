@@ -383,7 +383,7 @@ class lazytup(object):
 	def evaluate(self):
 		if hasattr(self, 'value'):
 			return
-		self.value = self.fn()		
+		self.value = self.fn()
 
 @conf
 def gather_msvc_targets(conf, versions, version, vc_path):
@@ -606,14 +606,20 @@ def get_msvc_versions(conf):
 	:return: list of compilers installed
 	:rtype: list of string
 	"""
-	if not conf.env['MSVC_INSTALLED_VERSIONS']:
-		lst = []
-		conf.gather_icl_versions(lst)
-		conf.gather_intel_composer_versions(lst)
-		conf.gather_wsdk_versions(lst)
-		conf.gather_msvc_versions(lst)
+	if conf.env['MSVC_INSTALLED_VERSIONS']:
+		return conf.env['MSVC_INSTALLED_VERSIONS']
+
+	lst = []
+	conf.gather_icl_versions(lst)
+	conf.gather_intel_composer_versions(lst)
+	conf.gather_wsdk_versions(lst)
+	conf.gather_msvc_versions(lst)
+
+	lazy = getattr(Options.options, 'msvc_lazy_autodetect', False) or conf.env['MSVC_LAZY_AUTODETECT']
+	if not lazy:
 		conf.env['MSVC_INSTALLED_VERSIONS'] = lst
-	return conf.env['MSVC_INSTALLED_VERSIONS']
+
+	return lst
 
 @conf
 def print_all_msvc_detected(conf):
