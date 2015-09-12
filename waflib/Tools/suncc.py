@@ -53,7 +53,7 @@ def scc_common_flags(conf):
 	v['cprogram_PATTERN']    = '%s'
 
 	# shared library
-	v['CFLAGS_cshlib']       = ['-Kpic', '-DPIC']
+	v['CFLAGS_cshlib']       = ['-xcode=pic32', '-DPIC']
 	v['LINKFLAGS_cshlib']    = ['-G']
 	v['cshlib_PATTERN']      = 'lib%s.so'
 
@@ -68,4 +68,3 @@ def configure(conf):
 	conf.cc_load_tools()
 	conf.cc_add_flags()
 	conf.link_add_flags()
-
