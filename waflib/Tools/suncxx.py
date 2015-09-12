@@ -3,7 +3,6 @@
 # Thomas Nagy, 2006-2010 (ita)
 # Ralf Habacker, 2006 (rh)
 
-from waflib import Utils
 from waflib.Tools import ccroot, ar
 from waflib.Configure import conf
 

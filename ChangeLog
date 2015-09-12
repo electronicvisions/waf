@@ -1,9 +1,12 @@
 NEW IN WAF 1.8.13
 -----------------
 * Exposed the Popen parameters input/timeout to cmd_and_log/exec_command (timeout is for Python >= 3.3)
-* Added an option to skip searching the regular sys.path when loading waf tools
-* Changed gccdeps so that it handle .. within paths
+* Added 'with_sys_path' to Context.load_tool to use/skip sys.path
+* Changed gccdeps so that it handle '..' within paths
 * env = conf.env.derive().detach()
+* Changed Sun compiler's default flags from -Kpic to -xcode=pic32 - #1625
+* Added bld(rule=, ..., cls_str=, cls_keyword=) for more descriptive outputs - #1598
+* Added a lazy Visual Studio detection option --msvc_lazy_autodetect - #1614
 
 NEW IN WAF 1.8.12
 -----------------
