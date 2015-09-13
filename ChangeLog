@@ -7,6 +7,7 @@ NEW IN WAF 1.8.13
 * Changed Sun compiler's default flags from -Kpic to -xcode=pic32 - #1625
 * Added bld(rule=, ..., cls_str=, cls_keyword=) for more descriptive outputs - #1598
 * Added a lazy Visual Studio detection option --msvc_lazy_autodetect - #1614
+* Changed the definition of function tests to prevent warnings with gcc - #1622
 
 NEW IN WAF 1.8.12
 -----------------
