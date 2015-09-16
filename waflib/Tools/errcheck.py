@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # encoding: utf-8
 # Thomas Nagy, 2011 (ita)
+# vim: ts=4 noexpandtab
 
 """
 errcheck: highlight common mistakes
@@ -213,7 +214,12 @@ def options(opt):
 	"""
 	Add a few methods
 	"""
-	enhance_lib()
+	try:
+		if enhance_lib.loaded == True:
+			pass
+	except:
+		setattr(enhance_lib,"loaded",True)
+		enhance_lib() # KHS: who the hack had the notion of changing waf internals in an options loader?
 
 def configure(conf):
 	pass
