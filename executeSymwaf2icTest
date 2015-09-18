@@ -4,21 +4,21 @@
 # Author:       Kai Husmann <kai.husmann@kip.uni-heidelberg.de> (KHS)
 # Changelog:    [2015-04-17 15:02:21]   created/released (KHS)
 #               [2015-04-17 15:02:37]   now hiding make (KHS)
+#               [2015-09-18 02:26:31]   TEST_DIR can now be specified as env (KHS)
 # --- chlog insert above ---
 
 
 # PREREQUISITES
 TESTS="$@"
 TESTS=${TESTS:-"default"}
-#TESTFOLDER="$HOME/tmp/symtest"
-TESTFOLDER="/tmp/symtest"
+TEST_DIR=${TEST_DIR:-"/tmp/symtest"}
 OUR_ZONES="symwaf2ic,symwaf2ic_options,dependency,mr"
 
 
 test -f "waf-light" || { echo "ERR: looks like we're executed in the wrong directory."; exit 1; }
 
-mkdir -p $TESTFOLDER
-ln -sf $PWD/waf $TESTFOLDER/waf
+mkdir -p $TEST_DIR
+ln -sf $PWD/waf $TEST_DIR/waf
 
 
 # TEST FUNCTIONS
@@ -55,12 +55,12 @@ function test_super {
 
 # BUILDING SYMWAF2IC
 function run_build {
-    make > $TESTFOLDER/make.log 2> $TESTFOLDER/make.err
+    make > $TEST_DIR/make.log 2> $TEST_DIR/make.err
     ERR=$?
     if [ $ERR -ne 0 ]
     then
-        cat $TESTFOLDER/make.log
-        cat $TESTFOLDER/make.err
+        cat $TEST_DIR/make.log
+        cat $TEST_DIR/make.err
         return 1
     fi
     echo "BUILD: symwaf2ic-waf rebuild successfully."
@@ -74,7 +74,7 @@ function run_tests {
     for i in "$@"
     do
         echo -e "\nEXECUTING TEST $i"
-        cd $TESTFOLDER
+        cd $TEST_DIR
 
         set -o xtrace
         test_$i
