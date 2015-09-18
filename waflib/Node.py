@@ -761,6 +761,13 @@ class Node(object):
 
 		return self.parent.find_or_declare([name])
 
+	def nice_path(self, env=None):
+		"""
+		Return the path seen from the launch directory.
+		Can be used for opening files easily (copy-paste in the console).
+		"""
+		return self.path_from(self.ctx.launch_node())
+
 	def bldpath(self):
 		"Path seen from the build directory default/src/foo.cpp"
 		return self.path_from(self.ctx.bldnode)
