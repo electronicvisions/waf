@@ -203,7 +203,6 @@ def init_vala_task(self):
 
 	if hasattr(self, 'vala_resources'):
 		nodes = self.to_nodes(self.vala_resources)
-		print nodes
 		valatask.vala_exclude = getattr(valatask, 'vala_exclude', []) + nodes
 		valatask.inputs.extend(nodes)
 		for x in nodes:
