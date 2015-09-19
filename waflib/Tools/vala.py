@@ -24,7 +24,8 @@ class valac(Task.Task):
 
 	def run(self):
 		cmd = self.env.VALAC + self.env.VALAFLAGS
-		cmd.extend([a.abspath() for a in self.inputs])
+		resources = getattr(self, 'vala_exclude', [])
+		cmd.extend([a.abspath() for a in self.inputs if a not in resources])
 		ret = self.exec_command(cmd, cwd=self.outputs[0].parent.abspath())
 
 		if ret:
@@ -199,6 +200,14 @@ def init_vala_task(self):
 			self.install_gir.source = gir_list
 		except AttributeError:
 			self.install_gir = self.bld.install_files(getattr(self, 'gir_path', '${DATAROOTDIR}/gir-1.0'), gir_list, self.env)
+
+	if hasattr(self, 'vala_resources'):
+		nodes = self.to_nodes(self.vala_resources)
+		print nodes
+		valatask.vala_exclude = getattr(valatask, 'vala_exclude', []) + nodes
+		valatask.inputs.extend(nodes)
+		for x in nodes:
+			addflags(['--gresources', x.abspath()])
 
 @extension('.vala', '.gs')
 def vala_file(self, node):
