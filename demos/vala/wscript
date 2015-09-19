@@ -17,6 +17,7 @@ def options(opt):
 def configure(conf):
 	conf.load('compiler_c vala')
 	conf.check_cfg(package='glib-2.0', uselib_store='GLIB', atleast_version='2.10.0', mandatory=1, args='--cflags --libs')
+	conf.recurse('resources')
 
 def build(bld):
 	bld.recurse('shlib multi-file stlib resources')
