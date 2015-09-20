@@ -106,7 +106,6 @@ def setup_msvc(conf, versions, arch = False):
 	:return: the compiler, revision, path, include dirs, library paths, and (optionally) target architecture
 	:rtype: tuple of strings
 	"""
-	
 	platforms = getattr(Options.options, 'msvc_targets', '').split(',')
 	if platforms == ['']:
 		platforms=Utils.to_list(conf.env['MSVC_TARGETS']) or [i for i,j in all_msvc_platforms+all_icl_platforms+all_wince_platforms]
@@ -359,7 +358,6 @@ class lazytup(object):
         def __init__(self, fn, lazy=True, default=None):
 		self.fn = fn
 		self.default = default
-		
 		if not lazy:
 			self.evaluate()
         def __len__(self):
@@ -429,7 +427,6 @@ def gather_wince_targets(conf, versions, version, vc_path, vsvars, supported_pla
 					cetargets.append((platform, (platform, get_compiler_env(conf, 'msvc', version, 'x86', vsvars, combine_common))))
 				except conf.errors.ConfigurationError:
 					continue
-					
 		if cetargets:
 			versions.append((device + ' ' + version, cetargets))
 
@@ -613,7 +610,7 @@ def get_msvc_versions(conf, eval_and_save=True):
 	"""
 	if conf.env['MSVC_INSTALLED_VERSIONS']:
 		return conf.env['MSVC_INSTALLED_VERSIONS']
-	
+
 	# Gather all the compiler versions and targets. This phase can be lazy
 	# per lazy detection settings.
 	lst = []
@@ -632,7 +629,7 @@ def get_msvc_versions(conf, eval_and_save=True):
 				return None
 			else:
 				return t
-		lst = [(version,filter(checked_target, targets)) for version, targets in lst]
+		lst = [(version, list(filter(checked_target, targets))) for version, targets in lst]
 		conf.env['MSVC_INSTALLED_VERSIONS'] = lst
 
 	return lst
