@@ -1,9 +1,9 @@
 NEW IN WAF 1.8.14
 -----------------
-* Fixed the Visual Studio detection on Python 3 when --msvc_lazy_autodetect is not provided
+* Fixed the Visual Studio detection on Python 3 when --msvc_lazy_autodetect is not provided (regression)
 * Enable vala processing on a folder basis with the vala_dir parameter - #1601
 * Enable vala resource processing - #1626
-* Documentation update - #1605
+* Minor documentation updates - #1605
 
 NEW IN WAF 1.8.13
 -----------------
