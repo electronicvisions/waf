@@ -133,6 +133,8 @@ $ waf --version
 waf {version} (54dc13ba5f51bfe2ae277451ec5ac1d0a91c7aaf)
 ---------------
 
+For convenience purposes on windows systems, a https://github.com/waf-project/waf/tree/master/utils/waf.bat[waf.bat file] is provided to detect the presence of the Python application. It assumes that it is residing in the same folder as the waf file.
+
 In the next sections of the book, we assume that either an alias or the execution path have been set in a way that +waf+ may be called directly.
 
 ==== Local waflib folders
