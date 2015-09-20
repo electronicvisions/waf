@@ -6,25 +6,15 @@ Waf 1.9
 * Remove the split functions from Utils
 * Ensure _cache.py are valid python files
 * Include the tool 'nobuild' by default
-* cflags in the beginning / cppflags at the end
-* remove qt4 from the default modules, rework qt5
-* remove the command called "update"
+* Set cflags in the beginning / cppflags at the end
+* Remove qt4 from the default modules, rework qt5
+* Remove the command called "update"
+* Remove Node.cache_sig
+* Make lazy visual studio detection the default
+* Do not cache waf tool detection
+* Fix the vala detection
+* Better consistency between check_cfg and check_cc variables
+* Detect Clang by default on FreeBSD instead of gcc
 
-Waf 1.8.x
----------
-
-Can be useful:
-
-def bld_command(*k):
-	fun = k[0]
-	name = fun.__name__
-	from waflib.Build import BuildContext
-	class tmp(BuildContext):
-		cmd = name
-		fun = name
-	return fun
-
-@bld_command
-def foo(ctx):
-	print ctx.env
+and all other issues listed on https://github.com/waf-project/waf/issues
 
