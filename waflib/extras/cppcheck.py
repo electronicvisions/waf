@@ -98,7 +98,7 @@ try:
 	from pygments import formatters, lexers
 except ImportError as e:
 	Logs.warn(PYGMENTS_EXC_MSG)
- 	raise e
+	raise e
 
 
 def options(opt):

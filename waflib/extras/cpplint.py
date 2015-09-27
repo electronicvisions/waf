@@ -98,7 +98,7 @@ def options(opt):
 def configure(conf):
     conf.start_msg('Checking cpplint')
     try:
-	_cpplint_state
+        _cpplint_state
         conf.end_msg('ok')
     except NameError:
         conf.env.CPPLINT_SKIP = True
