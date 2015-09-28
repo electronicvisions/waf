@@ -134,7 +134,7 @@ from waflib.Task import Task
 Task.__dict__['post_run'].__doc__ = "Update the cache files (executed by threads). Override in subclasses."
 
 
-from waflib import Configure, Build
+from waflib import Configure, Build, Errors
 confmeths = []
 def conf(f):
 	def fun(*k, **kw):

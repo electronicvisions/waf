@@ -26,10 +26,10 @@ if not os.path.exists(filename):
 
 length = os.stat(filename).st_size
 
-print "Content-Type: application/octet-stream"
-print "Content-Disposition: attachment; filename=f.bin"
-print "Content-length: %s" % length
-print ""
+print("Content-Type: application/octet-stream")
+print("Content-Disposition: attachment; filename=f.bin")
+print("Content-length: %s" % length)
+print("")
 
 with open(filename, 'rb') as f:
 	while True:

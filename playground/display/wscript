@@ -2,6 +2,8 @@
 # encoding: utf-8
 # Thomas Nagy, 2011 (ita)
 
+import sys
+
 def options(opt):
 	opt.load('compiler_c')
 

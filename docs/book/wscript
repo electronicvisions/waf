@@ -183,38 +183,6 @@ def make_size_table(self):
 
 	return tbl
 
-
-	if 0:
-			val = str(int(1.6 * int(m.group(2))))
-			if m.group(1) == 'width':
-				w = val
-				h = "800"
-			else:
-				w = "800"
-				h = val
-
-			if ext == 'eps':
-				code = '-geometry %sx%s' % (w, h)
-			elif ext == 'dia':
-				if m.group(1) == 'width':
-					h = ''
-				else:
-					w = ''
-				code = '--size %sx%s' % (w, h)
-			elif ext == 'semd':
-				if m.group(1) == 'width':
-					code = '--width=%s' % w
-				else:
-					code = '--height=%s' % h
-			else:
-				code = '-Gsize="%s,%s"' % (w, h)
-			break
-	else:
-		return ([], '')
-
-	return ([], code)
-
-
 """
 For vim highlighting:
 cp vim/syntax/asciidoc.vim /usr/share/vim/site/syntax/
