@@ -85,7 +85,7 @@ class store_task_type(type):
 			if getattr(cls, 'run_str', None):
 				# if a string is provided, convert it to a method
 				(f, dvars) = compile_fun(cls.run_str, cls.shell)
-				cls.hcode = cls.run_str
+				cls.hcode = str(cls.run_str)
 				cls.orig_run_str = cls.run_str
 				# change the name of run_str or it is impossible to subclass with a function
 				cls.run_str = None
@@ -1074,9 +1074,23 @@ def compile_fun(line, shell=False):
 	The reserved keywords *TGT* and *SRC* represent the task input and output nodes
 
 	"""
-	if line.find('<') > 0 or line.find('>') > 0 or line.find('&&') > 0:
-		shell = True
-
+	if isinstance(line, str):
+		if line.find('<') > 0 or line.find('>') > 0 or line.find('&&') > 0:
+			shell = True
+	else:
+		dvars_lst = []
+		funs_lst = []
+		for x in line:
+			fun, dvars = compile_fun(x, shell)
+			dvars_lst += dvars
+			funs_lst.append(fun)
+		def composed_fun(task):
+			for x in funs_lst:
+				ret = x(task)
+				if ret:
+					return ret
+			return None
+		return composed_fun, dvars
 	if shell:
 		return compile_fun_shell(line)
 	else:
