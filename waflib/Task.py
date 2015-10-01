@@ -1081,9 +1081,13 @@ def compile_fun(line, shell=False):
 		dvars_lst = []
 		funs_lst = []
 		for x in line:
-			fun, dvars = compile_fun(x, shell)
-			dvars_lst += dvars
-			funs_lst.append(fun)
+			if isinstance(x, str):
+				fun, dvars = compile_fun(x, shell)
+				dvars_lst += dvars
+				funs_lst.append(fun)
+			else:
+				# assume a function to let through
+				funs_lst.append(x)
 		def composed_fun(task):
 			for x in funs_lst:
 				ret = x(task)
