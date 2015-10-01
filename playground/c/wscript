@@ -26,13 +26,9 @@ def configure(conf):
 	conf.check_cc(fragment="""#include<stdio.h>\nint main(){fprintf(stderr, "mu"); printf("%d", 22);return 0;}\n""", execute=True, define_name='HAVE_MU')
 	conf.write_config_header('config.h')
 
-
 	# gotcha - the config.h must be written for each variant
-	txt = conf.bldnode.search_node('config.h').read()
 	for x in lst:
-		node = conf.bldnode.make_node(x + '/config.h')
-		node.parent.mkdir()
-		node.write(txt)
+		conf.write_config_header(x + '/config.h')
 
 from waflib import Utils, Build
 class buildall_ctx(Build.BuildContext):
@@ -50,7 +46,7 @@ def buildall(ctx):
 	class sub_build(Utils.threading.Thread):
 		def run(self):
 			bld = self.bld = self.cls(top_dir=ctx.top_dir, out_dir=ctx.out_dir)
-			bld.load()
+			bld.restore()
 			bld.siblings = threads
 			bld.count = count
 			bld.line_lock = line_lock
@@ -96,13 +92,13 @@ def cleanall(ctx):
 	for x in lst:
 		cls = type(Build.CleanContext)(x, (Build.CleanContext,), {'cmd': x, 'variant': x})
 		bld = cls(top_dir=ctx.top_dir, out_dir=ctx.out_dir)
-		bld.load()
+		bld.restore()
 		bld.load_envs()
 		bld.recurse([bld.run_dir])
 		try:
 			bld.clean()
 		finally:
-			bld.save()
+			bld.store()
 
 
 # produces dict/json compatible output
