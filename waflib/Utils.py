@@ -441,6 +441,7 @@ def check_dir(path):
 def check_exe(name, env=None):
 	"""
 	Ensure that a program exists
+
 	:type name: string
 	:param name: name or path to program
 	:return: path of the program or None
@@ -522,6 +523,25 @@ def h_fun(fun):
 		except AttributeError:
 			pass
 		return h
+
+def h_cmd(ins):
+	"""
+	Task command hashes are calculated by calling this function. The inputs can be
+	strings, functions, tuples/lists containing strings/functions
+	"""
+	# this function is not meant to be particularly fast
+	if isinstance(ins, str):
+		# a command is either a string
+		ret = ins
+	elif isinstance(ins, list) or isinstance(ins, tuple):
+		# or a list of functions/strings
+		ret = str([h_cmd(x) for x in ins])
+	else:
+		# or just a python function
+		ret = str(h_fun(ins))
+	if sys.hexversion > 0x3000000:
+		ret = ret.encode('iso8859-1', 'xmlcharrefreplace')
+	return ret
 
 reg_subst = re.compile(r"(\\\\)|(\$\$)|\$\{([^}]+)\}")
 def subst_vars(expr, params):

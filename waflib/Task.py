@@ -81,11 +81,10 @@ class store_task_type(type):
 			name = name.replace('_task', '')
 		if name != 'evil' and name != 'TaskBase':
 			global classes
-
 			if getattr(cls, 'run_str', None):
 				# if a string is provided, convert it to a method
 				(f, dvars) = compile_fun(cls.run_str, cls.shell)
-				cls.hcode = str(cls.run_str)
+				cls.hcode = Utils.h_cmd(cls.run_str)
 				cls.orig_run_str = cls.run_str
 				# change the name of run_str or it is impossible to subclass with a function
 				cls.run_str = None
@@ -94,10 +93,7 @@ class store_task_type(type):
 				cls.vars.sort()
 			elif getattr(cls, 'run', None) and not 'hcode' in cls.__dict__:
 				# getattr(cls, 'hcode') would look in the upper classes
-				cls.hcode = Utils.h_fun(cls.run)
-
-			if sys.hexversion > 0x3000000:
-				cls.hcode = cls.hcode.encode('iso8859-1', 'xmlcharrefreplace')
+				cls.hcode = Utils.h_cmd(cls.run)
 
 			# be creative
 			getattr(cls, 'register', classes)[name] = cls
