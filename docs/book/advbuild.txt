@@ -214,11 +214,11 @@ The _WAFLOCK_ environment variable is used to control the configuration lock and
 // advbuild_waflock
 [source,python]
 ---------------
-def configure(conf):
+def configure(ctx):
 	pass
 
-def build(bld):
-	bld(rule='touch ${TGT}', target='foo.txt')
+def build(ctx):
+	ctx(rule='touch ${TGT}', target='foo.txt')
 ---------------
 
 We will change the _WAFLOCK_ variable in the execution:

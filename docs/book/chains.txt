@@ -5,7 +5,7 @@ Transformations may be performed automatically based on the file name or on the 
 
 ==== Refactoring repeated rule-based task generators into implicit rules
 
-The explicit rules described in the previous chapter become limited for processing several files of the same kind. The following code may lead to unmaintainable scripts and to slow builds (for loop):
+The explicit rules described in the previous chapter become a limitation for processing several files of the same extension. The following code may lead to unmaintainable scripts and to slow builds (large amount of objects):
 
 [source, python]
 ----------------
@@ -16,7 +16,7 @@ def build(bld):
 		bld.install_files('${LUADIR}', x)
 ----------------
 
-Rather, the rule should be removed from the user script, like this:
+It is desirable to extract the rule from the user scripts in the following manner:
 
 [source,python]
 ---------------
@@ -24,7 +24,7 @@ def build(bld):
 	bld(source='a.lua b.lua c.lua')
 ---------------
 
-The equivalent logic may then be provided by using the following code. It may be located in either the same 'wscript', or in a waf tool:
+The following piece of code will enable this functionality. It may be inserted in a waf tool or in the same `wscript` file:
 
 [source,python]
 ---------------
@@ -41,11 +41,11 @@ TaskGen.declare_chain(
 ---------------
 
 <1> The name for the corresponding task class to use
-<2> The rule is the same as for any rule-based task generator
+<2> The rule is the same as for any rule-based task generator. It is passed to the `run_str` attribute of a task class.
 <3> Input file, processed by extension
 <4> Output files extensions separated by spaces. In this case there is only one output file
 <5> The reentrant attribute is used to add the output files as source again, for processing by another implicit rule
-<6> String representing the installation path for the output files, similar to the destination path from 'bld.install_files'. To disable installation, set it to False.
+<6> String representing the installation path for the output files, similar to the destination path from 'bld.install_files'. To disable installation, set it to `False` or `None`.
 
 ==== Chaining more than one command
 

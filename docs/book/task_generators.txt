@@ -96,7 +96,7 @@ $ waf distclean configure build --zones=task_gen <1>
 Waf: Entering directory `/tmp/simpleproject/build'
 23:03:44 task_gen posting objects (normal)
 23:03:44 task_gen posting >task_gen '' of type task_gen defined in dir:///tmp/simpleproject> 139657958706768 <2>
-23:03:44 task_gen -> exec_rule (139657958706768) <3>
+23:03:44 task_gen -> process_rule (139657958706768) <3>
 23:03:44 task_gen -> process_source (139657958706768) <4>
 23:03:44 task_gen -> methodName (139657958706768) <5>
 Hello, world!
@@ -108,8 +108,8 @@ Waf: Leaving directory `/tmp/simpleproject/build'
 
 <1> The debugging zone 'task_gen' is used to display the task generator methods being executed
 <2> Display which task generator is being executed
-<3> The method 'exec_rule' is used to process the 'rule'. It is always executed.
-<4> The method 'process_source' is used to process the 'source' attribute. It is always executed exept if the method 'exec_rule' processes a 'rule' attribute
+<3> The method 'process_rule' is used to process the 'rule'. It is always executed.
+<4> The method 'process_source' is used to process the 'source' attribute. It is always executed exept if the method 'process_rule' processes a 'rule' attribute
 <5> Our task generator method is executed, and prints 'Hello, world!'
 <6> The task generator methods have been executed, the task generator is marked as done (posted)
 
@@ -150,13 +150,13 @@ $ waf distclean configure build --zones=task_gen
 Waf: Entering directory `/tmp/simpleproject/build'
 16:22:07 task_gen posting objects (normal)
 16:22:07 task_gen posting <task_gen '' of type task_gen defined in dir:///tmp/simpleproject> 140631018237584
-16:22:07 task_gen -> exec_rule (140631018237584)
+16:22:07 task_gen -> process_rule (140631018237584)
 16:22:07 task_gen -> process_source (140631018237584)
 16:22:07 task_gen -> ping (140631018237584)
 ping
 16:22:07 task_gen posted
 16:22:07 task_gen posting <task_gen '' of type task_gen defined in dir:///tmp/simpleproject> 140631018237776
-16:22:07 task_gen -> exec_rule (140631018237776)
+16:22:07 task_gen -> process_rule (140631018237776)
 16:22:07 task_gen -> process_source (140631018237776)
 16:22:07 task_gen -> pong (140631018237776)
 pong
@@ -188,7 +188,7 @@ def build(bld):
 from waflib import TaskGen
 
 @TaskGen.feature('*')
-@TaskGen.before('process_source', 'exec_rule')
+@TaskGen.before('process_source', 'process_rule')
 def method1(self):
 	print('method 1 %r' % getattr(self, 'myattr', None))
 
@@ -211,7 +211,7 @@ Waf: Entering directory `/tmp/simpleproject/build'
 15:54:02 task_gen posting <task_gen of type task_gen defined in dir:///tmp/simpleproject> 139808568487632
 15:54:02 task_gen -> method1 (139808568487632)
 method 1 'Hello, world!'
-15:54:02 task_gen -> exec_rule (139808568487632)
+15:54:02 task_gen -> process_rule (139808568487632)
 15:54:02 task_gen -> method2 (139808568487632)
 method 2 'Hello, world!'
 15:54:02 task_gen -> process_source (139808568487632)

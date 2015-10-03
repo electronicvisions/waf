@@ -514,6 +514,51 @@ ${CPPPATH_ST:INCPATHS} <4>
 <3> Print the task unique identifier
 <4> Perform a map replacement equivalent to _[env.CPPPATH_ST % x for x in env.INCPATHS]_
 
+==== Command chains
+
+In order to improve script portability 'run_str' can also be a list of command strings or functions. All sub-commands must complete for the task to succeed.
+
+The following example shows how to chain three commands to copy `wscript` to `wscript.out`. The output file will be removed first if it already exists.
+The copy is then performed. When successful, the output file permissions are changed to turn it into an executable.
+
+// tasks_chains
+[source,python]
+---------------
+def build(ctx):
+	import os
+	from waflib import Utils, Task
+
+	def chmod_fun(task): <1>
+		for x in task.outputs:
+			os.chmod(x.abspath(), Utils.O755)
+		return 0
+
+	def remove_fun(task):
+		for x in task.outputs:
+			try:
+				os.remove(x.abspath())
+			except OSError:
+				if os.path.exists(x.abspath()):
+					raise ValueError('Cannot remove %r' % x) <2>
+		return 0
+
+	class complex_copy(Task.Task):
+		run_str = (remove_fun, "${CP} ${SRC} ${TGT}", chmod_fun) <3>
+
+	ctx.env.CP = '/bin/cp' <4>
+	tsk = complex_copy(env=ctx.env.derive())
+	tsk.set_inputs(ctx.path.find_resource('wscript'))
+	tsk.set_outputs(ctx.path.find_or_declare('wscript.out'))
+	ctx.add_to_group(tsk)
+---------------
+
+<1> The function arguments is the same as that of 'run' methods. Function commands return 0 or None in case of success.
+<2> Function commands can raise exceptions such as OSError, ValueError or WafError
+<3> Several functions or strings can be chained together; the build will run the commands in the order specified
+<4> Rebuilds will occur when variables used in command strings are modified, and when command strings or function definitions change
+
+NOTE: Chaining is also possible through subclassing.
+
 ==== Direct class modifications
 
 ===== Always execute
