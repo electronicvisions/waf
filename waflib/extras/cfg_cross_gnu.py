@@ -44,6 +44,17 @@ try:
 except ImportError:
 	from pipes import quote
 
+def get_chost_stuff(conf):
+	"""
+	Get the CHOST environment variable contents
+	"""
+	chost = None
+	chost_envar = None
+	if conf.env.CHOST:
+		chost = conf.env.CHOST[0]
+		host_envar = host.replace('-', '_')
+	return chost, chost_envar
+
 @Configure.conf
 def xcheck_prog(conf, var, tool, cross=False):
 	value = os.environ.get(var, '')
@@ -80,10 +91,12 @@ def xcheck_envar(conf, name, wafname=None, cross=False):
 @Configure.conf
 def xcheck_host_prog(conf, name, tool, wafname=None):
 	wafname = wafname or name
-	host = conf.env.CHOST
+
+	chost, chost_envar = get_chost_stuff(conf)
+
 	specific = None
-	if host:
-		specific = os.environ.get('%s-%s' % (host[0], name), None)
+	if chost:
+		specific = os.environ.get('%s_%s' % (chost_envar, name), None)
 
 	if specific:
 		value = Utils.to_list(specific)
@@ -98,7 +111,7 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 		return
 
 	value = None
-	if host:
+	if chost:
 		value = '%s-%s' % (host[0], tool)
 
 	if value:
@@ -109,10 +122,11 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 def xcheck_host_envar(conf, name, wafname=None):
 	wafname = wafname or name
 
-	host = conf.env.CHOST
+	chost, chost_envar = get_chost_stuff(conf)
+
 	specific = None
-	if host:
-		specific = os.environ.get('%s-%s' % (host[0], name), None)
+	if chost:
+		specific = os.environ.get('%s_%s' % (chost_envar, name), None)
 
 	if specific:
 		value = Utils.to_list(specific)
@@ -140,11 +154,19 @@ def xcheck_host(conf):
 	conf.xcheck_host_envar('LIB')
 	conf.xcheck_host_envar('PKG_CONFIG_LIBDIR')
 	conf.xcheck_host_envar('PKG_CONFIG_PATH')
+
 	# TODO find a better solution than this ugliness
 	if conf.env.PKG_CONFIG_PATH or conf.env.PKG_CONFIG_LIBDIR:
 		conf.find_program('pkg-config', var='PKGCONFIG')
-		conf.env.PKGCONFIG = [
+		x = [
 		 'env',
-		 'PKG_CONFIG_LIBDIR=%s' % (conf.env.PKG_CONFIG_LIBDIR[0]),
-		 'PKG_CONFIG_PATH=%s' % (conf.env.PKG_CONFIG_PATH[0]),
-		] + conf.env.PKGCONFIG
+		]
+		if conf.env.PKG_CONFIG_LIBDIR:
+			x += [
+			 'PKG_CONFIG_LIBDIR=%s' % (conf.env.PKG_CONFIG_LIBDIR[0]),
+			]
+		if conf.env.PKG_CONFIG_PATH:
+			x += [
+			 'PKG_CONFIG_PATH=%s' % (conf.env.PKG_CONFIG_PATH[0]),
+			]
+		conf.env.PKG_CONFIG = x + conf.env.PKGCONFIG
