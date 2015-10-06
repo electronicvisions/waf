@@ -615,6 +615,9 @@ def unversioned_sys_platform():
 		return 'darwin'
 	if s == 'win32' or s == 'os2':
 		return s
+	if s == 'cli' and os.name == 'nt':
+		# ironpython is only on windows as far as we know
+		return 'win32'
 	return re.split('\d+$', s)[0]
 
 def nada(*k, **kw):
