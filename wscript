@@ -90,7 +90,10 @@ def options(opt):
 
 	opt.add_option('--sign', action='store_true', default=False, help='make a signed file', dest='signed')
 
-	opt.add_option('--zip-type', action='store', default='bz2',
+	default_zip = 'bz2'
+	if os.name == 'java':
+		default_zip = 'gz'
+	opt.add_option('--zip-type', action='store', default=default_zip,
 		help='specify the zip type [Allowed values: %s]' % ' '.join(zip_types), dest='zip')
 
 	opt.add_option('--make-batch', action='store_true', default=False,
@@ -401,7 +404,7 @@ def make_copy(inf, outf):
 		f.close()
 
 def configure(conf):
-	conf.find_program('python')
+	conf.load('python')
 
 def build(bld):
 	waf = bld.path.make_node('waf') # create the node right here
