@@ -52,7 +52,7 @@ def get_chost_stuff(conf):
 	chost_envar = None
 	if conf.env.CHOST:
 		chost = conf.env.CHOST[0]
-		host_envar = host.replace('-', '_')
+		host_envar = chost.replace('-', '_')
 	return chost, chost_envar
 
 @Configure.conf
@@ -112,7 +112,7 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 
 	value = None
 	if chost:
-		value = '%s-%s' % (host[0], tool)
+		value = '%s-%s' % (chost, tool)
 
 	if value:
 		conf.env[wafname] = value
