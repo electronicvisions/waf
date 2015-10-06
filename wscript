@@ -267,7 +267,11 @@ def create_waf(self, *k, **kw):
 	tar = tarfile.open('%s.tar.%s' % (mw, zipType), "w:%s" % zipType)
 	z = zipfile.ZipFile("zip/waflib.zip", "w", compression=zipfile.ZIP_DEFLATED)
 	for x in files:
-		tarinfo = tar.gettarinfo(x, x)
+		try:
+			tarinfo = tar.gettarinfo(x, x)
+		except NotImplementedError:
+			# jython 2.7.0 workaround
+			tarinfo = tarfile.TarInfo(x)
 		tarinfo.uid   = tarinfo.gid   = 0
 		tarinfo.uname = tarinfo.gname = 'root'
 		(code, size, cnt) = sfilter(x)
@@ -397,8 +401,7 @@ def make_copy(inf, outf):
 		f.close()
 
 def configure(conf):
-	conf.load('python')
-	conf.check_python_version((2,4))
+	conf.find_program('python')
 
 def build(bld):
 	waf = bld.path.make_node('waf') # create the node right here
