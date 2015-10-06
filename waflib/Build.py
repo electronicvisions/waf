@@ -44,6 +44,10 @@ POST_LAZY = 1
 POST_BOTH = 2
 """Post mode: post the task generators at once, then re-check them for each group"""
 
+PROTOCOL = -1
+if sys.platform == 'cli':
+	PROTOCOL = 0
+
 class BuildContext(Context.Context):
 	'''executes the build'''
 
@@ -322,7 +326,7 @@ class BuildContext(Context.Context):
 		try:
 			waflib.Node.pickle_lock.acquire()
 			waflib.Node.Nod3 = self.node_class
-			x = cPickle.dumps(data, -1)
+			x = cPickle.dumps(data, PROTOCOL)
 		finally:
 			waflib.Node.pickle_lock.release()
 
