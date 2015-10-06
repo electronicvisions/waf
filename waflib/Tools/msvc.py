@@ -235,7 +235,7 @@ def gather_wsdk_versions(conf, versions):
 			path,type = Utils.winreg.QueryValueEx(msvc_version,'InstallationFolder')
 		except WindowsError:
 			continue
-		if os.path.isfile(os.path.join(path, 'bin', 'SetEnv.cmd')):
+		if path and os.path.isfile(os.path.join(path, 'bin', 'SetEnv.cmd')):
 			targets = []
 			for target,arch in all_msvc_platforms:
 				try:
