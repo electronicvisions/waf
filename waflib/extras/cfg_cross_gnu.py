@@ -10,6 +10,12 @@ __copyright__ = "Jérôme Carretero, 2014"
 This tool allows to use environment variables to define cross-compilation things,
 mostly used when you use build variants.
 
+The variables are obtained from the environment in 3 ways:
+
+1. By defining CHOST, they can be derived as ${CHOST}-${TOOL}
+2. By defining HOST_x
+3. By defining ${CHOST//-/_}_x
+
 Usage:
 
 - In your build script::
@@ -55,32 +61,18 @@ def get_chost_stuff(conf):
 		host_envar = chost.replace('-', '_')
 	return chost, chost_envar
 
-@Configure.conf
-def xcheck_prog(conf, var, tool, cross=False):
-	value = os.environ.get(var, '')
-	value = Utils.to_list(value)
-
-	if not value:
-		return
-
-	conf.env[var] = value
-	if cross:
-		pretty = 'cross-compilation %s' % var
-	else:
-		pretty = var
-	conf.msg('Will use %s' % pretty,
-	 " ".join(quote(x) for x in value))
 
 @Configure.conf
 def xcheck_envar(conf, name, wafname=None, cross=False):
 	wafname = wafname or name
-	value = os.environ.get(name, None)
-	value = Utils.to_list(value)
+	envar = os.environ.get(name, None)
 
-	if not value:
+	if envar is None:
 		return
 
-	conf.env[wafname] += value
+	value = Utils.to_list(envar) if envar != '' else [envar]
+
+	conf.env[wafname] = value
 	if cross:
 		pretty = 'cross-compilation %s' % wafname
 	else:
@@ -101,11 +93,19 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 	if specific:
 		value = Utils.to_list(specific)
 		conf.env[wafname] += value
-		conf.msg('Will use cross-compilation %s' % name,
+		conf.msg('Will use cross-compilation %s from %s_%s' \
+		 % (name, chost_envar, name),
 		 " ".join(quote(x) for x in value))
 		return
-
-	conf.xcheck_prog('HOST_%s' % name, tool, cross=True)
+	else:
+		envar = os.environ.get('HOST_%s' % name, None)
+		if envar is not None:
+			value = Utils.to_list(envar)
+			conf.env[wafname] = value
+			conf.msg('Will use cross-compilation %s from HOST_%s' \
+			 % (name, name),
+			 " ".join(quote(x) for x in value))
+			return
 
 	if conf.env[wafname]:
 		return
@@ -116,7 +116,8 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 
 	if value:
 		conf.env[wafname] = value
-		conf.msg('Will use cross-compilation %s' % wafname, value)
+		conf.msg('Will use cross-compilation %s from CHOST' \
+		 % wafname, value)
 
 @Configure.conf
 def xcheck_host_envar(conf, name, wafname=None):
@@ -131,11 +132,22 @@ def xcheck_host_envar(conf, name, wafname=None):
 	if specific:
 		value = Utils.to_list(specific)
 		conf.env[wafname] += value
-		conf.msg('Will use cross-compilation %s' % name,
+		conf.msg('Will use cross-compilation %s from %s_%s' \
+		 % (name, chost_envar, name),
 		 " ".join(quote(x) for x in value))
 		return
 
-	conf.xcheck_envar('HOST_%s' % name, wafname, cross=True)
+
+	envar = os.environ.get('HOST_%s' % name, None)
+	if envar is None:
+		return
+
+	value = Utils.to_list(envar) if envar != '' else [envar]
+
+	conf.env[wafname] = value
+	conf.msg('Will use cross-compilation %s from HOST_%s' \
+	 % (name, name),
+	 " ".join(quote(x) for x in value))
 
 
 @Configure.conf
@@ -155,18 +167,10 @@ def xcheck_host(conf):
 	conf.xcheck_host_envar('PKG_CONFIG_LIBDIR')
 	conf.xcheck_host_envar('PKG_CONFIG_PATH')
 
-	# TODO find a better solution than this ugliness
-	if conf.env.PKG_CONFIG_PATH or conf.env.PKG_CONFIG_LIBDIR:
-		conf.find_program('pkg-config', var='PKGCONFIG')
-		x = [
-		 'env',
-		]
-		if conf.env.PKG_CONFIG_LIBDIR:
-			x += [
-			 'PKG_CONFIG_LIBDIR=%s' % (conf.env.PKG_CONFIG_LIBDIR[0]),
-			]
-		if conf.env.PKG_CONFIG_PATH:
-			x += [
-			 'PKG_CONFIG_PATH=%s' % (conf.env.PKG_CONFIG_PATH[0]),
-			]
-		conf.env.PKG_CONFIG = x + conf.env.PKGCONFIG
+	if not conf.env.env:
+		conf.env.env = {}
+		conf.env.env.update(os.environ)
+	if conf.env.PKG_CONFIG_LIBDIR:
+		conf.env.env['PKG_CONFIG_LIBDIR'] = conf.env.PKG_CONFIG_LIBDIR[0]
+	if conf.env.PKG_CONFIG_PATH:
+		conf.env.env['PKG_CONFIG_PATH'] = conf.env.PKG_CONFIG_PATH[0]
