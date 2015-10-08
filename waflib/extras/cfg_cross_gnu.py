@@ -58,7 +58,7 @@ def get_chost_stuff(conf):
 	chost_envar = None
 	if conf.env.CHOST:
 		chost = conf.env.CHOST[0]
-		host_envar = chost.replace('-', '_')
+		chost_envar = chost.replace('-', '_')
 	return chost, chost_envar
 
 
