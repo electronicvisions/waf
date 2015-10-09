@@ -8,7 +8,7 @@ bld.program(
 	features = 'aaa',
 	source   = 'main.c',
 	includes = '. ..',
-	cflags   = ['-O3'],
+	#cflags   = ['-O3'], # for example
 	defines  = ['foo=bar'],
 	target   = 'myprogram',
 	use      = 'M')
