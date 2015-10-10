@@ -1,3 +1,12 @@
+NEW IN WAF 1.8.15
+-----------------
+* Multiple commands can be provided in run_str/rule
+* conf.check(header_name=) will compile only (no link by default)
+* Added a workaround for building using IronPython
+* Added a workaround for non-standard python installations (Python bug 7352) - #1636
+* Let conf.check_cfg use contents of conf.env.env as os environment
+* Enabled gzip compression when creating the Waf file with Jython
+
 NEW IN WAF 1.8.14
 -----------------
 * Fixed the Visual Studio detection on Python 3 when --msvc_lazy_autodetect is not provided (regression)
