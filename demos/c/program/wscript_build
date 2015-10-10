@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 def write_header(tsk):
-	tsk.outputs[0].write('int abc = 423;')
+	tsk.outputs[0].write('int abc = 423;\n')
 bld(rule=write_header, target='b.h', ext_out=['.h'])
 
 bld.program(
