@@ -753,3 +753,7 @@ def lib64():
 				return '64'
 	return ''
 
+def sane_path(p):
+	# private function for the time being!
+	return os.path.abspath(os.path.expanduser(p))
+

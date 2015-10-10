@@ -208,17 +208,17 @@ class ConfigurationContext(Context.Context):
 		"""
 		if not env.PREFIX:
 			if Options.options.prefix or Utils.is_win32:
-				env.PREFIX = os.path.abspath(os.path.expanduser(Options.options.prefix))
+				env.PREFIX = Utils.sane_path(Options.options.prefix)
 			else:
 				env.PREFIX = ''
 		if not env.BINDIR:
 			if Options.options.bindir:
-				env.BINDIR = os.path.abspath(os.path.expanduser(Options.options.bindir))
+				env.BINDIR = Utils.sane_path(Options.options.bindir)
 			else:
 				env.BINDIR = Utils.subst_vars('${PREFIX}/bin', env)
 		if not env.LIBDIR:
 			if Options.options.libdir:
-				env.LIBDIR = os.path.abspath(os.path.expanduser(Options.options.libdir))
+				env.LIBDIR = Utils.sane_path(Options.options.libdir)
 			else:
 				env.LIBDIR = Utils.subst_vars('${PREFIX}/lib%s' % Utils.lib64(), env)
 
@@ -528,7 +528,6 @@ def find_binary(self, filenames, exts, paths):
 					if os.path.isfile(x):
 						return x
 	return None
-
 
 @conf
 def run_build(self, *k, **kw):
