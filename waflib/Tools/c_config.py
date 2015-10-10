@@ -482,7 +482,10 @@ def validate_c(self, kw):
 		kw['type'] = 'cprogram'
 
 	if not 'features' in kw:
-		kw['features'] = [kw['compile_mode'], kw['type']] # "cprogram c"
+		if not 'header_name' in kw:
+			kw['features'] = [kw['compile_mode'], kw['type']] # "c ccprogram"
+		else:
+			kw['features'] = [kw['compile_mode']]
 	else:
 		kw['features'] = Utils.to_list(kw['features'])
 
