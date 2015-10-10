@@ -37,6 +37,8 @@ SKIP_ME = -2
 RUN_ME = -3
 """The task must be executed"""
 
+# To save some memory during the build, consider discarding tsk.last_cmd in the two templates below
+
 COMPILE_TEMPLATE_SHELL = '''
 def f(tsk):
 	env = tsk.env

@@ -6,6 +6,7 @@ NEW IN WAF 1.8.15
 * Added a workaround for non-standard python installations (Python bug 7352) - #1636
 * Let conf.check_cfg use contents of conf.env.env as os environment
 * Enabled gzip compression when creating the Waf file with Jython
+* Enabled relative paths in --top and --out
 
 NEW IN WAF 1.8.14
 -----------------
