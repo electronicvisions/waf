@@ -34,9 +34,7 @@ Known issues:
 """
 
 import os, binascii
-
-from waflib import Task, Utils, TaskGen, Errors
-
+from waflib import Task, TaskGen, Errors
 
 def filename_c_escape(x):
 	return x.replace("\\", "\\\\")
@@ -135,12 +133,12 @@ def tg_file_to_object(self):
 	for src in sources:
 		if bld.env.F2O_METHOD == ["asm"]:
 			tgt = src.parent.find_or_declare(src.name + '.f2o.s')
-			task = self.create_task('file_to_object_s',
-			 src, tgt, cwd=src.parent.abspath())
+			tsk = self.create_task('file_to_object_s', src, tgt)
+			tsk.cwd = src.parent.abspath() # verify
 		else:
 			tgt = src.parent.find_or_declare(src.name + '.f2o.c')
-			task = self.create_task('file_to_object_c',
-			 src, tgt, cwd=src.parent.abspath())
+			tsk = self.create_task('file_to_object_c', src, tgt)
+			tsk.cwd = src.parent.abspath() # verify
 		targets.append(tgt)
 	self.source = targets
 

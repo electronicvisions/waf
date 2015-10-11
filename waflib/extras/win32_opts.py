@@ -8,11 +8,7 @@ This module can help reducing the overhead of listing files on windows (more tha
 """
 
 import os
-try:
-	import cPickle
-except ImportError:
-	import pickle as cPickle
-from waflib import Utils, Build, Context, Node, Logs
+from waflib import Utils, Build, Node, Logs
 
 try:
 	TP = '%s\\*'.decode('ascii')

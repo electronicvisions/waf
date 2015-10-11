@@ -16,8 +16,6 @@ this hashing scheme
 """
 
 import os, stat
-try: import cPickle
-except: import pickle as cPickle
 from waflib import Utils, Build, Context
 
 STRONGEST = True

@@ -4,11 +4,7 @@
 
 # TODO: have the child process terminate if the parent is killed abruptly
 
-import os, re, socket, threading, sys, subprocess, time, atexit, traceback, random
-try:
-	import SocketServer
-except ImportError:
-	import socketserver as SocketServer
+import os, socket, threading, sys, subprocess, time, atexit, random
 try:
 	from queue import Queue
 except ImportError:
@@ -84,7 +80,7 @@ if 1:
 		global SERVERS
 		while SERVERS:
 			srv = SERVERS.pop()
-			pid = srv.pid
+			#pid = srv.pid
 			try:
 				srv.kill()
 			except Exception as e:

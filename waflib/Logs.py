@@ -321,7 +321,7 @@ def free_logger(logger):
 		for x in logger.handlers:
 			x.close()
 			logger.removeHandler(x)
-	except Exception as e:
+	except Exception:
 		pass
 
 def pprint(col, msg, label='', sep='\n'):

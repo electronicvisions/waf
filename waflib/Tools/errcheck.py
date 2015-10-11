@@ -103,7 +103,6 @@ def replace(m):
 			if x in kw:
 				if x == 'iscopy' and 'subst' in getattr(self, 'features', ''):
 					continue
-				err = True
 				Logs.error('Fix the typo %r -> %r on %r' % (x, typos[x], ret))
 		return ret
 	setattr(Build.BuildContext, m, call)

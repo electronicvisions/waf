@@ -23,8 +23,8 @@ Support for Ruby extensions. A C/C++ compiler is required::
 """
 
 import os
-from waflib import Task, Options, Utils
-from waflib.TaskGen import before_method, feature, after_method, Task, extension
+from waflib import Options, Utils, Task
+from waflib.TaskGen import before_method, feature, extension
 from waflib.Configure import conf
 
 @feature('rubyext')
@@ -103,7 +103,6 @@ def check_ruby_ext_devel(self):
 	def read_config(key):
 		return read_out('puts RbConfig::CONFIG[%r]' % key)
 
-	ruby = self.env['RUBY']
 	cpppath = archdir = read_config('archdir')
 
 	if version >= (1, 9, 0):
@@ -166,18 +165,18 @@ def check_ruby_module(self, module_name):
 
 @extension('.rb')
 def process(self, node):
-	tsk = self.create_task('run_ruby', node)
+	return self.create_task('run_ruby', node)
 
 class run_ruby(Task.Task):
 	"""
 	Task to run ruby files detected by file extension .rb::
-	
+
 		def options(opt):
 			opt.load('ruby')
-		
+
 		def configure(ctx):
 			ctx.check_ruby_version()
-		
+
 		def build(bld):
 			bld.env['RBFLAGS'] = '-e puts "hello world"'
 			bld(source='a_ruby_file.rb')

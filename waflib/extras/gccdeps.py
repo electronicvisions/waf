@@ -107,7 +107,6 @@ def post_run(self):
 	txt = txt.replace('\\\n', '')
 
 	val = txt.strip()
-	lst = val.split(':')
 	val = [x.replace('\\ ', ' ') for x in re_splitter.split(val) if x]
 
 	nodes = []

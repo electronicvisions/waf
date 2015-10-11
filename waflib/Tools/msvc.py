@@ -833,9 +833,6 @@ def find_msvc(conf):
 	v.MSVC_MANIFEST = (compiler == 'msvc' and version >= 8) or (compiler == 'wsdk' and version >= 6) or (compiler == 'intel' and version >= 11)
 
 	# compiler
-	cxx = None
-	if v['CXX']: cxx = v['CXX']
-	elif 'CXX' in conf.environ: cxx = conf.environ['CXX']
 	cxx = conf.find_program(compiler_name, var='CXX', path_list=path)
 
 	# before setting anything, check if the compiler is really msvc

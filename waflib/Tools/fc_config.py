@@ -10,7 +10,6 @@ Fortran configuration helpers
 import re, os, sys, shlex
 from waflib.Configure import conf
 from waflib.TaskGen import feature, before_method
-from waflib import Utils
 
 FC_FRAGMENT = '        program main\n        end     program main\n'
 FC_FRAGMENT2 = '        PROGRAM MAIN\n        END\n' # what's the actual difference between these?

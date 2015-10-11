@@ -4,8 +4,7 @@
 
 "base for all c/c++ programs and libraries"
 
-import os, sys, re
-from waflib import Utils, Build, Errors
+from waflib import Utils, Errors
 from waflib.Configure import conf
 
 def get_extensions(lst):

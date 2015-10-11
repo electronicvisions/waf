@@ -251,7 +251,7 @@ class Node(object):
 				cur.children = self.dict_class()
 			else:
 				try:
-					cur = cur.children[x]
+					cur = ch[x]
 					continue
 				except KeyError:
 					pass

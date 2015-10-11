@@ -151,14 +151,8 @@ class ConfigurationContext(Context.Context):
 			if ver:
 				app = "%s (%s)" % (app, ver)
 
-		now = time.ctime()
-		pyver = sys.hexversion
-		systype = sys.platform
-		args = " ".join(sys.argv)
-		wafver = Context.WAFVERSION
-		abi = Context.ABI
-		self.to_log(conf_template % vars())
-
+		params = {'now': time.ctime(), 'pyver': sys.hexversion, 'systype': sys.platform, 'args': " ".join(sys.argv), 'wafver': Context.WAFVERSION, 'abi': Context.ABI, 'app': app}
+		self.to_log(conf_template % params)
 		self.msg('Setting top to', self.srcnode.abspath())
 		self.msg('Setting out to', self.bldnode.abspath())
 

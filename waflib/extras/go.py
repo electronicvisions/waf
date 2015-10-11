@@ -144,7 +144,6 @@ def compile_go(self, node):
 	#print ('compile_go-cgo...')
 	bld_dir = node.parent.get_bld()
 	obj_dir = bld_dir.make_node('_obj')
-	target  = obj_dir.make_node(node.change_ext('.a').name)
 	return self.create_task('cgopackage', node, node.change_ext('.a'))
 
 @feature('gopackage', 'goprogram', 'cgopackage')

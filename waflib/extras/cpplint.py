@@ -47,7 +47,7 @@ When using this tool, the wscript will look like:
 import sys, re
 import logging
 import threading
-from waflib import Task, Build, TaskGen, Logs, Utils
+from waflib import Task, TaskGen, Logs
 try:
     from cpplint.cpplint import ProcessFile, _cpplint_state
 except ImportError:

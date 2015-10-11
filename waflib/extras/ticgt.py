@@ -32,28 +32,27 @@ TODO:
 
 import os, re
 
-from waflib import Configure, Options, Utils, Task, TaskGen
+from waflib import Options, Utils, Task, TaskGen
 from waflib.Tools import c, ccroot, c_preproc
 from waflib.Configure import conf
-from waflib.TaskGen import feature, before_method, taskgen_method
-from waflib.Tools.ccroot import link_task, stlink_task
+from waflib.TaskGen import feature, before_method
 from waflib.Tools.c import cprogram
 
 opj = os.path.join
 
 @conf
 def find_ticc(conf):
-	cc = conf.find_program(['cl6x'], var='CC', path_list=opj(getattr(Options.options, 'ti-cgt-dir', ""), 'bin'))
+	conf.find_program(['cl6x'], var='CC', path_list=opj(getattr(Options.options, 'ti-cgt-dir', ""), 'bin'))
 	conf.env.CC_NAME = 'ticc'
 
 @conf
 def find_tild(conf):
-	ld = conf.find_program(['lnk6x'], var='LINK_CC', path_list=opj(getattr(Options.options, 'ti-cgt-dir', ""), 'bin'))
+	conf.find_program(['lnk6x'], var='LINK_CC', path_list=opj(getattr(Options.options, 'ti-cgt-dir', ""), 'bin'))
 	conf.env.LINK_CC_NAME = 'tild'
 
 @conf
 def find_tiar(conf):
-	ar = conf.find_program(['ar6x'], var='AR', path_list=opj(getattr(Options.options, 'ti-cgt-dir', ""), 'bin'))
+	conf.find_program(['ar6x'], var='AR', path_list=opj(getattr(Options.options, 'ti-cgt-dir', ""), 'bin'))
 	conf.env.AR_NAME = 'tiar'
 	conf.env.ARFLAGS = 'qru'
 

@@ -83,7 +83,7 @@ The generation of the html report is originally based on the cppcheck-htmlreport
 script that comes shipped with the cppcheck tool.
 """
 
-import os, sys
+import sys
 import xml.etree.ElementTree as ElementTree
 from waflib import Task, TaskGen, Logs, Context
 
