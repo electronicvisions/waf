@@ -22,7 +22,7 @@ def configure(cnf):
 		cnf.find_program('bjam', path_list=[
 			cnf.env.BJAM_SRC + sep + 'bin.' + cnf.env.BJAM_UNAME
 		])
-	except Exception as e:
+	except Exception:
 		cnf.env.BJAM = None
 	if not cnf.env.BJAM_CONFIG:
 		cnf.env.BJAM_CONFIG = cnf.options.bjam_config

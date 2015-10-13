@@ -61,7 +61,7 @@ if Utils.is_win32:
 							lst_files[str(findData.cFileName)] = d
 					if not FindNextFile(find, ctypes.byref(findData)):
 						break
-			except Exception as e:
+			except Exception:
 				cache[id(self.parent)] = {}
 				raise IOError('Not a file')
 			finally:

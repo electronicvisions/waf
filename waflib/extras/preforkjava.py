@@ -83,7 +83,7 @@ if 1:
 			#pid = srv.pid
 			try:
 				srv.kill()
-			except Exception as e:
+			except Exception:
 				pass
 	atexit.register(close_all)
 

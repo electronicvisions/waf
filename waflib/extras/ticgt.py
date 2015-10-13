@@ -260,7 +260,7 @@ def apply_tconf(self):
 	 target_node.change_ext("cfg.cmd"),
 	]
 
-	s62task = create_compiled_task(self, 'ti_c', task.outputs[1])
+	create_compiled_task(self, 'ti_c', task.outputs[1])
 	ctask = create_compiled_task(self, 'ti_c', task.outputs[0])
 	ctask.env = self.env.derive()
 
