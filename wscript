@@ -255,7 +255,7 @@ def create_waf(self, *k, **kw):
 		dd = os.path.join('waflib', d)
 		for k in os.listdir(dd):
 			if k == '__init__.py':
-				files.append(os.path.join(dd, k))
+				files.append(os.path.normpath(os.path.join(dd, k)))
 				continue
 			if d == 'Tools' and Options.options.coretools != 'default':
 				if not k in coretools:
@@ -264,7 +264,7 @@ def create_waf(self, *k, **kw):
 				if not k in add3rdparty:
 					continue
 			if k.endswith('.py'):
-				files.append(os.path.join(dd, k))
+				files.append(os.path.normpath(os.path.join(dd, k)))
 
 	#open a file as tar.[extension] for writing
 	tar = tarfile.open('%s.tar.%s' % (mw, zipType), "w:%s" % zipType)
