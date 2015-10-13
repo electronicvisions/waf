@@ -610,7 +610,7 @@ class Context(ctx):
 				doban = False
 				for b in ban:
 					r = b.replace("*", ".*")
-					if re.match(b, f):
+					if re.match(r, f):
 						doban = True
 				if not doban:
 					f = f.replace('.py', '')
