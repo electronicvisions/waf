@@ -144,5 +144,5 @@ def tg_file_to_object(self):
 
 def configure(conf):
 	conf.load('gas')
-	conf.env.F2O_METHOD = ["asm"]
+	conf.env.F2O_METHOD = ["c"]
 
