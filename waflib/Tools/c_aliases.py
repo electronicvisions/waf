@@ -48,7 +48,7 @@ def sniff_features(**kw):
 			feats.append('cxx')
 			break
 
-	if 'c' in exts or 'vala' in exts:
+	if 'c' in exts or 'vala' in exts or 'gs' in exts:
 		feats.append('c')
 
 	for x in 'f f90 F F90 for FOR'.split():
@@ -70,7 +70,7 @@ def sniff_features(**kw):
 				feats.append(x + type)
 				will_link = True
 		if not will_link and not kw.get('features', []):
-			raise Errors.WafError('Cannot link from %r, try passing eg: features="cprogram"?' % kw)
+			raise Errors.WafError('Cannot link from %r, try passing eg: features="c cprogram"?' % kw)
 	return feats
 
 def set_features(kw, _type):
