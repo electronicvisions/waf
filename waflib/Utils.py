@@ -565,6 +565,8 @@ def subst_vars(expr, params):
 			return params.get_flat(m.group(3))
 		except AttributeError:
 			return params[m.group(3)]
+		# if you get a TypeError, it means that 'expr' is not a string...
+		# Utils.subst_vars(None, env)  will not work
 	return reg_subst.sub(repl_var, expr)
 
 def destos_to_binfmt(key):
