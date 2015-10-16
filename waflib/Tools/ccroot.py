@@ -158,7 +158,10 @@ class link_task(Task.Task):
 					if len(nums) >= 2:
 						pattern += '.%s' % nums[1]
 
-			tmp = folder + os.sep + pattern % name
+			if folder:
+				tmp = folder + os.sep + pattern % name
+			else:
+				tmp = pattern % name
 			target = self.generator.path.find_or_declare(tmp)
 		self.set_outputs(target)
 

@@ -409,10 +409,25 @@ def split_path_win32(path):
 		return ret
 	return re.split(re_sp, path)
 
+msysroot = None
+def split_path_msys(path):
+	if (path.startswith('/') or path.startswith('\\')) and not path.startswith('//') and not path.startswith('\\\\'):
+		# msys paths can be in the form /usr/bin
+		global msysroot
+		if not msysroot:
+			# msys has python 2.7 or 3, so we can use this
+			msysroot = subprocess.check_output(['cygpath', '-w', '/']).decode(sys.stdout.encoding or 'iso8859-1')
+			msysroot = msysroot.strip()
+		path = os.path.normpath(msysroot + os.sep + path)
+	return split_path_win32(path)
+
 if sys.platform == 'cygwin':
 	split_path = split_path_cygwin
 elif is_win32:
-	split_path = split_path_win32
+	if os.environ.get('MSYSTEM', None):
+		split_path = split_path_msys
+	else:
+		split_path = split_path_win32
 else:
 	split_path = split_path_unix
 

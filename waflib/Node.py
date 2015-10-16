@@ -59,14 +59,11 @@ Ant patterns for files and folders to exclude while doing the
 recursive traversal in :py:meth:`waflib.Node.Node.ant_glob`
 """
 
-# TODO waf 1.9
-split_path = Utils.split_path_unix
+# TODO remove in waf 1.9
+split_path = Utils.split_path
+split_path_unix = Utils.split_path_unix
 split_path_cygwin = Utils.split_path_cygwin
 split_path_win32 = Utils.split_path_win32
-if sys.platform == 'cygwin':
-	split_path = split_path_cygwin
-elif Utils.is_win32:
-	split_path = split_path_win32
 
 class Node(object):
 	"""
