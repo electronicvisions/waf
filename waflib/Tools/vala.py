@@ -45,10 +45,14 @@ def init_vala_task(self):
 	"""
 	self.profile = getattr(self, 'profile', 'gobject')
 
+	self.packages = packages = Utils.to_list(getattr(self, 'packages', []))
+	self.use = Utils.to_list(getattr(self, 'use', []))
+	if packages and not self.use:
+		self.use = packages[:] # copy
+
 	if self.profile == 'gobject':
-		self.uselib = Utils.to_list(getattr(self, 'uselib', []))
-		if not 'GOBJECT' in self.uselib:
-			self.uselib.append('GOBJECT')
+		if not 'GOBJECT' in self.use:
+			self.use.append('GOBJECT')
 
 	def addflags(flags):
 		self.env.append_value('VALAFLAGS', flags)
@@ -74,8 +78,8 @@ def init_vala_task(self):
 
 	if hasattr(self, 'thread'):
 		if self.profile == 'gobject':
-			if not 'GTHREAD' in self.uselib:
-				self.uselib.append('GTHREAD')
+			if not 'GTHREAD' in self.use:
+				self.use.append('GTHREAD')
 		else:
 			#Vala doesn't have threading support for dova nor posix
 			Logs.warn("Profile %s means no threading support" % self.profile)
@@ -119,7 +123,6 @@ def init_vala_task(self):
 		return api_version
 
 	self.includes = Utils.to_list(getattr(self, 'includes', []))
-	self.uselib = self.to_list(getattr(self, 'uselib', []))
 	valatask.install_path = getattr(self, 'install_path', '')
 
 	valatask.vapi_path = getattr(self, 'vapi_path', '${DATAROOTDIR}/vala/vapi')
@@ -127,7 +130,6 @@ def init_vala_task(self):
 	valatask.header_path = getattr(self, 'header_path', '${INCLUDEDIR}/%s-%s' % (valatask.pkg_name, _get_api_version()))
 	valatask.install_binding = getattr(self, 'install_binding', True)
 
-	self.packages = packages = Utils.to_list(getattr(self, 'packages', []))
 	self.vapi_dirs = vapi_dirs = Utils.to_list(getattr(self, 'vapi_dirs', []))
 	#includes =  []
 
@@ -215,7 +217,7 @@ def vala_file(self, node):
 			bld.program(
 				packages      = 'gtk+-2.0',
 				target        = 'vala-gtk-example',
-				uselib        = 'GTK GLIB',
+				use           = 'GTK GLIB',
 				source        = 'vala-gtk-example.vala foo.vala',
 				vala_defines  = ['DEBUG'] # adds --define=<xyz> values to the command-line
 
