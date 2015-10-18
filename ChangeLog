@@ -1,13 +1,13 @@
 NEW IN WAF 1.8.15
 -----------------
-* Multiple commands can be provided in run_str/rule
-* conf.check(header_name=) should compile only (not link by default)
+* Enabled multiple commands in run_str/rule
+* Fixed conf.check(header_name=) so that it does not link test by default
 * Added a workaround for non-standard python installations (Python bug 7352) - #1636
-* Let conf.check_cfg use contents of conf.env.env as os environment
-* Enabled gzip compression when creating the Waf file with Jython
+* Enabled conf.check_cfg to use conf.env.env as os environment if provided
 * Enabled relative paths in --top and --out
-* Added a workaround for building using IronPython
-* Added a workaround for pkg-config usage within msys2
+* Enabled gzip compression for Waf file creation with Jython
+* Added a workaround for building projects using IronPython
+* Added a workarounds for pkg-config usage within msys2 and for inconsistent Python 2 paths
 
 NEW IN WAF 1.8.14
 -----------------
