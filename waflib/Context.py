@@ -307,6 +307,10 @@ class Context(ctx):
 				elif not node:
 					if not mandatory:
 						continue
+					try:
+						os.listdir(d)
+					except OSError:
+						raise Errors.WafError('Cannot read the folder %r' % d)
 					raise Errors.WafError('No wscript file in directory %s' % d)
 
 	def exec_command(self, cmd, **kw):
