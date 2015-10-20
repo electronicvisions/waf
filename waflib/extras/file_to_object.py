@@ -26,14 +26,12 @@ Usage::
 
 Known issues:
 
-- Currently only handles elf files with GNU ld.
-
 - Destination is named like source, with extension renamed to .o
   eg. some.file -> some.o
 
 """
 
-import os, binascii
+import os
 from waflib import Task, TaskGen, Errors
 
 def filename_c_escape(x):
@@ -97,31 +95,22 @@ class file_to_object_c(Task.Task):
 
 		name = "_binary_" + "".join(name)
 
-		data = []
-		data = self.inputs[0].read()
-		data = binascii.hexlify(data)
-		data = [ ("0x%s" % (data[i:i+2])) for i in range(0, len(data), 2) ]
-		data = ",\n ".join(data)
+		data = self.inputs[0].read('rb')
+		lines, line = [], []
+		for idx_byte, byte in enumerate(data):
+			line.append(byte)
+			if len(line) > 15 or idx_byte == size-1:
+				lines.append(", ".join(("0x%02x" % ord(x)) for x in line))
+				line = []
+		data = ",\n ".join(lines)
 
-		with open(self.outputs[0].abspath(), 'w') as f:
-			f.write(\
-"""
-char const %(name)s[] = {
- %(data)s
-};
-unsigned long %(name)s_size = %(size)dL;
-char const * %(name)s_start = %(name)s;
-char const * %(name)s_end = &%(name)s[%(size)d];
-""" % locals())
-		with open(self.outputs[0].abspath(), 'w') as f:
-			f.write(\
+		self.outputs[0].write(\
 """
 unsigned long %(name)s_size = %(size)dL;
 char const %(name)s_start[] = {
  %(data)s
 };
-char const %(name)s_end[] = {
-};
+char const %(name)s_end[] = {};
 """ % locals())
 
 @TaskGen.feature('file_to_object')
