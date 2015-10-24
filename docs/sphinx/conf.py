@@ -396,8 +396,11 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-from sphinx import version_info
-if (1, 3) <= version_info:
+try:
+	from sphinx import version_info
+except ImportError:
+	version_info = None
+if version_info and (1, 3) <= version_info:
 	html_theme = 'classic'
 else:
 	html_theme = 'default'
