@@ -88,8 +88,9 @@ def apply_incpaths_emscripten(self):
 	"""
 	Emscripten doesn't like absolute include paths
 	"""
-    if self.env.CC_NAME != 'emscripten' or self.env.CC_NAME != CXX_NAME:
-       return
+	# TODO: in waf 1.9 we can switch back to bldnode as the default since path_from handles cross-drive paths
+	if self.env.CC_NAME != 'emscripten' or self.env.CC_NAME != 'emscripten':
+		return
 	lst = self.to_incnodes(self.to_list(getattr(self, 'includes', [])) + self.env['INCLUDES'])
 	self.includes_nodes = lst
 	self.env['INCPATHS'] = [x.path_from(self.bld.bldnode) for x in lst]
