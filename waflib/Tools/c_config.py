@@ -482,7 +482,7 @@ def validate_c(self, kw):
 		kw['type'] = 'cprogram'
 
 	if not 'features' in kw:
-		if not 'header_name' in kw:
+		if not 'header_name' in kw or kw.get('link_header_test', True):
 			kw['features'] = [kw['compile_mode'], kw['type']] # "c ccprogram"
 		else:
 			kw['features'] = [kw['compile_mode']]

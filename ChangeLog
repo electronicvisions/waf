@@ -1,3 +1,11 @@
+NEW IN WAF 1.8.16
+-----------------
+* Reverted the changes to conf.check(header_name=) as this causes regressions. Use conf.check(header_name=, link_header_test=False) - #1647
+* Disabled the loading of c_emscripten when building from the Waf tree
+* Fixed the documentation build when using Sphinx < 1.3
+* Propagate ldflags/LDFLAGS besides linkflags/LINKFLAGS
+* Python3 fixes in extras/file_to_object.py
+
 NEW IN WAF 1.8.15
 -----------------
 * Enabled multiple commands in run_str/rule

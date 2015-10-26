@@ -15,6 +15,7 @@ Waf 1.9
 * Fix the vala detection
 * Better consistency between check_cfg and check_cc variables
 * Detect Clang by default on FreeBSD instead of gcc
+* Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
 
 and all other issues listed on https://github.com/waf-project/waf/issues
 
