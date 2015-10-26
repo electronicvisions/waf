@@ -112,7 +112,7 @@ def check_ruby_ext_devel(self):
 			cpppath += read_config('rubyarchhdrdir')
 		cpppath += [os.path.join(ruby_hdrdir[0], read_config('arch')[0])]
 
-	self.check(header_name='ruby.h', includes=cpppath, errmsg='could not find ruby header file')
+	self.check(header_name='ruby.h', includes=cpppath, errmsg='could not find ruby header file', link_header_test=False)
 
 	self.env.LIBPATH_RUBYEXT = read_config('libdir')
 	self.env.LIBPATH_RUBYEXT += archdir
