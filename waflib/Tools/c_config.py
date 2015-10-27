@@ -292,7 +292,7 @@ def exec_cfg(self, kw):
 	def define_it():
 		pkgname = kw.get('uselib_store', kw['package'].upper())
 		if kw.get('global_define'):
-			# compatibility
+			# compatibility, replace by pkgname in WAF 1.9?
 			self.define(self.have_define(kw['package']), 1, False)
 		else:
 			self.env.append_unique('DEFINES_%s' % pkgname, "%s=1" % self.have_define(pkgname))
@@ -629,7 +629,7 @@ def post_check(self, *k, **kw):
 		is_success = (kw['success'] == 0)
 
 	if 'define_name' in kw:
-		# TODO simplify?
+		# TODO simplify!
 		if 'header_name' in kw or 'function_name' in kw or 'type_name' in kw or 'fragment' in kw:
 			if kw['execute'] and kw.get('define_ret', None) and isinstance(is_success, str):
 				self.define(kw['define_name'], is_success, quote=kw.get('quote', 1))
@@ -637,6 +637,10 @@ def post_check(self, *k, **kw):
 				self.define_cond(kw['define_name'], is_success)
 		else:
 			self.define_cond(kw['define_name'], is_success)
+
+		# consistency with check_cfg
+		if kw.get('global_define', None):
+			self.env[kw['define_name']] = is_success
 
 	if 'header_name' in kw:
 		if kw.get('auto_add_header_name', False):
