@@ -1,17 +1,54 @@
 #! /usr/bin/env python
 # encoding: utf-8
 # XCode 3/XCode 4 generator for Waf
-# Nicolas Mercier 2011
-# Modified by Simon Warg 2015
+# Based on work by Nicolas Mercier 2011
+# Extended by Simon Warg 2015, https://github.com/mimon
 # XCode project file format based on http://www.monobjc.net/xcode-project-file-format.html
 
 """
 Usage:
 
-def options(opt):
-	opt.load('xcode')
+See also demos/xcode6/ folder
 
-$ waf configure xcode
+def options(opt):
+	opt.load('xcode6')
+
+def configure(cnf):
+	# <do your stuff>
+
+	# For example
+	cnf.env.SDKROOT = 'macosx10.9'
+
+	# Use cnf.PROJ_CONFIGURATION to completely set/override
+	# global project settings
+	# cnf.env.PROJ_CONFIGURATION = {
+	# 	'Debug': {
+	# 		'SDKROOT': 'macosx10.9'
+	# 	}
+	# 	'MyCustomReleaseConfig': {
+	# 		'SDKROOT': 'macosx10.10'
+	# 	}
+	# }
+
+	# In the end of configure() do
+	cnf.load('xcode6')
+
+def build(bld):
+
+	# Make a Framework target
+	bld.framework(
+		source=bld.path.ant_glob('src/MyLib/*.cpp'),
+		includes='include',
+		group_files={
+			'Include': bld.path.ant_glob('include/MyLib/*.h')
+		},
+		export_headers=bld.path.ant_glob('include/MyLib/*.h'),
+		target='MyLib',
+	)
+
+	# You can also make bld.dylib, bld.app, bld.stlib ...
+
+$ waf configure xcode6
 """
 
 # TODO: support iOS projects

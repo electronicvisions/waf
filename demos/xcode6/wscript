@@ -24,6 +24,9 @@ def build(bld):
 		group_files={
 			'Include': bld.path.ant_glob('include/MyLib/*.h')
 		},
+
+		# export_headers will put the files in the Header
+		# buildphase in Xcode - i.e ship them with your .framework
 		export_headers=bld.path.ant_glob('include/MyLib/*.h'),
 		target='MyLib',
 	)
