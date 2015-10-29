@@ -736,62 +736,6 @@ class mr_lstag(MRContext):
     cmd = 'repos-lstag'
     mr_cmd = 'run git tag --list'
 
-
-#### DEPRECATED code startsnip
-# TODO [2013-09-17 15:08:56] old deprecated mr interface, will be deleted
-# repos-mrcmd for standard mr commands
-# mr-(x)run for special commands that expect mr understanding
-# the old commands are marked as deprecated and will be removed anytime soon
-# under discussion: leave some shortcut commands like up/st/diff
-# rationale: better organized output of waf --help (its alphabetic sorting)
-
-class mr_deprecated(MRContext):
-    cmd=None
-    newcmd=None
-    def __init__(self, **kw):
-        super(mr_deprecated, self).__init__(**kw)
-        Logs.warn("This mr/repo-command interface is deprecated use ./waf repos-{command} instead.".format(command = self.newcmd or self.cmd))
-
-class deprecated_mr_up(mr_deprecated):
-    '''DEPRECATED update the repositories (using MR tool)'''
-    cmd = 'up'
-    mr_cmd = 'update'
-    newcmd = 'update'
-
-# FIXME, conflicts, @see ./waf --help | grep update (KHS)
-class deprecated_mr_update(mr_deprecated):
-    '''KHS: we never see this doc'''
-    cmd = 'update'
-
-class deprecated_mr_diff(mr_deprecated):
-    '''DEPRECATED diff all repositories (using MR tool)'''
-    cmd = 'diff'
-
-class deprecated_mr_status(mr_deprecated):
-    '''DEPRECATED check status of the repositories (using MR tool)'''
-    cmd = 'st'
-    mr_cmd = 'status'
-    newcmd = 'status'
-
-class deprecated_mr_status(mr_deprecated):
-    '''DEPRECATED check status of the repositories (using MR tool)'''
-    cmd = 'status'
-
-class deprecated_mr_commit(mr_deprecated):
-    '''DEPRECATED commit all changes (using MR tool)'''
-    cmd = 'commit'
-
-class deprecated_mr_push(mr_deprecated):
-    '''DEPRECATED push all changes (using MR tool)'''
-    cmd = 'push'
-
-#class deprecated_mr_branch(mr_deprecated):
-#    cmd = 'branch'
-#
-#class deprecated_mr_checkout(mr_deprecated):
-#    cmd = 'checkout'
-#### endsnip
-
 def options(opt):
     gr = opt.add_option_group("show_repos")
     gr.add_option(
@@ -819,7 +763,7 @@ class show_repos_context(Context.Context):
 
     def build_repo_info(self, r):
         info = {"name" : r,
-                "used" : '*' if (r in self.used) else ' ', #str(r  in self.used),
+                "used" : '*' if (r in self.used) else ' ',
                 "desc" : self.db.get_description(r),
                 "url"  : self.db.get_url(r),
                 "man"  : self.db.get_manager(r) or '- n/a -',
