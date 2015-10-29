@@ -410,7 +410,7 @@ class PBXProject(XCodeNode):
 		return None
 
 class xcode(Build.BuildContext):
-	cmd = 'xcode'
+	cmd = 'xcode6'
 	fun = 'build'
 
 	file_refs = dict()
