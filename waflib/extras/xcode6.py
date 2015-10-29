@@ -436,6 +436,11 @@ class xcode(Build.BuildContext):
 		return group
 
 	def unique_filereference(self, fileref):
+		"""
+		Returns a unique fileref, possibly an existing one if the paths are the same.
+		Use this after you've constructed a PBXFileReference to make sure there is
+		only one PBXFileReference for the same file in the same project.
+		"""
 		if fileref not in self.file_refs:
 			self.file_refs[fileref] = fileref
 		return self.file_refs[fileref]
@@ -469,7 +474,7 @@ class xcode(Build.BuildContext):
 							group_files = self.create_group(grpname, files)
 							target_group.children.append(group_files)
 					else:
-						self.to_log("Argument 'group_files' passed to target '%s' was not a dictionary. Hence, some source files may not be included. Please provide a dict of source files, with group name as key and list of source files as value.\n" % tg.name)
+						self.to_log("Argument 'group_files' passed to target '%s' was not a dictionary. Hence, some source files may not be included. Please provide a dictionary of source files, with group name as key and list of source files as value.\n" % tg.name)
 
 				# Determine what type to build - framework, app bundle etc.
 				target_type = getattr(tg, 'target_type', 'app')
