@@ -6,7 +6,7 @@
 # Integrates jenkins commands into symap2ic waf (symap2ic/src/jenkins)
 
 from waflib import Logs, Context, Options
-from waflib.extras import mr
+from waflib.extras import mr, symwaf2ic
 import os, re, subprocess, platform
 
 TOOL            = "Jenkins Integration"
@@ -328,10 +328,7 @@ To simulate a valid Jenkins environment run:
     def fetch_upstream(self):
         """Fetches upstream changes (git fetch) and returns False if an error occurs"""
         try:
-            print("Fetching upstream..."),
-            self.cmd_and_log(['./waf', 'repos-fetch'], quiet=Context.BOTH)
-            # TODO filter stderr for basic output? (output of fetch goes to stderr!)
-            print("OK.")
+            cmd, out, err = symwaf2ic.storage.repo_tool.call_mr(*("run git fetch --no-progress".split()))
         except Exception as e:
             print("FAILURE!")
             Logs.error("Fetching origin updates failed --> build due failure!")
