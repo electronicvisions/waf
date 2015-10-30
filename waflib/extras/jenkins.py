@@ -338,7 +338,6 @@ To simulate a valid Jenkins environment run:
         return True
 
 
-
     ############################
     ### new flow trigger system
 
@@ -416,7 +415,7 @@ but such should not occur in a Jenkins environment, anyways.
             Logs.info("Changes have been found (exitcode: {})!".format(self.exitcode_build))
             return self.exitcode_build
         else:
-            Logs.info("No changes found (exitcode: {})!".format(self.exitcode_doNotBuild))
+            Logs.info("No upstream changes found (exitcode: {})!".format(self.exitcode_doNotBuild))
             return self.exitcode_doNotBuild
 
         assert False, "unreachable code"
@@ -600,10 +599,7 @@ The authors and the changelog are deduced from the git log 'diff' of the origin 
     def getLocalCommits(self):
         # find latest local commits
         cmd = (
-                './waf',
-                'mr-xrun',
-                '--',
-                'git log {logformat}'.format(logformat=self.logformat)
+                'git log {logformat}'.format(logformat=self.logformat),
         )
         local_commits = parseLog(cmd, self.jenkins_workspace.abspath())
         return local_commits
@@ -611,9 +607,6 @@ The authors and the changelog are deduced from the git log 'diff' of the origin 
     def getOriginCommits(self):
         # find according (same branch) upstream (last fetch) commits
         cmd = (
-                "./waf",
-                "mr-xrun",
-                "--",
                 "ref=`git symbolic-ref -q HEAD` # refs/heads/<branchname>",
                 #"# upstream: The name of a local ref which can be considered “upstream” from the displayed ref (KHS: ie, origin)",
                 "branch=`git for-each-ref --format='%(upstream:short)' $ref` # origin/<branchname>",
@@ -625,8 +618,6 @@ The authors and the changelog are deduced from the git log 'diff' of the origin 
 
     ### returns latest local and origin commit of the current checked out branch for every mr-managed repo.
     def getLatestCommits(self):
-        # git log format, latest and a format thats understood by parseLog
-
         local_commits=self.getLocalCommits()
         origin_commits=self.getOriginCommits()
 
@@ -840,17 +831,36 @@ class ProcessPipe():
 
 ### function to parse "git log -n1 --pretty=oneline", retrieving the recent authors
 def parseLog(command, toplevel):
-    with open(os.devnull, 'w') as fp:
-        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=fp)
-    # mr title line has been removed (was available in the old flow)
+    Logs.debug("jenkins: parseLog: " + str(command) + ", " + toplevel)
+    script = symwaf2ic.storage.repo_tool.getMrScript(*command)
+    Logs.debug("jenkins: executing mr script: " + script)
+
+    # enable mr zone to see the output
+    cmd, out, err = symwaf2ic.storage.repo_tool.call_mr("run", script)
+
+    # make it look like a subprocess return object
+    # XXX fix the parsing logic instead
+    out = out.strip().split("\n")
+    for idx, val in enumerate(out): out[idx] = val + "\n"
+    class fu:
+        def wait(self): return 0
+    proc = fu()
+    proc.stdout=iter(out)
+
     triple=[]   # 3 lines log output
     ret={}      # ret['<repo>'] = CommitSpecifier(...)
-    #i = 0      # for debugging...
+    i = 0       # for debugging...
     for line in proc.stdout:
-        #print i, line,
-        #i+=1
+        #Logs.info("jenkins: " + str(i) + ": " + line)
+
+        if (i == 0) and line.startswith("Toplevel set to: "):
+            Logs.debug("jenkins: Toplevel line ignored")
+            continue
+
+        i+=1
         triple.append(line)
         if len(triple)==3:
+            Logs.debug("jenkins: " + str(triple))
 
             # triple[0]                 # mr run: </path/to/repository>\n
             s=triple[0].split()
