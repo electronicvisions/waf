@@ -837,20 +837,12 @@ def parseLog(command, toplevel):
 
     # enable mr zone to see the output
     cmd, out, err = symwaf2ic.storage.repo_tool.call_mr("run", script)
-
-    # make it look like a subprocess return object
-    # XXX fix the parsing logic instead
     out = out.strip().split("\n")
-    for idx, val in enumerate(out): out[idx] = val + "\n"
-    class fu:
-        def wait(self): return 0
-    proc = fu()
-    proc.stdout=iter(out)
 
     triple=[]   # 3 lines log output
     ret={}      # ret['<repo>'] = CommitSpecifier(...)
     i = 0       # for debugging...
-    for line in proc.stdout:
+    for line in out:
         #Logs.info("jenkins: " + str(i) + ": " + line)
 
         if (i == 0) and line.startswith("Toplevel set to: "):
@@ -862,34 +854,33 @@ def parseLog(command, toplevel):
         if len(triple)==3:
             Logs.debug("jenkins: " + str(triple))
 
-            # triple[0]                 # mr run: </path/to/repository>\n
+            # triple[0]                         # mr run: </path/to/repository>\n
             s=triple[0].split()
             assert( len(s) == 3 )
-            assert( s[0]+s[1] == 'mrrun:' ) # startswith "mr run:"
-            assert( s[2].startswith(toplevel) )  # is an absolute path to somedir in symap2ic/below toplevel
+            assert( s[0]+s[1] == 'mrrun:' )     # startswith "mr run:"
+            assert( s[2].startswith(toplevel) ) # is an absolute path to somedir in symap2ic/below toplevel
 
-            repo=s[2].replace(toplevel,".") # abspath to relpath (beutify)
+            repo=s[2].replace(toplevel,".")     # abspath to relpath (beautify)
 
-            # triple[1]                 # <hexstring> <commit message with spaces>\n
+            # triple[1]                         # <hexstring> <commit message with spaces>
             s=triple[1].partition(' ')
-            int(s[0], 16)                   # throws if not a hex string
-            assert( s[1] == ' ' )           # space found!
+            int(s[0], 16)                       # throws if not a hex string
+            assert( s[1] == ' ' )               # space found, i.e. partition successful.
 
             commitId=s[0]
-            commitText=s[2].strip()         # remove trailing newline
+            commitText=s[2].strip()
 
-            # triple[2]                 # \n
-            assert( triple[2] == "\n" )     # just a newline
+            # triple[2]                         # should be just an empty string
+            assert( triple[2] == "" )
 
             c = CommitSpecifier(repo, commitId, commitText)
             assert repo not in ret
             ret[repo] = c
             triple = []
-    returncode = proc.wait()
 
-    assert( returncode == 0 )
-    assert( len(triple) == 1 )          # ~ "mr run: finished (N ok)"
-    assert( triple[0].startswith("mr run: finished (") )    # failures not jet handled..
-    final = triple[0]
+    assert( len(triple) == 1 )                  # ~ "mr run: finished (N ok)"
+    final = re.search("mr run: finished \((\d+) ok\)", triple[0])
+    final = int(final.groups()[0])
+    assert len(ret) == final, "number of mr repos differs from those we could parse from the output"
 
     return ret
