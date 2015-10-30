@@ -416,7 +416,7 @@ def find_file(self, filename, path_list=[]):
 	"""
 	for n in Utils.to_list(filename):
 		for d in Utils.to_list(path_list):
-			p = os.path.join(d, n)
+			p = os.path.join(os.path.expanduser(d), n)
 			if os.path.exists(p):
 				return p
 	self.fatal('Could not find %r' % filename)
