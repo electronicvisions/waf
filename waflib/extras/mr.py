@@ -627,6 +627,8 @@ class mr_run(MRContext):
     mr_cmd = 'run'      # + Options.rargs
 
     def get_args(self):
+        if not Options.rargs:
+            self.fatal("Usage: %s. Maybe you forgot the '--' separator?" % (self.__doc__))
         ret = [ 'run' ] + Options.rargs
         Options.rargs=[]
         self.mr_cmd = ' '.join(ret)
@@ -651,6 +653,9 @@ class mr_xrun(MRContext):
             Logs.debug('mr: get commands' + str(Options.rargs))
             self.mr_cmds = Options.rargs
             Options.rargs=[]
+
+        if not self.mr_cmds:
+            self.fatal("Usage: %s. Maybe you forgot the '--' separator?" % (self.__doc__))
 
         import symwaf2ic
         script = symwaf2ic.storage.repo_tool.getMrScript(*self.mr_cmds)
@@ -697,7 +702,7 @@ class mr_tag(mr_xrun):
             tag = Options.rargs[0]
             Options.rargs=[]
         else:
-            self.fatal("You must specify a tag; it will be prefixed with 'symwaf2ic-'")
+            self.fatal("Usage: %s. Maybe you forgot the '--' separator?" % (self.__doc__))
 
         print
         Logs.info("If you have not choosen a unique tag, tagging will fail on some repos with collisions.\n" +
