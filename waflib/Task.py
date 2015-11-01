@@ -44,6 +44,7 @@ def f(tsk):
 	env = tsk.env
 	gen = tsk.generator
 	bld = gen.bld
+	cwdx = getattr(bld, 'cwdx', bld.bldnode) # TODO single cwd value in waf 1.9
 	wd = getattr(tsk, 'cwd', None)
 	p = env.get_flat
 	tsk.last_cmd = cmd = \'\'\' %s \'\'\' % s
@@ -55,6 +56,7 @@ def f(tsk):
 	env = tsk.env
 	gen = tsk.generator
 	bld = gen.bld
+	cwdx = getattr(bld, 'cwdx', bld.bldnode) # TODO single cwd value in waf 1.9
 	wd = getattr(tsk, 'cwd', None)
 	def to_list(xx):
 		if isinstance(xx, str): return [xx]
@@ -970,17 +972,17 @@ def compile_fun_shell(line):
 	for (var, meth) in extr:
 		if var == 'SRC':
 			if meth: app('tsk.inputs%s' % meth)
-			else: app('" ".join([a.path_from(bld.bldnode) for a in tsk.inputs])')
+			else: app('" ".join([a.path_from(cwdx) for a in tsk.inputs])')
 		elif var == 'TGT':
 			if meth: app('tsk.outputs%s' % meth)
-			else: app('" ".join([a.path_from(bld.bldnode) for a in tsk.outputs])')
+			else: app('" ".join([a.path_from(cwdx) for a in tsk.outputs])')
 		elif meth:
 			if meth.startswith(':'):
 				m = meth[1:]
 				if m == 'SRC':
-					m = '[a.path_from(bld.bldnode) for a in tsk.inputs]'
+					m = '[a.path_from(cwdx) for a in tsk.inputs]'
 				elif m == 'TGT':
-					m = '[a.path_from(bld.bldnode) for a in tsk.outputs]'
+					m = '[a.path_from(cwdx) for a in tsk.outputs]'
 				elif m[:3] not in ('tsk', 'gen', 'bld'):
 					dvars.extend([var, meth[1:]])
 					m = '%r' % m
@@ -1025,17 +1027,17 @@ def compile_fun_noshell(line):
 		(var, meth) = extr[x]
 		if var == 'SRC':
 			if meth: app('lst.append(tsk.inputs%s)' % meth)
-			else: app("lst.extend([a.path_from(bld.bldnode) for a in tsk.inputs])")
+			else: app("lst.extend([a.path_from(cwdx) for a in tsk.inputs])")
 		elif var == 'TGT':
 			if meth: app('lst.append(tsk.outputs%s)' % meth)
-			else: app("lst.extend([a.path_from(bld.bldnode) for a in tsk.outputs])")
+			else: app("lst.extend([a.path_from(cwdx) for a in tsk.outputs])")
 		elif meth:
 			if meth.startswith(':'):
 				m = meth[1:]
 				if m == 'SRC':
-					m = '[a.path_from(bld.bldnode) for a in tsk.inputs]'
+					m = '[a.path_from(cwdx) for a in tsk.inputs]'
 				elif m == 'TGT':
-					m = '[a.path_from(bld.bldnode) for a in tsk.outputs]'
+					m = '[a.path_from(cwdx) for a in tsk.outputs]'
 				elif m[:3] not in ('tsk', 'gen', 'bld'):
 					dvars.extend([var, m])
 					m = '%r' % m
