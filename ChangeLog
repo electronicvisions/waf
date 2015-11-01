@@ -1,3 +1,8 @@
+NEW IN WAF 1.8.17
+-----------------
+* Added customizations that enable building whole projects from the build folder instead of the variant folder
+* Added a project generator for Xcode 6 - #1648
+
 NEW IN WAF 1.8.16
 -----------------
 * Reverted the changes to conf.check(header_name=) as this causes regressions. Use conf.check(header_name=, link_header_test=False) - #1647
