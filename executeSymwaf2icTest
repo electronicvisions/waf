@@ -125,7 +125,6 @@ function run_build {
 
 # PREPARE TEST FOLDER
 function run_prep {
-    mkdir -p ${TEST_DIR}
     pushd ${TEST_DIR}
         ln -sf $WAFSRC_DIR/waf
         ./waf setup
@@ -158,6 +157,7 @@ function run_tests {
     done
 }
 
+mkdir -p ${TEST_DIR} || { echo "Could not create test directory: ${TEST_DIR}"; exit 1; }
 run_build || { echo "ERR: make failed, aborting test!"; exit 1; }
 run_prep
 echo
