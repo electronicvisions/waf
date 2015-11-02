@@ -12,41 +12,41 @@
 
 __get_waf()
 {
-	# if the waf used contains a path component, check that it exists
-	# otherwise, check that it is in the path with 'which'
-	if [[ "$@" =~ "/" ]] && test -e "$@" ; then
-		# check path?
-		echo "$@"
-	else
-		which "$@"
-	fi
+    # if the waf used contains a path component, check that it exists
+    # otherwise, check that it is in the path with 'which'
+    if [[ "$@" =~ "/" ]] && test -e "$@" ; then
+        # check path?
+        echo "$@"
+    else
+        which "$@"
+    fi
 }
 
 _waf ()
 {
-	local cur cmds opts use
-	# eval expands ~ and $VARS that may be in the waf program name.
-	# Otherwise ~/$MYWAF/waf would not complete.
-	local waf=$(eval __get_waf "${COMP_WORDS[0]}")
-	COMPREPLY=()
-	if test -z "$waf" ; then
-		return
-	fi
-	cur=${COMP_WORDS[COMP_CWORD]}
+    local cur cmds opts use
+    # eval expands ~ and $VARS that may be in the waf program name.
+    # Otherwise ~/$MYWAF/waf would not complete.
+    local waf=$(eval __get_waf "${COMP_WORDS[0]}")
+    COMPREPLY=()
+    if test -z "$waf" ; then
+        return
+    fi
+    cur=${COMP_WORDS[COMP_CWORD]}
     wafhelp=$($waf --help)
     cmds=$(echo "$wafhelp" | grep '^  [[:alpha:]-]*\s*: ' | sed 's/\s*:.*//' | sed 's/  //' | tr '\n' ' ')
-	opts=$(echo "$wafhelp" | grep '^[[:blank:]]*-' |  awk '
-	{ for (i = 1; i <= NF; ++i) {
-		if (($i ~ /^-/) && ($i !~ /:$/) && ($i !~ /---/)) {
-			gsub("(,|=.*)","",$i); print $i;
-		}
-	}}')
-	case "${cur}" in
-		-*) use=$opts ;;
-		*)  use=$cmds ;;
-	esac
+    opts=$(echo "$wafhelp" | grep '^[[:blank:]]*-' |  awk '
+    { for (i = 1; i <= NF; ++i) {
+        if (($i ~ /^-/) && ($i !~ /:$/) && ($i !~ /---/)) {
+            gsub("(,|=.*)","",$i); print $i;
+        }
+    }}')
+    case "${cur}" in
+        -*) use=$opts ;;
+        *)  use=$cmds ;;
+    esac
     # TODO for cur in projects? use project db...
-	COMPREPLY=( $( compgen -W "$use" -- $cur ) )
+    COMPREPLY=( $( compgen -W "$use" -- $cur ) )
 }
 
 complete -o default -o nospace -F _waf waf
