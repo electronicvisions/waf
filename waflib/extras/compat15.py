@@ -155,6 +155,16 @@ def get_curdir(self):
 	return self.path.abspath()
 Context.Context.curdir = property(get_curdir, Utils.nada)
 
+def get_srcdir(self):
+	return self.srcnode.abspath()
+Configure.ConfigurationContext.srcdir = property(get_srcdir, Utils.nada)
+
+def get_blddir(self):
+	return self.bldnode.abspath()
+Configure.ConfigurationContext.blddir = property(get_blddir, Utils.nada)
+
+Configure.ConfigurationContext.check_message_1 = Configure.ConfigurationContext.start_msg
+Configure.ConfigurationContext.check_message_2 = Configure.ConfigurationContext.end_msg
 
 rev = Context.load_module
 def load_module(path, encoding=None):
@@ -171,6 +181,8 @@ def load_module(path, encoding=None):
 		if Logs.verbose:
 			Logs.warn('compat: rename "blddir" to "out" (%r)' % path)
 		ret.out = ret.blddir
+	Utils.g_module = Context.g_module
+	Options.launch_dir = Context.launch_dir
 	return ret
 Context.load_module = load_module
 
