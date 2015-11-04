@@ -24,6 +24,9 @@ sys.modules['Node'] = Node
 sys.modules['Runner'] = Runner
 sys.modules['TaskGen'] = TaskGen
 sys.modules['Utils'] = Utils
+sys.modules['Constants'] = Context
+Context.SRCDIR = ''
+Context.BLDDIR = ''
 
 from waflib.Tools import c_preproc
 sys.modules['preproc'] = c_preproc
@@ -33,6 +36,8 @@ sys.modules['config_c'] = c_config
 
 ConfigSet.ConfigSet.copy = ConfigSet.ConfigSet.derive
 ConfigSet.ConfigSet.set_variant = Utils.nada
+
+Utils.pproc = Utils.subprocess
 
 Build.BuildContext.add_subdirs = Build.BuildContext.recurse
 Build.BuildContext.new_task_gen = Build.BuildContext.__call__
