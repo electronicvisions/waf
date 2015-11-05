@@ -341,6 +341,7 @@ def conf(f):
 			if mandatory:
 				raise
 
+	fun.__name__ = f.__name__
 	setattr(ConfigurationContext, f.__name__, fun)
 	setattr(Build.BuildContext, f.__name__, fun)
 	return f

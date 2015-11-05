@@ -749,6 +749,7 @@ def run_once(fun):
 			cache[k] = ret
 			return ret
 	wrap.__cache__ = cache
+	wrap.__name__ = fun.__name__
 	return wrap
 
 def get_registry_app_path(key, filename):
