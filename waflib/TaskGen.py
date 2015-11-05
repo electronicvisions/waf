@@ -675,7 +675,8 @@ class subst_pc(Task.Task):
 		if getattr(self.generator, 'is_copy', None):
 			self.outputs[0].write(self.inputs[0].read('rb'), 'wb')
 			if getattr(self.generator, 'chmod', None):
-				os.chmod(self.outputs[0].abspath(), self.generator.chmod)
+				for x in self.outputs:
+					os.chmod(x.abspath(), self.generator.chmod)
 			return None
 
 		if getattr(self.generator, 'fun', None):
@@ -723,7 +724,8 @@ class subst_pc(Task.Task):
 		except AttributeError: pass
 
 		if getattr(self.generator, 'chmod', None):
-			os.chmod(self.outputs[0].abspath(), self.generator.chmod)
+			for x in self.outputs:
+				os.chmod(x.abspath(), self.generator.chmod)
 
 	def sig_vars(self):
 		"""
