@@ -1129,7 +1129,7 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 		'scan': scan,
 	}
 
-	if isinstance(func, str):
+	if isinstance(func, str) or isinstance(func, tuple):
 		params['run_str'] = func
 	else:
 		params['run'] = func
