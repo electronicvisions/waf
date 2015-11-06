@@ -8,7 +8,7 @@ In this case, print the commands being executed as strings
 """
 
 import sys
-from waflib import Context, Utils, Logs
+from waflib import Context, Utils, Errors, Logs
 
 def exec_command(self, cmd, **kw):
 	subprocess = Utils.subprocess
