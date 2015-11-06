@@ -18,7 +18,6 @@ def exec_command(self, cmd, **kw):
 	if isinstance(cmd, list):
 		txt = ' '.join(cmd)
 
-	print(txt)
 	Logs.debug('runner_env: kw=%s' % kw)
 
 	try:
