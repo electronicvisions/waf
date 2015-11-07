@@ -607,6 +607,11 @@ def validate_c(self, kw):
 	if self.env[INCKEYS]:
 		kw['code'] = '\n'.join(['#include <%s>' % x for x in self.env[INCKEYS]]) + '\n' + kw['code']
 
+	# in case defines lead to very long command-lines
+	if kw.get('merge_config_header', False) or env.merge_config_header:
+		kw['code'] = '%s\n\n%s' % (self.get_config_header(), kw['code'])
+		env.DEFINES = [] # modify the copy
+
 	if not kw.get('success'): kw['success'] = None
 
 	if 'define_name' in kw:
