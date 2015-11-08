@@ -121,7 +121,8 @@ def post_run(self):
 		if os.path.isabs(x):
 			node = path_to_node(bld.root, x, cached_nodes)
 		else:
-			path = bld.bldnode
+			# TODO waf 1.9 - single cwd value
+			path = getattr(bld, 'cwdx', bld.bldnode)
 			# when calling find_resource, make sure the path does not contain '..'
 			x = [k for k in Utils.split_path(x) if k and k != '.']
 			while '..' in x:
