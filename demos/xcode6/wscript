@@ -4,8 +4,11 @@ out = 'build'
 APPNAME = 'TestProject'
 VERSION = '1.0'
 
-def options(opt):
-	opt.load('xcode6')
+"""
+This demo will create an XCode project containing
+an App bundle target, a dynamic library target,
+a static library target and an executable target
+"""
 
 def configure(conf):
 	
@@ -17,23 +20,27 @@ def configure(conf):
 	conf.load('xcode6')
 
 def build(bld):
-	
+
 	tg = bld.framework(
-		source=bld.path.ant_glob('src/MyLib/*.cpp'),
 		includes='include',
-		group_files={
-			'Include': bld.path.ant_glob('include/MyLib/*.h')
+
+		# Specify source files.
+		# Give a dictionary to group by name. Use a list to add everything in one 
+		source_files={
+			'MyLibSource': bld.path.ant_glob('src/MyLib/*.cpp|*.m|*.mm'),
+			'Include': bld.path.ant_glob(incl=['include/MyLib/*.h', 'include'], dir=True)
 		},
 
 		# export_headers will put the files in the Header
 		# buildphase in Xcode - i.e ship them with your .framework
-		export_headers=bld.path.ant_glob('include/MyLib/*.h'),
+		export_headers=bld.path.ant_glob(incl=['include/MyLib/*.h', 'include/MyLib/SupportLib'], dir=True),
 		target='MyLib',
+		install='~/Library/Frameworks'
 	)
 
 	bld.env.LIB_SDL2 = '/Library/Frameworks/SDL2.framework/SDL2'
 	tg2 = bld.app(
-		source=bld.path.ant_glob('src/*.cpp|'),
+		source_files=bld.path.ant_glob('src/*.cpp'),
 		includes=tg.includes,
 		target='MyApp',
 		use='MyLib',
@@ -44,19 +51,20 @@ def build(bld):
 	)
 
 	bld.dylib(
-		source=tg.source,
+		source_files=bld.path.ant_glob('src/MyLib/*.cpp'),
 		includes=tg.includes,
 		target='MyDynLib',
 	)
 
 	bld.exe(
-		source=tg.source,
+		source_files=['src/test.cpp'],
 		includes=tg.includes,
 		target='MyExe',
+		use='MyDynLib'
 	)
 
 	bld.stlib(
-		source=tg.source,
+		source_files=bld.path.ant_glob('src/MyLib/*.cpp'),
 		includes=tg.includes,
 		target='MyStaticLib',
 	)
