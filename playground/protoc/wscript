@@ -14,5 +14,5 @@ def build(bld):
 		features = 'cxx cxxshlib',
 		source   = ['inc/message.proto'],
 		target   = 'somelib',
-		includes = ['.', 'inc'])
+		includes = ['inc'])
 
