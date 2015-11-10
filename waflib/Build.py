@@ -825,17 +825,10 @@ class inst(Task.Task):
 			else:
 				y = self.path.find_resource(x)
 				if not y:
-					if Logs.verbose:
-						Logs.warn('Could not find %s immediately (may cause broken builds)' % x)
-					idx = self.generator.bld.get_group_idx(self)
-					for tg in self.generator.bld.groups[idx]:
-						if not isinstance(tg, inst) and id(tg) != id(self):
-							tg.post()
-						y = self.path.find_resource(x)
-						if y:
-							break
+					if os.path.isabs(x):
+						y = self.bld.root.make_node(x)
 					else:
-						raise Errors.WafError('Could not find %r in %r' % (x, self.path))
+						y = self.path.make_node(x)
 			buf.append(y)
 		self.inputs = buf
 
