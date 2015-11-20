@@ -183,6 +183,29 @@ class Node(object):
 		"""
 		Utils.writef(self.abspath(), data, flags, encoding)
 
+	def write_json(self, data, pretty=True):
+		"""
+		Writes a python object as JSON to disk. Files are always written as UTF8 as per the JSON standard::
+
+			def build(bld):
+				bld.path.find_node('xyz.json').write_json(199)
+
+		:type  data: object
+		:param data: The data to write to disk
+		:type  pretty: boolean
+		:param pretty: Determines if the JSON will be nicely space separated
+		"""
+		indent = 2
+		separators = (',', ': ')
+		sort_keys = pretty
+		newline = os.linesep
+		if not pretty:
+			indent = None
+			separators = (',', ':')
+			newline = ''
+		output = json.dumps(data, indent=indent, separators=separators, sort_keys=sort_keys) + newline
+		self.write(output, encoding='utf-8')
+
 	def chmod(self, val):
 		"""
 		Change file/dir permissions::
