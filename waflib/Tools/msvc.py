@@ -194,6 +194,8 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	try:
 		try:
 			conf.cmd_and_log(cxx + ['/help'], env=env)
+		except UnicodeError:
+			raise
 		except Exception as e:
 			debug('msvc: get_msvc_version: %r %r %r -> failure' % (compiler, version, target))
 			debug(str(e))
