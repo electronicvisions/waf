@@ -20,7 +20,7 @@ Node: filesystem structure, contains lists of nodes
    (:py:class:`waflib.Node.Nod3`, see the :py:class:`waflib.Context.Context` initializer). A reference to the context owning a node is held as self.ctx
 """
 
-import os, re, sys, shutil
+import os, re, sys, shutil, json
 from waflib import Utils, Errors
 
 exclude_regs = '''
@@ -134,6 +134,40 @@ class Node(object):
 		:return: File contents
 		"""
 		return Utils.readf(self.abspath(), flags, encoding)
+
+	def read_json(self, convert=True, encoding='utf-8'):
+		"""
+		Read and parse the contents of this node as JSON::
+
+			def build(bld):
+				bld.path.find_node('abc.json').read_json()
+
+		Note that this by default automatically decodes unicode strings on Python2, unlike what the Python JSON module does.
+
+		:type  convert: boolean
+		:param convert: Prevents decoding of unicode strings on Python2
+		:type  encoding: string
+		:param encoding: The encoding of the file to read. This default to UTF8 as per the JSON standard
+		:rtype: object
+		:return: Parsed file contents
+		"""
+		object_pairs_hook = None
+
+		if convert and sys.hexversion < 0x3000000:
+			def convert(value):
+				if isinstance(value, list):
+					return [convert(element) for element in value]
+				elif isinstance(value, unicode):
+					return str(value)
+				else:
+					return value
+
+			def object_pairs(pairs):
+				return dict((str(pair[0]), convert(pair[1])) for pair in pairs)
+
+			object_pairs_hook = object_pairs
+
+		return json.loads(self.read(encoding=encoding), object_pairs_hook=object_pairs_hook)
 
 	def write(self, data, flags='w', encoding='ISO8859-1'):
 		"""
