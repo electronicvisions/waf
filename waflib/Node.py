@@ -20,7 +20,7 @@ Node: filesystem structure, contains lists of nodes
    (:py:class:`waflib.Node.Nod3`, see the :py:class:`waflib.Context.Context` initializer). A reference to the context owning a node is held as self.ctx
 """
 
-import os, re, sys, shutil, json
+import os, re, sys, shutil
 from waflib import Utils, Errors
 
 exclude_regs = '''
@@ -135,6 +135,20 @@ class Node(object):
 		"""
 		return Utils.readf(self.abspath(), flags, encoding)
 
+	def write(self, data, flags='w', encoding='ISO8859-1'):
+		"""
+		Write some text to the physical file represented by this node::
+
+			def build(bld):
+				bld.path.make_node('foo.txt').write('Hello, world!')
+
+		:type  data: string
+		:param data: data to write
+		:type  flags: string
+		:param flags: Write mode
+		"""
+		Utils.writef(self.abspath(), data, flags, encoding)
+
 	def read_json(self, convert=True, encoding='utf-8'):
 		"""
 		Read and parse the contents of this node as JSON::
@@ -151,6 +165,7 @@ class Node(object):
 		:rtype: object
 		:return: Parsed file contents
 		"""
+		import json # Python 2.6 and up
 		object_pairs_hook = None
 
 		if convert and sys.hexversion < 0x3000000:
@@ -169,20 +184,6 @@ class Node(object):
 
 		return json.loads(self.read(encoding=encoding), object_pairs_hook=object_pairs_hook)
 
-	def write(self, data, flags='w', encoding='ISO8859-1'):
-		"""
-		Write some text to the physical file represented by this node::
-
-			def build(bld):
-				bld.path.make_node('foo.txt').write('Hello, world!')
-
-		:type  data: string
-		:param data: data to write
-		:type  flags: string
-		:param flags: Write mode
-		"""
-		Utils.writef(self.abspath(), data, flags, encoding)
-
 	def write_json(self, data, pretty=True):
 		"""
 		Writes a python object as JSON to disk. Files are always written as UTF8 as per the JSON standard::
@@ -195,6 +196,7 @@ class Node(object):
 		:type  pretty: boolean
 		:param pretty: Determines if the JSON will be nicely space separated
 		"""
+		import json # Python 2.6 and up
 		indent = 2
 		separators = (',', ': ')
 		sort_keys = pretty
