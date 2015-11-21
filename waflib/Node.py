@@ -167,12 +167,16 @@ class Node(object):
 		"""
 		import json # Python 2.6 and up
 		object_pairs_hook = None
-
 		if convert and sys.hexversion < 0x3000000:
+			try:
+				_type = unicode
+			except NameError:
+				_type = str
+
 			def convert(value):
 				if isinstance(value, list):
 					return [convert(element) for element in value]
-				elif isinstance(value, unicode):
+				elif isinstance(value, _type):
 					return str(value)
 				else:
 					return value
