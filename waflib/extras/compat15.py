@@ -385,3 +385,26 @@ def install_dir(self, path):
 			pass
 Build.BuildContext.install_dir = install_dir
 
+# before/after names
+repl = {'apply_core': 'process_source',
+	'apply_lib_vars': 'process_source',
+	'apply_obj_vars': 'propagate_uselib_vars',
+	'exec_rule': 'process_rule'
+}
+def after(*k):
+	for key, val in repl.items():
+		if key in k:
+			if Logs.verbose > 1:
+				Logs.error('after %s -> %s' % (key, val))
+			k.replace(key, val)
+	return TaskGen.after_method(*k)
+
+def before(*k):
+	for key, val in repl.items():
+		if key in k:
+			if Logs.verbose > 1:
+				Logs.info('before %s -> %s' % (key, val))
+			k.replace(key, val)
+	return TaskGen.before_method(*k)
+TaskGen.before = before
+

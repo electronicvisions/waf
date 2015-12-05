@@ -17,6 +17,7 @@ Waf 1.9
 * Detect Clang by default on FreeBSD instead of gcc
 * Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
 * Let run_once accept a list of *args
+* Let more context commands depend on the configuration
 
 and all other issues listed on https://github.com/waf-project/waf/issues
 
