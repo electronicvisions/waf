@@ -392,19 +392,11 @@ repl = {'apply_core': 'process_source',
 	'exec_rule': 'process_rule'
 }
 def after(*k):
-	for key, val in repl.items():
-		if key in k:
-			if Logs.verbose > 1:
-				Logs.error('after %s -> %s' % (key, val))
-			k.replace(key, val)
+	k = [repl.get(key, key) for key in k]
 	return TaskGen.after_method(*k)
 
 def before(*k):
-	for key, val in repl.items():
-		if key in k:
-			if Logs.verbose > 1:
-				Logs.info('before %s -> %s' % (key, val))
-			k.replace(key, val)
+	k = [repl.get(key, key) for key in k]
 	return TaskGen.before_method(*k)
 TaskGen.before = before
 
