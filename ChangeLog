@@ -1,7 +1,17 @@
 NEW IN WAF 1.8.17
 -----------------
 * Added customizations that enable building whole projects from the build folder instead of the variant folder
-* Added a project generator for Xcode 6 - #1648
+* Added a project generator for Xcode 6 #1648
+* Force scanner functions to run after task failures #1660
+* Improved the Intel Fortran compiler detection #1655
+* Added processing of chmod attributes on subst and rule when provided #1650
+* Enabled global_define in conf.check() tests
+* Enabled usage of home folder/tilde ~ in Configure.find_files
+* Added usage of options.enable_gccdeps when provided by user scripts
+* Enabled 'waf -v' to catch invalid string on hcode values in Python3
+* Fixed the function names returned by the @conf and @run_once decorators
+* Let 'subst' change permissions for all its files with chmod (not just the first one)
+* Added quoting for space-containing-arguments in print_commands.py
 
 NEW IN WAF 1.8.16
 -----------------
