@@ -342,13 +342,13 @@ def exec_cfg(self, kw):
 
 	# retrieving variables of a module
 	if 'variables' in kw:
-		v = kw.get('env', self.env)
+		v_env = kw.get('env', self.env)
 		uselib = kw.get('uselib_store', kw['package'].upper())
 		vars = Utils.to_list(kw['variables'])
 		for v in vars:
 			val = self.cmd_and_log(lst + ['--variable=' + v], env=env).strip()
 			var = '%s_%s' % (uselib, v)
-			v[var] = val
+			v_env[var] = val
 		if not 'okmsg' in kw:
 			kw['okmsg'] = 'yes'
 		return
