@@ -349,16 +349,16 @@ def add_obj_file(self, file):
 old_define = Configure.ConfigurationContext.__dict__['define']
 
 @Configure.conf
-def define(self, key, val, quote=True):
-	old_define(self, key, val, quote)
+def define(self, key, val, quote=True, comment=''):
+	old_define(self, key, val, quote, comment)
 	if key.startswith('HAVE_'):
 		self.env[key] = 1
 
 old_undefine = Configure.ConfigurationContext.__dict__['undefine']
 
 @Configure.conf
-def undefine(self, key):
-	old_undefine(self, key)
+def undefine(self, key, comment=''):
+	old_undefine(self, key, comment)
 	if key.startswith('HAVE_'):
 		self.env[key] = 0
 

@@ -757,7 +757,20 @@ def check_cc(self, *k, **kw):
 	return self.check(*k, **kw)
 
 @conf
-def define(self, key, val, quote=True):
+def set_define_comment(self, key, comment):
+	# comments that appear in get_config_header
+	coms = self.env.DEFINE_COMMENTS
+	if not coms:
+		coms = self.env.DEFINE_COMMENTS = {}
+	coms[key] = comment or ''
+
+@conf
+def get_define_comment(self, key):
+	coms = self.env.DEFINE_COMMENTS or {}
+	return coms.get(key, '')
+
+@conf
+def define(self, key, val, quote=True, comment=''):
 	"""
 	Store a single define and its state into conf.env.DEFINES. If the value is True, False or None it is cast to 1 or 0.
 
@@ -791,9 +804,10 @@ def define(self, key, val, quote=True):
 		self.env.append_value('DEFINES', app)
 
 	self.env.append_unique(DEFKEYS, key)
+	self.set_define_comment(key, comment)
 
 @conf
-def undefine(self, key):
+def undefine(self, key, comment=''):
 	"""
 	Remove a define from conf.env.DEFINES
 
@@ -806,6 +820,7 @@ def undefine(self, key):
 	lst = [x for x in self.env['DEFINES'] if not x.startswith(ban)]
 	self.env['DEFINES'] = lst
 	self.env.append_unique(DEFKEYS, key)
+	self.set_define_comment(key, comment)
 
 @conf
 def define_cond(self, key, val):
@@ -958,10 +973,13 @@ def get_config_header(self, defines=True, headers=False, define_prefix=''):
 			tbl[a] = b
 
 		for k in self.env[DEFKEYS]:
+			caption = self.get_define_comment(k)
+			if caption:
+				caption = ' /* %s */' % caption
 			try:
-				txt = '#define %s%s %s' % (define_prefix, k, tbl[k])
+				txt = '#define %s%s %s%s' % (define_prefix, k, tbl[k], caption)
 			except KeyError:
-				txt = '/* #undef %s%s */' % (define_prefix, k)
+				txt = '/* #undef %s%s */%s' % (define_prefix, k, caption)
 			lst.append(txt)
 	return "\n".join(lst)
 
