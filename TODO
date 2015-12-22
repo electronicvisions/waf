@@ -11,7 +11,6 @@ Waf 1.9
 * Do not cache waf tool detection
 * Fix the vala detection
 * Better consistency between check_cfg and check_cc variables
-* Detect Clang by default on FreeBSD instead of gcc
 * Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
 * Let run_once accept a list of *args
 * Let more context commands depend on the configuration
@@ -23,5 +22,6 @@ Done
 * Remove the split functions from Utils
 * Remove the command called "update"
 * Include the tool 'nobuild' by default
-* Remove qt4 from the default modules
+* Remove qt4 and kde4 from the default modules
+* Detect Clang first on many platforms, in particular on FreeBSD
 

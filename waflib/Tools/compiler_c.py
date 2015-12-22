@@ -47,7 +47,7 @@ c_compiler = {
 'osf1V':  ['gcc'],
 'gnu':    ['gcc', 'clang'],
 'java':   ['gcc', 'msvc', 'clang', 'icc'],
-'default':['gcc', 'clang'],
+'default':['clang', 'gcc'],
 }
 """
 Dict mapping the platform names to Waf tools finding specific C compilers::

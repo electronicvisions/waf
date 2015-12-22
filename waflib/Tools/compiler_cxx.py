@@ -48,7 +48,7 @@ cxx_compiler = {
 'osf1V':  ['g++'],
 'gnu':    ['g++', 'clang++'],
 'java':   ['g++', 'msvc', 'clang++', 'icpc'],
-'default': ['g++', 'clang++']
+'default': ['clang++', 'g++']
 }
 """
 Dict mapping the platform names to Waf tools finding specific C++ compilers::
