@@ -193,7 +193,7 @@ def set_main_module(file_path):
 		name = obj.__name__
 		if not name in Context.g_module.__dict__:
 			setattr(Context.g_module, name, obj)
-	for k in (update, dist, distclean, distcheck, update):
+	for k in (update, dist, distclean, distcheck):
 		set_def(k)
 	# add dummy init and shutdown functions if they're not defined
 	if not 'init' in Context.g_module.__dict__:
