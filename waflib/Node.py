@@ -59,12 +59,6 @@ Ant patterns for files and folders to exclude while doing the
 recursive traversal in :py:meth:`waflib.Node.Node.ant_glob`
 """
 
-# TODO remove in waf 1.9
-split_path = Utils.split_path
-split_path_unix = Utils.split_path_unix
-split_path_cygwin = Utils.split_path_cygwin
-split_path_win32 = Utils.split_path_win32
-
 class Node(object):
 	"""
 	This class is organized in two parts
@@ -297,7 +291,7 @@ class Node(object):
 		"""
 
 		if isinstance(lst, str):
-			lst = [x for x in split_path(lst) if x and x != '.']
+			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		cur = self
 		for x in lst:
@@ -349,7 +343,7 @@ class Node(object):
 		:type lst: string or list of string
 		"""
 		if isinstance(lst, str):
-			lst = [x for x in split_path(lst) if x and x != '.']
+			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		cur = self
 		for x in lst:
@@ -374,7 +368,7 @@ class Node(object):
 		:type lst: string or list of string
 		"""
 		if isinstance(lst, str):
-			lst = [x for x in split_path(lst) if x and x != '.']
+			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		cur = self
 		for x in lst:
@@ -724,7 +718,7 @@ class Node(object):
 		:type lst: string or list of string
 		"""
 		if isinstance(lst, str):
-			lst = [x for x in split_path(lst) if x and x != '.']
+			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		node = self.get_bld().search_node(lst)
 		if not node:
@@ -746,7 +740,7 @@ class Node(object):
 		:type lst: string or list of string
 		"""
 		if isinstance(lst, str):
-			lst = [x for x in split_path(lst) if x and x != '.']
+			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		node = self.get_bld().search_node(lst)
 		if node:
@@ -773,7 +767,7 @@ class Node(object):
 		:type lst: string or list of string
 		"""
 		if isinstance(lst, str):
-			lst = [x for x in split_path(lst) if x and x != '.']
+			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		node = self.find_node(lst)
 		try:

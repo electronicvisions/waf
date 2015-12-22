@@ -3,7 +3,6 @@ Waf 1.9
 
 * Reduce the key size in bld.task_sigs
 * Provide a more efficient ConfigSet implementation
-* Remove the split functions from Utils
 * Ensure _cache.py are valid python files
 * Include the tool 'nobuild' by default
 * Set cflags in the beginning / cppflags at the end
@@ -20,4 +19,8 @@ Waf 1.9
 * Let more context commands depend on the configuration
 
 and all other issues listed on https://github.com/waf-project/waf/issues
+
+Done
+----
+* Remove the split functions from Utils
 

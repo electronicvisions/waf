@@ -51,7 +51,7 @@ from waflib import Node, Utils, Context
 
 def find_resource(self, lst):
 	if isinstance(lst, str):
-		lst = [x for x in Node.split_path(lst) if x and x != '.']
+		lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 	if lst[0].startswith('\\\\'):
 		if len(lst) < 3:
@@ -71,7 +71,7 @@ def find_resource(self, lst):
 
 def find_or_declare(self, lst):
 	if isinstance(lst, str):
-		lst = [x for x in Node.split_path(lst) if x and x != '.']
+		lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 	if lst[0].startswith('\\\\'):
 		if len(lst) < 3:

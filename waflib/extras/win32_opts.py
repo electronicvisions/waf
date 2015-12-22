@@ -148,7 +148,7 @@ if Utils.is_win32:
 	def find_or_declare_win32(self, lst):
 		# assuming that "find_or_declare" is called before the build starts, remove the calls to os.path.isfile
 		if isinstance(lst, str):
-			lst = [x for x in Node.split_path(lst) if x and x != '.']
+			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		node = self.get_bld().search(lst)
 		if node:
