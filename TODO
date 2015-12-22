@@ -4,7 +4,6 @@ Waf 1.9
 * Reduce the key size in bld.task_sigs
 * Provide a more efficient ConfigSet implementation
 * Ensure _cache.py are valid python files
-* Include the tool 'nobuild' by default
 * Set cflags in the beginning / cppflags at the end
 * Remove qt4 from the default modules, rework qt5
 * Remove Node.cache_sig
@@ -23,4 +22,5 @@ Done
 ----
 * Remove the split functions from Utils
 * Remove the command called "update"
+* Include the tool 'nobuild' by default
 
