@@ -7,7 +7,6 @@ Waf 1.9
 * Include the tool 'nobuild' by default
 * Set cflags in the beginning / cppflags at the end
 * Remove qt4 from the default modules, rework qt5
-* Remove the command called "update"
 * Remove Node.cache_sig
 * Make lazy visual studio detection the default
 * Do not cache waf tool detection
@@ -23,4 +22,5 @@ and all other issues listed on https://github.com/waf-project/waf/issues
 Done
 ----
 * Remove the split functions from Utils
+* Remove the command called "update"
 

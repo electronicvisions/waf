@@ -193,7 +193,7 @@ def set_main_module(file_path):
 		name = obj.__name__
 		if not name in Context.g_module.__dict__:
 			setattr(Context.g_module, name, obj)
-	for k in (update, dist, distclean, distcheck):
+	for k in (dist, distclean, distcheck):
 		set_def(k)
 	# add dummy init and shutdown functions if they're not defined
 	if not 'init' in Context.g_module.__dict__:
@@ -566,28 +566,6 @@ class DistCheck(Dist):
 def distcheck(ctx):
 	'''checks if the project compiles (tarball from 'dist')'''
 	pass
-
-def update(ctx):
-	lst = Options.options.files
-	if lst:
-		lst = lst.split(',')
-	else:
-		path = os.path.join(Context.waf_dir, 'waflib', 'extras')
-		lst = [x for x in Utils.listdir(path) if x.endswith('.py')]
-	for x in lst:
-		tool = x.replace('.py', '')
-		if not tool:
-			continue
-		try:
-			dl = Configure.download_tool
-		except AttributeError:
-			ctx.fatal('The command "update" is dangerous; include the tool "use_config" in your project!')
-		try:
-			dl(tool, force=True, ctx=ctx)
-		except Errors.WafError:
-			Logs.error('Could not find the tool %r in the remote repository' % x)
-		else:
-			Logs.warn('Updated %r' % tool)
 
 def autoconfigure(execute_method):
 	"""
