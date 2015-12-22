@@ -12,7 +12,6 @@ Waf 1.9
 * Fix the vala detection
 * Better consistency between check_cfg and check_cc variables
 * Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
-* Let run_once accept a list of *args
 * Let more context commands depend on the configuration
 
 and all other issues listed on https://github.com/waf-project/waf/issues
@@ -24,4 +23,5 @@ Done
 * Include the tool 'nobuild' by default
 * Remove qt4 and kde4 from the default modules
 * Detect Clang first on many platforms, in particular on FreeBSD
+* Let run_once accept a list of *args
 

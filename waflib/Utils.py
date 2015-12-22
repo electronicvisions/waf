@@ -741,11 +741,11 @@ def run_once(fun):
 	:return: the return value of the function executed
 	"""
 	cache = {}
-	def wrap(k):
+	def wrap(*k):
 		try:
 			return cache[k]
 		except KeyError:
-			ret = fun(k)
+			ret = fun(*k)
 			cache[k] = ret
 			return ret
 	wrap.__cache__ = cache
