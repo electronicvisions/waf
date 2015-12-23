@@ -37,7 +37,7 @@ def ifort_modifier_platform(conf):
 def get_ifort_version(conf, fc):
 	"""get the compiler version"""
 
-	version_re = re.compile(r"Intel[\sa-zA-Z()0-9,-]*Version\s*(?P<major>\d*)\.(?P<minor>\d*)",re.I).search
+	version_re = re.compile(r"\bIntel\b.*\bVersion\s*(?P<major>\d*)\.(?P<minor>\d*)",re.I).search
 	if Utils.is_win32:
 		cmd = fc
 	else:
