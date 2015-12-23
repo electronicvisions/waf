@@ -411,6 +411,9 @@ class Task(TaskBase):
 	vars = []
 	"""Variables to depend on (class attribute used for :py:meth:`waflib.Task.Task.sig_vars`)"""
 
+	never_skip = False
+	"""Specify whether task instances must always be executed or not, leave empty or set to :py:const:`waflib.Task.RUN_ME`"""
+
 	shell = False
 	"""Execute the command with the shell (class attribute)"""
 
@@ -615,7 +618,7 @@ class Task(TaskBase):
 
 		if new_sig != prev_sig:
 			return RUN_ME
-		return SKIP_ME
+		return self.never_skip or SKIP_ME
 
 	def post_run(self):
 		"""
@@ -629,7 +632,7 @@ class Task(TaskBase):
 		sig = self.signature()
 
 		for node in self.outputs:
-			# check if the node exists ..
+			# check if the node exists
 			try:
 				os.stat(node.abspath())
 			except OSError:
@@ -1140,19 +1143,13 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 
 def always_run(cls):
 	"""
-	Task class decorator
+	Task class decorator - will be removed in waf 2.0
 
 	Set all task instances of this class to be executed whenever a build is started
-	The task signature is calculated, but the result of the comparation between
+	The task signature is calculated, but the result of the comparison between
 	task signatures is bypassed
 	"""
-	old = cls.runnable_status
-	def always(self):
-		ret = old(self)
-		if ret == SKIP_ME:
-			ret = RUN_ME
-		return ret
-	cls.runnable_status = always
+	cls.never_skip = RUN_ME
 	return cls
 
 def update_outputs(cls):
