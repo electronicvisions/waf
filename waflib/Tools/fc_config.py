@@ -346,11 +346,16 @@ def getoutput(conf, cmd, stdin=False):
 	try:
 		out, err = conf.cmd_and_log(cmd, env=env, output=0, input=input)
 	except Errors.WafError as e:
-		# Some compilers will return an error code if no source file
-		# is provided. Nevertheless, they print a version string and
-		# we can ignore the error code here.
-		out = e.stdout
-		err = e.stderr
+		# An WafError might indicate an error code during the command
+		# execution, in this case we still obtain the stderr and stdout,
+		# which we can use to find the version string.
+		if not (hasattr(e, 'stderr') and hasattr(e, 'stdout')):
+			raise e
+                else:
+			# Ignore the return code and return the original
+			# stdout and stderr.
+			out = e.stdout
+			err = e.stderr
 	except Exception:
 		conf.fatal('could not determine the compiler version %r' % cmd)
 	return (out, err)
