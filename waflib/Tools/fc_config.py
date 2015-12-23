@@ -351,7 +351,7 @@ def getoutput(conf, cmd, stdin=False):
 		# which we can use to find the version string.
 		if not (hasattr(e, 'stderr') and hasattr(e, 'stdout')):
 			raise e
-                else:
+		else:
 			# Ignore the return code and return the original
 			# stdout and stderr.
 			out = e.stdout
