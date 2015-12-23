@@ -814,11 +814,7 @@ class Node(object):
 		"Build path without the file name"
 		return self.parent.bldpath()
 
-
-	def h_file(self):
-		# use Node.h_file = Utils.run_once(Node.h_file) if necessary
-		return Utils.h_file(self.abspath())
-
+	@Utils.run_once
 	def get_bld_sig(self):
 		"""
 		Node signature. If there is a build directory or and the file is there,
@@ -826,7 +822,7 @@ class Node(object):
 		signature is calculated automatically.
 		"""
 		# previous behaviour can be set by returning self.ctx.task_sigs[self.abspath()] when a build node
-		return self.h_file()
+		return Utils.h_file(self.abspath())
 
 	# --------------------------------------------
 	# TODO waf 2.0, remove the cache_sig attribute
