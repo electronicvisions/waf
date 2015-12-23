@@ -336,6 +336,7 @@ def getoutput(conf, cmd, stdin=False):
 	TODO a bit redundant, can be removed anytime
 	TODO waf 1.9
 	"""
+	from waflib import Errors
 	if conf.env.env:
 		env = conf.env.env
 	else:
@@ -344,6 +345,12 @@ def getoutput(conf, cmd, stdin=False):
 	input = stdin and '\n'.encode() or None
 	try:
 		out, err = conf.cmd_and_log(cmd, env=env, output=0, input=input)
+	except Errors.WafError as e:
+		# Some compilers will return an error code if no source file
+		# is provided. Nevertheless, they print a version string and
+		# we can ignore the error code here.
+		out = e.stdout
+		err = e.stderr
 	except Exception:
 		conf.fatal('could not determine the compiler version %r' % cmd)
 	return (out, err)
