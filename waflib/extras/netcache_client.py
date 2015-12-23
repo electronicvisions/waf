@@ -230,11 +230,6 @@ def can_retrieve_cache(self):
 	if err:
 		return False
 
-	for node in self.outputs:
-		node.sig = sig
-		#if self.generator.bld.progress_bar < 1:
-		#	self.generator.bld.to_log('restoring from cache %r\n' % node.abspath())
-
 	self.cached = True
 	return True
 

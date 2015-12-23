@@ -198,8 +198,6 @@ class fake_csshlib(Task.Task):
 	inst_to = None
 
 	def runnable_status(self):
-		for x in self.outputs:
-			x.sig = Utils.h_file(x.abspath())
 		return Task.SKIP_ME
 
 @conf

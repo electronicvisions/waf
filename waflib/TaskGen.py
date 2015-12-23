@@ -820,7 +820,6 @@ def process_subst(self):
 			a = self.path.find_node(x)
 			b = self.path.get_bld().make_node(y)
 			if not os.path.isfile(b.abspath()):
-				b.sig = None
 				b.parent.mkdir()
 		else:
 			if isinstance(x, str):

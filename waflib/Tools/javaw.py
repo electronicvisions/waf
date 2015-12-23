@@ -300,8 +300,8 @@ class javac(Task.Task):
 	def post_run(self):
 		"""
 		"""
-		for n in self.generator.outdir.ant_glob('**/*.class'):
-			n.sig = Utils.h_file(n.abspath()) # careful with this
+		for node in self.generator.outdir.ant_glob('**/*.class'):
+			bld.task_sigs[node.abspath()] = self.uid()
 		self.generator.bld.task_sigs[self.uid()] = self.cache_sig
 
 @feature('javadoc')
@@ -350,8 +350,8 @@ class javadoc(Task.Task):
 
 	def post_run(self):
 		nodes = self.generator.javadoc_output.ant_glob('**')
-		for x in nodes:
-			x.sig = Utils.h_file(x.abspath())
+		for nodes in nodes:
+			bld.task_sigs[node.abspath()] = self.uid()
 		self.generator.bld.task_sigs[self.uid()] = self.cache_sig
 
 def configure(self):

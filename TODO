@@ -6,7 +6,6 @@ Waf 1.9
 * Ensure _cache.py are valid python files
 * Set cflags in the beginning / cppflags at the end
 * Rework qt5
-* Remove Node.cache_sig
 * Make lazy visual studio detection the default
 * Do not cache waf tool detection
 * Fix the vala detection
@@ -24,4 +23,5 @@ Done
 * Remove qt4 and kde4 from the default modules
 * Detect Clang first on many platforms, in particular on FreeBSD
 * Let run_once accept a list of *args
+* Remove Node.cache_sig and Node.sig
 

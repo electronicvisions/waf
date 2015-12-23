@@ -591,8 +591,6 @@ class Task(TaskBase):
 			if not t.hasrun:
 				return ASK_LATER
 
-		bld = self.generator.bld
-
 		# first compute the signature
 		try:
 			new_sig = self.signature()
@@ -600,24 +598,32 @@ class Task(TaskBase):
 			return ASK_LATER
 
 		# compare the signature to a signature computed previously
+		bld = self.generator.bld
 		key = self.uid()
 		try:
 			prev_sig = bld.task_sigs[key]
 		except KeyError:
-			Logs.debug("task: task %r must run as it was never run before or the task code changed" % self)
+			Logs.debug("task: task %r must run: it was never run before or the task code changed" % self)
+			return RUN_ME
+
+		if new_sig != prev_sig:
+			Logs.debug("task: task %r must run: the task signature changed" % self)
 			return RUN_ME
 
 		# compare the signatures of the outputs
 		for node in self.outputs:
-			try:
-				if node.sig != new_sig:
-					return RUN_ME
-			except AttributeError:
-				Logs.debug("task: task %r must run as the output nodes do not exist" % self)
+			p = node.abspath()
+			sig = bld.task_sigs.get(p, None)
+			if not sig:
+				Logs.debug("task: task %r must run: an output node has no signature" % self)
+				return RUN_ME
+			if sig != key:
+				Logs.debug("task: task %r must run: an output node was produced by another task" % self)
+				return RUN_ME
+			if not os.path.exists(p):
+				Logs.debug("task: task %r must run: an output node does not exist" % self)
 				return RUN_ME
 
-		if new_sig != prev_sig:
-			return RUN_ME
 		return self.never_skip or SKIP_ME
 
 	def post_run(self):
@@ -630,7 +636,6 @@ class Task(TaskBase):
 		"""
 		bld = self.generator.bld
 		sig = self.signature()
-
 		for node in self.outputs:
 			# check if the node exists
 			try:
@@ -641,7 +646,7 @@ class Task(TaskBase):
 				raise Errors.WafError(self.err_msg)
 
 			# important, store the signature for the next run
-			node.sig = sig
+			bld.task_sigs[node.abspath()] = self.uid() # make sure this task produced the files in question
 
 		bld.task_sigs[self.uid()] = self.cache_sig
 
@@ -1154,56 +1159,7 @@ def always_run(cls):
 
 def update_outputs(cls):
 	"""
-	Task class decorator
-
-	If you want to create files in the source directory. For example, to keep *foo.txt* in the source
-	directory, create it first and declare::
-
-		def build(bld):
-			bld(rule='cp ${SRC} ${TGT}', source='wscript', target='foo.txt', update_outputs=True)
+	Obsolete, will be removed in waf 2.0
 	"""
-	old_post_run = cls.post_run
-	def post_run(self):
-		old_post_run(self)
-		for node in self.outputs:
-			node.sig = Utils.h_file(node.abspath())
-			self.generator.bld.task_sigs[node.abspath()] = self.uid() # issue #1017
-	cls.post_run = post_run
-
-
-	old_runnable_status = cls.runnable_status
-	def runnable_status(self):
-		status = old_runnable_status(self)
-		if status != RUN_ME:
-			return status
-
-		try:
-			# by default, we check that the output nodes have the signature of the task
-			# perform a second check, returning 'SKIP_ME' as we are expecting that
-			# the signatures do not match
-			bld = self.generator.bld
-			prev_sig = bld.task_sigs[self.uid()]
-			if prev_sig == self.signature():
-				for x in self.outputs:
-					if not x.is_child_of(bld.bldnode):
-						# special case of files created in the source directory
-						# hash them here for convenience -_-
-						x.sig = Utils.h_file(x.abspath())
-					if not x.sig or bld.task_sigs[x.abspath()] != self.uid():
-						return RUN_ME
-				return SKIP_ME
-		except OSError:
-			pass
-		except IOError:
-			pass
-		except KeyError:
-			pass
-		except IndexError:
-			pass
-		except AttributeError:
-			pass
-		return RUN_ME
-	cls.runnable_status = runnable_status
-
 	return cls
 

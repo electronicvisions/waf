@@ -17,10 +17,6 @@ and output files. While a typical script may require the following::
 			k.cache_isdir = True
 			k = k.parent
 
-		# clear the file if removed
-		if not os.path.isfile(node.abspath()):
-			node.sig = None
-
 		# create the folder structure
 		if node.parent.height() > 2:
 			node.parent.mkdir()
@@ -83,7 +79,6 @@ def find_or_declare(self, lst):
 		if not ret:
 			ret = node.make_node(lst[2:])
 		if not os.path.isfile(ret.abspath()):
-			ret.sig = None
 			ret.parent.mkdir()
 		return ret
 

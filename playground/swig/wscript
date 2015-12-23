@@ -129,7 +129,6 @@ def build(bld):
 			if x.endswith('.java'):
 				# create a node in the directory we want to
 				j = node.make_node(x) # create a node
-				j.sig = Utils.h_file(j.abspath()) # update the node signature
 	# depend on the .i file to make sure the .java files are copied after swig is executed
 	bld(name='move_and_read', rule=move_java_files, source='extend/java/test_swig_waf.i', after=['swig'], before=['javac'])
 	#"""

@@ -64,8 +64,6 @@ class cgopackage(stlink_task):
 				b.write(s.read())
 			bld_srcs.append(b)
 			#print("--|> [%s]" % b.abspath())
-			b.sig = Utils.h_file(b.abspath())
-			pass
 		#self.set_inputs(bld_srcs)
 		#self.generator.bld.raw_deps[self.uid()] = [self.signature()] + bld_srcs
 		makefile_node = bld_dir.make_node("Makefile")

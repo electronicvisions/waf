@@ -69,7 +69,7 @@ class Node(object):
 	The Node objects are not thread safe in any way.
 	"""
 	dict_class = dict
-	__slots__ = ('name', 'sig', 'children', 'parent', 'cache_abspath', 'cache_isdir')
+	__slots__ = ('name', 'parent', 'children', 'cache_abspath', 'cache_isdir')
 	def __init__(self, name, parent):
 		self.name = name
 		self.parent = parent
@@ -86,12 +86,10 @@ class Node(object):
 		if data[2] is not None:
 			# Issue 1480
 			self.children = self.dict_class(data[2])
-		if data[3] is not None:
-			self.sig = data[3]
 
 	def __getstate__(self):
 		"Serialize the node info"
-		return (self.name, self.parent, getattr(self, 'children', None), getattr(self, 'sig', None))
+		return (self.name, self.parent, getattr(self, 'children', None))
 
 	def __str__(self):
 		"String representation (name), for debugging purposes"
@@ -745,14 +743,12 @@ class Node(object):
 		node = self.get_bld().search_node(lst)
 		if node:
 			if not os.path.isfile(node.abspath()):
-				node.sig = None
 				node.parent.mkdir()
 			return node
 		self = self.get_src()
 		node = self.find_node(lst)
 		if node:
 			if not os.path.isfile(node.abspath()):
-				node.sig = None
 				node.parent.mkdir()
 			return node
 		node = self.get_bld().make_node(lst)
@@ -829,21 +825,15 @@ class Node(object):
 		the signature calculation relies on an existing attribute. Else the
 		signature is calculated automatically.
 		"""
-		if not self.is_bld() or self.ctx.bldnode is self.ctx.srcnode:
-			return self.h_file()
-
-		try:
-			return self.sig
-		except AttributeError:
-			return None
+		# previous behaviour can be set by returning self.ctx.task_sigs[self.abspath()] when a build node
+		return self.h_file()
 
 	# --------------------------------------------
 	# TODO waf 2.0, remove the cache_sig attribute
-	def get_cache_sig(self):
-		return self.sig
-	def set_cache_sig(self, v):
-		self.sig = v
-	cache_sig = property(get_cache_sig, set_cache_sig)
+	def get_sig(self):
+		return self.h_file()
+	sig = property(get_sig, Utils.nada)
+	cache_sig = property(get_sig, Utils.nada)
 
 pickle_lock = Utils.threading.Lock()
 """Lock mandatory for thread-safe node serialization"""

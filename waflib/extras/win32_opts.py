@@ -99,13 +99,7 @@ if Utils.is_win32:
 			pass
 		except AttributeError:
 			self.ctx.hash_cache = {}
-
-		if not self.is_bld():
-			if self.is_child_of(self.ctx.srcnode):
-				self.sig = self.cached_hash_file()
-			else:
-				self.sig = Utils.h_file(self.abspath())
-		self.ctx.hash_cache[id(self)] = ret = self.sig
+		self.ctx.hash_cache[id(self)] = ret = Utils.h_file(self.abspath())
 		return ret
 	Node.Node.get_bld_sig = get_bld_sig_win32
 
@@ -153,7 +147,6 @@ if Utils.is_win32:
 		node = self.get_bld().search(lst)
 		if node:
 			if not node.isfile_cached():
-				node.sig = None
 				try:
 					node.parent.mkdir()
 				except OSError:
@@ -163,7 +156,6 @@ if Utils.is_win32:
 		node = self.find_node(lst)
 		if node:
 			if not node.isfile_cached():
-				node.sig = None
 				try:
 					node.parent.mkdir()
 				except OSError:

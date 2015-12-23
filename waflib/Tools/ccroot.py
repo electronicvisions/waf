@@ -600,9 +600,6 @@ class fake_shlib(link_task):
 		for t in self.run_after:
 			if not t.hasrun:
 				return Task.ASK_LATER
-
-		for x in self.outputs:
-			x.sig = Utils.h_file(x.abspath())
 		return Task.SKIP_ME
 
 class fake_stlib(stlink_task):
@@ -613,9 +610,6 @@ class fake_stlib(stlink_task):
 		for t in self.run_after:
 			if not t.hasrun:
 				return Task.ASK_LATER
-
-		for x in self.outputs:
-			x.sig = Utils.h_file(x.abspath())
 		return Task.SKIP_ME
 
 @conf
@@ -658,7 +652,10 @@ def process_lib(self):
 		for y in names:
 			node = x.find_node(y)
 			if node:
-				node.sig = Utils.h_file(node.abspath())
+				try:
+					Utils.h_file(node.abspath())
+				except (IOError, OSError):
+					raise ValueError('Could not read %r' % y)
 				break
 		else:
 			continue

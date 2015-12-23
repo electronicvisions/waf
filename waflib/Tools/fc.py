@@ -111,8 +111,6 @@ class fc(Task.Task):
 				if x.startswith('MOD@'):
 					name = bld.modfile(x.replace('MOD@', ''))
 					node = bld.srcnode.find_or_declare(name)
-					if not getattr(node, 'sig', None):
-						node.sig = Utils.SIG_NIL
 					tsk.set_outputs(node)
 					outs[id(node)].add(tsk)
 
