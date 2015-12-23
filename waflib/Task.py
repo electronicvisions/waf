@@ -638,7 +638,7 @@ class Task(TaskBase):
 				raise Errors.WafError(self.err_msg)
 
 			# important, store the signature for the next run
-			node.sig = node.cache_sig = sig
+			node.sig = sig
 
 		bld.task_sigs[self.uid()] = self.cache_sig
 
@@ -656,7 +656,7 @@ class Task(TaskBase):
 		for x in self.inputs + self.dep_nodes:
 			try:
 				upd(x.get_bld_sig())
-			except (AttributeError, TypeError):
+			except TypeError:
 				raise Errors.WafError('Missing node signature for %r (required by %r)' % (x, self))
 
 		# manual dependencies, they can slow down the builds
@@ -670,9 +670,8 @@ class Task(TaskBase):
 
 				for v in d:
 					if isinstance(v, bld.root.__class__):
-						try:
-							v = v.get_bld_sig()
-						except AttributeError:
+						v = v.get_bld_sig()
+						if not v:
 							raise Errors.WafError('Missing node signature for %r (required by %r)' % (v, self))
 					elif hasattr(v, '__call__'):
 						v = v() # dependency is a function, call it
@@ -778,9 +777,7 @@ class Task(TaskBase):
 		except Exception:
 			if Logs.verbose:
 				for k in bld.node_deps.get(self.uid(), []):
-					try:
-						k.get_bld_sig()
-					except Exception:
+					if not k.get_bld_sig():
 						Logs.warn('Missing signature for node %r (may cause rebuilds)' % k)
 		else:
 			return sig
@@ -1172,7 +1169,7 @@ def update_outputs(cls):
 	def post_run(self):
 		old_post_run(self)
 		for node in self.outputs:
-			node.sig = node.cache_sig = Utils.h_file(node.abspath())
+			node.sig = Utils.h_file(node.abspath())
 			self.generator.bld.task_sigs[node.abspath()] = self.uid() # issue #1017
 	cls.post_run = post_run
 

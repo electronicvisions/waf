@@ -69,7 +69,7 @@ class Node(object):
 	The Node objects are not thread safe in any way.
 	"""
 	dict_class = dict
-	__slots__ = ('name', 'sig', 'children', 'parent', 'cache_abspath', 'cache_isdir', 'cache_sig')
+	__slots__ = ('name', 'sig', 'children', 'parent', 'cache_abspath', 'cache_isdir')
 	def __init__(self, name, parent):
 		self.name = name
 		self.parent = parent
@@ -818,19 +818,32 @@ class Node(object):
 		"Build path without the file name"
 		return self.parent.bldpath()
 
+
+	def h_file(self):
+		# use Node.h_file = Utils.run_once(Node.h_file) if necessary
+		return Utils.h_file(self.abspath())
+
 	def get_bld_sig(self):
 		"""
-		Node signature, assuming the file is in the build directory
+		Node signature. If there is a build directory or and the file is there,
+		the signature calculation relies on an existing attribute. Else the
+		signature is calculated automatically.
 		"""
-		try:
-			return self.cache_sig
-		except AttributeError:
-			pass
-
 		if not self.is_bld() or self.ctx.bldnode is self.ctx.srcnode:
-			self.sig = Utils.h_file(self.abspath())
-		self.cache_sig = ret = self.sig
-		return ret
+			return self.h_file()
+
+		try:
+			return self.sig
+		except AttributeError:
+			return None
+
+	# --------------------------------------------
+	# TODO waf 2.0, remove the cache_sig attribute
+	def get_cache_sig(self):
+		return self.sig
+	def set_cache_sig(self, v):
+		self.sig = v
+	cache_sig = property(get_cache_sig, set_cache_sig)
 
 pickle_lock = Utils.threading.Lock()
 """Lock mandatory for thread-safe node serialization"""

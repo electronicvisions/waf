@@ -15,18 +15,15 @@ import os
 from waflib import Node, Utils
 
 def get_bld_sig(self):
-	try:
-		return self.cache_sig
-	except AttributeError:
-		pass
-
 	if not self.is_bld() or self.ctx.bldnode is self.ctx.srcnode:
-		self.sig = Utils.h_file(self.abspath())
-		self.cache_sig = ret = self.sig
-	else:
-		# add the
-		self.cache_sig = ret = self.sig + str(os.stat(self.abspath()).st_mtime)
-	return ret
+		return Utils.h_file(self.abspath())
+
+	try:
+		# add the creation time to the signature
+		return self.sig + str(os.stat(self.abspath()).st_mtime)
+	except AttributeError:
+		return None
+
 
 Node.Node.get_bld_sig = get_bld_sig
 
