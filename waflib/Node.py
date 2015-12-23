@@ -99,14 +99,6 @@ class Node(object):
 		"String representation (abspath), for debugging purposes"
 		return self.abspath()
 
-	def __hash__(self):
-		"Node hash, used for storage in dicts. This hash is not persistent."
-		return id(self)
-
-	def __eq__(self, node):
-		"Node comparison, based on the IDs"
-		return id(self) == id(node)
-
 	def __copy__(self):
 		"Implemented to prevent nodes from being copied (raises an exception)"
 		raise Errors.WafError('nodes are not supposed to be copied')

@@ -160,10 +160,6 @@ class TaskBase(evil):
 			return self.fun.__name__
 		return self.__class__.__name__
 
-	def __hash__(self):
-		"Very fast hashing scheme but not persistent (replace/implement in subclasses and see :py:meth:`waflib.Task.Task.uid`)"
-		return id(self)
-
 	def keyword(self):
 		if hasattr(self, 'fun'):
 			return 'Function'
@@ -507,7 +503,6 @@ class Task(TaskBase):
 				up(x.abspath())
 			self.uid_ = m.digest()
 			return self.uid_
-
 
 	def set_inputs(self, inp):
 		"""
