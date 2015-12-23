@@ -50,6 +50,7 @@ def fc_add_flags(conf):
 	"""
 	Add FCFLAGS / LDFLAGS / LINKFLAGS from os.environ to conf.env
 	"""
+	conf.add_os_flags('FCPPFLAGS', dup=False)
 	conf.add_os_flags('FCFLAGS', dup=False)
 	conf.add_os_flags('LINKFLAGS', dup=False)
 	conf.add_os_flags('LDFLAGS', dup=False)

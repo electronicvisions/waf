@@ -4,7 +4,6 @@ Waf 1.9
 * Reduce the key size in bld.task_sigs
 * Provide a more efficient ConfigSet implementation
 * Ensure _cache.py are valid python files
-* Set cflags in the beginning / cppflags at the end
 * Rework qt5
 * Make lazy visual studio detection the default
 * Do not cache waf tool detection
@@ -21,7 +20,9 @@ Done
 * Remove the command called "update"
 * Include the tool 'nobuild' by default
 * Remove qt4 and kde4 from the default modules
-* Detect Clang first on many platforms, in particular on FreeBSD
+* Detect Clang first on many platforms, in particular on FreeBSD #1528
 * Let run_once accept a list of *args
-* Remove Node.cache_sig and Node.sig
+* Remove Node.cache_sig and Node.sig #1580
+* Remove __hash__ and __eq__ from Node and Task #1629
+* Set cflags in the beginning / cppflags at the end #1505
 
