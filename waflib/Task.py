@@ -44,11 +44,10 @@ def f(tsk):
 	env = tsk.env
 	gen = tsk.generator
 	bld = gen.bld
-	cwdx = getattr(bld, 'cwdx', bld.bldnode) # TODO single cwd value in waf 1.9
-	wd = getattr(tsk, 'cwd', None)
+	cwdx = getattr(tsk, 'cwd', None) or getattr(bld, 'cwd', bld.bldnode)
 	p = env.get_flat
 	tsk.last_cmd = cmd = \'\'\' %s \'\'\' % s
-	return tsk.exec_command(cmd, cwd=wd, env=env.env or None)
+	return tsk.exec_command(cmd, cwd=cwdx, env=env.env or None)
 '''
 
 COMPILE_TEMPLATE_NOSHELL = '''
@@ -56,15 +55,14 @@ def f(tsk):
 	env = tsk.env
 	gen = tsk.generator
 	bld = gen.bld
-	cwdx = getattr(bld, 'cwdx', bld.bldnode) # TODO single cwd value in waf 1.9
-	wd = getattr(tsk, 'cwd', None)
+	cwdx = getattr(tsk, 'cwd', None) or getattr(bld, 'cwd', bld.bldnode)
 	def to_list(xx):
 		if isinstance(xx, str): return [xx]
 		return xx
 	tsk.last_cmd = lst = []
 	%s
 	lst = [x for x in lst if x]
-	return tsk.exec_command(lst, cwd=wd, env=env.env or None)
+	return tsk.exec_command(lst, cwd=cwdx, env=env.env or None)
 '''
 
 classes = {}
@@ -173,11 +171,8 @@ class TaskBase(evil):
 		:rtype: int
 		"""
 		bld = self.generator.bld
-		try:
-			if not kw.get('cwd', None):
-				kw['cwd'] = bld.cwd
-		except AttributeError:
-			bld.cwd = kw['cwd'] = bld.variant_dir
+		if not 'cwd' in kw:
+			kw['cwd'] = getattr(self, 'cwd', None) or getattr(bld, 'cwd', bld.bldnode)
 		return bld.exec_command(cmd, **kw)
 
 	def runnable_status(self):
