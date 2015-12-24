@@ -29,8 +29,8 @@ INSTALL = 1337
 UNINSTALL = -1337
 """Negative value '<-' uninstall, see :py:attr:`waflib.Build.BuildContext.is_install`"""
 
-SAVED_ATTRS = 'root node_deps raw_deps task_sigs'.split()
-"""Build class members to save between the runs (root, node_deps, raw_deps, task_sigs)"""
+SAVED_ATTRS = 'root node_sigs task_sigs imp_sigs raw_deps node_deps'.split()
+"""Build class members to save between the runs (root, node_sigs, task_sigs, node_sigs, imp_sigs, raw_deps, node_deps)"""
 
 CFG_FILES = 'cfg_files'
 """Files from the build directory to hash before starting the build (``config.h`` written during the configuration)"""
@@ -80,14 +80,20 @@ class BuildContext(Context.Context):
 		# ======================================= #
 		# cache variables
 
+		self.node_sigs = {}
+		"""Dict mapping build nodes to task identifier (uid), it indicates whether a task created a particular file (persists between builds)"""
+
 		self.task_sigs = {}
-		"""Signatures of the tasks (persists between build executions)"""
+		"""Dict mapping task identifiers (uid) to task signatures (persists between builds)"""
+
+		self.imp_sigs = {}
+		"""Dict mapping task identifiers (uid) to implicit task dependencies used for scanning targets (persists between builds)"""
 
 		self.node_deps = {}
-		"""Dict of node dependencies found by :py:meth:`waflib.Task.Task.scan` (persists between build executions)"""
+		"""Dict mapping task identifiers (uid) to node dependencies found by :py:meth:`waflib.Task.Task.scan` (persists between builds)"""
 
 		self.raw_deps = {}
-		"""Dict of custom data returned by :py:meth:`waflib.Task.Task.scan` (persists between build executions)"""
+		"""Dict mapping task identifiers (uid) to custom data returned by :py:meth:`waflib.Task.Task.scan` (persists between builds)"""
 
 		# list of folders that are already scanned
 		# so that we do not need to stat them one more time
@@ -1214,7 +1220,7 @@ class CleanContext(BuildContext):
 				n.delete()
 		self.root.children = {}
 
-		for v in 'node_deps task_sigs raw_deps'.split():
+		for v in 'node_sigs task_sigs imp_sigs raw_deps node_deps'.split():
 			setattr(self, v, {})
 
 class ListContext(BuildContext):

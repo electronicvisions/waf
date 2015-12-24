@@ -148,7 +148,7 @@ class doxygen(Task.Task):
 	def post_run(self):
 		nodes = self.output_dir.ant_glob('**/*', quiet=True)
 		for x in nodes:
-			self.generator.bld.task_sigs[x.abspath()] = self.uid()
+			self.generator.bld.node_sigs[x] = self.uid()
 		self.add_install()
 		return Task.Task.post_run(self)
 

@@ -73,7 +73,7 @@ def runnable_status(self):
 		if add:
 			# recompute the task signature
 			delattr(self, 'cache_sig')
-			del bld.task_sigs[(self.uid(), 'imp')]
+			del bld.imp_sigs[self.uid()]
 			return self.runnable_status()
 
 		for x in bld.node_deps[self.uid()]:

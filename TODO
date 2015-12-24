@@ -1,7 +1,6 @@
 Waf 1.9
 -------
 
-* Reduce the key size in bld.task_sigs
 * Provide a more efficient ConfigSet implementation
 * Ensure _cache.py are valid python files
 * Rework qt5
@@ -25,4 +24,5 @@ Done
 * Remove Node.cache_sig and Node.sig #1580
 * Remove __hash__ and __eq__ from Node and Task #1629
 * Set cflags in the beginning / cppflags at the end #1505
+* Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
 

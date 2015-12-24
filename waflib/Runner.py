@@ -280,9 +280,8 @@ class Parallel(object):
 		"""
 		if hasattr(tsk, 'scan') and hasattr(tsk, 'uid'):
 			# TODO waf 1.9 - this breaks encapsulation
-			key = (tsk.uid(), 'imp')
 			try:
-				del self.bld.task_sigs[key]
+				del self.bld.imp_sigs[tsk.uid()]
 			except KeyError:
 				pass
 		if not self.bld.keep:

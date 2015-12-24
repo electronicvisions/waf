@@ -607,7 +607,7 @@ class Task(TaskBase):
 
 		# compare the signatures of the outputs
 		for node in self.outputs:
-			sig = bld.task_sigs.get(node, None)
+			sig = bld.node_sigs.get(node, None)
 			if not sig:
 				Logs.debug("task: task %r must run: an output node has no signature" % self)
 				return RUN_ME
@@ -628,14 +628,14 @@ class Task(TaskBase):
 		The node signature is obtained from the task signature, but the output nodes may also get the signature
 		of their contents. See the class decorator :py:func:`waflib.Task.update_outputs` if you need this behaviour.
 		"""
-		dct = self.generator.bld.task_sigs
+		bld = self.generator.bld
 		for node in self.outputs:
 			if not node.exists():
 				self.hasrun = MISSING
 				self.err_msg = '-> missing file: %r' % node.abspath()
 				raise Errors.WafError(self.err_msg)
-			dct[node] = self.uid() # make sure this task produced the files in question
-		dct[self.uid()] = self.signature()
+			bld.node_sigs[node] = self.uid() # make sure this task produced the files in question
+		bld.task_sigs[self.uid()] = self.signature()
 
 	def sig_explicit_deps(self):
 		"""
@@ -729,7 +729,7 @@ class Task(TaskBase):
 
 		# get the task signatures from previous runs
 		key = self.uid()
-		prev = bld.task_sigs.get((key, 'imp'), [])
+		prev = bld.imp_sigs.get(key, [])
 
 		# for issue #379
 		if prev:
@@ -751,7 +751,7 @@ class Task(TaskBase):
 								del x.parent.children[x.name]
 							except KeyError:
 								pass
-			del bld.task_sigs[(key, 'imp')]
+			del bld.imp_sigs[key]
 			raise Errors.TaskRescan('rescan')
 
 		# no previous run or the signature of the dependencies has changed, rescan the dependencies
@@ -768,7 +768,7 @@ class Task(TaskBase):
 
 		# recompute the signature and return it
 		try:
-			bld.task_sigs[(key, 'imp')] = sig = self.compute_sig_implicit_deps()
+			bld.imp_sigs[key] = sig = self.compute_sig_implicit_deps()
 		except Exception:
 			if Logs.verbose:
 				for k in bld.node_deps.get(self.uid(), []):
