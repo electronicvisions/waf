@@ -17,13 +17,6 @@ ccroot.USELIB_VARS['fcprogram_test'] = ccroot.USELIB_VARS['fcprogram'] = set(['L
 ccroot.USELIB_VARS['fcshlib'] = set(['LIB', 'STLIB', 'LIBPATH', 'STLIBPATH', 'LINKFLAGS', 'RPATH', 'LINKDEPS'])
 ccroot.USELIB_VARS['fcstlib'] = set(['ARFLAGS', 'LINKDEPS'])
 
-@feature('fcprogram', 'fcshlib', 'fcstlib', 'fcprogram_test')
-def dummy(self):
-	"""
-	Unused function that does nothing (TODO: remove in waf 1.9)
-	"""
-	pass
-
 @extension('.f', '.f90', '.F', '.F90', '.for', '.FOR')
 def fc_hook(self, node):
 	"Bind the typical Fortran file extensions to the creation of a :py:class:`waflib.Tools.fc.fc` instance"
