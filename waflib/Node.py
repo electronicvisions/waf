@@ -813,7 +813,7 @@ class Node(object):
 		the signature calculation relies on an existing attribute. Else the
 		signature is calculated automatically.
 		"""
-		# previous behaviour can be set by returning self.ctx.task_sigs[self.abspath()] when a build node
+		# previous behaviour can be set by returning self.ctx.task_sigs[self] when a build node
 		return Utils.h_file(self.abspath())
 
 	# --------------------------------------------

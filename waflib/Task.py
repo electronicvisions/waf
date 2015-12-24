@@ -607,15 +607,14 @@ class Task(TaskBase):
 
 		# compare the signatures of the outputs
 		for node in self.outputs:
-			p = node.abspath()
-			sig = bld.task_sigs.get(p, None)
+			sig = bld.task_sigs.get(node, None)
 			if not sig:
 				Logs.debug("task: task %r must run: an output node has no signature" % self)
 				return RUN_ME
 			if sig != key:
 				Logs.debug("task: task %r must run: an output node was produced by another task" % self)
 				return RUN_ME
-			if not os.path.exists(p):
+			if not os.path.exists(node.abspath()):
 				Logs.debug("task: task %r must run: an output node does not exist" % self)
 				return RUN_ME
 
@@ -632,17 +631,14 @@ class Task(TaskBase):
 		bld = self.generator.bld
 		sig = self.signature()
 		for node in self.outputs:
-			# check if the node exists
+			# check if the output actually exists
 			try:
 				os.stat(node.abspath())
 			except OSError:
 				self.hasrun = MISSING
 				self.err_msg = '-> missing file: %r' % node.abspath()
 				raise Errors.WafError(self.err_msg)
-
-			# important, store the signature for the next run
-			bld.task_sigs[node.abspath()] = self.uid() # make sure this task produced the files in question
-
+			bld.task_sigs[node] = self.uid() # make sure this task produced the files in question
 		bld.task_sigs[self.uid()] = self.cache_sig
 
 	def sig_explicit_deps(self):
