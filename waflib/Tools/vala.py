@@ -179,17 +179,6 @@ def init_vala_task(self):
 		self.dump_deps_node = valatask.vala_dir_node.find_or_declare('%s.deps' % self.target)
 		valatask.outputs.append(self.dump_deps_node)
 
-	# TODO remove in waf 1.9
-	self.includes.append(self.bld.srcnode.abspath())
-	self.includes.append(self.bld.bldnode.abspath())
-	#for include in includes:
-	#	try:
-	#		self.includes.append(self.path.find_dir(include).abspath())
-	#		self.includes.append(self.path.find_dir(include).get_bld().abspath())
-	#	except AttributeError:
-	#		Logs.warn("Unable to locate include directory: '%s'" % include)
-
-
 	if self.is_lib and valatask.install_binding:
 		headers_list = [o for o in valatask.outputs if o.suffix() == ".h"]
 		try:
