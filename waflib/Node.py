@@ -806,6 +806,9 @@ class Node(object):
 		"Build path without the file name"
 		return self.parent.bldpath()
 
+	def exists(self):
+		return os.path.exists(self.abspath())
+
 	@Utils.run_once
 	def get_bld_sig(self):
 		"""

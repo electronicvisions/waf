@@ -191,7 +191,7 @@ class TaskBase(evil):
 
 	def process(self):
 		"""
-		Assume that the task has had a new attribute ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
+		Assume that the task has had a ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
 		Execute the task and then put it back in the queue :py:attr:`waflib.Runner.Parallel.out` (may be replaced by subclassing).
 		"""
 		m = self.master
@@ -614,7 +614,7 @@ class Task(TaskBase):
 			if sig != key:
 				Logs.debug("task: task %r must run: an output node was produced by another task" % self)
 				return RUN_ME
-			if not os.path.exists(node.abspath()):
+			if not node.exists():
 				Logs.debug("task: task %r must run: an output node does not exist" % self)
 				return RUN_ME
 
@@ -628,18 +628,14 @@ class Task(TaskBase):
 		The node signature is obtained from the task signature, but the output nodes may also get the signature
 		of their contents. See the class decorator :py:func:`waflib.Task.update_outputs` if you need this behaviour.
 		"""
-		bld = self.generator.bld
-		sig = self.signature()
+		dct = self.generator.bld.task_sigs
 		for node in self.outputs:
-			# check if the output actually exists
-			try:
-				os.stat(node.abspath())
-			except OSError:
+			if not node.exists():
 				self.hasrun = MISSING
 				self.err_msg = '-> missing file: %r' % node.abspath()
 				raise Errors.WafError(self.err_msg)
-			bld.task_sigs[node] = self.uid() # make sure this task produced the files in question
-		bld.task_sigs[self.uid()] = self.cache_sig
+			dct[node] = self.uid() # make sure this task produced the files in question
+		dct[self.uid()] = self.signature()
 
 	def sig_explicit_deps(self):
 		"""

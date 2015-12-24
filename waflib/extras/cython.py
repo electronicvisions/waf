@@ -68,7 +68,7 @@ class cython(Task.Task):
 	def post_run(self):
 		for x in self.outputs:
 			if x.name.endswith('.h'):
-				if not os.path.exists(x.abspath()):
+				if not x.exists():
 					if Logs.verbose:
 						Logs.warn('Expected %r' % x.abspath())
 					x.write('')
