@@ -347,7 +347,7 @@ def conf(f):
 	return f
 
 @conf
-def add_os_flags(self, var, dest=None, dup=True):
+def add_os_flags(self, var, dest=None, dup=False):
 	"""
 	Import operating system environment values into ``conf.env`` dict::
 
@@ -365,7 +365,6 @@ def add_os_flags(self, var, dest=None, dup=True):
 		flags = shlex.split(self.environ[var])
 	except KeyError:
 		return
-	# TODO: in waf 1.9, make dup=False the default
 	if dup or ''.join(flags) not in ''.join(Utils.to_list(self.env[dest or var])):
 		self.env.append_value(dest or var, flags)
 
