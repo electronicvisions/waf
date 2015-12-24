@@ -1090,7 +1090,7 @@ class InstallContext(BuildContext):
 		self.run_task_now(tsk, postpone)
 		return tsk
 
-	def symlink_as(self, dest, src, env=None, cwd=None, add=True, postpone=True, relative_trick=False, task=None):
+	def symlink_as(self, dest, src, env=None, cwd=None, add=True, postpone=True, relative_trick=False, task=None, win32_install=False):
 		"""
 		Create a task to install a symlink::
 
@@ -1110,10 +1110,9 @@ class InstallContext(BuildContext):
 		:param relative_trick: make the symlink relative (default: ``False``)
 		:type relative_trick: bool
 		"""
-		if Utils.is_win32:
-			# symlinks *cannot* work on that platform
-			# TODO waf 1.9 - replace by install_as
-			return
+		if Utils.is_win32 and win32_install:
+			# symlinks *cannot* work on win32, install the file instead
+			return self.install_as(dest, src, env=env, chmod=chmod, cwd=cwd, add=add, postpone=postpone, task=task)
 		assert(dest)
 		tsk = inst(env=env or self.env)
 		tsk.bld = self
