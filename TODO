@@ -1,15 +1,15 @@
 Waf 1.9
 -------
 
-* Provide a more efficient ConfigSet implementation
-* Ensure _cache.py are valid python files
-* Rework qt5
 * Make lazy visual studio detection the default
 * Do not cache waf tool detection
 * Fix the vala detection
 * Better consistency between check_cfg and check_cc variables
-* Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
 * Let more context commands depend on the configuration
+* Rework qt5
+* Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
+* Provide a more efficient ConfigSet implementation
+* Ensure _cache.py are valid python files
 
 and all other issues listed on https://github.com/waf-project/waf/issues
 

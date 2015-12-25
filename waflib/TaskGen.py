@@ -593,7 +593,7 @@ def process_rule(self):
 			Task.update_outputs(cls)
 
 		if getattr(self, 'always', None):
-			Task.always_run(cls)
+			cls.always_run = True
 
 		for x in ('after', 'before', 'ext_in', 'ext_out'):
 			setattr(cls, x, getattr(self, x, []))

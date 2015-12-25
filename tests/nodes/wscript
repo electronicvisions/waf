@@ -39,9 +39,8 @@ def bar(ctx):
 
 from waflib import Task
 
-# TODO update_outputs is a decorator too .. now
-@Task.always_run
-class foo_task(Task.Task):
+class foo(Task.Task):
+	always_run = True
 	def run(self):
 		print("running foo")
 

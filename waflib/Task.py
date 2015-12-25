@@ -402,8 +402,8 @@ class Task(TaskBase):
 	vars = []
 	"""Variables to depend on (class attribute used for :py:meth:`waflib.Task.Task.sig_vars`)"""
 
-	never_skip = False
-	"""Specify whether task instances must always be executed or not, leave empty or set to :py:const:`waflib.Task.RUN_ME`"""
+	always_run = False
+	"""Specify whether task instances must always be executed or not"""
 
 	shell = False
 	"""Execute the command with the shell (class attribute)"""
@@ -613,7 +613,7 @@ class Task(TaskBase):
 				Logs.debug("task: task %r must run: an output node does not exist" % self)
 				return RUN_ME
 
-		return self.never_skip or SKIP_ME
+		return (self.always_run and RUN_ME) or SKIP_ME
 
 	def post_run(self):
 		"""
@@ -1136,7 +1136,8 @@ def always_run(cls):
 	The task signature is calculated, but the result of the comparison between
 	task signatures is bypassed
 	"""
-	cls.never_skip = RUN_ME
+	Logs.warn('This decorator is deprecated, set always_run on the task class instead!')
+	cls.always_run = True
 	return cls
 
 def update_outputs(cls):
