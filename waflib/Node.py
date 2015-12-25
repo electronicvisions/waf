@@ -820,11 +820,17 @@ class Node(object):
 		return Utils.h_file(self.abspath())
 
 	# --------------------------------------------
-	# TODO waf 2.0, remove the cache_sig attribute
+	# TODO waf 2.0, remove the sig and cache_sig attributes
 	def get_sig(self):
 		return self.h_file()
-	sig = property(get_sig, Utils.nada)
-	cache_sig = property(get_sig, Utils.nada)
+	def set_sig(self, val):
+		# clear the cache, so that past implementation should still work
+		try:
+			del self.get_bld_sig.__cache__[(self,)]
+		except (AttributeError, KeyError):
+			pass
+	sig = property(get_sig, set_sig)
+	cache_sig = property(get_sig, set_sig)
 
 pickle_lock = Utils.threading.Lock()
 """Lock mandatory for thread-safe node serialization"""
