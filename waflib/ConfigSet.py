@@ -15,7 +15,7 @@ re_imp = re.compile('^(#)*?([^#=]*?)\ =\ (.*?)$', re.M)
 
 class ConfigSet(object):
 	"""
-	A dict that honor serialization and parent relationships. The serialization format
+	A copy-on-write dict with human-readable serialized format. The serialization format
 	is human-readable (python-like) and performed by using eval() and repr().
 	For high performance prefer pickle. Do not store functions as they are not serializable.
 

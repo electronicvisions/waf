@@ -139,14 +139,7 @@ def check_fortran_dummy_main(self, *k, **kw):
 	"""
 	Guess if a main function is needed by compiling a code snippet with
 	the C compiler and link with the Fortran compiler
-
-	TODO: (DC)
-	- handling dialects (F77, F90, etc... -> needs core support first)
-	- fix dummy main check (AC_FC_DUMMY_MAIN vs AC_FC_MAIN)
-
-	TODO: what does the above mean? (ita)
 	"""
-
 	if not self.env.CC:
 		self.fatal('A c compiler is required for check_fortran_dummy_main')
 
