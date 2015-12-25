@@ -31,8 +31,8 @@ or::
 Platforms and targets will be tested in the order they appear;
 the first good configuration will be used.
 
-To skip testing all the configurations that are not used, use the ``--msvc_lazy_autodetect`` option
-or set ``conf.env['MSVC_LAZY_AUTODETECT']=True``.
+To force testing all the configurations that are not used, use the ``--no-msvc-lazy`` option
+or set ``conf.env['MSVC_LAZY_AUTODETECT']=False``.
 
 Supported platforms: ia64, x64, x86, x86_amd64, x86_ia64, x86_arm, amd64_x86, amd64_arm
 
@@ -94,7 +94,7 @@ all_icl_platforms = [ ('intel64', 'amd64'), ('em64t', 'amd64'), ('ia32', 'x86'),
 def options(opt):
 	opt.add_option('--msvc_version', type='string', help = 'msvc version, eg: "msvc 10.0,msvc 9.0"', default='')
 	opt.add_option('--msvc_targets', type='string', help = 'msvc targets, eg: "x64,arm"', default='')
-	opt.add_option('--msvc_lazy_autodetect', action='store_true', help = 'lazily check msvc target environments')
+	opt.add_option('--no-msvc-lazy', action='store_false', help = 'lazily check msvc target environments', default=True, dest=msvc_lazy)
 
 def setup_msvc(conf, versions, arch = False):
 	"""
@@ -330,10 +330,10 @@ def gather_msvc_detected_versions():
 
 def get_compiler_env(conf, compiler, version, bat_target, bat, select=None):
 	"""
-	Gets the compiler environment variables as a tuple. Evaluation is eager by default.
-	If set to lazy with ``--msvc_lazy_autodetect`` or ``env.MSVC_LAZY_AUTODETECT``
-	the environment is evaluated when the tuple is destructured or iterated. This means
-	destructuring can throw :py:class:`conf.errors.ConfigurationError`.
+	Gets the compiler environment variables as a tuple. Evaluation is lazy by default,
+	which means destructuring can throw :py:class:`conf.errors.ConfigurationError`
+	If ``--no-msvc-lazy`` or ``env.MSVC_LAZY_AUTODETECT`` are set, then the values are
+	evaluated at once.
 
 	:param conf: configuration context to use to eventually get the version environment
 	:param compiler: compiler name
@@ -341,7 +341,9 @@ def get_compiler_env(conf, compiler, version, bat_target, bat, select=None):
 	:param bat: path to the batch file to run
 	:param select: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
 	"""
-	lazy = getattr(Options.options, 'msvc_lazy_autodetect', False) or conf.env['MSVC_LAZY_AUTODETECT']
+	lazy = getattr(Options.options, 'msvc_lazy', True)
+	if conf.env.MSVC_LAZY_AUTODETECT is False:
+		lazy = False
 
 	def msvc_thunk():
 		vs = conf.get_msvc_version(compiler, version, bat_target, bat)

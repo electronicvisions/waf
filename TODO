@@ -1,7 +1,6 @@
 Waf 1.9
 -------
 
-* Make lazy visual studio detection the default
 * Do not cache waf tool detection
 * Fix the vala detection
 * Better consistency between check_cfg and check_cc variables
@@ -25,4 +24,5 @@ Done
 * Remove __hash__ and __eq__ from Node and Task #1629
 * Set cflags in the beginning / cppflags at the end #1505
 * Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
+* Make lazy visual studio detection the default
 
