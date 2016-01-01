@@ -124,9 +124,7 @@ The next tools provide support for code generators used in C and C++ projects.
 	tools/dbus
 	tools/vala
 	tools/glib2
-	tools/qt4
 	tools/qt5
-	tools/kde4
 	tools/perl
 	tools/python
 	tools/ruby

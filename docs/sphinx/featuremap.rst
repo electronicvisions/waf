@@ -603,18 +603,6 @@ Feature link_main_routines_func
 
 
 
-Feature msgfmt
-==============
-
-.. graphviz::
-
-	digraph feature_msgfmt {
-	size="8.0, 12.0";
-		"apply_msgfmt" [style="setlinewidth(0.5)",URL="tools/kde4.html#waflib.Tools.kde4.apply_msgfmt",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape=box,fontsize=10,fillcolor="#fffea6",style=filled];
-	}
-
-
-
 Feature perlext
 ===============
 
@@ -660,20 +648,6 @@ Feature pyext
 	size="8.0, 12.0";
 		"set_lib_pat" [style="setlinewidth(0.5)",URL="tools/fc_config.html#waflib.Tools.fc_config.set_lib_pat",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape=box,fontsize=10,fillcolor="#fffea6",style=filled];
 	"init_pyext" [style="setlinewidth(0.5)",URL="tools/python.html#waflib.Tools.python.init_pyext",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape=box,fontsize=10,fillcolor="#fffea6",style=filled];
-	}
-
-
-
-Feature qt4
-===========
-
-.. graphviz::
-
-	digraph feature_qt4 {
-	size="8.0, 12.0";
-		"apply_qt4" [style="setlinewidth(0.5)",URL="tools/qt4.html#waflib.Tools.qt4.apply_qt4",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape=box,fontsize=10,fillcolor="#fffea6",style=filled];
-	"apply_link" [style="setlinewidth(0.5)",URL="tools/ccroot.html#waflib.Tools.ccroot.apply_link",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape=box,fontsize=10];
-	"apply_qt4" -> "apply_link" [arrowsize=0.5,style="setlinewidth(0.5)"];
 	}
 
 
