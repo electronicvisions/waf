@@ -387,7 +387,7 @@ class glib_gresource_base(Task.Task):
 			if not kw.get('cwd', None):
 				kw['cwd'] = bld.cwd
 		except AttributeError:
-			bld.cwd = kw['cwd'] = bld.variant_dir
+			kw['cwd'] = bld.bldnode.abspath()
 		kw['quiet'] = Context.BOTH
 
 		cmd = Utils.subst_vars('${GLIB_COMPILE_RESOURCES} --sourcedir=%s --sourcedir=%s --generate-dependencies %s' % (
