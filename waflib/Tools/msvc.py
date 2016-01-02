@@ -1104,7 +1104,7 @@ def exec_command_msvc(self, *k, **kw):
 		if not kw.get('cwd', None):
 			kw['cwd'] = bld.cwd
 	except AttributeError:
-		bld.cwd = kw['cwd'] = bld.variant_dir
+		kw['cwd'] = bld.bldnode
 
 	ret = self.exec_response_command(k[0], **kw)
 	if not ret and getattr(self, 'do_manifest', None):

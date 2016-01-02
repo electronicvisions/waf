@@ -439,6 +439,10 @@ class Context(ctx):
 				kw['stdin'] = Utils.subprocess.PIPE
 			del kw['input']
 
+		if 'cwd' in kw:
+			if not isinstance(kw['cwd'], str):
+				kw['cwd'] = kw['cwd'].abspath()
+
 		try:
 			p = subprocess.Popen(cmd, **kw)
 			(out, err) = p.communicate(**wargs)

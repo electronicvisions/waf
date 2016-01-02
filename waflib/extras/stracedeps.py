@@ -70,7 +70,7 @@ def exec_command(self, cmd, **kw):
 		if not kw.get('cwd', None):
 			kw['cwd'] = bld.cwd
 	except AttributeError:
-		bld.cwd = kw['cwd'] = bld.variant_dir
+		kw['cwd'] = bld.bldnode
 
 	args = self.get_strace_args()
 	fname = self.get_strace_file()
@@ -102,6 +102,9 @@ def parse_strace_deps(self, path, cwd):
 			os.remove(path)
 		except OSError:
 			pass
+
+	if not isinstance(cwd, str):
+		cwd = cwd.abspath()
 
 	nodes = []
 	bld = self.generator.bld

@@ -93,7 +93,7 @@ class Node(object):
 
 	def __str__(self):
 		"String representation (name), for debugging purposes"
-		return self.name
+		return self.abspath()
 
 	def __repr__(self):
 		"String representation (abspath), for debugging purposes"

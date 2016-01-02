@@ -260,7 +260,7 @@ class javac(Task.Task):
 		env = self.env
 		gen = self.generator
 		bld = gen.bld
-		wd = bld.bldnode.abspath()
+		wd = bld.bldnode
 		def to_list(xx):
 			if isinstance(xx, str): return [xx]
 			return xx
@@ -325,7 +325,7 @@ class javadoc(Task.Task):
 	def run(self):
 		env = self.env
 		bld = self.generator.bld
-		wd = bld.bldnode.abspath()
+		wd = bld.bldnode
 
 		#add src node + bld node (for generated java code)
 		srcpath = self.generator.path.abspath() + os.sep + self.generator.srcdir

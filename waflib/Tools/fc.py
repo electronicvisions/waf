@@ -167,7 +167,7 @@ class fcprogram_test(fcprogram):
 
 		kw['shell'] = isinstance(cmd, str)
 		kw['stdout'] = kw['stderr'] = Utils.subprocess.PIPE
-		kw['cwd'] = bld.variant_dir
+		kw['cwd'] = bld.bldnode
 		bld.out = bld.err = ''
 
 		bld.to_log('command: %s\n' % cmd)

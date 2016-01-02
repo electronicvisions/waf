@@ -85,7 +85,7 @@ class batch_task(Task.Task):
 				srclst.append(t.inputs[0].abspath())
 
 		self.env.SRCLST = srclst
-		self.cwd = slaves[0].outputs[0].parent.abspath()
+		self.cwd = slaves[0].outputs[0].parent
 
 		if self.slaves[0].__class__.__name__ == 'c':
 			ret = c_fun(self)

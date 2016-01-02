@@ -117,9 +117,9 @@ class tex(Task.Task):
 		Logs.info('runner: %r' % cmd)
 		try:
 			if not kw.get('cwd', None):
-				kw['cwd'] = bld.cwd
+				kw['cwd'] = bld.cwd.abspath()
 		except AttributeError:
-			bld.cwd = kw['cwd'] = bld.variant_dir
+			kw['cwd'] = bld.bldnode.abspath()
 		return Utils.subprocess.Popen(cmd, **kw).wait()
 
 	def scan_aux(self, node):
@@ -350,7 +350,7 @@ class tex(Task.Task):
 			env.append_value('XELATEXFLAGS', '-interaction=batchmode')
 
 		# important, set the cwd for everybody
-		self.cwd = self.inputs[0].parent.get_bld().abspath()
+		self.cwd = self.inputs[0].parent.get_bld()
 
 		Logs.info('first pass on %s' % self.__class__.__name__)
 

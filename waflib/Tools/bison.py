@@ -35,7 +35,7 @@ def big_bison(self, node):
 			outs.append(node.change_ext('.tab.h'))
 
 	tsk = self.create_task('bison', node, outs)
-	tsk.cwd = node.parent.get_bld().abspath()
+	tsk.cwd = node.parent.get_bld()
 
 	# and the c/cxx file must be compiled too
 	self.source.append(outs[0])
