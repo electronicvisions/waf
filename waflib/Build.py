@@ -1112,7 +1112,8 @@ class InstallContext(BuildContext):
 		"""
 		if Utils.is_win32 and win32_install:
 			# symlinks *cannot* work on win32, install the file instead
-			return self.install_as(dest, src, env=env, chmod=chmod, cwd=cwd, add=add, postpone=postpone, task=task)
+			# TODO chmod value?
+			return self.install_as(dest, src, env=env, cwd=cwd, add=add, postpone=postpone, task=task)
 		assert(dest)
 		tsk = inst(env=env or self.env)
 		tsk.bld = self
