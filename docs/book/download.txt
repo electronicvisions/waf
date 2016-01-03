@@ -3,7 +3,7 @@
 === Obtaining the Waf file
 
 The Waf project is located on https://waf.io[waf.io].
-The current Waf version requires an interpreter for the Python programming language such as http://www.python.org[cPython] 2.5 to 3.4, http://pypy.org[Pypy] or http://www.jython.org[Jython] >= 2.5.
+The current Waf version requires an interpreter for the Python programming language such as http://www.python.org[cPython] 2.5 to 3.5, http://pypy.org[Pypy] or http://www.jython.org[Jython] >= 2.5.
 
 ==== Downloading and using the Waf binary
 
@@ -29,7 +29,7 @@ NOTE: The binary file requires http://docs.python.org/library/bz2.html[bzip2] co
 
 ==== Building Waf from the source code
 
-Building Waf requires a Python interpreter having a version number in the range 2.6-3.4. The source code is then processed to support Python 2.5.
+Building Waf requires a Python interpreter having a version number in the range 2.6-3.5. The source code is then processed to support Python 2.5.
 
 [source,shishell]
 ---------------
