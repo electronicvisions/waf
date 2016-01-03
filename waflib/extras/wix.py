@@ -76,7 +76,7 @@ def wix_bin_path():
 	for i in range(cnt-1,-1,-1):
 		thiskey = winreg.EnumKey(query,i)
 		if 'WiX' in thiskey:
-			break;
+			break
 	winreg.CloseKey(query)
 	return os.path.normpath(winreg.QueryValue(winreg.HKEY_LOCAL_MACHINE, basekey+r'\\'+thiskey)+'..\\bin')
 

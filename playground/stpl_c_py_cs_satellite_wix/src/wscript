@@ -10,14 +10,16 @@
 # - GUI localization via satellite assemblies
 # - Wrapper for Python
 #
-# Python libs required: bottle, cffi
+# Python libs required: bottle, cffi, pytest
+#
+# This project requires plenty of applications and libraries such as:
+# gcc, mono-devel, pytest, cffi
+# LD_LIBRARY_PATH=$PWD/../build/api/: PATH=$PATH:$LD_LIBRARY_PATH waf configure build test --stubs
+#
 
-import sys
-import os
-import os.path
-import shutil
 
-sys.path += [os.getcwd()]
+from waflib import Utils
+import sys, os, shutil
 
 APPNAME = "funigui"
 DLLNAME = "funi"
@@ -37,7 +39,7 @@ PYTEST = ''
 def configure (ctx):
     global PYTEST
     try:
-        PYTEST = ctx.find_program('py.test') [0]
+        PYTEST = ctx.find_program('py.test')[0]
     except:
         PYTEST = ctx.find_program('py.test',path_list=[r'C:\Python35\Scripts']) [0]
 
@@ -48,7 +50,7 @@ def configure (ctx):
         ctx.env.append_value('DEFINES',['NDEBUG'])
 
     ctx.load('compiler_c compiler_cxx cs resx satellite_assembly')
-    if sys.platform != 'linux':
+    if Utils.is_win32:
         ctx.load('wix')
 
     if ctx.env['CC_NAME'] == 'msvc':
@@ -71,17 +73,19 @@ def configure (ctx):
     ctx.env.dllname = DLLNAME
     ctx.env.maxfuni = MAXFUNI
     ctx.env.company = COMPANY
+    ctx.load('print_commands')
 
 def build(ctx):
+    ctx.load('build', tooldir='.') # additional stuff
     ctx.recurse('api')
     ctx.recurse('gui')
-    if sys.platform != 'linux':
+    if Utils.is_win32:
         ctx.recurse('msi')
 
 def test(ctx):
     if ctx.options.stubs:
         cwd = ctx.path.find_node('../build/api').abspath()
         print('running test in ',cwd)
-        ctx.cmd_and_log(os.path.join(cwd,'test_funi.exe'),cwd=cwd)
+        ctx.cmd_and_log(os.path.join(cwd,'test_funi'),cwd=cwd)
         ctx.cmd_and_log(PYTEST+' test_funi.py',cwd=cwd)
 

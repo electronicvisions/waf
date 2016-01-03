@@ -1,26 +1,34 @@
+#! /usr/bin/env python
+# encoding: utf-8
 #vim syntax=python
 
-import sys
-import shutil
-
-import os
-sys.path += [os.getcwd()]
-
-from build import *
+import os, sys, shutil
+from waflib import Utils
 
 bld.add_group()
 
 funigui = ctx.env.guiname+'.exe'
-funidll = ctx.env.dllname+'.dll'
 csdll = ctx.env.dllname+'_cs.dll'
-funi = bld.path.find_or_declare(funidll)
 funi_cs = bld.path.find_or_declare(csdll)
 
-bld(rule=cp, source=bld.path.get_bld().make_node('../api/'+funidll)  , target=funi )
-bld(rule=cp, source=bld.path.get_bld().make_node('../api/'+csdll) , target=funi_cs)
-src2bld(bld,'Resources/Icon1.ico')
+# obtain the file names to copy
+from waflib import TaskGen
+@TaskGen.feature('copy_over')
+@TaskGen.before_method('process_subst')
+def get_filenames_to_copy_from_task_generators(self):
+    src = self.bld.get_tgen_by_name(self.from_tg).tasks[-1].outputs[0]
+    self.source = [src]
+    self.target = [src.name]
+    self.is_copy = True
 
-bld(rule=stpl,source='AssemblyInfo.cs.stpl',target='AssemblyInfo.cs')
+# just copy the files to this folder
+bld(features='copy_over subst', from_tg='funi')
+bld(features='copy_over subst', from_tg='csdll')
+
+# copy the same file to the build directory
+bld.src2bld(bld, 'Resources/Icon1.ico')
+
+bld(rule=bld.stpl,source='AssemblyInfo.cs.stpl',target='AssemblyInfo.cs')
 
 bld.add_group()
 
@@ -32,6 +40,18 @@ src = """
 """.strip().split()
 
 refs = """
+    System
+    System.Core
+    System.Windows.Forms
+    System.Xml
+    System.Xml.Linq
+    System.Data
+    System.Data.DataSetExtensions
+    System.Drawing
+""".strip().split()
+
+if Utils.is_win32:
+	refs = """
     System
     System.Core
     System.Windows.Forms
@@ -53,9 +73,10 @@ def csflag(x):
     CSFLAGS+=[x]
 csflag(r'/platform:x64')
 csflag(r'/errorreport:prompt')
-csflag(r'/errorendlocation')
-csflag(r'/preferreduilang:en-US')
-csflag(r'/highentropyva-')
+if Utils.is_win32:
+    csflag(r'/errorendlocation')
+    csflag(r'/preferreduilang:en-US')
+    csflag(r'/highentropyva-')
 csflag(r'/debug:pdbonly')
 csflag(r'/filealign:512')
 csflag(r'/define:'+ctx.env.guiname[1:]) #EstimPRO or EstimRESEARCH
@@ -77,4 +98,5 @@ bld(features='cs',source=src,gen=funigui,csflags=CSFLAGS,use=[r+'.dll' for r in 
 
 bld.add_group()
 
-bld(features='satellite_assembly',source='Resources/resources.fr.txt',gen=funigui)
+bld(features='satellite_assembly',source='Resources/resources.fr.txt', gen=funigui)
+
