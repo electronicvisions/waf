@@ -12,7 +12,7 @@ bld(features='wix', some.wxs, gen='some.msi', candleflags=[..], lightflags=[..])
 bld(features='wix', source=['bundle.wxs','WixBalExtension'], gen='setup.exe', candleflags=[..])
 """
 
-import os
+import os, copy
 from waflib import TaskGen
 from waflib import Task
 from waflib.Utils import winreg
@@ -54,8 +54,8 @@ def wix(self):
 	cndl = self.create_task('candle', self.to_nodes(wxs), self.to_nodes(wxobj))
 	lght = self.create_task('light', self.to_nodes(wxobj), self.path.find_or_declare(self.gen))
 
-	cndl.env.CANDLEFLAGS = getattr(self,'candleflags',[]).copy()
-	lght.env.LIGHTFLAGS = getattr(self,'lightflags',[]).copy()
+	cndl.env.CANDLEFLAGS = copy.copy(getattr(self,'candleflags',[]))
+	lght.env.LIGHTFLAGS = copy.copy(getattr(self,'lightflags',[]))
 
 	for x in wxl:
 		lght.env.append_value('LIGHTFLAGS','wixui.wixlib')

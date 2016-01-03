@@ -1,0 +1,80 @@
+#vim syntax=python
+
+import sys
+import shutil
+
+import os
+sys.path += [os.getcwd()]
+
+from build import *
+
+bld.add_group()
+
+funigui = ctx.env.guiname+'.exe'
+funidll = ctx.env.dllname+'.dll'
+csdll = ctx.env.dllname+'_cs.dll'
+funi = bld.path.find_or_declare(funidll)
+funi_cs = bld.path.find_or_declare(csdll)
+
+bld(rule=cp, source=bld.path.get_bld().make_node('../api/'+funidll)  , target=funi )
+bld(rule=cp, source=bld.path.get_bld().make_node('../api/'+csdll) , target=funi_cs)
+src2bld(bld,'Resources/Icon1.ico')
+
+bld(rule=stpl,source='AssemblyInfo.cs.stpl',target='AssemblyInfo.cs')
+
+bld.add_group()
+
+src = """
+    program.cs
+    FormFuni.cs
+    AssemblyInfo.cs
+    Resources.resx
+""".strip().split()
+
+refs = """
+    System
+    System.Core
+    System.Windows.Forms
+    System.Linq
+    System.RunTime.InteropServices
+    System.Xml
+    System.Xml.Linq
+    System.Threading.Tasks
+    System.Data
+    System.Data.DataSetExtensions
+    System.Deployment
+    System.Drawing
+""".strip().split()
+
+
+CSFLAGS = []
+def csflag(x):
+    global CSFLAGS
+    CSFLAGS+=[x]
+csflag(r'/platform:x64')
+csflag(r'/errorreport:prompt')
+csflag(r'/errorendlocation')
+csflag(r'/preferreduilang:en-US')
+csflag(r'/highentropyva-')
+csflag(r'/debug:pdbonly')
+csflag(r'/filealign:512')
+csflag(r'/define:'+ctx.env.guiname[1:]) #EstimPRO or EstimRESEARCH
+csflag(r'/nologo')
+csflag(r'/noconfig')
+csflag(r'/nowarn:1701,1702')
+csflag(r'/target:winexe')
+if ctx.options.stubs:
+    csflag('/optimize-')
+    csflag('/define:DEBUG')
+    csflag('/define:TRACE')
+else:
+    csflag('/optimize+')
+
+csflag(r'/win32icon:gui/Resources/Icon1.ico')
+
+
+bld(features='cs',source=src,gen=funigui,csflags=CSFLAGS,use=[r+'.dll' for r in refs]+[funi_cs.abspath()])
+
+bld.add_group()
+
+bld(features='satellite_assembly',source='Resources/resources.fr.txt',gen=funigui)
