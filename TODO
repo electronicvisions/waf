@@ -9,20 +9,21 @@ Waf 1.9
 * Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
 * Provide a more efficient ConfigSet implementation
 * Ensure _cache.py are valid python files
-
-and all other issues listed on https://github.com/waf-project/waf/issues
+* Accessor for task.cwd
+* Other issues listed on https://github.com/waf-project/waf/issues
 
 Done
 ----
-* Remove the split functions from Utils
-* Remove the command called "update"
-* Include the tool 'nobuild' by default
-* Remove qt4 and kde4 from the default modules
-* Detect Clang first on many platforms, in particular on FreeBSD #1528
-* Let run_once accept a list of *args
-* Remove Node.cache_sig and Node.sig #1580
-* Remove __hash__ and __eq__ from Node and Task #1629
-* Set cflags in the beginning / cppflags at the end #1505
-* Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
-* Make lazy visual studio detection the default
+* Removed the split functions from Utils
+* Removed the command called "update"
+* Added the tool 'nobuild.py'
+* Removed qt4 and kde4 from the default modules
+* Made Clang detected first on many platforms, in particular on FreeBSD #1528
+* Modified Utils.run_once so that it accepts a list of *args
+* Removed Node.cache_sig and Node.sig #1580
+* Removed __hash__ and __eq__ from Node and Task #1629
+* Changed cflags in the beginning / cppflags at the end #1505
+* Reduced the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
+* Made lazy visual studio detection the default
+* Flags given in the form ${FOO}${BAR} will be merged in commands executed without a shell
 
