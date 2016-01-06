@@ -53,7 +53,7 @@ def get_ifort_version(conf, fc):
 def configure(conf):
 	conf.find_ifort()
 	conf.find_program('xiar', var='AR')
-	conf.env.ARFLAGS = 'rcs'
+	conf.find_ar()
 	conf.fc_flags()
 	conf.fc_add_flags()
 	conf.ifort_modifier_platform()
