@@ -165,8 +165,7 @@ Operator precendence rules required for parsing expressions of the form::
 	#if 1 && 2 != 0
 """
 ops = ['* / %', '+ -', '<< >>', '< <= >= >', '== !=', '& | ^', '&& ||', ',']
-for x in range(len(ops)):
-	syms = ops[x]
+for x, syms in enumerate(ops):
 	for u in syms.split():
 		prec[u] = x
 
@@ -447,8 +446,8 @@ def reduce_tokens(lst, defs, ban=[]):
 				del lst[i]
 				accu = to_add[:]
 				reduce_tokens(accu, defs, ban+[v])
-				for x in range(len(accu)):
-					lst.insert(i, accu[x])
+				for tmp in accu:
+					lst.insert(i, tmp)
 					i += 1
 			else:
 				# collect the arguments for the funcall

@@ -1008,11 +1008,10 @@ def compile_fun_noshell(line):
 	buf = []
 	dvars = []
 	app = buf.append
-	for x in range(len(extr)):
+	for x, (var, meth) in enumerate(extr):
 		params[x] = params[x].strip()
 		if params[x]:
 			app("lst.extend(%r)" % params[x].split())
-		(var, meth) = extr[x]
 		if var == 'SRC':
 			if meth: app('lst.append(tsk.inputs%s)' % meth)
 			else: app("lst.extend([a.path_from(cwdx) for a in tsk.inputs])")

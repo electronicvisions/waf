@@ -622,8 +622,8 @@ class BuildContext(Context.Context):
 		:type tg: :py:class:`waflib.TaskGen.task_gen`
 		"""
 		se = id(tg)
-		for i in range(len(self.groups)):
-			for t in self.groups[i]:
+		for i, tmp in enumerate(self.groups):
+			for t in tmp:
 				if id(t) == se:
 					return i
 		return None
@@ -663,8 +663,8 @@ class BuildContext(Context.Context):
 		"""
 		if isinstance(idx, str):
 			g = self.group_names[idx]
-			for i in range(len(self.groups)):
-				if id(g) == id(self.groups[i]):
+			for i, tmp in enumerate(self.groups):
+				if id(g) == id(tmp):
 					self.current_group = i
 					break
 		else:
