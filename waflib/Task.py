@@ -60,8 +60,13 @@ def f(tsk):
 		if isinstance(xx, str): return [xx]
 		return xx
 	tsk.last_cmd = lst = []
+	def merge(lst1, lst2):
+		if lst1 and lst2:
+			return lst1[:-1] + [lst1[-1] + lst2[0]] + lst2[1:]
+		return lst1 + lst2
 	%s
-	lst = [x for x in lst if x]
+	if '' in lst:
+		lst = [x for x in lst if x]
 	return tsk.exec_command(lst, cwd=cwdx, env=env.env or None)
 '''
 
@@ -937,6 +942,7 @@ def funex(c):
 	exec(c, dc)
 	return dc['f']
 
+re_novar = re.compile(r"^(SRC|TGT)\W+.*?$")
 reg_act = re.compile(r"(?P<backslash>\\)|(?P<dollar>\$\$)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})", re.M)
 def compile_fun_shell(line):
 	"""
@@ -971,6 +977,10 @@ def compile_fun_shell(line):
 					m = '[a.path_from(cwdx) for a in tsk.inputs]'
 				elif m == 'TGT':
 					m = '[a.path_from(cwdx) for a in tsk.outputs]'
+				elif re_novar.match(m):
+					m = '[tsk.inputs%s]' % m[3:]
+				elif re_novar.match(m):
+					m = '[tsk.outputs%s]' % m[3:]
 				elif m[:3] not in ('tsk', 'gen', 'bld'):
 					dvars.extend([var, meth[1:]])
 					m = '%r' % m
@@ -988,56 +998,68 @@ def compile_fun_shell(line):
 	Logs.debug('action: %s' % c.strip().splitlines())
 	return (funex(c), dvars)
 
+reg_act_noshell = re.compile(r"(?P<space>\s+)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})|(?P<text>\S+)", re.M)
 def compile_fun_noshell(line):
 	"""
 	Create a compiled function to execute a process without the shell
 	WARNING: this method may disappear anytime, so use compile_fun instead
 	"""
-	extr = []
-	def repl(match):
-		g = match.group
-		if g('dollar'): return "$"
-		elif g('backslash'): return '\\'
-		elif g('subst'): extr.append((g('var'), g('code'))); return "<<|@|>>"
-		return None
-
-	line2 = reg_act.sub(repl, line)
-	params = line2.split('<<|@|>>')
-	assert(extr)
-
 	buf = []
 	dvars = []
+	merge = False
 	app = buf.append
-	for x, (var, meth) in enumerate(extr):
-		params[x] = params[x].strip()
-		if params[x]:
-			app("lst.extend(%r)" % params[x].split())
-		if var == 'SRC':
-			if meth: app('lst.append(tsk.inputs%s)' % meth)
-			else: app("lst.extend([a.path_from(cwdx) for a in tsk.inputs])")
-		elif var == 'TGT':
-			if meth: app('lst.append(tsk.outputs%s)' % meth)
-			else: app("lst.extend([a.path_from(cwdx) for a in tsk.outputs])")
-		elif meth:
-			if meth.startswith(':'):
-				m = meth[1:]
-				if m == 'SRC':
-					m = '[a.path_from(cwdx) for a in tsk.inputs]'
-				elif m == 'TGT':
-					m = '[a.path_from(cwdx) for a in tsk.outputs]'
-				elif m[:3] not in ('tsk', 'gen', 'bld'):
-					dvars.extend([var, m])
-					m = '%r' % m
-				app('lst.extend(tsk.colon(%r, %s))' % (var, m))
+	for m in reg_act_noshell.finditer(line):
+		if m.group('space'):
+			merge = False
+			continue
+		elif m.group('text'):
+			app('[%r]' % m.group('text'))
+		elif m.group('subst'):
+			var = m.group('var')
+			code = m.group('code')
+			if var == 'SRC':
+				if code:
+					app('[tsk.inputs%s]' % code)
+				else:
+					app("[a.path_from(cwdx) for a in tsk.inputs]")
+			elif var == 'TGT':
+				if code:
+					app('[tsk.outputs%s]' % code)
+				else:
+					app("[a.path_from(cwdx) for a in tsk.outputs]")
+			elif code:
+				if code.startswith(':'):
+					# a composed variable ${FOO:OUT}
+					if not var in dvars:
+						dvars.append(var)
+					m = code[1:]
+					if m == 'SRC':
+						m = '[a.path_from(cwdx) for a in tsk.inputs]'
+					elif m == 'TGT':
+						m = '[a.path_from(cwdx) for a in tsk.outputs]'
+					elif re_novar.match(m):
+						m = '[tsk.inputs%s]' % m[3:]
+					elif re_novar.match(m):
+						m = '[tsk.outputs%s]' % m[3:]
+					elif m[:3] not in ('tsk', 'gen', 'bld'):
+						dvars.append(m)
+						m = '%r' % m
+					app('tsk.colon(%r, %s)' % (var, m))
+				else:
+					# plain code such as ${tsk.inputs[0].abspath()}
+					app('gen.to_list(%s%s)' % (var, code))
 			else:
-				app('lst.extend(gen.to_list(%s%s))' % (var, meth))
-		else:
-			app('lst.extend(to_list(env[%r]))' % var)
-			if not var in dvars: dvars.append(var)
+				# a plain variable such as # a plain variable like ${AR}
+				app('to_list(env[%r])' % var)
+				if not var in dvars:
+					dvars.append(var)
+		if merge:
+			tmp = 'merge(%s, %s)' % (buf[-2], buf[-1])
+			del buf[-1]
+			buf[-1] = tmp
+		merge = True # next turn
 
-	if extr:
-		if params[-1]:
-			app("lst.extend(%r)" % params[-1].split())
+	buf = ['lst.extend(%s)' % x for x in buf]
 	fun = COMPILE_TEMPLATE_NOSHELL % "\n\t".join(buf)
 	Logs.debug('action: %s' % fun.strip().splitlines())
 	return (funex(fun), dvars)

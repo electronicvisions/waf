@@ -66,7 +66,14 @@ def build(bld):
 
 	bld.env.FOO =['m', 'ncurses']
 	bld.env.ST = '-L%s'
-	bld(rule='echo ${ST:FOO} ${ST:SRC}', always=True, source='wscript', shell=1)
+	bld.env.A = 'aye'
+	bld.env.B = 'doh'
+	bld.env.SRCA = ['aaa']
+	bld(rule='echo ${ST:FOO} ${ST:SRC} ${A}${B} ${ST:SRCA} ${ST:SRC[0].abspath()}',
+		always=True, source='wscript', shell=1, name='Shell')
+	if not Utils.is_win32:
+		bld(rule='echo ${ST:FOO} ${ST:SRC} ${A}${B} ${ST:SRCA} ${ST:SRC[0].abspath()}',
+		always=True, source='wscript', shell=0, cls_keyword=lambda x:'Trying again', name='NoShell')
 
 	# illustrate how to add a command 'foo' and to execute things in it
 	if bld.cmd == 'foo':

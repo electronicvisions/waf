@@ -21,7 +21,6 @@ def find_scc(conf):
 	v.CC_NAME = 'sun'
 	conf.get_suncc_version(cc)
 
-
 @conf
 def scc_common_flags(conf):
 	"""
@@ -30,12 +29,12 @@ def scc_common_flags(conf):
 	v = conf.env
 
 	v['CC_SRC_F']            = []
-	v['CC_TGT_F']            = ['-c', '-o']
+	v['CC_TGT_F']            = ['-c', '-o', '']
 
 	# linker
 	if not v['LINK_CC']: v['LINK_CC'] = v['CC']
 	v['CCLNK_SRC_F']         = ''
-	v['CCLNK_TGT_F']         = ['-o']
+	v['CCLNK_TGT_F']         = ['-o', '']
 	v['CPPPATH_ST']          = '-I%s'
 	v['DEFINES_ST']          = '-D%s'
 
