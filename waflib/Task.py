@@ -972,6 +972,8 @@ def compile_fun_shell(line):
 			else: app('" ".join([a.path_from(cwdx) for a in tsk.outputs])')
 		elif meth:
 			if meth.startswith(':'):
+				if var not in dvars:
+					dvars.append(var)
 				m = meth[1:]
 				if m == 'SRC':
 					m = '[a.path_from(cwdx) for a in tsk.inputs]'
@@ -982,19 +984,19 @@ def compile_fun_shell(line):
 				elif re_novar.match(m):
 					m = '[tsk.outputs%s]' % m[3:]
 				elif m[:3] not in ('tsk', 'gen', 'bld'):
-					dvars.extend([var, meth[1:]])
+					dvars.append(meth[1:])
 					m = '%r' % m
 				app('" ".join(tsk.colon(%r, %s))' % (var, m))
 			else:
 				app('%s%s' % (var, meth))
 		else:
-			if not var in dvars: dvars.append(var)
+			if var not in dvars:
+				dvars.append(var)
 			app("p('%s')" % var)
 	if parm: parm = "%% (%s) " % (',\n\t\t'.join(parm))
 	else: parm = ''
 
 	c = COMPILE_TEMPLATE_SHELL % (line, parm)
-
 	Logs.debug('action: %s' % c.strip().splitlines())
 	return (funex(c), dvars)
 
