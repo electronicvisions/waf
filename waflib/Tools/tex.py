@@ -113,14 +113,8 @@ class tex(Task.Task):
 		:return: the return code
 		:rtype: int
 		"""
-		bld = self.generator.bld
-		Logs.info('runner: %r' % cmd)
-		try:
-			if not kw.get('cwd', None):
-				kw['cwd'] = bld.cwd.abspath()
-		except AttributeError:
-			kw['cwd'] = bld.bldnode.abspath()
-		return Utils.subprocess.Popen(cmd, **kw).wait()
+		kw['stdout'] = kw['stderr'] = None
+		return super(tex, self).exec_command(cmd, **kw)
 
 	def scan_aux(self, node):
 		"""

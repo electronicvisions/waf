@@ -1099,13 +1099,9 @@ def exec_command_msvc(self, *k, **kw):
 		env.update(PATH = ';'.join(self.env['PATH']))
 		kw['env'] = env
 
-	bld = self.generator.bld
-	try:
-		if not kw.get('cwd', None):
-			kw['cwd'] = bld.cwd
-	except AttributeError:
-		kw['cwd'] = bld.bldnode
 
+	if not 'cwd' in kw:
+		kw['cwd'] = self.get_cwd()
 	ret = self.exec_response_command(k[0], **kw)
 	if not ret and getattr(self, 'do_manifest', None):
 		ret = self.exec_mf()

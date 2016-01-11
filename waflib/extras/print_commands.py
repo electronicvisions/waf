@@ -45,6 +45,10 @@ def exec_command(self, cmd, **kw):
 			kw['stdin'] = Utils.subprocess.PIPE
 		del kw['input']
 
+	if 'cwd' in kw:
+		if not isinstance(kw['cwd'], str):
+			kw['cwd'] = kw['cwd'].abspath()
+
 	try:
 		if kw['stdout'] or kw['stderr']:
 			p = subprocess.Popen(cmd, **kw)

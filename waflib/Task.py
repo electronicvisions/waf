@@ -44,7 +44,7 @@ def f(tsk):
 	env = tsk.env
 	gen = tsk.generator
 	bld = gen.bld
-	cwdx = getattr(tsk, 'cwd', None) or getattr(bld, 'cwd', bld.bldnode)
+	cwdx = tsk.get_cwd()
 	p = env.get_flat
 	tsk.last_cmd = cmd = \'\'\' %s \'\'\' % s
 	return tsk.exec_command(cmd, cwd=cwdx, env=env.env or None)
@@ -55,7 +55,7 @@ def f(tsk):
 	env = tsk.env
 	gen = tsk.generator
 	bld = gen.bld
-	cwdx = getattr(tsk, 'cwd', None) or getattr(bld, 'cwd', bld.bldnode)
+	cwdx = tsk.get_cwd()
 	def to_list(xx):
 		if isinstance(xx, str): return [xx]
 		return xx
@@ -168,6 +168,13 @@ class TaskBase(evil):
 			return 'Function'
 		return 'Processing'
 
+	def get_cwd(self):
+		bld = self.generator.bld
+		ret = getattr(self, 'cwd', None) or getattr(self.generator.bld, 'cwd', bld.bldnode)
+		if isinstance(ret, str):
+			self.generator.bld.fatal('Working folders given to tasks must be Node objects')
+		return ret
+
 	def exec_command(self, cmd, **kw):
 		"""
 		Wrapper for :py:meth:`waflib.Context.Context.exec_command` which sets a current working directory to ``build.variant_dir``
@@ -175,10 +182,9 @@ class TaskBase(evil):
 		:return: the return code
 		:rtype: int
 		"""
-		bld = self.generator.bld
 		if not 'cwd' in kw:
-			kw['cwd'] = getattr(self, 'cwd', None) or getattr(bld, 'cwd', bld.bldnode)
-		return bld.exec_command(cmd, **kw)
+			kw['cwd'] = self.get_cwd()
+		return self.generator.bld.exec_command(cmd, **kw)
 
 	def runnable_status(self):
 		"""

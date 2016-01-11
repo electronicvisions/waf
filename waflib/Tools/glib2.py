@@ -54,10 +54,11 @@ def process_marshal(self):
 	self.source.append(c_node)
 
 class glib_genmarshal(Task.Task):
-
+	vars    = ['GLIB_GENMARSHAL_PREFIX', 'GLIB_GENMARSHAL']
+	color   = 'BLUE'
+	ext_out = ['.h']
 	def run(self):
-
-		bld = self.inputs[0].__class__.ctx
+		bld = self.generator.bld
 
 		get = self.env.get_flat
 		cmd1 = "%s %s --prefix=%s --header > %s" % (
@@ -81,10 +82,6 @@ class glib_genmarshal(Task.Task):
 			self.outputs[1].abspath()
 		)
 		return bld.exec_command(cmd2)
-
-	vars    = ['GLIB_GENMARSHAL_PREFIX', 'GLIB_GENMARSHAL']
-	color   = 'BLUE'
-	ext_out = ['.h']
 
 ########################## glib-mkenums
 
@@ -383,11 +380,7 @@ class glib_gresource_base(Task.Task):
 		"""
 		bld = self.generator.bld
 		kw = {}
-		try:
-			if not kw.get('cwd', None):
-				kw['cwd'] = bld.cwd
-		except AttributeError:
-			kw['cwd'] = bld.bldnode
+		kw['cwd'] = self.get_cwd()
 		kw['quiet'] = Context.BOTH
 
 		cmd = Utils.subst_vars('${GLIB_COMPILE_RESOURCES} --sourcedir=%s --sourcedir=%s --generate-dependencies %s' % (

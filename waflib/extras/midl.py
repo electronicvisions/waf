@@ -72,14 +72,5 @@ class midl(Task.Task):
 			env = self.env.env or dict(os.environ)
 			env.update(PATH = ';'.join(self.env['PATH']))
 			kw['env'] = env
-	
-		bld = self.generator.bld
-	
-		try:
-			if not kw.get('cwd', None):
-				kw['cwd'] = bld.cwd
-		except AttributeError:
-			bld.cwd = kw['cwd'] = bld.variant_dir
-	
-		return bld.exec_command(k[0], **kw)
+		return super(midl, self).exec_command(*k, **kw)
 

@@ -126,13 +126,8 @@ class mcs(Task.Task):
 	run_str = '${MCS} ${CSTYPE} ${CSFLAGS} ${ASS_ST:ASSEMBLIES} ${RES_ST:RESOURCES} ${OUT} ${SRC}'
 
 	def exec_command(self, cmd, **kw):
-		bld = self.generator.bld
-
-		try:
-			if not kw.get('cwd', None):
-				kw['cwd'] = bld.cwd
-		except AttributeError:
-			kw['cwd'] = bld.bldnode
+		if not 'cwd' in kw:
+			kw['cwd'] = self.get_cwd()
 
 		try:
 			tmp = None

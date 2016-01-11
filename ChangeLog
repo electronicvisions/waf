@@ -12,4 +12,4 @@ NEW IN WAF 1.9
 * Reduced the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
 * Made lazy visual studio detection the default
 * Flags given in the form ${FOO}${BAR} will be merged in commands executed without a shell
-
+* Added Task.get_cwd()

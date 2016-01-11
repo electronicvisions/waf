@@ -65,12 +65,9 @@ def get_strace_args(self):
 
 @task_method
 def exec_command(self, cmd, **kw):
-	bld = self.generator.bld
-	try:
-		if not kw.get('cwd', None):
-			kw['cwd'] = bld.cwd
-	except AttributeError:
-		kw['cwd'] = bld.bldnode
+	bld = self.generator.bldA
+	if not 'cwd' in kw:
+		kw['cwd'] = self.get_cwd()
 
 	args = self.get_strace_args()
 	fname = self.get_strace_file()
