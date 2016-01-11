@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2015
+# Thomas Nagy, 2005-2016
 
 """
 to make a custom waf file use the option --tools
@@ -10,7 +10,7 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 """
 
 
-VERSION="1.8.17"
+VERSION="1.9.0"
 APPNAME='waf'
 REVISION=''
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2010 (ita)
+# Thomas Nagy, 2010-2016 (ita)
 
 """
 Classes and functions required for waf commands
@@ -11,13 +11,13 @@ from waflib import Utils, Errors, Logs
 import waflib.Node
 
 # the following 3 constants are updated on each new release (do not touch)
-HEXVERSION=0x1081100
+HEXVERSION=0x1090000
 """Constant updated on new releases"""
 
-WAFVERSION="1.8.17"
+WAFVERSION="1.9.0"
 """Constant updated on new releases"""
 
-WAFREVISION="cd7579a727d1b390bf9cbf111c1b20e811370bc0"
+WAFREVISION="c016a5761ed37ababf6ded5dddff0f0a0c1c8da0"
 """Git revision when the waf version is updated"""
 
 ABI = 99
