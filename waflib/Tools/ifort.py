@@ -20,7 +20,23 @@ def ifort_modifier_cygwin(conf):
 
 @conf
 def ifort_modifier_win32(conf):
-	fc_config.fortran_modifier_win32(conf)
+	v = conf.env
+	v.FCSTLIB_MARKER = ''
+	v.FCSHLIB_MARKER = ''
+
+	v.FCLIB_ST = v.FCSTLIB_ST = '%s.lib'
+	v.FCLIBPATH_ST = v.STLIBPATH_ST = '/LIBPATH:%s'
+	v.FCINCPATH_ST = '/I%s'
+	v.FCDEFINES_ST = '/D%s'
+
+	v.fcprogram_PATTERN = v.fcprogram_test_PATTERN = '%s.exe'
+	v.fcshlib_PATTERN = '%s.dll'
+	v.fcstlib_PATTERN = v.implib_PATTERN = '%s.lib'
+
+	v.FCLNK_TGT_F = '/o'
+	v.FC_TGT_F = ['/c', '/o']
+	v.FCFLAGS_fcshlib = ''
+	v.AR_TGT_F = '/out:'
 
 @conf
 def ifort_modifier_darwin(conf):
