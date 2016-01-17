@@ -35,6 +35,10 @@ def ifort_modifier_win32(self):
 	v.FCFLAGS_fcshlib = ''
 	v.AR_TGT_F = '/out:'
 
+	v.append_value('LINKFLAGS', '/subsystem:console')
+	if v.IFORT_MANIFEST:
+		v.append_value('LINKFLAGS', ['/MANIFEST'])
+
 @conf
 def ifort_modifier_darwin(conf):
 	fc_config.fortran_modifier_darwin(conf)
@@ -373,7 +377,7 @@ def find_ifort_win32(conf):
 	version = v['MSVC_VERSION']
 
 	compiler_name, linker_name, lib_name = _get_prog_names(conf, compiler)
-	v.MSVC_MANIFEST = (compiler == 'intel' and version >= 11)
+	v.IFORT_MANIFEST = (compiler == 'intel' and version >= 11)
 
 	# compiler
 	fc = conf.find_program(compiler_name, var='FC', path_list=path)
@@ -394,7 +398,7 @@ def find_ifort_win32(conf):
 		v['ARFLAGS'] = ['/NOLOGO']
 
 	# manifest tool. Not required for VS 2003 and below. Must have for VS 2005 and later
-	if v.MSVC_MANIFEST:
+	if v.IFORT_MANIFEST:
 		conf.find_program('MT', path_list=path, var='MT')
 		v['MTFLAGS'] = ['/NOLOGO']
 
@@ -444,12 +448,10 @@ def apply_flags_ifort(self):
 @after_method('apply_link')
 def apply_manifest_ifort(self):
 	if self.env.IFORT_WIN32 and getattr(self, 'link_task', None):
-		# TODO: not sure this is really necessary, it seems ifort.exe can be called for linking
-		# if you remove the two lines, change v.FCLNK_TGT_F to /o...
+		# it seems ifort.exe cannot be called for linking
 		self.link_task.env.FC = self.env.LINK_FC
 
-	if self.env.IFORT_WIN32 and self.env.MSVC_MANIFEST and getattr(self, 'link_task', None):
-		# TODO: are manifest files possible to generate?
+	if self.env.IFORT_WIN32 and self.env.IFORT_MANIFEST and getattr(self, 'link_task', None):
 		out_node = self.link_task.outputs[0]
 		man_node = out_node.parent.find_or_declare(out_node.name + '.manifest')
 		self.link_task.outputs.append(man_node)
