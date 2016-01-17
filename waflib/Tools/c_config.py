@@ -635,13 +635,15 @@ def post_check(self, *k, **kw):
 
 	if 'define_name' in kw:
 		# TODO simplify!
+		comment = kw.get('comment', '')
+		define_name = kw['define_name']
 		if 'header_name' in kw or 'function_name' in kw or 'type_name' in kw or 'fragment' in kw:
 			if kw['execute'] and kw.get('define_ret', None) and isinstance(is_success, str):
-				self.define(kw['define_name'], is_success, quote=kw.get('quote', 1))
+				self.define(define_name, is_success, quote=kw.get('quote', 1), comment=comment)
 			else:
-				self.define_cond(kw['define_name'], is_success)
+				self.define_cond(define_name, is_success, comment=comment)
 		else:
-			self.define_cond(kw['define_name'], is_success)
+			self.define_cond(define_name, is_success, comment=comment)
 
 		# consistency with check_cfg
 		if kw.get('global_define', None):
@@ -823,7 +825,7 @@ def undefine(self, key, comment=''):
 	self.set_define_comment(key, comment)
 
 @conf
-def define_cond(self, key, val):
+def define_cond(self, key, val, comment=''):
 	"""
 	Conditionally define a name::
 
@@ -841,9 +843,9 @@ def define_cond(self, key, val):
 	assert key and isinstance(key, str)
 
 	if val:
-		self.define(key, 1)
+		self.define(key, 1, comment=comment)
 	else:
-		self.undefine(key)
+		self.undefine(key, comment=comment)
 
 @conf
 def is_defined(self, key):
