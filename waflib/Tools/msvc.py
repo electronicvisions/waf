@@ -808,7 +808,7 @@ def autodetect(conf, arch = False):
 	v['MSVC_COMPILER'] = compiler
 	try:
 		v['MSVC_VERSION'] = float(version)
-	except Exception:
+	except TypeError:
 		v['MSVC_VERSION'] = float(version[:-3])
 
 def _get_prog_names(conf, compiler):
@@ -853,9 +853,8 @@ def find_msvc(conf):
 
 	# linker
 	if not v['LINK_CXX']:
-		link = conf.find_program(linker_name, path_list=path)
-		if link: v['LINK_CXX'] = link
-		else: conf.fatal('%s was not found (linker)' % linker_name)
+		# TODO: var=LINK_CXX to let so that LINK_CXX can be overridden?
+		v.LINK_CXX = conf.find_program(linker_name, path_list=path, errmsg='%s was not found (linker)' % linker_name)
 
 	if not v['LINK_CC']:
 		v['LINK_CC'] = v['LINK_CXX']
@@ -880,10 +879,10 @@ def find_msvc(conf):
 def visual_studio_add_flags(self):
 	"""visual studio flags found in the system environment"""
 	v = self.env
-	try: v.prepend_value('INCLUDES', [x for x in self.environ['INCLUDE'].split(';') if x]) # notice the 'S'
-	except Exception: pass
-	try: v.prepend_value('LIBPATH', [x for x in self.environ['LIB'].split(';') if x])
-	except Exception: pass
+	if self.environ.get('INCLUDE', None):
+		v.prepend_value('INCLUDES', [x for x in self.environ['INCLUDE'].split(';') if x]) # notice the 'S'
+	if self.environ.get('LIB', None):
+		v.prepend_value('LIBPATH', [x for x in self.environ['LIB'].split(';') if x])
 
 @conf
 def msvc_common_flags(conf):
