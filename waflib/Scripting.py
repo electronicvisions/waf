@@ -82,7 +82,7 @@ def waf_entry_point(current_directory, version, wafdir):
 			try:
 				env.load(os.path.join(cur, Options.lockfile))
 				ino = os.stat(cur)[stat.ST_INO]
-			except Exception:
+			except EnvironmentError:
 				pass
 			else:
 				# check if the folder was not moved
