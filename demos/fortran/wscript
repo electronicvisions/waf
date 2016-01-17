@@ -12,13 +12,13 @@ def options(opt):
 	opt.recurse('typemap')
 
 def configure(conf):
-	conf.load('compiler_fc')
 	conf.load('compiler_c')
+	conf.load('compiler_fc')
+
 	if conf.env.FC_NAME == 'IFORT':
-		conf.env['FCFLAGS'] = ['-warn']
+		conf.env.append_unique('FCFLAGS', '-warn')
 	elif conf.env.FC_NAME == 'GFORTRAN':
-		conf.env['FCFLAGS'] = ['-Wall', '-W']
-	#conf.env['INCLUDES'] = ['hfloupi']
+		conf.env.append_unique('FCFLAGS', ['-Wall', '-W'])
 
 	conf.check_fortran()
 	conf.check_fortran_verbose_flag()
@@ -26,6 +26,7 @@ def configure(conf):
 	conf.check_fortran_dummy_main()
 	conf.check_fortran_mangling()
 	conf.recurse('typemap')
+
 
 def build(bld):
 
