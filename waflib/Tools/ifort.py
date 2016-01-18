@@ -388,6 +388,8 @@ def find_ifort_win32(conf):
 	if not conf.cmd_and_log(fc + ['/nologo', '/help'], env=env):
 		conf.fatal('not intel fortran compiler could not be identified')
 
+	v['FC_NAME'] = 'IFORT'
+
 	# linker
 	if not v['LINK_FC']:
 		conf.find_program(linker_name, var='LINK_FC', path_list=path, mandatory=True)
