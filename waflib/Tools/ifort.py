@@ -446,7 +446,7 @@ def apply_flags_ifort(self):
 
 # split the manifest file processing from the link task, like for the rc processing
 
-@feature('fcprogram', 'fcshlib')
+@feature('fcprogram', 'fcshlib', 'fcprogram_test')
 @after_method('apply_link')
 def apply_manifest_ifort(self):
 	if self.env.IFORT_WIN32 and getattr(self, 'link_task', None):
@@ -486,7 +486,7 @@ def exec_mf(self):
 	# embedding mode. Different for EXE's and DLL's.
 	# see: http://msdn2.microsoft.com/en-us/library/ms235591(VS.80).aspx
 	mode = ''
-	if 'fcprogram' in self.generator.features:
+	if 'fcprogram' in self.generator.features or 'fcprogram_test' in self.generator.features:
 		mode = '1'
 	elif 'fcshlib' in self.generator.features:
 		mode = '2'
@@ -522,7 +522,7 @@ def exec_response_command(self, cmd, **kw):
 			os.close(fd)
 			cmd = [program, '@' + tmp]
 		# no return here, that's on purpose
-		ret = self.generator.bld.exec_command(cmd, **kw)
+		ret = super(self.__class__, self).exec_command(cmd, **kw)
 	finally:
 		if tmp:
 			try:
@@ -593,6 +593,6 @@ def wrap_class(class_name):
 
 	return derived_class
 
-for k in 'fc fcprogram fcshlib fcstlib'.split():
+for k in 'fc fcprogram fcprogram_test fcshlib fcstlib'.split():
 	wrap_class(k)
 
