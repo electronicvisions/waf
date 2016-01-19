@@ -33,7 +33,9 @@ def ifort_modifier_win32(self):
 	v.FCLNK_TGT_F = '/out:'
 	v.FC_TGT_F = ['/c', '/o', '']
 	v.FCFLAGS_fcshlib = ''
+	v.LINKFLAGS_fcshlib = '/DLL'
 	v.AR_TGT_F = '/out:'
+	v.IMPLIB_ST = '/IMPLIB:%s'
 
 	v.append_value('LINKFLAGS', '/subsystem:console')
 	if v.IFORT_MANIFEST:

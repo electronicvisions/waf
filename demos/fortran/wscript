@@ -44,6 +44,7 @@ def build(bld):
 		features = 'fc fcshlib',
 		source   = 'foo.f',
 		target   = 'shlib1',
+		defs     = 'foo.def',
 		vnum     = '2.3.9')
 
 	bld(
