@@ -159,7 +159,7 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 		elif st == '-l':
 			if not ot: ot = lst.pop(0)
 			prefix = (force_static or static) and 'STLIB_' or 'LIB_'
-			appu(prefix + uselib, [ot])
+			app(prefix + uselib, [ot])
 		elif st == '-L':
 			if not ot: ot = lst.pop(0)
 			prefix = (force_static or static) and 'STLIBPATH_' or 'LIBPATH_'
