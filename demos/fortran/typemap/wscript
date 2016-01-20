@@ -11,9 +11,12 @@ def configure(conf):
 	conf.load('compiler_c')
 	conf.load('compiler_fc')
 	conf.check_fortran()
+	# configuration tests taht may be totally irrelevant
 	if not conf.env.IFORT_WIN32:
 		conf.check_fortran_verbose_flag()
 		conf.check_fortran_clib()
+		conf.check_fortran_mangling()
+	conf.check_fortran_dummy_main()
 
 def build(bld):
 
@@ -30,9 +33,9 @@ from waflib import Logs, Build, Utils
 from waflib import TaskGen, Task
 from waflib.ConfigSet import ConfigSet
 
-#@TaskGen.feature('typemap') <- python >= 2.4
-#@TaskGen.after('process_source')
-#@TaskGen.before('apply_link')
+@TaskGen.feature('typemap')
+@TaskGen.after('process_source')
+@TaskGen.before('apply_link')
 def process_typemaps(self):
 	"""
 	modmap: *.f90 + foo.in -> foo.h + foo.f90
@@ -55,11 +58,6 @@ def process_typemaps(self):
 
 	tsk = self.create_compiled_task('fc', f90out)
 	tsk.nomod = True # the fortran files won't compile unless all the .mod files are set, ick
-
-# for python 2.3
-TaskGen.feature('typemap')(process_typemaps)
-TaskGen.after('process_source')(process_typemaps)
-TaskGen.before('apply_link')(process_typemaps)
 
 class modmap(Task.Task):
 	"""
