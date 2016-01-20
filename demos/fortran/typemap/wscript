@@ -19,6 +19,7 @@ def build(bld):
 	bld(
 		features = 'fc typemap fcshlib',
 		source = 'fsrc.f90 basetypes.f90',
+		defs   = 'fsrc.def',
 		target = 'foo',
 		)
 
