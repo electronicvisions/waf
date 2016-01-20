@@ -21,10 +21,11 @@ def configure(conf):
 		conf.env.append_unique('FCFLAGS', ['-Wall', '-W'])
 
 	conf.check_fortran()
-	conf.check_fortran_verbose_flag()
-	conf.check_fortran_clib()
+	if not conf.env.IFORT_WIN32:
+		conf.check_fortran_verbose_flag()
+		conf.check_fortran_clib()
+		conf.check_fortran_mangling()
 	conf.check_fortran_dummy_main()
-	conf.check_fortran_mangling()
 	conf.recurse('typemap')
 
 

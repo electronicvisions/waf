@@ -11,8 +11,9 @@ def configure(conf):
 	conf.load('compiler_c')
 	conf.load('compiler_fc')
 	conf.check_fortran()
-	conf.check_fortran_verbose_flag()
-	conf.check_fortran_clib()
+	if not conf.env.IFORT_WIN32:
+		conf.check_fortran_verbose_flag()
+		conf.check_fortran_clib()
 
 def build(bld):
 
