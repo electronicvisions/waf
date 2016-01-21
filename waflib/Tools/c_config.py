@@ -100,6 +100,7 @@ MACRO_TO_DEST_CPU = {
 '__s390x__'   : 's390x',
 '__s390__'    : 's390',
 '__sh__'      : 'sh',
+'__xtensa__'  : 'xtensa',
 }
 
 @conf
