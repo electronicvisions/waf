@@ -11,12 +11,12 @@ def configure(conf):
 	conf.load('compiler_c')
 	conf.load('compiler_fc')
 	conf.check_fortran()
-	# configuration tests taht may be totally irrelevant
+	# configuration tests that may be totally irrelevant
+	conf.check_fortran_dummy_main()
 	if not conf.env.IFORT_WIN32:
 		conf.check_fortran_verbose_flag()
 		conf.check_fortran_clib()
 		conf.check_fortran_mangling()
-	conf.check_fortran_dummy_main()
 
 def build(bld):
 
@@ -166,25 +166,26 @@ end subroutine outer
 	return res
 
 def write_type_map(bld, ctps, fort_file, c_header):
-	fort_file.write('''\
+	buf = ['''\
 module type_maps
 use, intrinsic :: iso_c_binding
 implicit none
-''', flags='w')
+''']
 	for ctp in ctps:
-		fort_file.write('integer, parameter :: %s = %s\n' % (ctp.name, ctp.fc_type),
-				flags='a')
-	fort_file.write('end module type_maps\n', flags='a')
+		buf.append('integer, parameter :: %s = %s' % (ctp.name, ctp.fc_type))
+	buf.append('end module type_maps\n')
+	fort_file.write('\n'.join(buf))
 
 	cap_name = '%s__' % c_header.name.upper().replace('.', '_')
-	c_header.write('''\
+	buf = ['''\
 #ifndef %s
 #define %s
-''' % (cap_name, cap_name), flags='w')
+''' % (cap_name, cap_name)]
 	for ctp in ctps:
 		# This is just an example, so this would be customized. The 'long long'
 		# would correspond to the actual C type...
-		c_header.write('typedef long long %s\n' % ctp.name, flags='a')
-	c_header.write('#endif\n', flags='a')
+		buf.append('typedef long long %s\n' % ctp.name)
+	buf.append('#endif\n')
+	c_header.write('\n'.join(buf))
 
 # vim:ft=python:noet
