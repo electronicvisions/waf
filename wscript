@@ -118,6 +118,7 @@ def options(opt):
 	opt.add_option('--coretools', action='store', help='Comma-separated core tools to add, eg: "vala,tex" [Default: all of them]',
 		dest='coretools', default='default')
 	opt.add_option('--prelude', action='store', help='Code to execute before calling waf', dest='prelude', default=PRELUDE)
+	opt.add_option('--namesfrom', action='store', help='Obtain the file names from a model archive', dest='namesfrom', default=None)
 	opt.load('python')
 
 def process_tokens(tokens):
@@ -266,6 +267,15 @@ def create_waf(self, *k, **kw):
 			if k.endswith('.py'):
 				files.append(os.path.normpath(os.path.join(dd, k)))
 
+	if Options.options.namesfrom:
+		with tarfile.open(Options.options.namesfrom) as tar:
+			oldfiles = files
+			files = [x.name for x in tar.getmembers()]
+			if set(files) ^ set(oldfiles):
+				Logs.warn('The archive model has differences:')
+				Logs.warn('- Added %r' % list(set(files) - set(oldfiles)))
+				Logs.warn('- Removed %r' % list(set(oldfiles) - set(files)))
+
 	#open a file as tar.[extension] for writing
 	tar = tarfile.open('%s.tar.%s' % (mw, zipType), "w:%s" % zipType)
 	z = zipfile.ZipFile("zip/waflib.zip", "w", compression=zipfile.ZIP_DEFLATED)
@@ -284,7 +294,6 @@ def create_waf(self, *k, **kw):
 			tarinfo.name = 'waflib/extras/' + os.path.split(x)[1]
 
 		print("   adding %s as %s" % (x, tarinfo.name))
-
 		def dest(x):
 			if os.path.isabs(x):
 				return os.path.join("extras", os.path.basename(x))
