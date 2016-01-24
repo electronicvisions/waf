@@ -26,7 +26,7 @@ import tokenize
 
 import os, sys, re, io, optparse
 
-from waflib import Utils, Options, Logs
+from waflib import Utils, Options, Logs, Scripting
 from hashlib import md5
 
 from waflib import Configure
@@ -404,18 +404,14 @@ def create_waf(self, *k, **kw):
 		os.chmod('waf', Utils.O755)
 	os.remove('%s.tar.%s' % (mw, zipType))
 
-def make_copy(inf, outf):
-	(a, b, cnt) = sfilter(inf)
-	f = open(outf, "wb")
-	try:
-		f.write(cnt)
-	finally:
-		f.close()
-
 def configure(conf):
 	conf.load('python')
 
 def build(bld):
 	waf = bld.path.make_node('waf') # create the node right here
 	bld(name='create_waf', rule=create_waf, target=waf, always=True, color='PINK', update_outputs=True)
+
+class Dist(Scripting.Dist):
+	def get_excl(self):
+		return super(self.__class__, self).get_excl() + ' **/waflib.zip'
 
