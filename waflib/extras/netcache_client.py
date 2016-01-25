@@ -321,6 +321,8 @@ def make_cached(cls):
 
 	m1 = cls.run
 	def run(self):
+		if getattr(self, 'nocache', False):
+			return m1(self)
 		if self.can_retrieve_cache():
 			return 0
 		return m1(self)
@@ -328,6 +330,8 @@ def make_cached(cls):
 
 	m2 = cls.post_run
 	def post_run(self):
+		if getattr(self, 'nocache', False):
+			return m2(self)
 		bld = self.generator.bld
 		ret = m2(self)
 		if bld.cache_global:
