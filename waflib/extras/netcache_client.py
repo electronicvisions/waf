@@ -332,6 +332,9 @@ def make_cached(cls):
 		ret = m2(self)
 		if bld.cache_global:
 			self.put_files_cache()
+		if hasattr(self, 'chmod'):
+			for node in self.outputs:
+				os.chmod(node.abspath(), self.chmod)
 		return ret
 	cls.post_run = post_run
 
