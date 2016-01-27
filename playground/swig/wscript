@@ -81,7 +81,7 @@ def build(bld):
 	bld.add_group()
 	python_site_package = '${PREFIX}/lib/python%s/site-packages' % bld.env.PYTHON_VERSION
 	generated_py = bld.path.find_or_declare('extend/python/test_swig_waf.py')
-	bld(feature='py', source=generated_py, install_path=python_site_package, install_from=bld.path.get_bld())
+	bld(features='py', source=generated_py, install_path=python_site_package, install_from=bld.path.get_bld())
 
 
 	bld.add_post_fun(exec_test_python)
