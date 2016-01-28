@@ -642,6 +642,7 @@ class Task(TaskBase):
 				raise Errors.WafError(self.err_msg)
 			bld.node_sigs[node] = self.uid() # make sure this task produced the files in question
 		bld.task_sigs[self.uid()] = self.signature()
+		# TODO: to save some memory, unbind last_cmd here
 
 	def sig_explicit_deps(self):
 		"""
@@ -655,10 +656,7 @@ class Task(TaskBase):
 
 		# the inputs
 		for x in self.inputs + self.dep_nodes:
-			try:
-				upd(x.get_bld_sig())
-			except TypeError:
-				raise Errors.WafError('Missing node signature for %r (required by %r)' % (x, self))
+			upd(x.get_bld_sig())
 
 		# manual dependencies, they can slow down the builds
 		if bld.deps_man:
@@ -672,8 +670,6 @@ class Task(TaskBase):
 				for v in d:
 					if isinstance(v, bld.root.__class__):
 						v = v.get_bld_sig()
-						if not v:
-							raise Errors.WafError('Missing node signature for %r (required by %r)' % (v, self))
 					elif hasattr(v, '__call__'):
 						v = v() # dependency is a function, call it
 					upd(v)
@@ -778,8 +774,10 @@ class Task(TaskBase):
 		except Exception:
 			if Logs.verbose:
 				for k in bld.node_deps.get(self.uid(), []):
-					if not k.get_bld_sig():
-						Logs.warn('Missing signature for node %r (may cause rebuilds)' % k)
+					try:
+						k.get_bld_sig()
+					except EnvironmentError:
+						Logs.warn('Node %r does not exist (may cause rebuilds)' % k)
 		else:
 			return sig
 
