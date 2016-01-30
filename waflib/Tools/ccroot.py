@@ -535,9 +535,9 @@ def apply_vnum(self):
 
 	# the following task is just to enable execution from the build dir :-/
 	if self.env.DEST_OS != 'openbsd':
-		outs = [node.parent.find_or_declare(name3)]
+		outs = [node.parent.make_node(name3)]
 		if name2 != name3:
-			outs.append(node.parent.find_or_declare(name2))
+			outs.append(node.parent.make_node(name2))
 		self.create_task('vnum', node, outs)
 
 	if getattr(self, 'install_task', None):
