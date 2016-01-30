@@ -284,6 +284,10 @@ else:
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
 			raise Errors.WafError("Program %s not found!" % cmd[0])
 
+		if 'cwd' in kw:
+			if not isinstance(kw['cwd'], str):
+				kw['cwd'] = kw['cwd'].abspath()
+
 		idx = threading.current_thread().idx
 		kw['cmd'] = cmd
 
