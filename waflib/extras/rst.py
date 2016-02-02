@@ -56,12 +56,12 @@ def parse_rst_node(task, node, nodes, names, seen, dirs=None):
 			found = d.find_node(ipath)
 			if found:
 				Logs.debug("rst: found %s as %s" % (ipath, found.abspath()))
-				nodes.append(found)
+				nodes.append((itype, found))
 				if itype == 'include':
 					parse_rst_node(task, found, nodes, names, seen)
 				break
 		if not found:
-			names.append(ipath)
+			names.append((itype, ipath))
 
 class docutils(Task.Task):
 	"""
@@ -88,7 +88,7 @@ class docutils(Task.Task):
 		if names:
 			Logs.warn("rst: %s: could not find the following file deps: %s" % (repr(self), names))
 
-		return (nodes, names)
+		return ([v for (t,v) in nodes], [v for (t,v) in names])
 
 	def check_status(self, msg, retcode):
 		"""
