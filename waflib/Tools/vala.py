@@ -103,7 +103,7 @@ def init_vala_task(self):
 	if self.vala_target_glib:
 		addflags('--target-glib=%s' % self.vala_target_glib)
 
-	addflags(['--define=%s' % x for x in getattr(self, 'vala_defines', [])])
+	addflags(['--define=%s' % x for x in Utils.to_list(getattr(self, 'vala_defines', []))])
 
 	packages_private = Utils.to_list(getattr(self, 'packages_private', []))
 	addflags(['--pkg=%s' % x for x in packages_private])
