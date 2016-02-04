@@ -1152,7 +1152,8 @@ def get_suncc_version(conf, cc):
 
 	# cc: Sun C 5.10 SunOS_i386 2009/06/03
 	# cc: Studio 12.5 Sun C++ 5.14 SunOS_sparc Beta 2015/11/17
-	version_re = re.compile(r'cc: (studio.*?|\s+)?sun\s+(c\+\+|c)\s+(?P<major>\d*)\.(?P<minor>\d*)', re.I).search
+	# cc: WorkShop Compilers 5.0 98/12/15 C 5.0
+	version_re = re.compile(r'cc: (studio.*?|\s+)?(sun\s+(c\+\+|c)|(WorkShop\s+Compilers))?\s+(?P<major>\d*)\.(?P<minor>\d*)', re.I).search
 	match = version_re(version)
 	if match:
 		k = match.groupdict()
