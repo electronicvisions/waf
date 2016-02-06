@@ -352,7 +352,7 @@ class Context(ctx):
 		if 'input' in kw:
 			if kw['input']:
 				wargs['input'] = kw['input']
-				kw['stdin'] = Utils.subprocess.PIPE
+				kw['stdin'] = subprocess.PIPE
 			del kw['input']
 
 		if 'cwd' in kw:
@@ -436,7 +436,7 @@ class Context(ctx):
 		if 'input' in kw:
 			if kw['input']:
 				wargs['input'] = kw['input']
-				kw['stdin'] = Utils.subprocess.PIPE
+				kw['stdin'] = subprocess.PIPE
 			del kw['input']
 
 		if 'cwd' in kw:
