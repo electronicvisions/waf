@@ -223,10 +223,8 @@ class BuildContext(Context.Context):
 			self.all_envs[name] = env
 			for f in env[CFG_FILES]:
 				newnode = self.root.find_resource(f)
-				try:
-					Utils.h_file(newnode.abspath())
-				except (IOError, OSError, AttributeError):
-					raise ValueError('Missing configuration file %r, reconfigure the project' % f)
+				if not newnode or not newnode.exists():
+					raise Errors.WafError('Missing configuration file %r, reconfigure the project!' % f)
 
 	def init_dirs(self):
 		"""
