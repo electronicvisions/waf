@@ -774,9 +774,7 @@ class Task(TaskBase):
 		except Exception:
 			if Logs.verbose:
 				for k in bld.node_deps.get(self.uid(), []):
-					try:
-						k.get_bld_sig()
-					except EnvironmentError:
+					if not k.exists():
 						Logs.warn('Node %r does not exist (may cause rebuilds)' % k)
 		else:
 			return sig
