@@ -663,7 +663,7 @@ class Task(TaskBase):
 			additional_deps = bld.deps_man
 			for x in self.inputs + self.outputs:
 				try:
-					d = additional_deps[id(x)]
+					d = additional_deps[x]
 				except KeyError:
 					continue
 

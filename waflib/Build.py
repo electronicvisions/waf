@@ -428,9 +428,9 @@ class BuildContext(Context.Context):
 			node = self.path.find_resource(path)
 
 		if isinstance(value, list):
-			self.deps_man[id(node)].extend(value)
+			self.deps_man[node].extend(value)
 		else:
-			self.deps_man[id(node)].append(value)
+			self.deps_man[node].append(value)
 
 	def launch_node(self):
 		"""Returns the launch directory as a :py:class:`waflib.Node.Node` object"""
