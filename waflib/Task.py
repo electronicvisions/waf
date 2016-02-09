@@ -745,14 +745,11 @@ class Task(TaskBase):
 				# this will break the order calculation for headers created during the build in the source directory (should be uncommon)
 				# the behaviour will differ when top != out
 				for x in bld.node_deps.get(self.uid(), []):
-					if not x.is_bld():
+					if not x.is_bld() and not x.exists():
 						try:
-							os.stat(x.abspath())
-						except OSError:
-							try:
-								del x.parent.children[x.name]
-							except KeyError:
-								pass
+							del x.parent.children[x.name]
+						except KeyError:
+							pass
 			del bld.imp_sigs[key]
 			raise Errors.TaskRescan('rescan')
 
