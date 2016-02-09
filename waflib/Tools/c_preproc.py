@@ -929,6 +929,10 @@ class c_parser(object):
 			self.parse_cache = bld.parse_cache
 		except AttributeError:
 			self.parse_cache = bld.parse_cache = {}
+		else:
+			# TODO a LRU cache would be appropriate here
+			if len(self.parse_cache) > 500:
+				self.parse_cache.clear()
 
 		self.current_file = node
 		self.addlines(node)
