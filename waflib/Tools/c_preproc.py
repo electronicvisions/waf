@@ -30,6 +30,14 @@ import re, string, traceback
 from waflib import Logs, Utils, Errors
 from waflib.Logs import debug, error
 
+try:
+	from functools import lru_cache
+except ImportError:
+	def lru_cache(*k, **kw):
+		def f(fun):
+			return fun
+		return f
+
 class PreprocError(Errors.WafError):
 	pass
 
@@ -762,6 +770,13 @@ def tokenize_private(s):
 				break
 	return ret
 
+@lru_cache(maxsize=1000)
+def parse_lines(filepath):
+	lines = filter_comments(filepath)
+	lines.append((POPFILE, ''))
+	lines.reverse()
+	return lines
+
 @Utils.run_once
 def define_name(line):
 	"""
@@ -882,34 +897,24 @@ class c_parser(object):
 		"""
 
 		self.currentnode_stack.append(node.parent)
-		filepath = node.abspath()
 
 		self.count_files += 1
 		if self.count_files > recursion_limit:
 			# issue #812
 			raise PreprocError("recursion limit exceeded")
-		pc = self.parse_cache
+
+		filepath = node.abspath()
 		debug('preproc: reading file %r', filepath)
 		try:
-			lns = pc[filepath]
-		except KeyError:
-			pass
-		else:
-			self.lines.extend(lns)
-			return
-
-		try:
-			lines = filter_comments(filepath)
-			lines.append((POPFILE, ''))
-			lines.reverse()
-			pc[filepath] = lines # cache the lines filtered
-			self.lines.extend(lines)
-		except IOError:
+			lines = parse_lines(filepath)
+		except EnvironmentError:
 			raise PreprocError("could not read the file %s" % filepath)
 		except Exception:
 			if Logs.verbose > 0:
 				error("parsing %s failed" % filepath)
 				traceback.print_exc()
+		else:
+			self.lines.extend(lines)
 
 	def start(self, node, env):
 		"""
