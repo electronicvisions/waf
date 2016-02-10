@@ -10,7 +10,15 @@ through Python versions 2.3 to 3.X and across different platforms (win32, linux,
 """
 
 import os, sys, errno, traceback, inspect, re, shutil, datetime, gc, platform
-import subprocess # <- leave this!
+
+# leave this
+if os.name == 'posix' and sys.version_info[0] < 3:
+	try:
+		import subprocess32 as subprocess
+	except ImportError:
+		import subprocess
+else:
+	import subprocess
 
 from collections import deque, defaultdict
 
