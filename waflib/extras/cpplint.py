@@ -8,18 +8,9 @@
 This is an extra tool, not bundled with the default waf binary.
 To add the cpplint tool to the waf file:
 $ ./waf-light --tools=compat15,cpplint
-    or, if you have waf >= 1.6.2
-$ ./waf update --files=cpplint
 
 this tool also requires cpplint for python.
 If you have PIP, you can install it like this: pip install cpplint
-
-But I'd recommend getting the latest version from the SVN,
-the PIP version is outdated.
-https://code.google.com/p/google-styleguide/source/browse/trunk/cpplint/cpplint.py
-Apply this patch if you want to run it with Python 3:
-https://code.google.com/p/google-styleguide/issues/detail?id=19
-
 
 When using this tool, the wscript will look like:
 
@@ -47,7 +38,7 @@ When using this tool, the wscript will look like:
 import sys, re
 import logging
 import threading
-from waflib import Task, TaskGen, Logs
+from waflib import Task, TaskGen, Logs, Options, Node
 try:
     from cpplint.cpplint import ProcessFile, _cpplint_state
 except ImportError:
@@ -66,18 +57,6 @@ CPPLINT_RE = {
     'vs7': re.compile('(?P<filename>.*)\((?P<linenum>\d+)\):  (?P<message>.*)  \[(?P<category>.*)\] \[(?P<confidence>\d+)\]'),
     'eclipse': re.compile('(?P<filename>.*):(?P<linenum>\d+): warning: (?P<message>.*)  \[(?P<category>.*)\] \[(?P<confidence>\d+)\]'),
 }
-
-
-
-def init_env_from_options(env):
-    from waflib.Options import options
-    for key, value in options.__dict__.items():
-        if not key.startswith('CPPLINT_') or env[key]:
-            continue
-        env[key] = value
-    if env.CPPLINT_OUTPUT != 'waf':
-        _cpplint_state.output_format = env.CPPLINT_OUTPUT
-
 
 def options(opt):
     opt.add_option('--cpplint-filters', type='string',
@@ -197,14 +176,12 @@ class cpplint(Task.Task):
 
     def run(self):
         global critical_errors
-        _cpplint_state.SetFilters(self.env.CPPLINT_FILTERS)
-        break_level = self.env.CPPLINT_BREAK
-        verbosity = self.env.CPPLINT_LEVEL
-        with cpplint_wrapper(get_cpplint_logger(self.env.CPPLINT_OUTPUT),
-                             break_level, self.env.CPPLINT_OUTPUT):
-            ProcessFile(self.inputs[0].abspath(), verbosity)
+        with cpplint_wrapper(get_cpplint_logger(self.env.CPPLINT_OUTPUT), self.env.CPPLINT_BREAK, self.env.CPPLINT_OUTPUT):
+            if self.env.CPPLINT_OUTPUT != 'waf':
+                _cpplint_state.output_format = self.env.CPPLINT_OUTPUT
+            _cpplint_state.SetFilters(self.env.CPPLINT_FILTERS)
+            ProcessFile(self.inputs[0].abspath(), self.env.CPPLINT_LEVEL)
         return critical_errors
-
 
 @TaskGen.extension('.h', '.hh', '.hpp', '.hxx')
 def cpplint_includes(self, node):
@@ -212,16 +189,27 @@ def cpplint_includes(self, node):
 
 @TaskGen.feature('cpplint')
 @TaskGen.before_method('process_source')
-def run_cpplint(self):
-    if not self.env.CPPLINT_INITIALIZED:
-        self.env.CPPLINT_INITIALIZED = True
-        init_env_from_options(self.env)
+def post_cpplint(self):
     if self.env.CPPLINT_SKIP:
         return
+
+    if not self.env.CPPLINT_INITIALIZED:
+        for key, value in Options.options.__dict__.items():
+            if not key.startswith('CPPLINT_') or self.env[key]:
+               continue
+            self.env[key] = value
+        self.env.CPPLINT_INITIALIZED = True
+
     if not self.env.CPPLINT_OUTPUT in CPPLINT_RE:
         return
+
     for src in self.to_list(getattr(self, 'source', [])):
-        if isinstance(src, str):
-            self.create_task('cpplint', self.path.find_or_declare(src))
+        if isinstance(src, Node.Node):
+            node = src
         else:
-            self.create_task('cpplint', src)
+            node = self.path.find_or_declare(src)
+        if not node:
+            self.bld.fatal('Could not find %r' % src)
+        self.create_task('cpplint', node)
+
+
