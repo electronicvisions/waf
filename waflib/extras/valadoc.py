@@ -31,6 +31,7 @@ class valadoc(Task.Task):
 		self.inherit = False
 		self.deps = False
 		self.vala_defines = []
+		self.vala_target_glib = None
 		self.enable_non_null_experimental = False
 		self.force = False
 
@@ -61,6 +62,8 @@ class valadoc(Task.Task):
 		if getattr(self, 'vala_defines', None):
 			for define in self.vala_defines:
 				cmd.append ('--define %s' % define)
+		if getattr(self, 'vala_target_glib', None):
+			cmd.append ('--target-glib=%s' % self.vala_target_glib)
 		if getattr(self, 'enable_non_null_experimental', None):
 			cmd.append ('--enable-non-null-experimental')
 		if getattr(self, 'force', None):
@@ -125,6 +128,8 @@ def process_valadoc(self):
 		task.deps = self.deps
 	if getattr(self, 'vala_defines', None):
 		task.vala_defines = Utils.to_list(self.vala_defines)
+	if getattr(self, 'vala_target_glib', None):
+		task.vala_target_glib = self.vala_target_glib
 	if getattr(self, 'enable_non_null_experimental', None):
 		task.enable_non_null_experimental = self.enable_non_null_experimental
 	if getattr(self, 'force', None):
