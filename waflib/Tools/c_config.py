@@ -1237,7 +1237,7 @@ def multicheck(self, *k, **kw):
 		yield tasks
 		while 1:
 			yield []
-	p = Runner.Parallel(bld, Options.options.jobs)
+	bld.producer = p = Runner.Parallel(bld, Options.options.jobs)
 	p.biter = it()
 	p.start()
 
