@@ -419,6 +419,8 @@ class Task(TaskBase):
 	shell = False
 	"""Execute the command with the shell (class attribute)"""
 
+	__slots__ = ('env', 'inputs', 'outputs', 'dep_nodes', 'run_after', 'dep_vars', 'cwd', 'last_cmd', 'err_msg', '_uid')
+
 	def __init__(self, *k, **kw):
 		TaskBase.__init__(self, *k, **kw)
 
