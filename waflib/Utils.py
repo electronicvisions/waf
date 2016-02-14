@@ -77,8 +77,8 @@ else:
 			sys.excepthook(*sys.exc_info())
 	threading.Thread.run = run
 
-SIG_NIL = 'iluvcuteoverload'.encode()
-"""Arbitrary null value for a md5 hash. This value must be changed when the hash value is replaced (size)"""
+SIG_NIL = 'SIG_NIL_SIG_NIL_'.encode()
+"""Arbitrary null value for hashes. Modify this value according to the hash function in use"""
 
 O644 = 420
 """Constant representing the permissions for regular files (0644 raises a syntax error on python 3)"""
