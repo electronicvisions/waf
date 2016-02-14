@@ -120,6 +120,21 @@ except ImportError:
 				yield x
 		def keys(self):
 			return self.lst
+		def popitem(self, last=True):
+			key = self.lst[last and -1 or 0]
+			ret = (key, dict.__getitem__(self, key))
+			dict.__delitem(self, key)
+			return ret
+
+class lru_cache(ordered_iter_dict):
+	def __init__(self, maxlen=100):
+		ordered_iter_dict.__init__(self)
+		self.maxlen = maxlen
+	def __setitem__(self, key, value):
+		if len(self) > self.maxlen:
+			for i in range(int(self.maxlen * 0.9)):
+				self.popitem(last=False)
+		ordered_iter_dict.__setitem__(self, key, value)
 
 is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 

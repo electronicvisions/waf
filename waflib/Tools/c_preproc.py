@@ -30,14 +30,6 @@ import re, string, traceback
 from waflib import Logs, Utils, Errors
 from waflib.Logs import debug, error
 
-try:
-	from functools import lru_cache
-except ImportError:
-	def lru_cache(*k, **kw):
-		def f(fun):
-			return fun
-		return f
-
 class PreprocError(Errors.WafError):
 	pass
 
@@ -770,13 +762,6 @@ def tokenize_private(s):
 				break
 	return ret
 
-@lru_cache(maxsize=1000)
-def parse_lines(filepath):
-	lines = filter_comments(filepath)
-	lines.append((POPFILE, ''))
-	lines.reverse()
-	return lines
-
 @Utils.run_once
 def define_name(line):
 	"""
@@ -832,13 +817,13 @@ class c_parser(object):
 		:rtype: :py:class:`waflib.Node.Node`
 		"""
 		try:
-			nd = node.ctx.cache_nd
+			cache = node.ctx.preproc_cache_node
 		except AttributeError:
-			nd = node.ctx.cache_nd = {}
+			cache = node.ctx.preproc_cache_node = Utils.lru_cache(500)
 
-		tup = (node, filename)
+		key = (node, filename)
 		try:
-			return nd[tup]
+			return cache[key]
 		except KeyError:
 			ret = node.find_resource(filename)
 			if ret:
@@ -848,7 +833,7 @@ class c_parser(object):
 					tmp = node.ctx.srcnode.search_node(ret.path_from(node.ctx.bldnode))
 					if tmp and getattr(tmp, 'children', None):
 						ret = None
-			nd[tup] = ret
+			cache[key] = ret
 			return ret
 
 	def tryfind(self, filename):
@@ -888,6 +873,19 @@ class c_parser(object):
 				self.names.append(filename)
 		return found
 
+	def parse_lines(self, node):
+		try:
+			cache = node.ctx.preproc_cache_lines
+		except AttributeError:
+			cache = node.ctx.preproc_cache_lines = Utils.lru_cache(1000)
+		try:
+			return cache[node]
+		except KeyError:
+			cache[node] = lines = filter_comments(node.abspath())
+			lines.append((POPFILE, ''))
+			lines.reverse()
+			return lines
+
 	def addlines(self, node):
 		"""
 		Add the lines from a header in the list of preprocessor lines to parse
@@ -903,15 +901,14 @@ class c_parser(object):
 			# issue #812
 			raise PreprocError("recursion limit exceeded")
 
-		filepath = node.abspath()
-		debug('preproc: reading file %r', filepath)
+		debug('preproc: reading file %r', node)
 		try:
-			lines = parse_lines(filepath)
+			lines = self.parse_lines(node)
 		except EnvironmentError:
-			raise PreprocError("could not read the file %s" % filepath)
+			raise PreprocError("could not read the file %r" % node)
 		except Exception:
 			if Logs.verbose > 0:
-				error("parsing %s failed" % filepath)
+				error("parsing %r failed" % node)
 				traceback.print_exc()
 		else:
 			self.lines.extend(lines)
@@ -926,18 +923,7 @@ class c_parser(object):
 		:param env: config set containing additional defines to take into account
 		:type env: :py:class:`waflib.ConfigSet.ConfigSet`
 		"""
-
 		debug('preproc: scanning %s (in %s)', node.name, node.parent.name)
-
-		bld = node.ctx
-		try:
-			self.parse_cache = bld.parse_cache
-		except AttributeError:
-			self.parse_cache = bld.parse_cache = {}
-		else:
-			# TODO a LRU cache would be appropriate here
-			if len(self.parse_cache) > 500:
-				self.parse_cache.clear()
 
 		self.current_file = node
 		self.addlines(node)
