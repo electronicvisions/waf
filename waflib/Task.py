@@ -200,7 +200,7 @@ class TaskBase(evil):
 		Assume that the task has had a ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
 		Execute the task and then put it back in the queue :py:attr:`waflib.Runner.Parallel.out` (may be replaced by subclassing).
 		"""
-		m = self.master
+		m = self.generator.bld.producer
 		if m.stop:
 			m.out.put(self)
 			return
@@ -286,7 +286,7 @@ class TaskBase(evil):
 		"""
 		col1 = Logs.colors(self.color)
 		col2 = Logs.colors.NORMAL
-		master = self.master
+		master = self.generator.bld.producer
 
 		def cur():
 			# the current task position, computed as late as possible

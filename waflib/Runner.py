@@ -343,9 +343,7 @@ class Parallel(object):
 
 			st = self.task_status(tsk)
 			if st == Task.RUN_ME:
-				tsk.position = (self.processed, self.total)
 				self.count += 1
-				tsk.master = self
 				self.processed += 1
 
 				if self.numjobs == 1:
