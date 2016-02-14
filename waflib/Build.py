@@ -30,7 +30,9 @@ UNINSTALL = -1337
 """Negative value '<-' uninstall, see :py:attr:`waflib.Build.BuildContext.is_install`"""
 
 SAVED_ATTRS = 'root node_sigs task_sigs imp_sigs raw_deps node_deps'.split()
-"""Build class members to save between the runs (root, node_sigs, task_sigs, node_sigs, imp_sigs, raw_deps, node_deps)"""
+"""Build class members to save between the runs; these should be all dicts
+except for `root` which represents a :py:class:`waflib.Node.Node` instance
+"""
 
 CFG_FILES = 'cfg_files'
 """Files from the build directory to hash before starting the build (``config.h`` written during the configuration)"""
@@ -1218,7 +1220,9 @@ class CleanContext(BuildContext):
 				n.delete()
 		self.root.children = {}
 
-		for v in 'node_sigs task_sigs imp_sigs raw_deps node_deps'.split():
+		for v in SAVED_ATTRS:
+			if v == 'root':
+				continue
 			setattr(self, v, {})
 
 class ListContext(BuildContext):
