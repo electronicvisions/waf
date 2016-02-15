@@ -108,7 +108,6 @@ def statusSummary(d):
     out += "\n"
     return out
 
-
 def removeDuplicates(seq):
     seen = set()
     return [ x for x in seq if x not in seen and not seen.add(x)]
@@ -121,7 +120,6 @@ def getStatusColor(results):
         return "YELLOW"
     else:
         return "RED"
-
 
 @Utils.run_once
 def summary(ctx):
@@ -142,17 +140,25 @@ def summary(ctx):
     len_status = getLongestField(results, "status")
     scaleTime(results, 1000.0)
 
+    project_line = "{}:"
     result_line = (
-            "{{:.<{len_file}}}:".format(len_file = len_file),
+            "   {{:.<{len_file}}}:".format(len_file = len_file),
             "{{:<{len_status}}}".format(len_status = len_status),
             "(execution time: {:.2f}ms)"
     )
 
-    Logs.pprint(COLOR, 'Test results:')
-    for line in results:
-        Logs.pprint(COLOR, result_line[0].format(line["file"]), sep=" ")
-        Logs.pprint(getStatusColor(line), result_line[1].format(line["status"]), sep=" ")
-        Logs.pprint(COLOR, result_line[2].format(line["time"]))
+    # Collect all projects
+    projects = sorted(set(r['project'] for r in results))
+    for project in projects:
+        project_results = sorted(
+            (r['file'], r) for r in results if r['project'] == project)
+
+        Logs.pprint(COLOR, project_line.format(project))
+
+        for _, line in project_results:
+            Logs.pprint(COLOR, result_line[0].format(line["file"]), sep=" ")
+            Logs.pprint(getStatusColor(line), result_line[1].format(line["status"]), sep=" ")
+            Logs.pprint(COLOR, result_line[2].format(line["time"]))
 
     Logs.pprint(COLOR, "\n" + statusSummary(results))
 
@@ -224,6 +230,7 @@ class TestBase(Task.Task):
         self.test_environ = getattr(task_gen, "test_environ", {})
         self.skip_run = getattr(task_gen, "skip_run", False)
         src_dir = task_gen.path.srcpath()
+        self.project = task_gen.path.relpath().split(os.sep)[0]
         self.xmlDir = getDir(task_gen.bld, "TEST_XML_DIR", src_dir)
         self.txtDir = getDir(task_gen.bld, "TEST_XML_DIR", src_dir)
 
@@ -245,6 +252,7 @@ class TestBase(Task.Task):
 
     def storeResult(self, result):
         bld = self.generator.bld
+        result['project'] = self.project
         assert "time" in result and isinstance(result["time"], float)
         assert "status" in result
         assert "file" in result
