@@ -135,6 +135,14 @@ class lru_cache(ordered_iter_dict):
 			for i in range(int(self.maxlen * 0.9)):
 				self.popitem(last=False)
 		ordered_iter_dict.__setitem__(self, key, value)
+	def __getitem__(self, key):
+		try:
+			ret = ordered_iter_dict.__getitem__(self, key)
+		except KeyError:
+			raise
+		else:
+			ordered_iter_dict.__setitem__(self, key, ret)
+		return ret
 
 is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 
