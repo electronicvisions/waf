@@ -1212,7 +1212,6 @@ def multicheck(self, *k, **kw):
 	class par(object):
 		def __init__(self):
 			self.keep = False
-			self.returned_tasks = []
 			self.task_sigs = {}
 			self.progress_bar = 0
 		def total(self):

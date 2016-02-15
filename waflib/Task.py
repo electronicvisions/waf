@@ -214,7 +214,6 @@ class TaskBase(evil):
 			pass
 
 		try:
-			self.generator.bld.returned_tasks.append(self)
 			self.log_display(self.generator.bld)
 			ret = self.run()
 		except Exception:
