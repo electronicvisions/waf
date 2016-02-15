@@ -809,7 +809,6 @@ class Node(object):
 	def exists(self):
 		return os.path.exists(self.abspath())
 
-	@Utils.run_once
 	def get_bld_sig(self):
 		"""
 		Node signature. If there is a build directory or and the file is there,
@@ -817,7 +816,15 @@ class Node(object):
 		signature is calculated automatically.
 		"""
 		# previous behaviour can be set by returning self.ctx.node_sigs[self] when a build node
-		return Utils.h_file(self.abspath())
+		try:
+			cache = self.ctx.cache_sig
+		except AttributeError:
+			cache = self.ctx.cache_sig = {}
+		try:
+			ret = cache[self]
+		except KeyError:
+			ret = cache[self] = Utils.h_file(self.abspath())
+		return ret
 
 	# --------------------------------------------
 	# TODO waf 2.0, remove the sig and cache_sig attributes
