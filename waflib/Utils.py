@@ -132,7 +132,7 @@ class lru_cache(ordered_iter_dict):
 		self.maxlen = maxlen
 	def __setitem__(self, key, value):
 		if len(self) > self.maxlen:
-			for i in range(int(self.maxlen * 0.9)):
+			for i in range(int(self.maxlen * 0.15)):
 				self.popitem(last=False)
 		ordered_iter_dict.__setitem__(self, key, value)
 	def __getitem__(self, key):
