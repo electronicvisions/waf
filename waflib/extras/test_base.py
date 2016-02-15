@@ -16,6 +16,7 @@ from time import time, sleep
 from threading import Thread, Lock
 from subprocess import Popen, PIPE
 from collections import defaultdict
+from xml.etree import ElementTree
 
 COLOR = 'CYAN'
 resultlock = Lock()
@@ -91,35 +92,97 @@ def getLongestField(d, key):
     else:
         return 0
 
-def scaleTime(d, factor):
-    for item in d:
-        item["time"] = item["time"] * factor
+def formatStatisticsBrokenTests(results):
+    total_none_excecuted = 0
+    total_tests, total_errors, total_failures, total_skip = 0, 0, 0, 0
+    for result in results:
+        statistic = result["statistic"]
+        if statistic is None:
+            continue
 
-def statusSummary(d):
-    msg = "\t{status:.<{status_len}}: {no:>4}\n"
+        tests, errors, failures, skip = statistic
+        total_tests += tests
+        total_errors += errors
+        total_failures += failures
+        total_skip += skip
+
+        if tests == 0:
+            total_none_excecuted += 1
+
+    # Count tests that are somehow broken, e.g. crashed or didn't run any
+    # tests at all
     count = defaultdict(int)
-    status_len = getLongestField(d, "status") + 3
-    for item in d:
+    for item in results:
         count[item["status"]] += 1
 
-    out = "Summary:\n"
-    for status, no in count.iteritems():
-        out += msg.format(**locals())
-    out += "\n"
-    return out
+    # Filter out failures and passes
+    for key in (TestBase.PASSED, TestBase.FAILED):
+        try:
+            del count[key]
+        except KeyError:
+            pass
+
+    if total_none_excecuted > 0:
+        count['None executed'] = total_none_excecuted
+
+    # Build messages
+    msg = "   {status:.<%i}: {no:>4}" % max(len(s) for s in count.keys())
+    if count:
+        broken = ["Broken tests:"]
+        for status, no in count.iteritems():
+            broken.append(msg.format(status=status, no=no))
+    else:
+        broken =[]
+
+    statistics = [
+        "Test Summary:",
+        "   Errors...: {}".format(total_errors),
+        "   Failures.: {}".format(total_failures),
+        "   Skipped..: {}".format(total_skip),
+        "   Total....: {}".format(total_tests),
+    ]
+
+    return os.linesep.join(statistics), os.linesep.join(broken)
 
 def removeDuplicates(seq):
     seen = set()
     return [ x for x in seq if x not in seen and not seen.add(x)]
 
-def getStatusColor(results):
-    st = results["status"]
-    if st == TestBase.PASSED:
-        return "GREEN"
-    elif st == TestBase.TIMEOUT:
-        return "YELLOW"
-    else:
-        return "RED"
+def addSummaryMsg(results):
+    for result in results:
+        statistic = result["statistic"]
+        if statistic is None:
+            total, errors, failures, skip = None, None, None, None
+        else:
+            total, errors, failures, skip = statistic
+
+        msg = []
+        status = result["status"]
+        if status == TestBase.PASSED and total > 0:
+            color = "GREEN"
+            msg.append('passed')
+            if skip != 0:
+                msg.append('({} skipped)'.format(skip))
+        elif status == TestBase.TIMEOUT:
+            color = "YELLOW"
+            msg.append('timeout')
+        elif status in (TestBase.PASSED, TestBase.FAILED) and total == 0:
+            color = "RED"
+            msg.append('none executed')
+        elif status == TestBase.FAILED:
+            color = "RED"
+            msg.append('{}/{} failed'.format(errors + failures, total))
+        else:
+            color = "RED"
+            msg.append(status)
+
+        result['msg'] = ' '.join(msg)
+        result['color'] = color
+
+def addTimeMsg(results):
+    field = "({:.1f}s)"
+    for result in results:
+        result['msg_time'] = field.format(result['time'])
 
 @Utils.run_once
 def summary(ctx):
@@ -135,16 +198,17 @@ def summary(ctx):
         return
 
     results = getattr(ctx, 'test_results', [])
+    addSummaryMsg(results)
+    addTimeMsg(results)
 
-    len_file = getLongestField(results, "file") + 3
-    len_status = getLongestField(results, "status")
-    scaleTime(results, 1000.0)
+    len_file = getLongestField(results, "file") + 1
+    len_status = getLongestField(results, "msg")
+    len_time = getLongestField(results, "msg_time")
 
     project_line = "{}:"
     result_line = (
-            "   {{:.<{len_file}}}:".format(len_file = len_file),
-            "{{:<{len_status}}}".format(len_status = len_status),
-            "(execution time: {:.2f}ms)"
+        "   {{:.<{}}}{{:.>{}}}:".format(len_file, len_time),
+        "{{:<{len_status}}}".format(len_status = len_status),
     )
 
     # Collect all projects
@@ -156,11 +220,19 @@ def summary(ctx):
         Logs.pprint(COLOR, project_line.format(project))
 
         for _, line in project_results:
-            Logs.pprint(COLOR, result_line[0].format(line["file"]), sep=" ")
-            Logs.pprint(getStatusColor(line), result_line[1].format(line["status"]), sep=" ")
-            Logs.pprint(COLOR, result_line[2].format(line["time"]))
+            line_head = result_line[0].format(line["file"], line["msg_time"])
+            line_tail = result_line[1].format(line["msg"])
+            Logs.pprint(COLOR, line_head, sep=" ")
+            Logs.pprint(line['color'], line_tail)
 
-    Logs.pprint(COLOR, "\n" + statusSummary(results))
+    statistics, broken = formatStatisticsBrokenTests(results)
+    if broken:
+        Logs.pprint("YELLOW", "")
+        Logs.pprint("YELLOW", broken)
+
+    Logs.pprint(COLOR, "")
+    Logs.pprint(COLOR, statistics)
+    Logs.pprint(COLOR, "")
 
     txt_result_dir, xml_result_dir = getDir(ctx, "TEST_TEXT_DIR"), getDir(ctx, "TEST_XML_DIR")
     if not txt_result_dir is None:
@@ -211,7 +283,7 @@ class TestBase(Task.Task):
     PASSED = "passed"
     TIMEOUT = "timeout"
     CRASHED = "crashed (return code: %i)"
-    INTERNAL_ERROR = "waf error"
+    INTERNAL_ERROR = "(waf) error"
 
     def __init__(self, *args, **kwargs):
         super(TestBase, self).__init__(self, *args, **kwargs)
@@ -299,9 +371,23 @@ class TestBase(Task.Task):
             env[var] = os.pathsep.join(p)
         return env
 
-    def runTest(self, name, cmd):
+    def readTestResult(self, test):
+        """
+        Extract the test result from the xml file
+        """
+        try:
+            xmlfile = self.getXMLFile(test)
+            tree = ElementTree.parse(xmlfile.abspath())
+            root = tree.getroot()
+            return [int(root.attrib.get(attr))
+                    for attr in ('tests', 'errors', 'failures', 'skip')]
+        except ElementTree.ParseError, IOError:
+            return None
+
+    def runTest(self, test, cmd):
         environ = self.getEnviron()
-        result = { "file" : name }
+        name = test.name
+        result = {"file" : name, "statistic": None}
         def target():
             try:
                 if Logs.verbose:
@@ -316,10 +402,12 @@ class TestBase(Task.Task):
                 result["stdout"], result["stderr"] = self.proc.communicate()
                 if self.proc.returncode == 0:
                     result["status"] = self.PASSED
+                    result["statistic"] = self.readTestResult(test)
                 elif self.proc.returncode < 0:
                     result["status"] = self.CRASHED % self.proc.returncode
                 else:
                     result["status"] = self.FAILED
+                    result["statistic"] = self.readTestResult(test)
             except Exception, e:
                 result["stdout"] = e.message
                 result["status"] = self.INTERNAL_ERROR

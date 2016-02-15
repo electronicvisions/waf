@@ -157,7 +157,10 @@ class gtest(test.TestBase):
             xml_result_file = xml_result_dir.find_or_declare( name + ".xml")
             cmd.append( "--gtest_output=xml:" + xml_result_file.abspath() )
 
-        result = self.runTest(self.inputs[0].name, cmd)
+        result = self.runTest(self.inputs[0], cmd)
+
+    def getXMLFile(self, test):
+        return self.getOutputNode(test.name, self.xmlDir, "xml")
 
 
 summary = test.summary

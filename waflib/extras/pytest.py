@@ -23,7 +23,7 @@ class pytest(test_base.TestBase):
         are stored on ``self.generator.bld.utest_results`` for postprocessing.
         """
         for test in self.inputs:
-            xml = self.getOutputNode(test.name, self.xmlDir, "xml")
+            xml = self.getXMLFile(test)
 
             frickeling = "import sys; sys.path.append(r{0}{1}{0}); import nose; import nosepatch; nose.main()".format('"', str(os.path.dirname(os.path.abspath(__file__))))
 
@@ -35,7 +35,10 @@ class pytest(test_base.TestBase):
                     '--with-xunit',
                     '--xunit-file="%s"' % xml.abspath() if xml else '',
                     ]
-            result = self.runTest(test.name, cmd)
+            self.runTest(test, cmd)
+
+    def getXMLFile(self, test):
+        return self.getOutputNode(test.name, self.xmlDir, "xml")
 
     def getOutputNode(self, name, d, ext):
         if d is None:
