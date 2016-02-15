@@ -327,7 +327,8 @@ def configure(self):
 	self.load('gnu_dirs')
 	self.check_vala_deps()
 	self.check_vala()
-	self.env.VALAFLAGS = ['-C']
+	self.add_os_flags('VALAFLAGS')
+	self.env.append_unique('VALAFLAGS', ['-C'])
 
 def options(opt):
 	"""
