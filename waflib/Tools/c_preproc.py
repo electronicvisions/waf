@@ -772,6 +772,19 @@ def define_name(line):
 	"""
 	return re_mac.match(line).group(0)
 
+def format_defines(lst):
+	ret = []
+	for y in lst:
+		if y:
+			pos = y.find('=')
+			if pos == -1:
+				# "-DFOO" should give "#define FOO 1"
+				ret.append(y)
+			elif pos > 0:
+				# all others are assumed to be -DX=Y
+				ret.append('%s %s' % (y[:pos], y[pos+1:]))
+	return ret
+
 class c_parser(object):
 	"""
 	Used by :py:func:`waflib.Tools.c_preproc.scan` to parse c/h files. Note that by default,
@@ -929,14 +942,10 @@ class c_parser(object):
 		self.addlines(node)
 
 		# macros may be defined on the command-line, so they must be parsed as if they were part of the file
-		if env['DEFINES']:
-			try:
-				lst = ['%s %s' % (x[0], trimquotes('='.join(x[1:]))) for x in [y.split('=') for y in env['DEFINES']]]
-				lst.reverse()
-				self.lines.extend([('define', x) for x in lst])
-			except AttributeError:
-				# if the defines are invalid the compiler will tell the user
-				pass
+		if env.DEFINES:
+			lst = format_defines(env.DEFINES)
+			lst.reverse()
+			self.lines.extend([('define', x) for x in lst])
 
 		while self.lines:
 			(token, line) = self.lines.pop()
