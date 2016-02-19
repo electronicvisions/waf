@@ -166,12 +166,13 @@ def addSummaryMsg(results):
         elif status == TestBase.TIMEOUT:
             color = "YELLOW"
             msg.append('timeout')
-        elif status in (TestBase.PASSED, TestBase.FAILED) and total == 0:
+        elif status in (TestBase.PASSED, TestBase.FAILED) and ((total == 0) or (total is None)):
             color = "RED"
             msg.append('none executed')
         elif status == TestBase.FAILED:
             color = "RED"
-            msg.append('{}/{} failed'.format(errors + failures, total))
+            fail_sum = errors + failures if None not in [errors, failures] else None
+            msg.append('{}/{} failed'.format(fail_sum, total))
         else:
             color = "RED"
             msg.append(status)
