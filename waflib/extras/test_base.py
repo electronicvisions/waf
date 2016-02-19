@@ -126,8 +126,8 @@ def formatStatisticsBrokenTests(results):
         count['None executed'] = total_none_excecuted
 
     # Build messages
-    msg = "   {status:.<%i}: {no:>4}" % max(len(s) for s in count.keys())
     if count:
+        msg = "   {status:.<%i}: {no:>4}" % max(len(s) for s in count.keys())
         broken = ["Broken tests:"]
         for status, no in count.iteritems():
             broken.append(msg.format(status=status, no=no))
