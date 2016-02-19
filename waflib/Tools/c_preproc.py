@@ -724,7 +724,6 @@ def tokenize(s):
 	"""
 	return tokenize_private(s)[:] # force a copy of the results
 
-@Utils.run_once
 def tokenize_private(s):
 	ret = []
 	for match in re_clexer.finditer(s):
@@ -761,16 +760,6 @@ def tokenize_private(s):
 				ret.append((name, v))
 				break
 	return ret
-
-@Utils.run_once
-def define_name(line):
-	"""
-	:param line: define line
-	:type line: string
-	:rtype: string
-	:return: the define name
-	"""
-	return re_mac.match(line).group(0)
 
 def format_defines(lst):
 	ret = []
@@ -1000,8 +989,8 @@ class c_parser(object):
 					elif state[-1] == ignored: state[-1] = accepted
 				elif token == 'define':
 					try:
-						self.defs[define_name(line)] = line
-					except Exception:
+						self.defs[self.define_name(line)] = line
+					except AttributeError:
 						raise PreprocError("Invalid define line %s" % line)
 				elif token == 'undef':
 					m = re_mac.match(line)
@@ -1014,6 +1003,15 @@ class c_parser(object):
 			except Exception as e:
 				if Logs.verbose:
 					debug('preproc: line parsing failed (%s): %s %s', e, line, Utils.ex_stack())
+
+	def define_name(self, line):
+		"""
+		:param line: define line
+		:type line: string
+		:rtype: string
+		:return: the define name
+		"""
+		return re_mac.match(line).group(0)
 
 def scan(task):
 	"""
