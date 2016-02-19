@@ -733,7 +733,7 @@ def tokenize_private(s):
 			if v:
 				if name == IDENT:
 					try:
-						g_optrans[v];
+						g_optrans[v]
 						name = OP
 					except KeyError:
 						# c++ specific
