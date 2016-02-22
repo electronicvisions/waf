@@ -12,6 +12,7 @@ import os, sys
 from waflib import Configure, Options, Utils
 from waflib.Tools import ccroot, ar
 from waflib.Configure import conf
+from waflib.extras import visionflags
 
 @conf
 def find_gcc(conf):
@@ -139,6 +140,9 @@ def gcc_modifier_platform(conf):
 	if gcc_modifier_func:
 		gcc_modifier_func()
 
+def options(opt):
+	opt.load("visionflags")
+
 def configure(conf):
 	"""
 	Configuration for gcc
@@ -147,8 +151,11 @@ def configure(conf):
 	conf.find_ar()
 	conf.gcc_common_flags()
 	conf.gcc_modifier_platform()
+	# ECM: If CCFLAGS/CCDEPS (or CXX) exist here, it has been provided by the
+	# user. If we would load later, the env vars would have been already
+	# touched by waf. We could have the idea to push the load into the c_config
+	# file, but seems a bit too "intrusive"...
+	conf.load("visionflags")
 	conf.cc_load_tools()
 	conf.cc_add_flags()
 	conf.link_add_flags()
-
-

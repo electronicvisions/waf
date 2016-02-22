@@ -12,6 +12,7 @@ import os, sys
 from waflib import Configure, Options, Utils
 from waflib.Tools import ccroot, ar
 from waflib.Configure import conf
+from waflib.extras import visionflags
 
 @conf
 def find_gxx(conf):
@@ -140,6 +141,9 @@ def gxx_modifier_platform(conf):
 	if gxx_modifier_func:
 		gxx_modifier_func()
 
+def options(opt):
+	opt.load("visionflags")
+
 def configure(conf):
 	"""
 	Configuration for g++
@@ -148,6 +152,8 @@ def configure(conf):
 	conf.find_ar()
 	conf.gxx_common_flags()
 	conf.gxx_modifier_platform()
+	# ECM: cf. gcc.py
+	conf.load("visionflags")
 	conf.cxx_load_tools()
 	conf.cxx_add_flags()
 	conf.link_add_flags()
