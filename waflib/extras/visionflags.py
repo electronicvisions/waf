@@ -118,8 +118,8 @@ def configure(conf):
 	env_vars = 'CCDEFINES CCFLAGS CXXDEFINES CXXFLAGS'.split()
 	user_vars = [ var for var in env_vars if os.environ.has_key(var) ]
 	if user_vars:
-		Logs.warn('Visionary build flags have been disabled due to user-defined'
-			'environment variables: %s' % ', '.join(user_vars))
+		Logs.warn('Visionary build flags have been disabled due to user-defined '
+		          'environment variables: %s' % ', '.join(user_vars))
 		return
 
 	if cc:
