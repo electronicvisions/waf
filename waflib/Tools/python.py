@@ -578,13 +578,12 @@ def configure(conf):
 	Detect the python interpreter
 	"""
 	v = conf.env
-	v['PYTHON'] = Options.options.python or os.environ.get('PYTHON', sys.executable)
 	if Options.options.pythondir:
 		v['PYTHONDIR'] = Options.options.pythondir
 	if Options.options.pythonarchdir:
 		v['PYTHONARCHDIR'] = Options.options.pythonarchdir
 
-	conf.find_program('python', var='PYTHON')
+	conf.find_program('python', var='PYTHON', value=Options.options.pythondir or sys.executable)
 
 	v['PYFLAGS'] = ''
 	v['PYFLAGS_OPT'] = '-O'

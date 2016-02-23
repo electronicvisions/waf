@@ -6,7 +6,7 @@
 Tasks represent atomic operations such as processes.
 """
 
-import os, re, sys
+import re, sys
 from waflib import Utils, Logs, Errors
 
 # task states

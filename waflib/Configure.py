@@ -376,13 +376,18 @@ def cmd_to_list(self, cmd):
 	:param cmd: command
 	:type cmd: a string or a list of string
 	"""
-	if isinstance(cmd, str) and cmd.find(' '):
-		try:
-			os.stat(cmd)
-		except OSError:
+	if isinstance(cmd, str):
+		if os.path.isfile(cmd):
+			# do not take any risk
+			return [cmd]
+		if os.sep == '/':
 			return shlex.split(cmd)
 		else:
-			return [cmd]
+			try:
+				return shlex.split(cmd, posix=False)
+			except TypeError:
+				# Python 2.5 on windows?
+				return shlex.split(cmd)
 	return cmd
 
 @conf
@@ -434,6 +439,8 @@ def find_program(self, filename, **kw):
 	:type param_list: list of string
 	:param var: store the result to conf.env[var], by default use filename.upper()
 	:type var: string
+	:param value: obtain the program from the value passed exclusively
+	:type value: list or string (list is preferred)
 	:param ext: list of extensions for the binary (do not add an extension for portability)
 	:type ext: list of string
 	:param msg: name to display in the log, by default filename is used
@@ -461,18 +468,15 @@ def find_program(self, filename, **kw):
 	else:
 		path_list = environ.get('PATH', '').split(os.pathsep)
 
-	if var in environ:
-		filename = environ[var]
-		if os.path.isfile(filename):
-			# typical CC=/usr/bin/gcc waf configure build
-			ret = [filename]
-		else:
-			# case  CC='ccache gcc' waf configure build
-			ret = self.cmd_to_list(filename)
+	if kw.get('value', None):
+		# user-provided in command-line options and passed to find_program
+		ret = self.cmd_to_list(kw['value'])
+	elif var in environ:
+		# user-provided in the os environment
+		ret = self.cmd_to_list(environ[var])
 	elif self.env[var]:
-		# set by the user in the wscript file
-		ret = self.env[var]
-		ret = self.cmd_to_list(ret)
+		# a default option in the wscript file
+		ret = self.cmd_to_list(self.env[var])
 	else:
 		if not ret:
 			ret = self.find_binary(filename, exts.split(','), path_list)
@@ -482,7 +486,6 @@ def find_program(self, filename, **kw):
 			ret = Utils.get_registry_app_path(Utils.winreg.HKEY_LOCAL_MACHINE, filename)
 		ret = self.cmd_to_list(ret)
 
-
 	if ret:
 		if len(ret) == 1:
 			retmsg = ret[0]
@@ -491,7 +494,7 @@ def find_program(self, filename, **kw):
 	else:
 		retmsg = False
 
-	self.msg("Checking for program '%s'" % msg, retmsg, **kw)
+	self.msg("Checking for program %r" % msg, retmsg, **kw)
 	if not kw.get('quiet', None):
 		self.to_log('find program=%r paths=%r var=%r -> %r' % (filename, path_list, var, ret))
 

@@ -70,17 +70,8 @@ def check_perl_version(self, minver=None):
 
 	self.start_msg('Checking for minimum perl version %s' % cver)
 
-	perl = getattr(Options.options, 'perlbinary', None)
-
-	if not perl:
-		perl = self.find_program('perl', var='PERL')
-	if not perl:
-		self.end_msg("Perl not found", color="YELLOW")
-		return False
-
-	self.env['PERL'] = perl
-
-	version = self.cmd_and_log(self.env.PERL + ["-e", 'printf \"%vd\", $^V'])
+	perl = self.find_program('perl', var='PERL', value=getattr(Options.options, 'perlbinary', None))
+	version = self.cmd_and_log(perl + ["-e", 'printf \"%vd\", $^V'])
 	if not version:
 		res = False
 		version = "Unknown"

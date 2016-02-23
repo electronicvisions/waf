@@ -56,12 +56,7 @@ def check_ruby_version(self, minver=()):
 	The ruby binary can be overridden by ``--with-ruby-binary`` command-line option.
 	"""
 
-	if Options.options.rubybinary:
-		self.env.RUBY = Options.options.rubybinary
-	else:
-		self.find_program('ruby', var='RUBY')
-
-	ruby = self.env.RUBY
+	ruby = self.find_program('ruby', var='RUBY', value=Options.options.rubybinary)
 
 	try:
 		version = self.cmd_and_log(ruby + ['-e', 'puts defined?(VERSION) ? VERSION : RUBY_VERSION']).strip()
