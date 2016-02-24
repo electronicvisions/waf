@@ -168,7 +168,7 @@ def _tgen_create_cmd(self):
 	bin_enable = self.env.CPPCHECK_BIN_ENABLE
 	lib_enable = self.env.CPPCHECK_LIB_ENABLE
 
-	cmd  = '%s' % self.env.CPPCHECK
+	cmd  = self.env.CPPCHECK
 	args = ['--inconclusive','--report-progress','--verbose','--xml','--xml-version=2']
 	args.append('--max-configs=%s' % max_configs)
 
@@ -193,7 +193,7 @@ def _tgen_create_cmd(self):
 		args.append('-I%r' % inc)
 	for inc in self.to_incnodes(self.to_list(self.env.INCLUDES)):
 		args.append('-I%r' % inc)
-	return '%s %s' % (cmd, ' '.join(args))
+	return cmd + args
 
 
 class cppcheck(Task.Task):
