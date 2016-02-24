@@ -37,15 +37,6 @@ class pytest(test_base.TestBase):
                     ]
             self.runTest(test, cmd)
 
-    def getXMLFile(self, test):
-        return self.getOutputNode(test.name, self.xmlDir, "xml")
-
-    def getOutputNode(self, name, d, ext):
-        if d is None:
-            return None
-        result_file = d.find_or_declare(basename(name) + "." + ext);
-        return result_file
-
 @feature('pyext')
 @after_method('apply_link')
 @before_method('process_use')

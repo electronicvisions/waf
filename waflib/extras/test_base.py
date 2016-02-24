@@ -8,6 +8,8 @@
 
 import os
 import sys
+import traceback
+import errno
 import pprint
 from waflib.TaskGen import taskgen_method
 from waflib import Configure, Utils, Task, Logs, Options, Errors
@@ -58,18 +60,16 @@ def configure(ctx):
         return False;
 
     txt_result_path =  getattr(Options.options, 'test_text_output_folder', None)
-    if txt_result_path:
-        ctx.env.TEST_TEXT_DIR = txt_result_path
-        node = getDir(ctx, 'TEST_TEXT_DIR')
-        ctx.start_msg('Test text summary directory')
-        ctx.end_msg(node.path_from(ctx.srcnode))
+    ctx.env.TEST_TEXT_DIR = txt_result_path
+    node = getDir(ctx, 'TEST_TEXT_DIR')
+    ctx.start_msg('Test text summary directory')
+    ctx.end_msg(node.path_from(ctx.srcnode))
 
     xml_result_path =  getattr(Options.options, 'test_xml_output_folder', None)
-    if xml_result_path:
-        ctx.env.TEST_XML_DIR = xml_result_path
-        node = getDir(ctx, 'TEST_XML_DIR')
-        ctx.start_msg('Test xml summary directory')
-        ctx.end_msg(node.path_from(ctx.srcnode))
+    ctx.env.TEST_XML_DIR = xml_result_path
+    node = getDir(ctx, 'TEST_XML_DIR')
+    ctx.start_msg('Test xml summary directory')
+    ctx.end_msg(node.path_from(ctx.srcnode))
 
     # See TestBase.init
     ctx.start_msg('GoogleTest maximal runtime')
@@ -150,32 +150,36 @@ def removeDuplicates(seq):
 
 def addSummaryMsg(results):
     for result in results:
-        statistic = result["statistic"]
-        if statistic is None:
-            total, errors, failures, skip = None, None, None, None
-        else:
-            total, errors, failures, skip = statistic
-
         msg = []
+
         status = result["status"]
-        if status == TestBase.PASSED and total > 0:
+        statistic = result["statistic"]
+        # If statistic is not None it must be a tuple of numbers:
+        if statistic is not None:
+            assert None not in statistic
+
+        if status in (TestBase.PASSED, TestBase.FAILED) and statistic is None:
+            color = "RED"
+            msg.append('none executed')
+        elif status == TestBase.PASSED:
             color = "GREEN"
-            msg.append('passed')
+            total, errors, failures, skip = statistic
+            passed = total - (errors + failures + skip)
+            msg.append('{} passed'.format(passed))
             if skip != 0:
                 msg.append('({} skipped)'.format(skip))
+        elif status == TestBase.FAILED:
+            color = "RED"
+            total, errors, failures, skip = statistic
+            fail_sum = errors + failures
+            msg.append('{}/{} failed'.format(fail_sum, total))
         elif status == TestBase.TIMEOUT:
             color = "YELLOW"
             msg.append('timeout')
-        elif status in (TestBase.PASSED, TestBase.FAILED) and ((total == 0) or (total is None)):
-            color = "RED"
-            msg.append('none executed')
-        elif status == TestBase.FAILED:
-            color = "RED"
-            fail_sum = errors + failures if None not in [errors, failures] else None
-            msg.append('{}/{} failed'.format(fail_sum, total))
         else:
             color = "RED"
             msg.append(status)
+            msg.append("({})".format(result.get('error_message')))
 
         result['msg'] = ' '.join(msg)
         result['color'] = color
@@ -283,7 +287,7 @@ class TestBase(Task.Task):
     FAILED = "failed"
     PASSED = "passed"
     TIMEOUT = "timeout"
-    CRASHED = "crashed (return code: %i)"
+    CRASHED = "crashed"
     INTERNAL_ERROR = "(waf) error"
 
     def __init__(self, *args, **kwargs):
@@ -292,8 +296,8 @@ class TestBase(Task.Task):
 
     def __str__(self):
         "string to display to the user"
-        return '%s (timeout: %is)\n' % (
-            Task.Task.__str__(self)[:-1], self.timeout)
+        return '%s (timeout: %is)' % (
+            Task.Task.__str__(self), self.timeout)
 
     def init(self, task_gen):
         """Common initialisation of Test tast, should be called by task_gen
@@ -372,6 +376,10 @@ class TestBase(Task.Task):
             env[var] = os.pathsep.join(p)
         return env
 
+    def getXMLFile(self, test):
+        xml_file = test.change_ext(".xml")
+        return self.xmlDir.find_or_declare(xml_file.name)
+
     def readTestResult(self, test):
         """
         Extract the test result from the xml file
@@ -380,10 +388,14 @@ class TestBase(Task.Task):
             xmlfile = self.getXMLFile(test)
             tree = ElementTree.parse(xmlfile.abspath())
             root = tree.getroot()
-            return [int(root.attrib.get(attr))
+            return [int(root.attrib.get(attr, 0))
                     for attr in ('tests', 'errors', 'failures', 'skip')]
-        except ElementTree.ParseError, IOError:
-            return None
+        except IOError as e:
+            if e.errno != errno.ENOENT:
+                raise
+        except ElementTree.ParseError:
+            pass
+        return None
 
     def runTest(self, test, cmd):
         environ = self.getEnviron()
@@ -405,13 +417,16 @@ class TestBase(Task.Task):
                     result["status"] = self.PASSED
                     result["statistic"] = self.readTestResult(test)
                 elif self.proc.returncode < 0:
-                    result["status"] = self.CRASHED % self.proc.returncode
+                    result["status"] = self.CRASHED
+                    result["error_message"] = "return code: {}".format(
+                        self.proc.returncode)
                 else:
                     result["status"] = self.FAILED
                     result["statistic"] = self.readTestResult(test)
             except Exception, e:
-                result["stdout"] = e.message
+                result["stderr"] = traceback.format_exc(e)
                 result["status"] = self.INTERNAL_ERROR
+                result["error_message"] = e.message
 
         starttime = time()
         thread = Thread(target=target)

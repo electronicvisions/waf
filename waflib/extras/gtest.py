@@ -148,28 +148,21 @@ class gtest(test.TestBase):
         are stored on ``self.generator.bld.utest_results`` for postprocessing.
         """
 
-        filename = self.inputs[0].abspath()
-        name = basename(filename)
-        cmd = [ filename ]
-
-        xml_result_dir = self.xmlDir
-        if not xml_result_dir is None:
-            xml_result_file = xml_result_dir.find_or_declare( name + ".xml")
-            cmd.append( "--gtest_output=xml:" + xml_result_file.abspath() )
-
-        result = self.runTest(self.inputs[0], cmd)
-
-    def getXMLFile(self, test):
-        return self.getOutputNode(test.name, self.xmlDir, "xml")
+        test = self.inputs[0]
+        xml_result_file = self.getXMLFile(test)
+        cmd = [
+            test.abspath(),
+            "--gtest_output=xml:" + xml_result_file.abspath(),
+        ]
+        self.runTest(test, cmd)
 
 
 summary = test.summary
 
-
 def options(opt):
     test.options(opt)
     opt.add_option('--with-gtest-src', action='store', default = [],
-                   dest="gtest_src", 
+                   dest="gtest_src",
                    help='Location of the bundled google test source (%s)' % _gtest_bundled_src)
 
 
