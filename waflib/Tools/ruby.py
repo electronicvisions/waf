@@ -71,13 +71,11 @@ def check_ruby_version(self, minver=()):
 
 	cver = ''
 	if minver:
+		cver = '> ' + '.'.join(str(x) for x in minver)
 		if ver < minver:
 			self.fatal('ruby is too old %r' % ver)
-		cver = '.'.join([str(x) for x in minver])
-	else:
-		cver = ver
 
-	self.msg('Checking for ruby version %s' % str(minver or ''), cver)
+	self.msg('Checking for ruby version %s' % cver, version)
 
 @conf
 def check_ruby_ext_devel(self):
