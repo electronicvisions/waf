@@ -9,7 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import os, sys, errno, traceback, inspect, re, shutil, datetime, gc, platform
+import os, sys, errno, traceback, inspect, re, shutil, datetime, gc, platform, time
 try:
 	import cPickle
 except ImportError:
@@ -810,29 +810,28 @@ def sane_path(p):
 
 
 process_lock = threading.Lock()
-process_pool = []
+process_pool = deque()
 def get_process():
 	try:
 		process_lock.acquire()
-		for proc in process_pool:
-			if not proc.used:
-				proc.used = True
+		if process_pool:
+			proc = process_pool.popleft()
+			if proc.returncode:
+				# just get another process
+				pass
+			else:
 				return proc
 		else:
 			filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
 			cmd = [sys.executable, filepath]
 			proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
-			header = '%d\n' % os.getpid()
-			proc.stdin.write(header.encode())
-			proc.stdin.flush()
-			proc.used = True
-			process_pool.append(proc)
 			return proc
 	finally:
 		process_lock.release()
+	return get_process()
 
-def run_process(cmd, kwargs, cargs=None, local=False):
-	if os.name == 'java' or local or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
+def run_process(cmd, kwargs, cargs=None):
+	if os.name == 'java' or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
 		proc = subprocess.Popen(cmd, **kwargs)
 		if kwargs.get('stdout', None) or kwargs.get('stderr', None):
 			out, err = proc.communicate(**cargs)
@@ -852,10 +851,10 @@ def run_process(cmd, kwargs, cargs=None, local=False):
 		txt = proc.stdout.readline()
 		buflen = int(txt.strip())
 		obj = proc.stdout.read(buflen)
+		process_pool.append(proc)
 		ret, out, err, ex = cPickle.loads(obj)
 		if ex:
 			# TODO
 			raise OSError(ex)
-		proc.used = False
 		return ret, out, err
 

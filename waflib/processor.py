@@ -16,34 +16,10 @@ try:
 except ImportError:
 	import subprocess
 
-def perr(msg):
-	return
-	sys.stderr.write('----- ' + msg)
-	sys.stderr.write('\n')
-	sys.stderr.flush()
-
-# quit if the parent process ends abruptly
-ppid = int(sys.stdin.readline())
-def reap():
-	if os.sep != '/':
-		os.waitpid(ppid, 0)
-	else:
-		while 1:
-			try:
-				os.kill(ppid, 0)
-			except OSError:
-				break
-			else:
-				time.sleep(1)
-	os.kill(os.getpid(), signal.SIGKILL)
-t = threading.Thread(target=reap)
-t.setDaemon(True)
-t.start()
-
 while 1:
 	txt = sys.stdin.readline()
 	if not txt:
-		# end
+		# parent process probably ended
 		break
 
 	buflen = int(txt.strip())
