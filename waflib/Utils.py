@@ -832,14 +832,14 @@ def get_process():
 		process_lock.release()
 
 def run_process(cmd, kwargs, cargs=None, local=False):
-	if local or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
+	if os.name == 'java' or local or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
 		proc = subprocess.Popen(cmd, **kwargs)
 		if kwargs.get('stdout', None) or kwargs.get('stderr', None):
-			out, err = (None, None)
-			status = proc.wait(**cargs)
-		else:
 			out, err = proc.communicate(**cargs)
 			status = proc.returncode
+		else:
+			out, err = (None, None)
+			status = proc.wait(**cargs)
 		return status, out, err
 	else:
 		proc = get_process()
