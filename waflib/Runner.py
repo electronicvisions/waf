@@ -7,7 +7,7 @@ Runner.py: Task scheduling and execution
 
 """
 
-import random, atexit
+import random
 try:
 	from queue import Queue
 except ImportError:
@@ -19,80 +19,33 @@ GAP = 10
 Wait for free tasks if there are at least ``GAP * njobs`` in queue
 """
 
-class TaskConsumer(Utils.threading.Thread):
-	"""
-	Task consumers belong to a pool of workers
-
-	They wait for tasks in the queue and then use ``task.process(...)``
-	"""
-	def __init__(self):
+class Consumer(Utils.threading.Thread):
+	def __init__(self, spawner, task):
 		Utils.threading.Thread.__init__(self)
-		self.ready = Queue()
-		"""
-		Obtain :py:class:`waflib.Task.TaskBase` instances from this queue.
-		"""
+		self.task = task
+		self.spawner = spawner
 		self.setDaemon(1)
 		self.start()
-
 	def run(self):
-		"""
-		Loop over the tasks to execute
-		"""
-		try:
-			self.loop()
-		except Exception:
-			pass
+		self.task.process()
+		self.spawner.sem.release()
 
-	def loop(self):
-		"""
-		Obtain tasks from :py:attr:`waflib.Runner.TaskConsumer.ready` and call
-		:py:meth:`waflib.Task.TaskBase.process`. If the object is a function, execute it.
-		"""
+class Spawner(Utils.threading.Thread):
+	def __init__(self, master):
+		Utils.threading.Thread.__init__(self)
+		self.master = master
+		self.sem = Utils.threading.Semaphore(master.numjobs)
+		self.setDaemon(1)
+		self.start()
+	def run(self):
+		master = self.master
 		while 1:
-			tsk = self.ready.get()
-			if not isinstance(tsk, Task.TaskBase):
-				tsk(self)
-			else:
-				tsk.process()
-
-pool = Queue()
-"""
-Pool of task consumer objects
-"""
-
-def get_pool():
-	"""
-	Obtain a task consumer from :py:attr:`waflib.Runner.pool`.
-	Do not forget to put it back by using :py:func:`waflib.Runner.put_pool`
-	and reset properly (original waiting queue).
-
-	:rtype: :py:class:`waflib.Runner.TaskConsumer`
-	"""
-	try:
-		return pool.get(False)
-	except Exception:
-		return TaskConsumer()
-
-def put_pool(x):
-	"""
-	Return a task consumer to the thread pool :py:attr:`waflib.Runner.pool`
-
-	:param x: task consumer object
-	:type x: :py:class:`waflib.Runner.TaskConsumer`
-	"""
-	pool.put(x)
-
-def _free_resources():
-	global pool
-	lst = []
-	while pool.qsize():
-		lst.append(pool.get())
-	for x in lst:
-		x.ready.put(None)
-	for x in lst:
-		x.join()
-	pool = None
-atexit.register(_free_resources)
+			if master.stop:
+				break
+			task = master.ready.get()
+			self.sem.acquire()
+			task.log_display(task.generator.bld)
+			Consumer(self, task)
 
 class Parallel(object):
 	"""
@@ -120,6 +73,8 @@ class Parallel(object):
 		self.frozen = []
 		"""List of :py:class:`waflib.Task.TaskBase` that cannot be executed immediately"""
 
+		self.ready = Queue(0)
+
 		self.out = Queue(0)
 		"""List of :py:class:`waflib.Task.TaskBase` returned by the task consumers"""
 
@@ -140,6 +95,8 @@ class Parallel(object):
 
 		self.dirty = False
 		"""Flag to indicate that tasks have been executed, and that the build cache must be saved (call :py:meth:`waflib.Build.BuildContext.store`)"""
+
+		self.spawner = Spawner(self)
 
 	def get_next_task(self):
 		"""
@@ -231,39 +188,7 @@ class Parallel(object):
 		:param tsk: task
 		:type tsk: :py:attr:`waflib.Task.TaskBase`
 		"""
-		try:
-			self.pool
-		except AttributeError:
-			self.init_task_pool()
 		self.ready.put(tsk)
-
-	def init_task_pool(self):
-		# lazy creation, and set a common pool for all task consumers
-		pool = self.pool = [get_pool() for i in range(self.numjobs)]
-		self.ready = Queue(0)
-		def setq(consumer):
-			consumer.ready = self.ready
-		for x in pool:
-			x.ready.put(setq)
-		return pool
-
-	def free_task_pool(self):
-		# return the consumers, setting a different queue for each of them
-		def setq(consumer):
-			consumer.ready = Queue(0)
-			self.out.put(self)
-		try:
-			pool = self.pool
-		except AttributeError:
-			pass
-		else:
-			for x in pool:
-				self.ready.put(setq)
-			for x in pool:
-				self.get_out()
-			for x in pool:
-				put_pool(x)
-			self.pool = []
 
 	def skip(self, tsk):
 		tsk.hasrun = Task.SKIPPED
@@ -364,7 +289,4 @@ class Parallel(object):
 
 		#print loop
 		assert (self.count == 0 or self.stop)
-
-		# free the task pool, if any
-		self.free_task_pool()
 

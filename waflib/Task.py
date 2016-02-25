@@ -214,7 +214,6 @@ class TaskBase(evil):
 			pass
 
 		try:
-			self.log_display(self.generator.bld)
 			ret = self.run()
 		except Exception:
 			self.err_msg = Utils.ex_stack()

@@ -360,13 +360,7 @@ class Context(ctx):
 				kw['cwd'] = kw['cwd'].abspath()
 
 		try:
-			if kw['stdout'] or kw['stderr']:
-				p = subprocess.Popen(cmd, **kw)
-				(out, err) = p.communicate(**wargs)
-				ret = p.returncode
-			else:
-				out, err = (None, None)
-				ret = subprocess.Popen(cmd, **kw).wait(**wargs)
+			ret, out, err = Utils.run_process(cmd, kw, wargs)
 		except Exception as e:
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
@@ -444,8 +438,7 @@ class Context(ctx):
 				kw['cwd'] = kw['cwd'].abspath()
 
 		try:
-			p = subprocess.Popen(cmd, **kw)
-			(out, err) = p.communicate(**wargs)
+			ret, out, err = Utils.run_process(cmd, kw, wargs)
 		except Exception as e:
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
@@ -459,9 +452,9 @@ class Context(ctx):
 		if err and quiet != STDERR and quiet != BOTH:
 			self.to_log('err: %s' % err)
 
-		if p.returncode:
-			e = Errors.WafError('Command %r returned %r' % (cmd, p.returncode))
-			e.returncode = p.returncode
+		if ret:
+			e = Errors.WafError('Command %r returned %r' % (cmd, ret))
+			e.returncode = ret
 			e.stderr = err
 			e.stdout = out
 			raise e

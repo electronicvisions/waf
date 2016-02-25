@@ -6,10 +6,14 @@
 Utilities and platform-specific fixes
 
 The portability fixes try to provide a consistent behavior of the Waf API
-through Python versions 2.3 to 3.X and across different platforms (win32, linux, etc)
+through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
 import os, sys, errno, traceback, inspect, re, shutil, datetime, gc, platform
+try:
+	import cPickle
+except ImportError:
+	import pickle as cPickle
 
 # leave this
 if os.name == 'posix' and sys.version_info[0] < 3:
@@ -803,4 +807,51 @@ def lib64():
 def sane_path(p):
 	# private function for the time being!
 	return os.path.abspath(os.path.expanduser(p))
+
+
+process_lock = threading.Lock()
+process_pool = []
+def get_process():
+	with process_lock:
+		for proc in process_pool:
+			if not proc.used:
+				proc.used = True
+				return proc
+		else:
+			filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
+			cmd = [sys.executable, filepath]
+			proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
+			proc.stdin.write('%d\n' % os.getpid())
+			proc.stdin.flush()
+			proc.used = True
+			process_pool.append(proc)
+			return proc
+
+def run_process(cmd, kwargs, cargs=None, local=False):
+	if local or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
+		proc = subprocess.Popen(cmd, **kwargs)
+		if kwargs.get('stdout', None) or kwargs.get('stderr', None):
+			out, err = (None, None)
+			status = proc.wait(**cargs)
+		else:
+			out, err = proc.communicate(**cargs)
+			status = proc.returncode
+		return status, out, err
+	else:
+		proc = get_process()
+		obj = cPickle.dumps([cmd, kwargs, cargs], 0)
+		header = "%d\n" % len(obj)
+		proc.stdin.write(header)
+		proc.stdin.write(obj)
+		proc.stdin.flush()
+
+		txt = proc.stdout.readline()
+		buflen = int(txt.strip())
+		obj = proc.stdout.read(buflen)
+		ret, out, err, ex = cPickle.loads(obj)
+		if ex:
+			# TODO
+			raise OSError(ex)
+		proc.used = False
+		return ret, out, err
 
