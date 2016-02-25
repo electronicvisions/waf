@@ -812,7 +812,8 @@ def sane_path(p):
 process_lock = threading.Lock()
 process_pool = []
 def get_process():
-	with process_lock:
+	try:
+		process_lock.acquire()
 		for proc in process_pool:
 			if not proc.used:
 				proc.used = True
@@ -821,11 +822,14 @@ def get_process():
 			filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
 			cmd = [sys.executable, filepath]
 			proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
-			proc.stdin.write('%d\n' % os.getpid())
+			header = '%d\n' % os.getpid()
+			proc.stdin.write(header.encode())
 			proc.stdin.flush()
 			proc.used = True
 			process_pool.append(proc)
 			return proc
+	finally:
+		process_lock.release()
 
 def run_process(cmd, kwargs, cargs=None, local=False):
 	if local or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
@@ -841,7 +845,7 @@ def run_process(cmd, kwargs, cargs=None, local=False):
 		proc = get_process()
 		obj = cPickle.dumps([cmd, kwargs, cargs], 0)
 		header = "%d\n" % len(obj)
-		proc.stdin.write(header)
+		proc.stdin.write(header.encode())
 		proc.stdin.write(obj)
 		proc.stdin.flush()
 

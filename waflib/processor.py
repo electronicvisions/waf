@@ -25,13 +25,16 @@ def perr(msg):
 # quit if the parent process ends abruptly
 ppid = int(sys.stdin.readline())
 def reap():
-	while 1:
-		try:
-			os.kill(ppid, 0)
-		except OSError:
-			break
-		else:
-			time.sleep(1)
+	if os.sep != '/':
+		os.waitpid(ppid, 0)
+	else:
+		while 1:
+			try:
+				os.kill(ppid, 0)
+			except OSError:
+				break
+			else:
+				time.sleep(1)
 	os.kill(os.getpid(), signal.SIGKILL)
 t = threading.Thread(target=reap)
 t.setDaemon(True)
@@ -45,7 +48,7 @@ while 1:
 
 	buflen = int(txt.strip())
 	obj = sys.stdin.read(buflen)
-	[cmd, kwargs, cargs] = cPickle.loads(obj)
+	[cmd, kwargs, cargs] = cPickle.loads(obj.encode())
 	cargs = cargs or {}
 
 	ret = 1
@@ -69,8 +72,7 @@ while 1:
 	obj = cPickle.dumps(tmp, 0)
 
 	header = "%d\n" % len(obj)
-
 	sys.stdout.write(header)
-	sys.stdout.write(obj)
+	sys.stdout.write(obj.decode(sys.stdout.encoding or 'iso8859-1'))
 	sys.stdout.flush()
 
