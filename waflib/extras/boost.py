@@ -61,7 +61,7 @@ BOOST_VERSION_FILE = 'boost/version.hpp'
 BOOST_VERSION_CODE = '''
 #include <iostream>
 #include <boost/version.hpp>
-int main() { std::cout << BOOST_LIB_VERSION << std::endl; }
+int main() { std::cout << BOOST_LIB_VERSION << ":" << BOOST_VERSION << std::endl; }
 '''
 
 BOOST_ERROR_CODE = '''
@@ -116,14 +116,15 @@ BOOST_TOOLSETS = {
 
 
 def options(opt):
+	opt = opt.add_option_group('Boost Options')
 	opt.add_option('--boost-includes', type='string',
 				   default='', dest='boost_includes',
-				   help='''path to the boost includes root (~boost root)
-				   e.g. /path/to/boost_1_47_0''')
+				   help='''path to the directory where the boost includes are,
+				   e.g., /path/to/boost_1_55_0/stage/include''')
 	opt.add_option('--boost-libs', type='string',
 				   default='', dest='boost_libs',
-				   help='''path to the directory where the boost libs are
-				   e.g. /path/to/boost_1_47_0/stage/lib''')
+				   help='''path to the directory where the boost libs are,
+				   e.g., path/to/boost_1_55_0/stage/lib''')
 	opt.add_option('--boost-mt', action='store_true',
 				   default=False, dest='boost_mt',
 				   help='select multi-threaded libraries')
@@ -162,11 +163,13 @@ def boost_get_version(self, d):
 		except EnvironmentError:
 			Logs.error("Could not read the file %r" % node.abspath())
 		else:
-			re_but = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"', re.M)
-			m = re_but.search(txt)
-			if m:
-				return m.group(1)
-	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True)
+			re_but1 = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.+)"', re.M)
+			m1 = re_but1.search(txt)
+			re_but2 = re.compile('^#define\\s+BOOST_VERSION\\s+(\\d+)', re.M)
+			m2 = re_but2.search(txt)
+			if m1 and m2:
+				return (m1.group(1), m2.group(1))
+	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True).split(":")
 
 @conf
 def boost_get_includes(self, *k, **kw):
@@ -328,8 +331,12 @@ def check_boost(self, *k, **kw):
 
 	self.start_msg('Checking boost includes')
 	self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
-	self.env.BOOST_VERSION = self.boost_get_version(inc)
-	self.end_msg(self.env.BOOST_VERSION)
+	versions = self.boost_get_version(inc)
+	self.env.BOOST_VERSION = versions[0]
+	self.env.BOOST_VERSION_NUMBER = int(versions[1])
+	self.end_msg("%d.%d.%d" % (int(versions[1]) / 100000,
+							   int(versions[1]) / 100 % 1000,
+							   int(versions[1]) % 100))
 	if Logs.verbose:
 		Logs.pprint('CYAN', '	path : %s' % self.env['INCLUDES_%s' % var])
 
@@ -357,8 +364,24 @@ def check_boost(self, *k, **kw):
 		if (params['lib'] and 'thread' in params['lib']) or \
 			params['stlib'] and 'thread' in params['stlib']:
 			self.check_cxx(fragment=BOOST_THREAD_CODE, use=var, execute=False)
-		if (params['lib'] and 'log' in params['lib']) or \
-			params['stlib'] and 'log' in params['stlib']:
+
+		def is_log_mt():
+			'''Check if found boost_log library is multithread-safe'''
+			for lib in libs:
+				if lib.startswith('boost_log'):
+					lib_log = lib
+					break
+			return '-mt' in lib_log
+
+		if params['lib'] and 'log' in params['lib']:
+			self.env['DEFINES_%s' % var] += ['BOOST_LOG_DYN_LINK']
+			if not is_log_mt():
+				self.env['DEFINES_%s' % var] += ['BOOST_LOG_NO_THREADS']
+			self.check_cxx(fragment=BOOST_LOG_CODE, use=var, execute=False)
+		if params['stlib'] and 'log' in params['stlib']:
+			# Static linking is assumed by default
+			if not is_log_mt():
+				self.env['DEFINES_%s' % var] += ['BOOST_LOG_NO_THREADS']
 			self.check_cxx(fragment=BOOST_LOG_CODE, use=var, execute=False)
 
 	if params.get('linkage_autodetect', False):
