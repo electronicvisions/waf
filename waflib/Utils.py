@@ -9,7 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import os, sys, errno, traceback, inspect, re, shutil, datetime, gc, platform, time
+import os, sys, errno, traceback, inspect, re, shutil, datetime, gc, platform, time, base64
 try:
 	import cPickle
 except ImportError:
@@ -830,7 +830,7 @@ def get_process():
 		process_lock.release()
 	return get_process()
 
-def run_process(cmd, kwargs, cargs=None):
+def run_process(cmd, kwargs, cargs={}):
 	if os.name == 'java' or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
 		proc = subprocess.Popen(cmd, **kwargs)
 		if kwargs.get('stdout', None) or kwargs.get('stderr', None):
@@ -842,17 +842,15 @@ def run_process(cmd, kwargs, cargs=None):
 		return status, out, err
 	else:
 		proc = get_process()
-		obj = cPickle.dumps([cmd, kwargs, cargs], 0)
-		header = "%d\n" % len(obj)
-		proc.stdin.write(header.encode())
+		obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs])) #.encode()
 		proc.stdin.write(obj)
+		proc.stdin.write('\n'.encode())
 		proc.stdin.flush()
 
-		txt = proc.stdout.readline()
-		buflen = int(txt.strip())
-		obj = proc.stdout.read(buflen)
+		obj = proc.stdout.readline()
 		process_pool.append(proc)
-		ret, out, err, ex = cPickle.loads(obj)
+
+		ret, out, err, ex = cPickle.loads(base64.b64decode(obj))
 		if ex:
 			# TODO
 			raise OSError(ex)

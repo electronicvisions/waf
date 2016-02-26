@@ -5,7 +5,7 @@
 """
 """
 
-import os, threading, sys, signal, time, traceback
+import os, threading, sys, signal, time, traceback, base64
 try:
 	import cPickle
 except ImportError:
@@ -17,14 +17,11 @@ except ImportError:
 	import subprocess
 
 while 1:
-	txt = sys.stdin.readline()
+	txt = sys.stdin.readline().strip()
 	if not txt:
 		# parent process probably ended
 		break
-
-	buflen = int(txt.strip())
-	obj = sys.stdin.read(buflen)
-	[cmd, kwargs, cargs] = cPickle.loads(obj.encode())
+	[cmd, kwargs, cargs] = cPickle.loads(base64.b64decode(txt))
 	cargs = cargs or {}
 
 	ret = 1
@@ -45,10 +42,8 @@ while 1:
 
 	# it is just text so maybe we do not need to pickle()
 	tmp = [ret, out, err, ex]
-	obj = cPickle.dumps(tmp, 0)
-
-	header = "%d\n" % len(obj)
-	sys.stdout.write(header)
-	sys.stdout.write(obj.decode(sys.stdout.encoding or 'iso8859-1'))
+	obj = base64.b64encode(cPickle.dumps(tmp))
+	sys.stdout.write(obj.decode())
+	sys.stdout.write('\n')
 	sys.stdout.flush()
 
