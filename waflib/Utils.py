@@ -831,7 +831,7 @@ def get_process():
 	return get_process()
 
 def run_process(cmd, kwargs, cargs={}):
-	if os.name == 'java' or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
+	if os.name == 'java' or sys.platform == 'cli' or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
 		proc = subprocess.Popen(cmd, **kwargs)
 		if kwargs.get('stdout', None) or kwargs.get('stderr', None):
 			out, err = proc.communicate(**cargs)
@@ -842,7 +842,7 @@ def run_process(cmd, kwargs, cargs={}):
 		return status, out, err
 	else:
 		proc = get_process()
-		obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs])) #.encode()
+		obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
 		proc.stdin.write(obj)
 		proc.stdin.write('\n'.encode())
 		proc.stdin.flush()
