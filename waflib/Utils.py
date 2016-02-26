@@ -843,7 +843,7 @@ def run_prefork_process(cmd, kwargs, cargs):
 	proc.stdin.flush()
 	obj = proc.stdout.readline()
 	if not obj:
-		raise OSError('Preforked sub-process died %r' % proc.getpid())
+		raise OSError('Preforked sub-process %r died' % proc.pid)
 
 	process_pool.append(proc)
 	ret, out, err, ex, trace = cPickle.loads(base64.b64decode(obj))
