@@ -830,29 +830,42 @@ def get_process():
 		process_lock.release()
 	return get_process()
 
+def run_regular_process(cmd, kwargs, cargs={}):
+	proc = subprocess.Popen(cmd, **kwargs)
+	if kwargs.get('stdout', None) or kwargs.get('stderr', None):
+		out, err = proc.communicate(**cargs)
+		status = proc.returncode
+	else:
+		out, err = (None, None)
+		status = proc.wait(**cargs)
+	return status, out, err
+
+def run_prefork_process(cmd, kwargs, cargs):
+	proc = get_process()
+	obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
+
+	proc.stdin.write(obj)
+	proc.stdin.write('\n'.encode())
+	proc.stdin.flush()
+	obj = proc.stdout.readline()
+	if not obj:
+		raise OSError('Preforked sub-process died %r' % proc.getpid())
+
+	process_pool.append(proc)
+	ret, out, err, ex, trace = cPickle.loads(base64.b64decode(obj))
+	if ex:
+		if ex == 'OSError':
+			raise OSError(trace)
+		elif ex == 'ValueError':
+			raise ValueError(trace)
+		else:
+			# something really strange
+			raise Exception(trace)
+	return ret, out, err
+
 def run_process(cmd, kwargs, cargs={}):
 	if os.name == 'java' or sys.platform == 'cli' or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
-		proc = subprocess.Popen(cmd, **kwargs)
-		if kwargs.get('stdout', None) or kwargs.get('stderr', None):
-			out, err = proc.communicate(**cargs)
-			status = proc.returncode
-		else:
-			out, err = (None, None)
-			status = proc.wait(**cargs)
-		return status, out, err
+		return run_regular_process(cmd, kwargs, cargs)
 	else:
-		proc = get_process()
-		obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
-		proc.stdin.write(obj)
-		proc.stdin.write('\n'.encode())
-		proc.stdin.flush()
-
-		obj = proc.stdout.readline()
-		process_pool.append(proc)
-
-		ret, out, err, ex = cPickle.loads(base64.b64decode(obj))
-		if ex:
-			# TODO
-			raise OSError(ex)
-		return ret, out, err
+		return run_prefork_process(cmd, kwargs, cargs)
 

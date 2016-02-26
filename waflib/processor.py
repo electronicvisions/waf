@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2015 (ita)
-
-"""
-"""
+# Thomas Nagy, 2016 (ita)
 
 import os, threading, sys, signal, time, traceback, base64
 try:
@@ -16,34 +13,36 @@ try:
 except ImportError:
 	import subprocess
 
-while 1:
+def run():
 	txt = sys.stdin.readline().strip()
 	if not txt:
 		# parent process probably ended
-		break
+		sys.exit(1)
 	[cmd, kwargs, cargs] = cPickle.loads(base64.b64decode(txt))
 	cargs = cargs or {}
 
 	ret = 1
-	out, err = (None, None)
-	ex = None
+	out, err, ex, trace = (None, None, None, None)
 	try:
 		proc = subprocess.Popen(cmd, **kwargs)
 		out, err = proc.communicate(**cargs)
 		ret = proc.returncode
-	except OSError as e:
-		# TODO
+	except (OSError, ValueError, Exception) as e:
 		exc_type, exc_value, tb = sys.exc_info()
 		exc_lines = traceback.format_exception(exc_type, exc_value, tb)
-		ex = str(cmd) + '\n' + ''.join(exc_lines)
-	except ValueError as e:
-		# TODO
-		ex = str(e)
+		trace = str(cmd) + '\n' + ''.join(exc_lines)
+		ex = e.__class__.__name__
 
 	# it is just text so maybe we do not need to pickle()
-	tmp = [ret, out, err, ex]
+	tmp = [ret, out, err, ex, trace]
 	obj = base64.b64encode(cPickle.dumps(tmp))
 	sys.stdout.write(obj.decode())
 	sys.stdout.write('\n')
 	sys.stdout.flush()
+
+while 1:
+	try:
+		run()
+	except KeyboardInterrupt:
+		break
 
