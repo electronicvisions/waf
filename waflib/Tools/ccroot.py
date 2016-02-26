@@ -142,6 +142,12 @@ class link_task(Task.Task):
 		The settings are retrieved from ``env.clsname_PATTERN``
 		"""
 		if isinstance(target, str):
+			base = self.generator.path
+			if target.startswith('#'):
+				# for those who like flat structures
+				target = target[1:]
+				base = self.generator.bld.bldnode
+
 			pattern = self.env[self.__class__.__name__ + '_PATTERN']
 			if not pattern:
 				pattern = '%s'
@@ -162,7 +168,7 @@ class link_task(Task.Task):
 				tmp = folder + os.sep + pattern % name
 			else:
 				tmp = pattern % name
-			target = self.generator.path.find_or_declare(tmp)
+			target = base.find_or_declare(tmp)
 		self.set_outputs(target)
 
 class stlink_task(link_task):
