@@ -108,17 +108,16 @@ class d_parser(object):
 		:param filename: file to read
 		:type filename: string
 		"""
-		file_path = filename.replace('.', '/')
+		found = 0
 		for n in self.incpaths:
-			for suffix in ('.d', '/package.d'):
-				found = n.find_resource(file_path + suffix)
-				if found:
-					self.nodes.append(found)
-					self.waiting.append(found)
-					return
-
-		if not filename in self.names:
-			self.names.append(filename)
+			found = n.find_resource(filename.replace('.', '/') + '.d')
+			if found:
+				self.nodes.append(found)
+				self.waiting.append(found)
+				break
+		if not found:
+			if not filename in self.names:
+				self.names.append(filename)
 
 	def get_strings(self, code):
 		"""
