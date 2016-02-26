@@ -40,10 +40,10 @@ import logging
 import threading
 from waflib import Task, TaskGen, Logs, Options, Node
 try:
-    from cpplint.cpplint import ProcessFile, _cpplint_state
+    import cpplint.cpplint as cpplint_tool
 except ImportError:
     try:
-        from cpplint import ProcessFile, _cpplint_state
+        import cpplint as cpplint_tool
     except ImportError:
         pass
 
@@ -62,6 +62,9 @@ def options(opt):
     opt.add_option('--cpplint-filters', type='string',
                    default='', dest='CPPLINT_FILTERS',
                    help='add filters to cpplint')
+    opt.add_option('--cpplint-length', type='int',
+                   default=80, dest='CPPLINT_LINE_LENGTH',
+                   help='specify the line length (default: 80)')
     opt.add_option('--cpplint-level', default=1, type='int', dest='CPPLINT_LEVEL',
                    help='specify the log level (default: 1)')
     opt.add_option('--cpplint-break', default=5, type='int', dest='CPPLINT_BREAK',
@@ -77,7 +80,7 @@ def options(opt):
 def configure(conf):
     conf.start_msg('Checking cpplint')
     try:
-        _cpplint_state
+        cpplint_tool._cpplint_state
         conf.end_msg('ok')
     except NameError:
         conf.env.CPPLINT_SKIP = True
@@ -178,9 +181,10 @@ class cpplint(Task.Task):
         global critical_errors
         with cpplint_wrapper(get_cpplint_logger(self.env.CPPLINT_OUTPUT), self.env.CPPLINT_BREAK, self.env.CPPLINT_OUTPUT):
             if self.env.CPPLINT_OUTPUT != 'waf':
-                _cpplint_state.output_format = self.env.CPPLINT_OUTPUT
-            _cpplint_state.SetFilters(self.env.CPPLINT_FILTERS)
-            ProcessFile(self.inputs[0].abspath(), self.env.CPPLINT_LEVEL)
+                cpplint_tool._cpplint_state.output_format = self.env.CPPLINT_OUTPUT
+            cpplint_tool._cpplint_state.SetFilters(self.env.CPPLINT_FILTERS)
+            cpplint_tool._line_length = self.env.CPPLINT_LINE_LENGTH
+            cpplint_tool.ProcessFile(self.inputs[0].abspath(), self.env.CPPLINT_LEVEL)
         return critical_errors
 
 @TaskGen.extension('.h', '.hh', '.hpp', '.hxx')
