@@ -809,26 +809,20 @@ def sane_path(p):
 	return os.path.abspath(os.path.expanduser(p))
 
 
-process_lock = threading.Lock()
-process_pool = deque()
+process_pool = []
 def get_process():
 	try:
-		process_lock.acquire()
-		if process_pool:
-			proc = process_pool.popleft()
-			if proc.returncode:
-				# just get another process
-				pass
-			else:
-				return proc
-		else:
-			filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
-			cmd = [sys.executable, filepath]
-			proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
-			return proc
-	finally:
-		process_lock.release()
-	return get_process()
+		proc = process_pool.pop()
+	except IndexError:
+		filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
+		cmd = [sys.executable, filepath]
+		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
+	return proc
+
+def alloc_process_pool(n):
+	lst = [get_process() for x in range(n)]
+	for x in lst:
+		process_pool.append(x)
 
 def run_regular_process(cmd, kwargs, cargs={}):
 	proc = subprocess.Popen(cmd, **kwargs)
@@ -841,9 +835,9 @@ def run_regular_process(cmd, kwargs, cargs={}):
 	return status, out, err
 
 def run_prefork_process(cmd, kwargs, cargs):
-	proc = get_process()
 	obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
 
+	proc = get_process()
 	proc.stdin.write(obj)
 	proc.stdin.write('\n'.encode())
 	proc.stdin.flush()
@@ -859,12 +853,11 @@ def run_prefork_process(cmd, kwargs, cargs):
 		elif ex == 'ValueError':
 			raise ValueError(trace)
 		else:
-			# something really strange
 			raise Exception(trace)
 	return ret, out, err
 
 def run_process(cmd, kwargs, cargs={}):
-	if os.name == 'java' or sys.platform == 'cli' or not kwargs.get('stdout', None) or not kwargs.get('stderr', None):
+	if not kwargs.get('stdout', None) or not kwargs.get('stderr', None) or os.name == 'java' or sys.platform == 'cli':
 		return run_regular_process(cmd, kwargs, cargs)
 	else:
 		return run_prefork_process(cmd, kwargs, cargs)

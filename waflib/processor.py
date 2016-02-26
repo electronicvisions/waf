@@ -2,7 +2,7 @@
 # encoding: utf-8
 # Thomas Nagy, 2016 (ita)
 
-import os, threading, sys, signal, time, traceback, base64
+import  sys, traceback, base64
 try:
 	import cPickle
 except ImportError:
