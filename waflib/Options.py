@@ -270,4 +270,5 @@ class OptionsContext(Context.Context):
 		"""
 		super(OptionsContext, self).execute()
 		self.parse_args()
+		Utils.alloc_process_pool(options.jobs)
 

@@ -812,32 +812,19 @@ def sane_path(p):
 process_pool = []
 def get_process():
 	try:
-		proc = process_pool.pop()
+		return process_pool.pop()
 	except IndexError:
 		filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
 		cmd = [sys.executable, filepath]
-		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
-	return proc
-
-def alloc_process_pool(n):
-	lst = [get_process() for x in range(n)]
-	for x in lst:
-		process_pool.append(x)
-
-def run_regular_process(cmd, kwargs, cargs={}):
-	proc = subprocess.Popen(cmd, **kwargs)
-	if kwargs.get('stdout', None) or kwargs.get('stderr', None):
-		out, err = proc.communicate(**cargs)
-		status = proc.returncode
-	else:
-		out, err = (None, None)
-		status = proc.wait(**cargs)
-	return status, out, err
+		return subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
 
 def run_prefork_process(cmd, kwargs, cargs):
 	obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
 
 	proc = get_process()
+	if not proc:
+		return run_regular_process(cmd, kwargs, cargs)
+
 	proc.stdin.write(obj)
 	proc.stdin.write('\n'.encode())
 	proc.stdin.flush()
@@ -856,9 +843,37 @@ def run_prefork_process(cmd, kwargs, cargs):
 			raise Exception(trace)
 	return ret, out, err
 
-def run_process(cmd, kwargs, cargs={}):
-	if not kwargs.get('stdout', None) or not kwargs.get('stderr', None) or os.name == 'java' or sys.platform == 'cli':
-		return run_regular_process(cmd, kwargs, cargs)
+def run_regular_process(cmd, kwargs, cargs={}):
+	proc = subprocess.Popen(cmd, **kwargs)
+	if kwargs.get('stdout', None) or kwargs.get('stderr', None):
+		out, err = proc.communicate(**cargs)
+		status = proc.returncode
 	else:
+		out, err = (None, None)
+		status = proc.wait(**cargs)
+	return status, out, err
+
+def run_process(cmd, kwargs, cargs={}):
+	if kwargs.get('stdout', None) and kwargs.get('stderr', None):
 		return run_prefork_process(cmd, kwargs, cargs)
+	else:
+		return run_regular_process(cmd, kwargs, cargs)
+
+def alloc_process_pool(n, force=False):
+	# mandatory on python2, unnecessary on python >= 3.2
+	global run_process, get_process, alloc_process_pool
+	if not force:
+		n = max(n - len(process_pool), 0)
+	try:
+		lst = [get_process() for x in range(n)]
+	except OSError:
+		run_process = run_regular_process
+		get_process = alloc_process_pool = nada
+	else:
+		for x in lst:
+			process_pool.append(x)
+
+if sys.platform == 'cli' or not sys.executable:
+	run_process = run_regular_process
+	get_process = alloc_process_pool = nada
 
