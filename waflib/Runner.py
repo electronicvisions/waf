@@ -40,8 +40,6 @@ class Spawner(Utils.threading.Thread):
 	def run(self):
 		master = self.master
 		while 1:
-			if master.stop:
-				break
 			task = master.ready.get()
 			self.sem.acquire()
 			task.log_display(task.generator.bld)
