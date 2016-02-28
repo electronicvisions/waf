@@ -14,12 +14,13 @@ except ImportError:
 	from Queue import Queue
 from waflib import Utils, Task, Errors, Logs
 
-GAP = 10
+GAP = 20
 """
 Wait for free tasks if there are at least ``GAP * njobs`` in queue
 """
 
 class Consumer(Utils.threading.Thread):
+	__slots__ = ('task', 'spawner')
 	def __init__(self, spawner, task):
 		Utils.threading.Thread.__init__(self)
 		self.task = task
@@ -27,8 +28,13 @@ class Consumer(Utils.threading.Thread):
 		self.setDaemon(1)
 		self.start()
 	def run(self):
-		self.task.process()
+		try:
+			self.task.process()
+		finally:
+			self.spawner.master.out.put(self.task)
 		self.spawner.sem.release()
+		self.task = None
+		self.spawner = None
 
 class Spawner(Utils.threading.Thread):
 	def __init__(self, master):
@@ -38,6 +44,13 @@ class Spawner(Utils.threading.Thread):
 		self.setDaemon(1)
 		self.start()
 	def run(self):
+		try:
+			self.loop()
+		except Exception:
+			# Python 2 prints unnecessary messages when shutting down
+			# we also want to stop the thread properly
+			pass
+	def loop(self):
 		master = self.master
 		while 1:
 			task = master.ready.get()
@@ -65,10 +78,10 @@ class Parallel(object):
 		Instance of :py:class:`waflib.Build.BuildContext`
 		"""
 
-		self.outstanding = []
+		self.outstanding = Utils.deque()
 		"""List of :py:class:`waflib.Task.TaskBase` that may be ready to be executed"""
 
-		self.frozen = []
+		self.frozen = Utils.deque()
 		"""List of :py:class:`waflib.Task.TaskBase` that cannot be executed immediately"""
 
 		self.ready = Queue(0)
@@ -104,7 +117,7 @@ class Parallel(object):
 		"""
 		if not self.outstanding:
 			return None
-		return self.outstanding.pop(0)
+		return self.outstanding.popleft()
 
 	def postpone(self, tsk):
 		"""
@@ -114,7 +127,7 @@ class Parallel(object):
 		:type tsk: :py:class:`waflib.Task.TaskBase`
 		"""
 		if random.randint(0, 1):
-			self.frozen.insert(0, tsk)
+			self.frozen.appendleft(tsk)
 		else:
 			self.frozen.append(tsk)
 
@@ -148,7 +161,7 @@ class Parallel(object):
 
 			if self.frozen:
 				self.outstanding += self.frozen
-				self.frozen = []
+				self.frozen.clear()
 			elif not self.count:
 				self.outstanding.extend(next(self.biter))
 				self.total = self.bld.total()
@@ -284,6 +297,9 @@ class Parallel(object):
 		# collect all the tasks after an error else the message may be incomplete
 		while self.error and self.count:
 			self.get_out()
+
+		self.ready.put(None)
+		self.bld = None
 
 		#print loop
 		assert (self.count == 0 or self.stop)

@@ -202,7 +202,6 @@ class TaskBase(evil):
 		"""
 		m = self.generator.bld.producer
 		if m.stop:
-			m.out.put(self)
 			return
 
 		# remove the task signature immediately before it is executed
@@ -221,7 +220,6 @@ class TaskBase(evil):
 
 			# TODO cleanup
 			m.error_handler(self)
-			m.out.put(self)
 			return
 
 		if ret:
@@ -239,8 +237,6 @@ class TaskBase(evil):
 				self.hasrun = SUCCESS
 		if self.hasrun != SUCCESS:
 			m.error_handler(self)
-
-		m.out.put(self)
 
 	def run(self):
 		"""
