@@ -161,7 +161,7 @@ class Parallel(object):
 				self.deadlock = self.processed
 
 			if self.frozen:
-				self.outstanding += self.frozen
+				self.outstanding.extend(self.frozen)
 				self.frozen.clear()
 			elif not self.count:
 				self.outstanding.extend(next(self.biter))
@@ -176,7 +176,7 @@ class Parallel(object):
 		:type tsk: :py:attr:`waflib.Task.TaskBase`
 		"""
 		if getattr(tsk, 'more_tasks', None):
-			self.outstanding += tsk.more_tasks
+			self.outstanding.extend(tsk.more_tasks)
 			self.total += len(tsk.more_tasks)
 
 	def get_out(self):
