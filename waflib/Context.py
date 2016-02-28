@@ -416,7 +416,7 @@ class Context(ctx):
 			to_ret = STDOUT
 
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
-			raise Errors.WafError("Program %s not found!" % cmd[0])
+			raise Errors.WafError("Program %r not found!" % cmd[0])
 
 		kw['stdout'] = kw['stderr'] = subprocess.PIPE
 		if quiet is None:

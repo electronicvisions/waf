@@ -61,12 +61,14 @@ def r1(code):
 	"utf-8 fixes for python < 2.6"
 	code = code.replace('as e:', ',e:')
 	code = code.replace(".decode(sys.stdout.encoding or 'iso8859-1')", '')
-	code = code.replace('.encode()', '')
-	return code
+	return code.replace('.encode()', '')
 
 @subst('Runner.py')
 def r4(code):
 	"generator syntax"
-	code = code.replace('next(self.biter)', 'self.biter.next()')
-	return code
+	return code.replace('next(self.biter)', 'self.biter.next()')
+
+@subst('Context.py')
+def r4(code):
+	return code.replace("('Execution failure: %s'%str(e),ex=e)", "('Execution failure: %s'%str(e),ex=e),None,sys.exc_info()[2]")
 

@@ -229,7 +229,7 @@ def h_file(fname):
 		from waflib import Utils
 		def h_file(fname):
 			st = os.stat(fname)
-			if stat.S_ISDIR(st[stat.ST_MODE]): raise IOError('not a file')
+			if stat.S_ISDIR(st[stat.ST_MODE]): raise OSError('not a file')
 			s = "%s%s%s" % (st.st_mtime, st.st_size, fname)
 			return Utils.md5(s.encode()).digest()
 		Utils.h_file = h_file
@@ -290,7 +290,7 @@ def writef_win32(f, data, m='w', encoding='ISO8859-1'):
 	try:
 		fd = os.open(f, flags)
 	except OSError:
-		raise IOError('Cannot write to %r' % f)
+		raise OSError('Cannot write to %r' % f)
 	f = os.fdopen(fd, m)
 	try:
 		f.write(data)
@@ -301,7 +301,7 @@ def h_file_win32(fname):
 	try:
 		fd = os.open(fname, os.O_BINARY | os.O_RDONLY | os.O_NOINHERIT)
 	except OSError:
-		raise IOError('Cannot read from %r' % fname)
+		raise OSError('Cannot read from %r' % fname)
 	f = os.fdopen(fd, 'rb')
 	m = md5()
 	try:

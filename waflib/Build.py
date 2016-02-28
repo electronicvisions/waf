@@ -191,7 +191,7 @@ class BuildContext(Context.Context):
 
 	def __copy__(self):
 		"""Implemented to prevents copies of build contexts (raises an exception)"""
-		raise Errors.WafError('build contexts are not supposed to be copied')
+		raise Errors.WafError('build contexts cannot be copied')
 
 	def install_files(self, *k, **kw):
 		"""Actual implementation provided by :py:meth:`waflib.Build.InstallContext.install_files`"""
