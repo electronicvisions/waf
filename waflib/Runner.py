@@ -284,7 +284,10 @@ class Parallel(object):
 				self.processed += 1
 
 				if self.numjobs == 1:
-					tsk.process()
+					try:
+						tsk.process()
+					finally:
+						self.out.put(tsk)
 				else:
 					self.add_task(tsk)
 			if st == Task.ASK_LATER:
