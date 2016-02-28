@@ -399,12 +399,12 @@ def num2ver(ver):
 def ex_stack():
 	"""
 	Extract the stack to display exceptions
+	Deprecated: use traceback.format_exc()
 
 	:return: a string represening the last exception
 	"""
-	exc_type, exc_value, tb = sys.exc_info()
-	exc_lines = traceback.format_exception(exc_type, exc_value, tb)
-	return ''.join(exc_lines)
+	# TODO remove in waf 2.0
+	return traceback.format_exc()
 
 def to_list(sth):
 	"""
