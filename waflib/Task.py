@@ -200,14 +200,10 @@ class TaskBase(evil):
 		Assume that the task has had a ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
 		Execute the task and then put it back in the queue :py:attr:`waflib.Runner.Parallel.out` (may be replaced by subclassing).
 		"""
-		m = self.generator.bld.producer
-		if m.stop:
-			return
-
 		# remove the task signature immediately before it is executed
 		# in case of failure the task will be executed again
 		try:
-			# TODO waf 1.9 - this breaks encapsulation
+			# TODO another place for this?
 			del self.generator.bld.task_sigs[self.uid()]
 		except KeyError:
 			pass

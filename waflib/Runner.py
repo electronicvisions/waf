@@ -29,12 +29,13 @@ class Consumer(Utils.threading.Thread):
 		self.start()
 	def run(self):
 		try:
-			self.task.process()
+			if not self.spawner.master.stop:
+				self.task.process()
 		finally:
+			self.spawner.sem.release()
 			self.spawner.master.out.put(self.task)
-		self.spawner.sem.release()
-		self.task = None
-		self.spawner = None
+			self.task = None
+			self.spawner = None
 
 class Spawner(Utils.threading.Thread):
 	def __init__(self, master):
