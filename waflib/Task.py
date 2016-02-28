@@ -202,6 +202,7 @@ class TaskBase(evil):
 		"""
 		# remove the task signature immediately before it is executed
 		# in case of failure the task will be executed again
+		m = self.generator.bld.producer
 		try:
 			# TODO another place for this?
 			del self.generator.bld.task_sigs[self.uid()]
