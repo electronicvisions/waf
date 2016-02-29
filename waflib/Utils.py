@@ -547,9 +547,7 @@ def h_list(lst):
 	:type lst: list of strings
 	:return: hash of the list
 	"""
-	m = md5()
-	m.update(str(lst).encode())
-	return m.digest()
+	return md5(repr(lst).encode()).digest()
 
 def h_fun(fun):
 	"""
