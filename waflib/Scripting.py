@@ -76,7 +76,11 @@ def waf_entry_point(current_directory, version, wafdir):
 	# at the same time, store the first wscript file seen
 	cur = current_directory
 	while cur and not Context.top_dir:
-		lst = os.listdir(cur)
+		try:
+			lst = os.listdir(cur)
+		except OSError:
+			lst = []
+			Logs.error('Directory %r is unreadable!' % cur)
 		if Options.lockfile in lst:
 			env = ConfigSet.ConfigSet()
 			try:
