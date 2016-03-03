@@ -284,6 +284,7 @@ class Parallel(object):
 				self.processed += 1
 
 				if self.numjobs == 1:
+					tsk.log_display(tsk.generator.bld)
 					try:
 						tsk.process()
 					finally:
