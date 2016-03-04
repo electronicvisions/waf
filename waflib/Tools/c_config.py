@@ -168,7 +168,12 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 		elif x.startswith('/LIBPATH:'):
 			prefix = (force_static or static) and 'STLIBPATH_' or 'LIBPATH_'
 			appu(prefix + uselib, [x.replace('/LIBPATH:', '')])
-		elif x == '-pthread' or x.startswith('+') or x.startswith('-std'):
+		elif x.startswith('-std='):
+			if '++' in x:
+				app('CXXFLAGS_' + uselib, [x])
+			else:
+				app('CFLAGS_' + uselib, [x])
+		elif x == '-pthread' or x.startswith('+'):
 			app('CFLAGS_' + uselib, [x])
 			app('CXXFLAGS_' + uselib, [x])
 			app('LINKFLAGS_' + uselib, [x])
