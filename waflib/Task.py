@@ -495,9 +495,8 @@ class Task(TaskBase):
 		try:
 			return self.uid_
 		except AttributeError:
-			m = Utils.md5()
+			m = Utils.md5(self.__class__.__name__)
 			up = m.update
-			up(self.__class__.__name__)
 			for x in self.inputs + self.outputs:
 				up(x.abspath())
 			self.uid_ = m.digest()
@@ -555,8 +554,7 @@ class Task(TaskBase):
 		try: return self.cache_sig
 		except AttributeError: pass
 
-		self.m = Utils.md5()
-		self.m.update(self.hcode)
+		self.m = Utils.md5(self.hcode)
 
 		# explicit deps
 		self.sig_explicit_deps()
@@ -828,9 +826,8 @@ if sys.hexversion > 0x3000000:
 		try:
 			return self.uid_
 		except AttributeError:
-			m = Utils.md5()
+			m = Utils.md5(self.__class__.__name__.encode('iso8859-1', 'xmlcharrefreplace'))
 			up = m.update
-			up(self.__class__.__name__.encode('iso8859-1', 'xmlcharrefreplace'))
 			for x in self.inputs + self.outputs:
 				up(x.abspath().encode('iso8859-1', 'xmlcharrefreplace'))
 			self.uid_ = m.digest()
