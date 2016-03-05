@@ -715,14 +715,6 @@ if is_win32:
 		shutil.copystat(src, dst)
 	setattr(shutil, 'copy2', copy2)
 
-if os.name == 'java':
-	# Jython cannot disable the gc but they can enable it ... wtf?
-	try:
-		gc.disable()
-		gc.enable()
-	except NotImplementedError:
-		gc.disable = gc.enable
-
 def read_la_file(path):
 	"""
 	Read property files, used by msvc.py
@@ -739,25 +731,6 @@ def read_la_file(path):
 		except ValueError:
 			pass
 	return dc
-
-def nogc(fun):
-	"""
-	Decorator: let a function disable the garbage collector during its execution.
-	It is used in the build context when storing/loading the build cache file (pickle)
-
-	:param fun: function to execute
-	:type fun: function
-	:return: the return value of the function executed
-	"""
-	def f(*k, **kw):
-		try:
-			gc.disable()
-			ret = fun(*k, **kw)
-		finally:
-			gc.enable()
-		return ret
-	f.__doc__ = fun.__doc__
-	return f
 
 def run_once(fun):
 	"""

@@ -16,4 +16,5 @@ NEW IN WAF 1.9
 * Enabled pre-forked builds by default
 * Modified the build scheduler to enable a consistent progress bar
 * Reduced the memory footprint of Task objects
+* Removed Utils.nogc
 
