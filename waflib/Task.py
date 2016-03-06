@@ -59,14 +59,15 @@ def f(tsk):
 	def to_list(xx):
 		if isinstance(xx, str): return [xx]
 		return xx
-	tsk.last_cmd = lst = []
 	def merge(lst1, lst2):
 		if lst1 and lst2:
 			return lst1[:-1] + [lst1[-1] + lst2[0]] + lst2[1:]
 		return lst1 + lst2
+	lst = []
 	%s
 	if '' in lst:
 		lst = [x for x in lst if x]
+	tsk.last_cmd = lst
 	return tsk.exec_command(lst, cwd=cwdx, env=env.env or None)
 '''
 
@@ -633,7 +634,10 @@ class Task(TaskBase):
 				raise Errors.WafError(self.err_msg)
 			bld.node_sigs[node] = self.uid() # make sure this task produced the files in question
 		bld.task_sigs[self.uid()] = self.signature()
-		# TODO: to save some memory, unbind last_cmd here
+		try:
+			del self.last_cmd
+		except AttributeError:
+			pass
 
 	def sig_explicit_deps(self):
 		"""
