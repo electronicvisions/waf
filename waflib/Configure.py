@@ -228,7 +228,7 @@ class ConfigurationContext(Context.Context):
 			tmpenv = self.all_envs[key]
 			tmpenv.store(os.path.join(self.cachedir.abspath(), key + Build.CACHE_SUFFIX))
 
-	def load(self, input, tooldir=None, funs=None, with_sys_path=True):
+	def load(self, input, tooldir=None, funs=None, with_sys_path=True, cache=False):
 		"""
 		Load Waf tools, which will be imported whenever a build is started.
 
@@ -238,6 +238,8 @@ class ConfigurationContext(Context.Context):
 		:type tooldir: list of string
 		:param funs: functions to execute from the waf tools
 		:type funs: list of string
+		:param cache: whether to prevent the tool from running twice
+		:type cache: bool
 		"""
 
 		tools = Utils.to_list(input)
@@ -246,11 +248,12 @@ class ConfigurationContext(Context.Context):
 			# avoid loading the same tool more than once with the same functions
 			# used by composite projects
 
-			mag = (tool, id(self.env), tooldir, funs)
-			if mag in self.tool_cache:
-				self.to_log('(tool %s is already loaded, skipping)' % tool)
-				continue
-			self.tool_cache.append(mag)
+			if cache:
+				mag = (tool, id(self.env), tooldir, funs)
+				if mag in self.tool_cache:
+					self.to_log('(tool %s is already loaded, skipping)' % tool)
+					continue
+				self.tool_cache.append(mag)
 
 			module = None
 			try:
