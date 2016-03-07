@@ -23,8 +23,12 @@ def build(bld):
 
 	#print( 'path from srcnode', bld.path.find_or_declare('aaa').path_from(bld.bldnode) )
 
-	bld.install_files('/tmp/bar', 'wscript')
+	# folders as nodes are best avoided
+	dnode = bld.path.get_bld().make_node('testdir')
+	bld(rule='mkdir -p ${TGT}', target=dnode)
+	bld(rule='touch ${TGT}', source=dnode, target=dnode.make_node('stuff'), cls_str=lambda x: 'stuff')
 
+	bld.install_files('/tmp/bar', 'wscript')
 	bld(features='c cprogram', source='main.c', target='app')
 
 

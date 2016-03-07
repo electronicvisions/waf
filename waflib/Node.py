@@ -823,7 +823,16 @@ class Node(object):
 		try:
 			ret = cache[self]
 		except KeyError:
-			ret = cache[self] = Utils.h_file(self.abspath())
+			p = self.abspath()
+			try:
+				ret = cache[self] = Utils.h_file(p)
+			except EnvironmentError:
+				if os.path.isdir(p):
+					# allow folders as build nodes, do not use the creation time
+					st = os.stat(p)
+					ret = cache[self] = Utils.h_list([p, st.st_ino, st.st_mode])
+					return ret
+				raise
 		return ret
 
 	# --------------------------------------------
