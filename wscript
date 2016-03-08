@@ -21,14 +21,10 @@ zip_types = ['bz2', 'gz', 'xz']
 
 PRELUDE = ''
 
-#from tokenize import *
-import tokenize
-
-import os, sys, re, io, optparse
-
-from waflib import Utils, Options, Logs, Scripting
+import os, sys, re, io, optparse, tokenize
 from hashlib import md5
 
+from waflib import Utils, Options, Logs, Scripting
 from waflib import Configure
 Configure.autoconfig = 1
 
@@ -359,7 +355,7 @@ def create_waf(self, *k, **kw):
 				s = chr(i) + chr(j)
 				if -1 == kd.find(s.encode()):
 					return (kd.replace(ch.encode(), s.encode()), s)
-		raise
+		raise ValueError('Could not find a proper encoding')
 
 	# The reverse order prevents collisions
 	(cnt, C3) = find_unused(cnt, '\x00')
@@ -389,6 +385,7 @@ def create_waf(self, *k, **kw):
 			f.write('#')
 			f.write(sig)
 			f.write('\n')
+			os.remove('waf.asc')
 	finally:
 		f.close()
 
