@@ -8,6 +8,5 @@ Waf 1.9
 * Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
 * Provide a more efficient ConfigSet implementation
 * Ensure _cache.py are valid python files
-* One task.idx per task node
 * Other issues listed on https://github.com/waf-project/waf/issues
 

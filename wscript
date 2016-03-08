@@ -9,7 +9,6 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 ./waf-light  --tools=compat15,/comp/waf/aba.py --prelude=$'\tfrom waflib.extras import aba\n\taba.foo()'
 """
 
-
 VERSION="1.9.0"
 APPNAME='waf'
 REVISION=''
@@ -29,7 +28,6 @@ from waflib import Configure
 Configure.autoconfig = 1
 
 def sub_file(fname, lst):
-
 	f = open(fname, 'rU')
 	try:
 		txt = f.read()
@@ -207,8 +205,8 @@ def sfilter(path):
 				cnt = f.read()
 			finally:
 				f.close()
-		# WARNING: since we now require python 2.4, we do not process the decorators anymore
-		# if you need such a thing, uncomment the code below:
+		# WARNING: since python >= 2.5 is required, decorators are not processed anymore
+		# uncomment the following to enable decorator replacement:
 		#cnt = process_decorators(cnt)
 		#if cnt.find('set(') > -1:
 		#	cnt = 'import sys\nif sys.hexversion < 0x020400f0: from sets import Set as set\n' + cnt
@@ -339,7 +337,7 @@ def create_waf(self, *k, **kw):
 	finally:
 		f.close()
 
-	# the REVISION value is the md5 sum of the binary blob (facilitate audits)
+	# the REVISION value is the md5 sum of the compressed data (facilitate audits)
 	m = md5()
 	m.update(cnt)
 	REVISION = m.hexdigest()
@@ -405,7 +403,7 @@ def configure(conf):
 	conf.load('python')
 
 def build(bld):
-	waf = bld.path.make_node('waf') # create the node right here
+	waf = bld.path.make_node('waf') # do not use a build directory for this file
 	bld(name='create_waf', rule=create_waf, target=waf, always=True, color='PINK')
 
 class Dist(Scripting.Dist):
