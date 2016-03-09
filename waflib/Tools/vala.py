@@ -288,6 +288,10 @@ def check_vala(self, min_version=(0,8,0), branch=None):
 	:param branch: first part of the version number, in case a snapshot is used (0, 8)
 	:type branch: tuple of int
 	"""
+	if self.env.VALA_MINVER:
+		min_version = self.env.VALA_MINVER
+	if self.env.VALA_MINVER_BRANCH:
+		branch = self.env.VALA_MINVER_BRANCH
 	if not branch:
 		branch = min_version[:2]
 	try:
@@ -321,8 +325,8 @@ def configure(self):
 	Use the following to enforce minimum vala version::
 
 		def configure(conf):
-			conf.load('vala', funs='')
-			conf.check_vala(min_version=(0,10,0))
+			conf.env.VALA_MINVER = (0, 10, 0)
+			conf.load('vala')
 	"""
 	self.load('gnu_dirs')
 	self.check_vala_deps()
