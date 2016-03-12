@@ -167,9 +167,7 @@ class BuildContext(Context.Context):
 		"""
 		Wrapper for creating a task generator using the decorator notation. The following code::
 
-			@bld.rule(
-				target = "foo"
-			)
+			@bld.rule(target="foo")
 			def _(tsk):
 				print("bar")
 
@@ -595,7 +593,6 @@ class BuildContext(Context.Context):
 
 	def add_to_group(self, tgen, group=None):
 		"""add a task or a task generator for the build"""
-		# paranoid
 		assert(isinstance(tgen, TaskGen.task_gen) or isinstance(tgen, Task.TaskBase))
 		tgen.bld = self
 		self.get_group(group).append(tgen)
