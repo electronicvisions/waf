@@ -812,7 +812,7 @@ class inst(Task.Task):
 
 	def uid(self):
 		lst = [self.dest, self.path] + self.source
-		return Utils.h_list(repr(lst))
+		return Utils.h_list(lst)
 
 	def post(self):
 		"""
