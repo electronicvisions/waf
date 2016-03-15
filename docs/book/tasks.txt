@@ -170,10 +170,10 @@ The attributes _before_ and _after_ are used to declare ordering constraints bet
 
 [source,python]
 ---------------
-from waflib.Task import TaskBase
-class task_test_a(TaskBase):
+from waflib.Task import Task
+class task_test_a(Task):
     before = ['task_test_b']
-class task_test_b(TaskBase):
+class task_test_b(Task):
     after  = ['task_test_a']
 ---------------
 
@@ -183,10 +183,10 @@ Another way to force the order is by declaring lists of abstract symbols on the 
 
 [source,python]
 ---------------
-from waflib.Task import TaskBase
-class task_test_a(TaskBase):
+from waflib.Task import Task
+class task_test_a(Task):
     ext_in  = ['.h']
-class task_test_b(TaskBase):
+class task_test_b(Task):
     ext_out = ['.h']
 ---------------
 

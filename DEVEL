@@ -1,4 +1,4 @@
-Waf 1.8 is on https://github.com/waf-project/waf
+Waf 1.9 is on https://github.com/waf-project/waf
 ------------------------------------------------
 
 waflib            the core library
@@ -22,7 +22,7 @@ Coding guidelines
 -----------------
 
 * We use tabs, no spaces
-* Do not use x.split("\n") but x.splitlines()
-* Do not catch all exceptions unless you have a good reason to do so (no "except:")
+* Use x.splitlines() instead of x.split('\n')
+* No "except:" and and no "except Exception:" unless there is a very good reason
 * File handles are too easy to get wrong, use Node.readf/Node.writef/Utils.readf/Utils.writef
 
