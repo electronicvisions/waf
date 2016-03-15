@@ -162,8 +162,6 @@ class task_gen(object):
 		#. The methods are then executed in order
 		#. The tasks created are added to :py:attr:`waflib.TaskGen.task_gen.tasks`
 		"""
-
-		# we could add a decorator to let the task run once, but then python 2.3 will be difficult to support
 		if getattr(self, 'posted', None):
 			#error("OBJECT ALREADY POSTED" + str( self))
 			return False

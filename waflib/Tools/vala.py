@@ -340,7 +340,7 @@ def options(opt):
 	"""
 	opt.load('gnu_dirs')
 	valaopts = opt.add_option_group('Vala Compiler Options')
-	valaopts.add_option ('--vala-target-glib', default=None,
+	valaopts.add_option('--vala-target-glib', default=None,
 		dest='vala_target_glib', metavar='MAJOR.MINOR',
 		help='Target version of glib for Vala GObject code generation')
 
