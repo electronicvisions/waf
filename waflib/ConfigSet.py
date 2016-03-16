@@ -312,8 +312,7 @@ class ConfigSet(object):
 		:param d: object to use the value from
 		:type d: dict-like object
 		"""
-		for k, v in d.items():
-			self[k] = v
+		self.table.update(d)
 
 	def stash(self):
 		"""
