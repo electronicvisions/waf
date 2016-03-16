@@ -94,10 +94,10 @@ class task_gen(object):
 
 			# provide a unique id
 			try:
-				self.idx = self.bld.idx[id(self.path)] = self.bld.idx.get(id(self.path), 0) + 1
+				self.idx = self.bld.idx[self.path] = self.bld.idx.get(self.path, 0) + 1
 			except AttributeError:
 				self.bld.idx = {}
-				self.idx = self.bld.idx[id(self.path)] = 1
+				self.idx = self.bld.idx[self.path] = 1
 
 		for key, val in kw.items():
 			setattr(self, key, val)
