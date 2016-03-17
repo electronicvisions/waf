@@ -4,7 +4,6 @@ Waf 1.9
 * Better consistency between check_cfg and check_cc variables
 * Let more context commands depend on the configuration
 * Rework qt5
-* Use relative paths in apply_incpaths (and absolute ones when paths cross drives)
 * Regexps for extension-based processing
 * Other issues listed on https://github.com/waf-project/waf/issues
 

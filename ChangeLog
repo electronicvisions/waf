@@ -27,4 +27,5 @@ NEW IN WAF 1.9
   - Remove Utils.nogc
   - Modify Utils.run_once so that it accepts a list of *args
   - Improve the task consumer in Runner.py
+  - Use relative paths in apply_incpaths by default (and absolute ones when paths cross drives)
 
