@@ -15,12 +15,6 @@ A :py:class:`waflib.Configure.ConfigurationContext` instance is created when ``w
 import os, shlex, sys, time, re, shutil
 from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
 
-BREAK    = 'break'
-"""In case of a configuration error, break"""
-
-CONTINUE = 'continue'
-"""In case of a configuration error, continue"""
-
 WAF_CONFIG_LOG = 'config.log'
 """Name of the configuration log file"""
 
@@ -288,8 +282,7 @@ class ConfigurationContext(Context.Context):
 
 	def eval_rules(self, rules):
 		"""
-		Execute the configuration tests. The method :py:meth:`waflib.Configure.ConfigurationContext.err_handler`
-		is used to process the eventual exceptions
+		Execute configuration tests provided as list of funcitons to run
 
 		:param rules: list of configuration method names
 		:type rules: list of string
@@ -297,28 +290,9 @@ class ConfigurationContext(Context.Context):
 		self.rules = Utils.to_list(rules)
 		for x in self.rules:
 			f = getattr(self, x)
-			if not f: self.fatal("No such method '%s'." % x)
-			try:
-				f()
-			except Exception as e:
-				ret = self.err_handler(x, e)
-				if ret == BREAK:
-					break
-				elif ret == CONTINUE:
-					continue
-				else:
-					raise
-
-	def err_handler(self, fun, error):
-		"""
-		Error handler for the configuration tests, the default is to let the exception raise
-
-		:param fun: configuration test
-		:type fun: method
-		:param error: exception
-		:type error: exception
-		"""
-		pass
+			if not f:
+				self.fatal("No such configuration function %r" % x)
+			f()
 
 def conf(f):
 	"""
