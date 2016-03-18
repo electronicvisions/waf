@@ -9,7 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import os, sys, errno, traceback, inspect, re, shutil, datetime, gc, platform, time, base64
+import os, sys, errno, traceback, inspect, re, shutil, datetime, platform, base64
 try:
 	import cPickle
 except ImportError:
@@ -35,11 +35,6 @@ except ImportError:
 		winreg = None
 
 from waflib import Errors
-
-try:
-	from collections import UserDict
-except ImportError:
-	from UserDict import UserDict
 
 try:
 	from hashlib import md5
@@ -351,7 +346,7 @@ def listdir_win32(s):
 			import ctypes
 		except ImportError:
 			# there is nothing much we can do
-			return [x + ':\\' for x in list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')]
+			return [x + ':\\' for x in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ']
 		else:
 			dlen = 4 # length of "?:\\x00"
 			maxdrives = 26
