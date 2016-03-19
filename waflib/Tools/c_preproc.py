@@ -821,7 +821,7 @@ class c_parser(object):
 		try:
 			cache = node.ctx.preproc_cache_node
 		except AttributeError:
-			cache = node.ctx.preproc_cache_node = Utils.lru_cache(500)
+			cache = node.ctx.preproc_cache_node = Utils.lru_cache(1000)
 
 		key = (node, filename)
 		try:
