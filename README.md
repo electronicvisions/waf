@@ -19,7 +19,7 @@ Download the project from our page on [waf.io](https://waf.io/) or from the mirr
 
 ## HOW TO CREATE THE WAF SCRIPT
 
-Python >= 2.6 3.4 is required to generate the waf script, and the resulting file can then run on Python 2.5.
+Python >= 2.6 is required to generate the waf script, and the resulting file can then run on Python 2.5.
 Just execute:
 ```sh
 $ ./waf-light configure build

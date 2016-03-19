@@ -191,16 +191,20 @@ class ConfigSet(object):
 		try:
 			value = self.table[key]
 		except KeyError:
-			try: value = self.parent[key]
-			except AttributeError: value = []
-			if isinstance(value, list):
-				value = value[:]
+			try:
+				value = self.parent[key]
+			except AttributeError:
+				value = []
 			else:
-				value = [value]
+				if isinstance(value, list):
+					# force a copy
+					value = value[:]
+				else:
+					value = [value]
+			self.table[key] = value
 		else:
 			if not isinstance(value, list):
-				value = [value]
-		self.table[key] = value
+				self.table[key] = value = [value]
 		return value
 
 	def append_value(self, var, val):
