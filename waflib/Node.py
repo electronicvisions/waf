@@ -196,6 +196,12 @@ class Node(object):
 		output = json.dumps(data, indent=indent, separators=separators, sort_keys=sort_keys) + newline
 		self.write(output, encoding='utf-8')
 
+	def exists(self):
+		return os.path.exists(self.abspath())
+
+	def isdir(self):
+		return os.path.isdir(self.abspath())
+
 	def chmod(self, val):
 		"""
 		Change file/dir permissions::
@@ -248,7 +254,7 @@ class Node(object):
 		Create a folder represented by this node, creating intermediate nodes as needed
 		An exception will be raised only when the folder cannot possibly exist there
 		"""
-		if getattr(self, 'cache_isdir', None):
+		if self.isdir():
 			return
 
 		try:
@@ -262,15 +268,13 @@ class Node(object):
 			except OSError:
 				pass
 
-			if not os.path.isdir(self.abspath()):
-				raise Errors.WafError('Could not create the directory %s' % self.abspath())
+			if not self.isdir():
+				raise Errors.WafError('Could not create the directory %r' % self)
 
 			try:
 				self.children
 			except AttributeError:
 				self.children = self.dict_class()
-
-		self.cache_isdir = True
 
 	def find_node(self, lst):
 		"""
@@ -302,28 +306,15 @@ class Node(object):
 
 			# optimistic: create the node first then look if it was correct to do so
 			cur = self.__class__(x, cur)
-			try:
-				os.stat(cur.abspath())
-			except OSError:
+			if not cur.exists():
 				cur.evict()
 				return None
 
-		ret = cur
-
-		try:
-			os.stat(ret.abspath())
-		except OSError:
-			ret.evict()
+		if not cur.exists():
+			cur.evict()
 			return None
 
-		try:
-			while not getattr(cur.parent, 'cache_isdir', None):
-				cur = cur.parent
-				cur.cache_isdir = True
-		except AttributeError:
-			pass
-
-		return ret
+		return cur
 
 	def make_node(self, lst):
 		"""
@@ -341,12 +332,14 @@ class Node(object):
 				cur = cur.parent or cur
 				continue
 
-			if getattr(cur, 'children', {}):
-				if x in cur.children:
-					cur = cur.children[x]
-					continue
-			else:
+			try:
+				cur = cur.children[x]
+			except AttributeError:
 				cur.children = self.dict_class()
+			except KeyError:
+				pass
+			else:
+				continue
 			cur = self.__class__(x, cur)
 		return cur
 
@@ -507,7 +500,7 @@ class Node(object):
 
 				node = self.make_node([name])
 
-				isdir = os.path.isdir(node.abspath())
+				isdir = node.isdir()
 				if accepted:
 					if isdir:
 						if dir:
@@ -516,7 +509,7 @@ class Node(object):
 						if src:
 							yield node
 
-				if getattr(node, 'cache_isdir', None) or isdir:
+				if isdir:
 					node.cache_isdir = True
 					if maxdepth:
 						for k in node.ant_iter(accept=accept, maxdepth=maxdepth - 1, pats=npats, dir=dir, src=src, remove=remove):
@@ -712,11 +705,9 @@ class Node(object):
 
 		node = self.get_bld().search_node(lst)
 		if not node:
-			self = self.get_src()
-			node = self.find_node(lst)
-		if node:
-			if os.path.isdir(node.abspath()):
-				return None
+			node = self.get_src().find_node(lst)
+		if node and node.isdir():
+			return None
 		return node
 
 	def find_or_declare(self, lst):
@@ -758,11 +749,7 @@ class Node(object):
 			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
 		node = self.find_node(lst)
-		try:
-			if not os.path.isdir(node.abspath()):
-				return None
-		except (OSError, AttributeError):
-			# the node might be None, and raise an AttributeError
+		if node and not node.isdir():
 			return None
 		return node
 
@@ -806,9 +793,6 @@ class Node(object):
 		"Build path without the file name"
 		return self.parent.bldpath()
 
-	def exists(self):
-		return os.path.exists(self.abspath())
-
 	def get_bld_sig(self):
 		"""
 		Node signature. If there is a build directory or and the file is there,
@@ -827,7 +811,7 @@ class Node(object):
 			try:
 				ret = cache[self] = Utils.h_file(p)
 			except EnvironmentError:
-				if os.path.isdir(p):
+				if self.isdir():
 					# allow folders as build nodes, do not use the creation time
 					st = os.stat(p)
 					ret = cache[self] = Utils.h_list([p, st.st_ino, st.st_mode])
