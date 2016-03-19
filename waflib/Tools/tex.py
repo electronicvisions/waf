@@ -58,15 +58,15 @@ def bibunitscan(self):
 		if path:
 			for k in ('', '.bib'):
 				# add another loop for the tex include paths?
-				Logs.debug('tex: trying %s%s' % (path, k))
+				Logs.debug('tex: trying %s%s', path, k)
 				fi = node.parent.find_resource(path + k)
 				if fi:
 					nodes.append(fi)
 					# no break, people are crazy
 			else:
-				Logs.debug('tex: could not find %s' % path)
+				Logs.debug('tex: could not find %s', path)
 
-	Logs.debug("tex: found the following bibunit files: %s" % nodes)
+	Logs.debug("tex: found the following bibunit files: %s", nodes)
 	return nodes
 
 exts_deps_tex = ['', '.ltx', '.tex', '.bib', '.pdf', '.png', '.eps', '.ps', '.sty']
@@ -129,7 +129,7 @@ class tex(Task.Task):
 				path = match.group('file')
 				found = node.parent.find_or_declare(path)
 				if found and found not in nodes:
-					Logs.debug('tex: found aux node ' + found.abspath())
+					Logs.debug('tex: found aux node %r', found)
 					nodes.append(found)
 					parse_node(found)
 
@@ -183,7 +183,7 @@ class tex(Task.Task):
 
 							# issue 1067, scan in all texinputs folders
 							for up in self.texinputs_nodes:
-								Logs.debug('tex: trying %s%s' % (path, k))
+								Logs.debug('tex: trying %s%s', path, k)
 								found = up.find_resource(path + k)
 								if found:
 									break
@@ -215,7 +215,7 @@ class tex(Task.Task):
 		for x in nodes:
 			x.parent.get_bld().mkdir()
 
-		Logs.debug("tex: found the following : %s and names %s" % (nodes, names))
+		Logs.debug("tex: found the following : %s and names %s", nodes, names)
 		return (nodes, names)
 
 	def check_status(self, msg, retcode):
@@ -288,7 +288,7 @@ class tex(Task.Task):
 			idx_path = self.idx_node.abspath()
 			os.stat(idx_path)
 		except OSError:
-			Logs.info('index file %s absent, not calling makeindex' % idx_path)
+			Logs.info('index file %s absent, not calling makeindex', idx_path)
 		else:
 			Logs.info('calling makeindex')
 
@@ -346,7 +346,7 @@ class tex(Task.Task):
 		# important, set the cwd for everybody
 		self.cwd = self.inputs[0].parent.get_bld()
 
-		Logs.info('first pass on %s' % self.__class__.__name__)
+		Logs.info('first pass on %s', self.__class__.__name__)
 
 		# Hash .aux files before even calling the LaTeX compiler
 		cur_hash = self.hash_aux_nodes()
@@ -372,7 +372,7 @@ class tex(Task.Task):
 				break
 
 			# run the command
-			Logs.info('calling %s' % self.__class__.__name__)
+			Logs.info('calling %s', self.__class__.__name__)
 			self.call_latex()
 
 	def hash_aux_nodes(self):

@@ -330,8 +330,8 @@ class Context(ctx):
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r' % (cmd,))
-		Logs.debug('runner_env: kw=%s' % kw)
+		Logs.debug('runner: %r', cmd)
+		Logs.debug('runner_env: kw=%s', kw)
 
 		if self.logger:
 			self.logger.info(cmd)
@@ -368,7 +368,7 @@ class Context(ctx):
 			if not isinstance(out, str):
 				out = out.decode(sys.stdout.encoding or 'iso8859-1')
 			if self.logger:
-				self.logger.debug('out: %s' % out)
+				self.logger.debug('out: %s', out)
 			else:
 				Logs.info(out, extra={'stream':sys.stdout, 'c1': ''})
 		if err:
@@ -401,7 +401,7 @@ class Context(ctx):
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r' % (cmd,))
+		Logs.debug('runner: %r', cmd)
 
 		if 'quiet' in kw:
 			quiet = kw['quiet']

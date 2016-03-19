@@ -297,7 +297,7 @@ class BuildContext(Context.Context):
 			data = Utils.readf(dbfn, 'rb')
 		except (IOError, EOFError):
 			# handle missing file/empty file
-			Logs.debug('build: Could not load the build cache %s (missing)' % dbfn)
+			Logs.debug('build: Could not load the build cache %s (missing)', dbfn)
 		else:
 			try:
 				waflib.Node.pickle_lock.acquire()
@@ -305,7 +305,7 @@ class BuildContext(Context.Context):
 				try:
 					data = cPickle.loads(data)
 				except Exception as e:
-					Logs.debug('build: Could not pickle the build cache %s: %r' % (dbfn, e))
+					Logs.debug('build: Could not pickle the build cache %s: %r', dbfn, e)
 				else:
 					for x in SAVED_ATTRS:
 						setattr(self, x, data[x])

@@ -200,7 +200,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 				conf.logger.error(st)
 			conf.fatal('msvc: Unicode error - check the code page?')
 		except Exception as e:
-			debug('msvc: get_msvc_version: %r %r %r -> failure %s' % (compiler, version, target, str(e)))
+			debug('msvc: get_msvc_version: %r %r %r -> failure %s', compiler, version, target, str(e))
 			conf.fatal('msvc: cannot run the compiler in get_msvc_version (run with -v to display errors)')
 		else:
 			debug('msvc: get_msvc_version: %r %r %r -> OK', compiler, version, target)
@@ -743,7 +743,7 @@ def libname_msvc(self, libname, is_static=False):
 	for path in _libpaths:
 		for libn in libnames:
 			if os.path.exists(os.path.join(path, libn)):
-				debug('msvc: lib found: %s' % os.path.join(path,libn))
+				debug('msvc: lib found: %s', os.path.join(path,libn))
 				return re.sub('\.lib$', '',libn)
 
 	#if no lib can be found, just return the libname as msvc expects it
@@ -1034,7 +1034,7 @@ def exec_mf(self):
 	elif 'cshlib' in self.generator.features or 'cxxshlib' in self.generator.features:
 		mode = '2'
 
-	debug('msvc: embedding manifest in mode %r' % mode)
+	debug('msvc: embedding manifest in mode %r', mode)
 
 	lst = [] + mtool
 	lst.extend(Utils.to_list(env['MTFLAGS']))

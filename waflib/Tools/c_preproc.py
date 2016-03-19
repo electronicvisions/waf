@@ -1037,6 +1037,6 @@ def scan(task):
 	tmp = c_parser(nodepaths)
 	tmp.start(task.inputs[0], task.env)
 	if Logs.verbose:
-		debug('deps: deps for %r: %r; unresolved %r' % (task.inputs, tmp.nodes, tmp.names))
+		debug('deps: deps for %r: %r; unresolved %r', task.inputs, tmp.nodes, tmp.names)
 	return (tmp.nodes, tmp.names)
 

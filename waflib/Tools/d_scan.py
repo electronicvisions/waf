@@ -204,6 +204,6 @@ def scan(self):
 	names = gruik.names
 
 	if Logs.verbose:
-		Logs.debug('deps: deps for %s: %r; unresolved %r' % (str(node), nodes, names))
+		Logs.debug('deps: deps for %s: %r; unresolved %r', str(node), nodes, names)
 	return (nodes, names)
 

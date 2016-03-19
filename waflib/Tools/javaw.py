@@ -286,7 +286,7 @@ class javac(Task.Task):
 					if tmp:
 						os.close(fd)
 				if Logs.verbose:
-					Logs.debug('runner: %r' % (cmd + files))
+					Logs.debug('runner: %r', cmd + files)
 				cmd.append('@' + tmp)
 			else:
 				cmd += files

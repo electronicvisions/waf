@@ -59,7 +59,7 @@ class fc(Task.Task):
 		tmp.task = self
 		tmp.start(self.inputs[0])
 		if Logs.verbose:
-			Logs.debug('deps: deps for %r: %r; unresolved %r' % (self.inputs, tmp.nodes, tmp.names))
+			Logs.debug('deps: deps for %r: %r; unresolved %r', self.inputs, tmp.nodes, tmp.names)
 		return (tmp.nodes, tmp.names)
 
 	def runnable_status(self):

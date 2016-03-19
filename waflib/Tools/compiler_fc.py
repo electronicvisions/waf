@@ -39,7 +39,7 @@ def configure(conf):
 		except conf.errors.ConfigurationError as e:
 			conf.env.revert()
 			conf.end_msg(False)
-			Logs.debug('compiler_fortran: %r' % e)
+			Logs.debug('compiler_fortran: %r', e)
 		else:
 			if conf.env['FC']:
 				conf.end_msg(conf.env.get_flat('FC'))

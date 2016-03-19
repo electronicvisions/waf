@@ -77,7 +77,7 @@ def configure(conf):
 		except conf.errors.ConfigurationError as e:
 			conf.env.revert()
 			conf.end_msg(False)
-			debug('compiler_cxx: %r' % e)
+			debug('compiler_cxx: %r', e)
 		else:
 			if conf.env['CXX']:
 				conf.end_msg(conf.env.get_flat('CXX'))

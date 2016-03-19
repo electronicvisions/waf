@@ -253,7 +253,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 				conf.logger.error(st)
 			conf.fatal('msvc: Unicode error - check the code page?')
 		except Exception as e:
-			debug('msvc: get_ifort_version: %r %r %r -> failure %s' % (compiler, version, target, str(e)))
+			debug('msvc: get_ifort_version: %r %r %r -> failure %s', compiler, version, target, str(e))
 			conf.fatal('msvc: cannot run the compiler in get_ifort_version (run with -v to display errors)')
 		else:
 			debug('msvc: get_ifort_version: %r %r %r -> OK', compiler, version, target)
@@ -493,7 +493,7 @@ def exec_mf(self):
 	elif 'fcshlib' in self.generator.features:
 		mode = '2'
 
-	debug('msvc: embedding manifest in mode %r' % mode)
+	debug('msvc: embedding manifest in mode %r', mode)
 
 	lst = [] + mtool
 	lst.extend(Utils.to_list(env['MTFLAGS']))

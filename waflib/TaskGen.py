@@ -220,16 +220,16 @@ class task_gen(object):
 		self.meths = out
 
 		# then we run the methods in order
-		Logs.debug('task_gen: posting %s %d' % (self, id(self)))
+		Logs.debug('task_gen: posting %s %d', self, id(self))
 		for x in out:
 			try:
 				v = getattr(self, x)
 			except AttributeError:
 				raise Errors.WafError('%r is not a valid task generator method' % x)
-			Logs.debug('task_gen: -> %s (%d)' % (x, id(self)))
+			Logs.debug('task_gen: -> %s (%d)', x, id(self))
 			v()
 
-		Logs.debug('task_gen: posted %s' % self.name)
+		Logs.debug('task_gen: posted %s', self.name)
 		return True
 
 	def get_hook(self, node):

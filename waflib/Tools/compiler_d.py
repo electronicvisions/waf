@@ -53,7 +53,7 @@ def configure(conf):
 		except conf.errors.ConfigurationError as e:
 			conf.env.revert()
 			conf.end_msg(False)
-			Logs.debug('compiler_d: %r' % e)
+			Logs.debug('compiler_d: %r', e)
 		else:
 			if conf.env.D:
 				conf.end_msg(conf.env.get_flat('D'))

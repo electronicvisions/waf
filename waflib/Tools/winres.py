@@ -87,7 +87,7 @@ class winrc(Task.Task):
 		names = tmp.names
 
 		if Logs.verbose:
-			Logs.debug('deps: deps for %s: %r; unresolved %r' % (str(self), nodes, names))
+			Logs.debug('deps: deps for %s: %r; unresolved %r', str(self), nodes, names)
 
 		return (nodes, names)
 

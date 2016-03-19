@@ -596,24 +596,24 @@ class Task(TaskBase):
 		try:
 			prev_sig = bld.task_sigs[key]
 		except KeyError:
-			Logs.debug("task: task %r must run: it was never run before or the task code changed" % self)
+			Logs.debug("task: task %r must run: it was never run before or the task code changed", self)
 			return RUN_ME
 
 		if new_sig != prev_sig:
-			Logs.debug("task: task %r must run: the task signature changed" % self)
+			Logs.debug("task: task %r must run: the task signature changed", self)
 			return RUN_ME
 
 		# compare the signatures of the outputs
 		for node in self.outputs:
 			sig = bld.node_sigs.get(node, None)
 			if not sig:
-				Logs.debug("task: task %r must run: an output node has no signature" % self)
+				Logs.debug("task: task %r must run: an output node has no signature", self)
 				return RUN_ME
 			if sig != key:
-				Logs.debug("task: task %r must run: an output node was produced by another task" % self)
+				Logs.debug("task: task %r must run: an output node was produced by another task", self)
 				return RUN_ME
 			if not node.exists():
-				Logs.debug("task: task %r must run: an output node does not exist" % self)
+				Logs.debug("task: task %r must run: an output node does not exist", self)
 				return RUN_ME
 
 		return (self.always_run and RUN_ME) or SKIP_ME
@@ -751,7 +751,7 @@ class Task(TaskBase):
 		# no previous run or the signature of the dependencies has changed, rescan the dependencies
 		(nodes, names) = self.scan()
 		if Logs.verbose:
-			Logs.debug('deps: scanner for %s returned %s %s' % (str(self), str(nodes), str(names)))
+			Logs.debug('deps: scanner for %s returned %s %s', self, nodes, names)
 
 		# store the dependencies in the cache
 		bld.node_deps[key] = nodes
@@ -990,7 +990,7 @@ def compile_fun_shell(line):
 	else: parm = ''
 
 	c = COMPILE_TEMPLATE_SHELL % (line, parm)
-	Logs.debug('action: %s' % c.strip().splitlines())
+	Logs.debug('action: %s', c.strip().splitlines())
 	return (funex(c), dvars)
 
 reg_act_noshell = re.compile(r"(?P<space>\s+)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})|(?P<text>\S+)", re.M)
@@ -1056,7 +1056,7 @@ def compile_fun_noshell(line):
 
 	buf = ['lst.extend(%s)' % x for x in buf]
 	fun = COMPILE_TEMPLATE_NOSHELL % "\n\t".join(buf)
-	Logs.debug('action: %s' % fun.strip().splitlines())
+	Logs.debug('action: %s', fun.strip().splitlines())
 	return (funex(fun), dvars)
 
 def compile_fun(line, shell=False):

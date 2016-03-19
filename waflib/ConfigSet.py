@@ -307,7 +307,7 @@ class ConfigSet(object):
 		for m in re_imp.finditer(code):
 			g = m.group
 			tbl[g(2)] = eval(g(3))
-		Logs.debug('env: %s' % str(self.table))
+		Logs.debug('env: %s', self.table)
 
 	def update(self, d):
 		"""
