@@ -44,7 +44,9 @@ def configure(conf):
 			if conf.env['FC']:
 				conf.end_msg(conf.env.get_flat('FC'))
 				conf.env.COMPILER_FORTRAN = compiler
+				conf.env.commit()
 				break
+			conf.env.revert()
 			conf.end_msg(False)
 	else:
 		conf.fatal('could not configure a Fortran compiler!')

@@ -81,7 +81,9 @@ def configure(conf):
 			if conf.env['CC']:
 				conf.end_msg(conf.env.get_flat('CC'))
 				conf.env['COMPILER_CC'] = compiler
+				conf.env.commit()
 				break
+			conf.env.revert()
 			conf.end_msg(False)
 	else:
 		conf.fatal('could not configure a C compiler!')

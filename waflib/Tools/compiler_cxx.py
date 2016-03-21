@@ -82,7 +82,9 @@ def configure(conf):
 			if conf.env['CXX']:
 				conf.end_msg(conf.env.get_flat('CXX'))
 				conf.env['COMPILER_CXX'] = compiler
+				conf.env.commit()
 				break
+			conf.env.revert()
 			conf.end_msg(False)
 	else:
 		conf.fatal('could not configure a C++ compiler!')

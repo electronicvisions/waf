@@ -410,12 +410,14 @@ def check_boost(self, *k, **kw):
 				self.env["CXXFLAGS_%s" % var] += cxxflags
 				try:
 					try_link()
-					self.end_msg("ok: winning cxxflags combination: %s" % (self.env["CXXFLAGS_%s" % var]))
-					exc = None
-					break
 				except Errors.ConfigurationError as e:
 					self.env.revert()
 					exc = e
+				else:
+					self.end_msg("ok: winning cxxflags combination: %s" % (self.env["CXXFLAGS_%s" % var]))
+					exc = None
+					self.env.commit()
+					break
 
 			if exc is not None:
 				self.end_msg("Could not auto-detect boost linking flags combination, you may report it to boost.py author", ex=exc)

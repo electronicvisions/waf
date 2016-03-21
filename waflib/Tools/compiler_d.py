@@ -58,7 +58,9 @@ def configure(conf):
 			if conf.env.D:
 				conf.end_msg(conf.env.get_flat('D'))
 				conf.env['COMPILER_D'] = compiler
+				conf.env.commit()
 				break
+			conf.env.revert()
 			conf.end_msg(False)
 	else:
 		conf.fatal('could not configure a D compiler!')
