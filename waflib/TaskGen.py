@@ -114,6 +114,9 @@ class task_gen(object):
 				lst.append("%s=%s" % (x, repr(getattr(self, x))))
 		return "bld(%s) in %s" % (", ".join(lst), self.path.abspath())
 
+	def get_cwd(self):
+		return self.bld.bldnode
+
 	def get_name(self):
 		"""
 		If not set, the name is computed from the target name::

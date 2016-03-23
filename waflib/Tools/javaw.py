@@ -272,7 +272,7 @@ class javac(Task.Task):
 		cmd.extend(to_list(env['OUTDIR']))
 		cmd.extend(to_list(env['JAVACFLAGS']))
 
-		files = [a.path_from(bld.bldnode) for a in self.inputs]
+		files = [a.path_from(self.get_cwd()) for a in self.inputs]
 
 		# workaround for command line length limit:
 		# http://support.microsoft.com/kb/830473
