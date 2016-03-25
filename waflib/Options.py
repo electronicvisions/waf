@@ -115,10 +115,11 @@ class OptionsContext(Context.Context):
 		p = self.add_option
 		color = os.environ.get('NOCOLOR', '') and 'no' or 'auto'
 		p('-c', '--color',    dest='colors',  default=color, action='store', help='whether to use colors (yes/no/auto) [default: auto]', choices=('yes', 'no', 'auto'))
-		p('-j', '--jobs',     dest='jobs',    default=jobs, type='int', help='amount of parallel jobs (%r)' % jobs)
+		p('-j', '--jobs',     dest='jobs',    default=jobs,  type='int', help='amount of parallel jobs (%r)' % jobs)
 		p('-k', '--keep',     dest='keep',    default=0,     action='count', help='continue despite errors (-kk to try harder)')
 		p('-v', '--verbose',  dest='verbose', default=0,     action='count', help='verbosity level -v -vv or -vvv [default: 0]')
 		p('--zones',          dest='zones',   default='',    action='store', help='debugging zones (task_gen, deps, tasks, etc)')
+		p('--profile',        dest='profile', default='',    action='store_true', help=optparse.SUPPRESS_HELP)
 
 		gr = self.add_option_group('Configuration options')
 		self.option_groups['configure options'] = gr

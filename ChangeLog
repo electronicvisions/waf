@@ -10,6 +10,7 @@ NEW IN WAF 1.9
   - Merge ${FOO}${BAR} flags in commands executed without a shell (no space added)
   - Interpret empty command-line defines as integer values #1704
   - Waf tools are not cached on "waf configure" by default anymore; pass conf.load(.., cache=True)
+  - New --profile command-line option
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs

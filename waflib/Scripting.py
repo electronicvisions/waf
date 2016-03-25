@@ -155,28 +155,27 @@ def waf_entry_point(current_directory, version, wafdir):
 		traceback.print_exc(file=sys.stdout)
 		sys.exit(2)
 
-	"""
-	import cProfile, pstats
-	cProfile.runctx("from waflib import Scripting; Scripting.run_commands()", {}, {}, 'profi.txt')
-	p = pstats.Stats('profi.txt')
-	p.sort_stats('time').print_stats(75) # or 'cumulative'
-	"""
-	try:
-		run_commands()
-	except Errors.WafError as e:
-		if Logs.verbose > 1:
-			Logs.pprint('RED', e.verbose_msg)
-		Logs.error(e.msg)
-		sys.exit(1)
-	except SystemExit:
-		raise
-	except Exception as e:
-		traceback.print_exc(file=sys.stdout)
-		sys.exit(2)
-	except KeyboardInterrupt:
-		Logs.pprint('RED', 'Interrupted')
-		sys.exit(68)
-	#"""
+	if '--profile' in sys.argv:
+		import cProfile, pstats
+		cProfile.runctx("from waflib import Scripting; Scripting.run_commands()", {}, {}, 'profi.txt')
+		p = pstats.Stats('profi.txt')
+		p.sort_stats('time').print_stats(75) # or 'cumulative'
+	else:
+		try:
+			run_commands()
+		except Errors.WafError as e:
+			if Logs.verbose > 1:
+				Logs.pprint('RED', e.verbose_msg)
+			Logs.error(e.msg)
+			sys.exit(1)
+		except SystemExit:
+			raise
+		except Exception as e:
+			traceback.print_exc(file=sys.stdout)
+			sys.exit(2)
+		except KeyboardInterrupt:
+			Logs.pprint('RED', 'Interrupted')
+			sys.exit(68)
 
 def set_main_module(file_path):
 	"""
