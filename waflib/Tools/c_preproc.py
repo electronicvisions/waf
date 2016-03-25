@@ -651,7 +651,7 @@ def extract_macro(txt):
 			# empty define, assign an empty token
 			return (v, [[], [('T','')]])
 
-re_include = re.compile('^\s*(<(?P<a>.*)>|"(?P<b>.*)")')
+re_include = re.compile('^\s*(<(?:.*)>|"(?:.*)")')
 def extract_include(txt, defs):
 	"""
 	Process a line in the form::
@@ -667,8 +667,8 @@ def extract_include(txt, defs):
 	"""
 	m = re_include.search(txt)
 	if m:
-		if m.group('a'): return '<', m.group('a')
-		if m.group('b'): return '"', m.group('b')
+		txt = m.group(1)
+		return txt[0], txt[1:-1]
 
 	# perform preprocessing and look at the result, it must match an include
 	toks = tokenize(txt)
