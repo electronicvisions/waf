@@ -754,7 +754,7 @@ class Task(TaskBase):
 
 		# recompute the signature and return it
 		try:
-			bld.imp_sigs[key] = sig = self.compute_sig_implicit_deps()
+			bld.imp_sigs[key] = self.compute_sig_implicit_deps()
 		except Exception:
 			if Logs.verbose:
 				for k in bld.node_deps.get(self.uid(), []):
