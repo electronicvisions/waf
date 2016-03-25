@@ -69,7 +69,7 @@ g_optrans = {
 
 # ignore #warning and #error
 re_lines = re.compile(
-	'^[ \t]*(#|%:)[ \t]*(ifdef|ifndef|if|else|elif|endif|include|import|define|undef|pragma)[ \t]*(.*)\r*$',
+	'^[ \t]*(?:#|%:)[ \t]*(ifdef|ifndef|if|else|elif|endif|include|import|define|undef|pragma)[ \t]*(.*)\r*$',
 	re.IGNORECASE | re.MULTILINE)
 """Match #include lines"""
 
@@ -156,7 +156,7 @@ def filter_comments(filename):
 		for (a, b) in trig_def: code = code.split(a).join(b)
 	code = re_nl.sub('', code)
 	code = re_cpp.sub(repl, code)
-	return [(m.group(2), m.group(3)) for m in re_lines.finditer(code)]
+	return [(m.group(1), m.group(2)) for m in re_lines.finditer(code)]
 
 prec = {}
 """
