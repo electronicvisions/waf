@@ -156,7 +156,7 @@ def filter_comments(filename):
 		for (a, b) in trig_def: code = code.split(a).join(b)
 	code = re_nl.sub('', code)
 	code = re_cpp.sub(repl, code)
-	return [(m.group(2), m.group(3)) for m in re.finditer(re_lines, code)]
+	return [(m.group(2), m.group(3)) for m in re_lines.finditer(code)]
 
 prec = {}
 """
@@ -903,7 +903,8 @@ class c_parser(object):
 			# issue #812
 			raise PreprocError("recursion limit exceeded")
 
-		debug('preproc: reading file %r', node)
+		if Logs.verbose:
+			debug('preproc: reading file %r', node)
 		try:
 			lines = self.parse_lines(node)
 		except EnvironmentError:
