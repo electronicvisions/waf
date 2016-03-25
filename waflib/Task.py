@@ -643,8 +643,6 @@ class Task(TaskBase):
 		"""
 		Used by :py:meth:`waflib.Task.Task.signature`, hash :py:attr:`waflib.Task.Task.inputs`
 		and :py:attr:`waflib.Task.Task.dep_nodes` signatures.
-
-		:rtype: hash value
 		"""
 		bld = self.generator.bld
 		upd = self.m.update
@@ -669,13 +667,9 @@ class Task(TaskBase):
 						v = v() # dependency is a function, call it
 					upd(v)
 
-		return self.m.digest()
-
 	def sig_vars(self):
 		"""
 		Used by :py:meth:`waflib.Task.Task.signature`, hash :py:attr:`waflib.Task.Task.env` variables/values
-
-		:rtype: hash value
 		"""
 		bld = self.generator.bld
 		env = self.env
@@ -689,8 +683,6 @@ class Task(TaskBase):
 		dep_vars = getattr(self, 'dep_vars', None)
 		if dep_vars:
 			upd(bld.hash_env_vars(env, dep_vars))
-
-		return self.m.digest()
 
 	scan = None
 	"""
@@ -768,16 +760,11 @@ class Task(TaskBase):
 				for k in bld.node_deps.get(self.uid(), []):
 					if not k.exists():
 						Logs.warn('Node %r does not exist (may cause rebuilds)' % k)
-		else:
-			return sig
 
 	def compute_sig_implicit_deps(self):
 		"""
 		Used by :py:meth:`waflib.Task.Task.sig_implicit_deps` for computing the actual hash of the
 		:py:class:`waflib.Node.Node` returned by the scanner.
-
-		:return: hash value
-		:rtype: string
 		"""
 
 		upd = self.m.update
