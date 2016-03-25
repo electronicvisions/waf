@@ -396,7 +396,7 @@ class Node(object):
 			c2 = c2.parent
 			c2h -= 1
 
-		while id(c1) != id(c2):
+		while not c1 is c2:
 			lst.append(c1.name)
 			up += 1
 
@@ -462,7 +462,7 @@ class Node(object):
 		while diff > 0:
 			diff -= 1
 			p = p.parent
-		return id(p) == id(node)
+		return p is node
 
 	def ant_iter(self, accept=None, maxdepth=25, pats=[], dir=False, src=True, remove=True):
 		"""
@@ -624,12 +624,12 @@ class Node(object):
 		:rtype: bool
 		"""
 		cur = self
-		x = id(self.ctx.srcnode)
-		y = id(self.ctx.bldnode)
+		x = self.ctx.srcnode
+		y = self.ctx.bldnode
 		while cur.parent:
-			if id(cur) == y:
+			if cur is y:
 				return False
-			if id(cur) == x:
+			if cur is x:
 				return True
 			cur = cur.parent
 		return False
@@ -642,9 +642,9 @@ class Node(object):
 		:rtype: bool
 		"""
 		cur = self
-		y = id(self.ctx.bldnode)
+		y = self.ctx.bldnode
 		while cur.parent:
-			if id(cur) == y:
+			if cur is y:
 				return True
 			cur = cur.parent
 		return False
@@ -656,14 +656,14 @@ class Node(object):
 		:rtype: :py:class:`waflib.Node.Node`
 		"""
 		cur = self
-		x = id(self.ctx.srcnode)
-		y = id(self.ctx.bldnode)
+		x = self.ctx.srcnode
+		y = self.ctx.bldnode
 		lst = []
 		while cur.parent:
-			if id(cur) == y:
+			if cur is y:
 				lst.reverse()
-				return self.ctx.srcnode.make_node(lst)
-			if id(cur) == x:
+				return x.make_node(lst)
+			if cur is x:
 				return self
 			lst.append(cur.name)
 			cur = cur.parent
@@ -676,13 +676,13 @@ class Node(object):
 		:rtype: :py:class:`waflib.Node.Node`
 		"""
 		cur = self
-		x = id(self.ctx.srcnode)
-		y = id(self.ctx.bldnode)
+		x = self.ctx.srcnode
+		y = self.ctx.bldnode
 		lst = []
 		while cur.parent:
-			if id(cur) == y:
+			if cur is y:
 				return self
-			if id(cur) == x:
+			if cur is x:
 				lst.reverse()
 				return self.ctx.bldnode.make_node(lst)
 			lst.append(cur.name)
@@ -782,9 +782,9 @@ class Node(object):
 	def relpath(self):
 		"If a file in the build directory, bldpath, else srcpath"
 		cur = self
-		x = id(self.ctx.bldnode)
+		x = self.ctx.bldnode
 		while cur.parent:
-			if id(cur) == x:
+			if cur is x:
 				return self.bldpath()
 			cur = cur.parent
 		return self.srcpath()
