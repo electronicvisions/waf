@@ -425,13 +425,13 @@ def split_path_cygwin(path):
 		return ret
 	return path.split('/')
 
-re_sp = re.compile('[/\\\\]')
+re_sp = re.compile('[/\\\\]+')
 def split_path_win32(path):
 	if path.startswith('\\\\'):
-		ret = re.split(re_sp, path)[2:]
+		ret = re_sp.split(path)[2:]
 		ret[0] = '\\' + ret[0]
 		return ret
-	return re.split(re_sp, path)
+	return re_sp.split(path)
 
 msysroot = None
 def split_path_msys(path):
