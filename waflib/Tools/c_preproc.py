@@ -138,7 +138,7 @@ skipped   = 's'
 def repl(m):
 	"""Replace function used with :py:attr:`waflib.Tools.c_preproc.re_cpp`"""
 	s = m.group(0)
-	if s.startswith('/'):
+	if s[0] == '/':
 		return ' '
 	return s
 
