@@ -731,8 +731,6 @@ class Node(object):
 		self = self.get_src()
 		node = self.find_node(lst)
 		if node:
-			if not os.path.isfile(node.abspath()):
-				node.parent.mkdir()
 			return node
 		node = self.get_bld().make_node(lst)
 		node.parent.mkdir()
