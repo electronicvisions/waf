@@ -650,11 +650,8 @@ def post_check(self, *k, **kw):
 		# TODO simplify!
 		comment = kw.get('comment', '')
 		define_name = kw['define_name']
-		if 'header_name' in kw or 'function_name' in kw or 'type_name' in kw or 'fragment' in kw:
-			if kw['execute'] and kw.get('define_ret', None) and isinstance(is_success, str):
-				self.define(define_name, is_success, quote=kw.get('quote', 1), comment=comment)
-			else:
-				self.define_cond(define_name, is_success, comment=comment)
+		if kw['execute'] and kw.get('define_ret', None) and isinstance(is_success, str):
+			self.define(define_name, is_success, quote=kw.get('quote', 1), comment=comment)
 		else:
 			self.define_cond(define_name, is_success, comment=comment)
 
