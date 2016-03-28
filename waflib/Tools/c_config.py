@@ -480,10 +480,10 @@ def validate_c(self, kw):
 		kw['compiler'] = 'c'
 		if env['CXX_NAME'] and Task.classes.get('cxx', None):
 			kw['compiler'] = 'cxx'
-			if not self.env['CXX']:
+			if not self.env.CXX:
 				self.fatal('a c++ compiler is required')
 		else:
-			if not self.env['CC']:
+			if not self.env.CC:
 				self.fatal('a c compiler is required')
 
 	if not 'compile_mode' in kw:
@@ -505,7 +505,6 @@ def validate_c(self, kw):
 	if not 'compile_filename' in kw:
 		kw['compile_filename'] = 'test.c' + ((kw['compile_mode'] == 'cxx') and 'pp' or '')
 
-
 	def to_header(dct):
 		if 'header_name' in dct:
 			dct = Utils.to_list(dct['header_name'])
@@ -517,7 +516,6 @@ def validate_c(self, kw):
 		fwkname = kw['framework_name']
 		if not 'uselib_store' in kw:
 			kw['uselib_store'] = fwkname.upper()
-
 		if not kw.get('no_header', False):
 			if not 'header_name' in kw:
 				kw['header_name'] = []
@@ -563,13 +561,11 @@ def validate_c(self, kw):
 			kw['msg'] = 'Checking for header %s' % kw['header_name']
 
 		l = Utils.to_list(kw['header_name'])
-		assert len(l)>0, 'list of headers in header_name is empty'
+		assert(len(l), 'list of headers in header_name is empty')
 
 		kw['code'] = to_header(kw) + SNIP_EMPTY_PROGRAM
-
 		if not 'uselib_store' in kw:
 			kw['uselib_store'] = l[0].upper()
-
 		if not 'define_name' in kw:
 			kw['define_name'] = self.have_define(l[0])
 
@@ -605,7 +601,7 @@ def validate_c(self, kw):
 		kw['execute'] = False
 	if kw['execute']:
 		kw['features'].append('test_exec')
-		kw['chmod'] = 493
+		kw['chmod'] = Utils.O755
 
 	if not 'errmsg' in kw:
 		kw['errmsg'] = 'not found'
@@ -647,16 +643,32 @@ def post_check(self, *k, **kw):
 		is_success = (kw['success'] == 0)
 
 	if 'define_name' in kw:
-		# TODO simplify!
+		# TODO this is still way too complicated
 		comment = kw.get('comment', '')
 		define_name = kw['define_name']
 		if kw['execute'] and kw.get('define_ret', None) and isinstance(is_success, str):
-			self.define(define_name, is_success, quote=kw.get('quote', 1), comment=comment)
+			if kw.get('global_define', 1):
+				self.define(define_name, is_success, quote=kw.get('quote', 1), comment=comment)
+			else:
+				if kw.get('quote', 1):
+					succ = '"%s"' % is_success
+				else:
+					succ = int(is_success)
+				val = '%s=%s' % (define_name, succ)
+				var = 'DEFINES_%s' % kw['uselib_store']
+				self.env.append_value(var, val)
 		else:
-			self.define_cond(define_name, is_success, comment=comment)
+			if kw.get('global_define', 1):
+				self.define_cond(define_name, is_success, comment=comment)
+			else:
+				var = 'DEFINES_%s' % kw['uselib_store']
+				self.env.append_value(var, '%s=%s' % (define_name, int(is_success)))
 
 		# define conf.env.HAVE_X to 1
-		self.env[define_name] = int(is_success)
+		if kw.get('uselib_store', None):
+			self.env[self.have_define(kw['uselib_store'])] = 1
+		else:
+			self.env[define_name] = int(is_success)
 
 	if 'header_name' in kw:
 		if kw.get('auto_add_header_name', False):
