@@ -301,7 +301,7 @@ def exec_cfg(self, kw):
 	env = self.env.env or None
 	def define_it():
 		pkgname = kw.get('uselib_store', kw['package'].upper())
-		if kw.get('global_define'):
+		if kw.get('global_define', 1):
 			# compatibility, replace by pkgname in WAF 1.9?
 			self.define(self.have_define(kw['package']), 1, False)
 		else:
@@ -316,7 +316,10 @@ def exec_cfg(self, kw):
 			kw['okmsg'] = 'yes'
 		return
 
-	# checking for the version of a module
+	# checking for the version of a module as separate verifications:
+	#   conf.check_cfg(package='libpng', atleast_version='1.0', ...)
+	# this is obsolete since once can use pkg-config arguments directly:
+	#   conf.check_cfg(package='libpng', atleast_version='1.6', args=['--libs', '--cflags', 'libpng >= 1.6'])
 	for x in cfg_ver:
 		y = x.replace('-', '_')
 		if y in kw:
@@ -655,9 +658,8 @@ def post_check(self, *k, **kw):
 		else:
 			self.define_cond(define_name, is_success, comment=comment)
 
-		# consistency with check_cfg
-		if kw.get('global_define', None):
-			self.env[kw['define_name']] = int(is_success)
+		# define conf.env.HAVE_X to 1
+		self.env[define_name] = int(is_success)
 
 	if 'header_name' in kw:
 		if kw.get('auto_add_header_name', False):
