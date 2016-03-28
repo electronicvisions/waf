@@ -138,9 +138,11 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 
 	# append_unique is not always possible
 	# for example, apple flags may require both -arch i386 and -arch ppc
-	app = env.append_value
-	appu = env.append_unique
 	uselib = uselib_store
+	def app(var, val):
+		env.append_value('%s_%s' % (var, uselib), val)
+	def appu(var, val):
+		env.append_unique('%s_%s' % (var, uselib), val)
 	static = False
 	while lst:
 		x = lst.pop(0)
@@ -148,68 +150,70 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 		ot = x[2:]
 
 		if st == '-I' or st == '/I':
-			if not ot: ot = lst.pop(0)
-			appu('INCLUDES_' + uselib, [ot])
+			if not ot:
+				ot = lst.pop(0)
+			appu('INCLUDES', ot)
 		elif st == '-i':
 			tmp = [x, lst.pop(0)]
 			app('CFLAGS', tmp)
 			app('CXXFLAGS', tmp)
 		elif st == '-D' or (env.CXX_NAME == 'msvc' and st == '/D'): # not perfect but..
-			if not ot: ot = lst.pop(0)
-			app('DEFINES_' + uselib, [ot])
+			if not ot:
+				ot = lst.pop(0)
+			app('DEFINES', ot)
 		elif st == '-l':
-			if not ot: ot = lst.pop(0)
-			prefix = (force_static or static) and 'STLIB_' or 'LIB_'
-			app(prefix + uselib, [ot])
+			if not ot:
+				ot = lst.pop(0)
+			prefix = 'STLIB' if (force_static or static) else 'LIB'
+			app(prefix, ot)
 		elif st == '-L':
-			if not ot: ot = lst.pop(0)
-			prefix = (force_static or static) and 'STLIBPATH_' or 'LIBPATH_'
-			appu(prefix + uselib, [ot])
+			if not ot:
+				ot = lst.pop(0)
+			prefix = 'STLIBPATH' if (force_static or static) else 'LIBPATH'
+			appu(prefix, ot)
 		elif x.startswith('/LIBPATH:'):
-			prefix = (force_static or static) and 'STLIBPATH_' or 'LIBPATH_'
-			appu(prefix + uselib, [x.replace('/LIBPATH:', '')])
+			prefix = 'STLIBPATH' if (force_static or static) else 'LIBPATH'
+			appu(prefix, x.replace('/LIBPATH:', ''))
 		elif x.startswith('-std='):
-			if '++' in x:
-				app('CXXFLAGS_' + uselib, [x])
-			else:
-				app('CFLAGS_' + uselib, [x])
+			prefix = 'CXXFLAGS' if '++' in x else 'CFLAGS'
+			app(prefix, x)
 		elif x == '-pthread' or x.startswith('+'):
-			app('CFLAGS_' + uselib, [x])
-			app('CXXFLAGS_' + uselib, [x])
-			app('LINKFLAGS_' + uselib, [x])
+			app('CFLAGS', x)
+			app('CXXFLAGS', x)
+			app('LINKFLAGS', x)
 		elif x == '-framework':
-			appu('FRAMEWORK_' + uselib, [lst.pop(0)])
+			appu('FRAMEWORK', lst.pop(0))
 		elif x.startswith('-F'):
-			appu('FRAMEWORKPATH_' + uselib, [x[2:]])
+			appu('FRAMEWORKPATH', x[2:])
 		elif x == '-Wl,-rpath' or x == '-Wl,-R':
-			app('RPATH_' + uselib, lst.pop(0).lstrip('-Wl,'))
+			app('RPATH', lst.pop(0).lstrip('-Wl,'))
 		elif x.startswith('-Wl,-R,'):
-			app('RPATH_' + uselib, x[7:])
+			app('RPATH', x[7:])
 		elif x.startswith('-Wl,-R'):
-			app('RPATH_' + uselib, x[6:])
+			app('RPATH', x[6:])
 		elif x.startswith('-Wl,-rpath,'):
-			app('RPATH_' + uselib, x[11:])
+			app('RPATH', x[11:])
 		elif x == '-Wl,-Bstatic' or x == '-Bstatic':
 			static = True
 		elif x == '-Wl,-Bdynamic' or x == '-Bdynamic':
 			static = False
 		elif x.startswith('-Wl'):
-			app('LINKFLAGS_' + uselib, [x])
+			app('LINKFLAGS', x)
 		elif x.startswith('-m') or x.startswith('-f') or x.startswith('-dynamic'):
-			app('CFLAGS_' + uselib, [x])
-			app('CXXFLAGS_' + uselib, [x])
+			app('CFLAGS', x)
+			app('CXXFLAGS', x)
 		elif x.startswith('-bundle'):
-			app('LINKFLAGS_' + uselib, [x])
+			app('LINKFLAGS', x)
 		elif x.startswith('-undefined') or x.startswith('-Xlinker'):
 			arg = lst.pop(0)
-			app('LINKFLAGS_' + uselib, [x, arg])
+			app('LINKFLAGS', [x, arg])
 		elif x.startswith('-arch') or x.startswith('-isysroot'):
 			tmp = [x, lst.pop(0)]
-			app('CFLAGS_' + uselib, tmp)
-			app('CXXFLAGS_' + uselib, tmp)
-			app('LINKFLAGS_' + uselib, tmp)
+			app('CFLAGS', tmp)
+			app('CXXFLAGS', tmp)
+			app('LINKFLAGS', tmp)
 		elif x.endswith('.a') or x.endswith('.so') or x.endswith('.dylib') or x.endswith('.lib'):
-			appu('LINKFLAGS_' + uselib, [x]) # not cool, #762
+			appu('LINKFLAGS', x) # not cool, #762
 
 @conf
 def validate_cfg(self, kw):
