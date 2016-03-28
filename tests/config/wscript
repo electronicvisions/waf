@@ -1,0 +1,96 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+from waflib.Logs import pprint
+
+top = '.'
+out = 'build'
+
+def options(opt):
+	opt.load('compiler_c')
+
+def configure(conf):
+	conf.load('compiler_c')
+
+	conf.failure = 0
+	def disp(color, result):
+		pprint(color, result)
+		if color == 'RED':
+			conf.failure=1
+
+	png_args = {'package': 'libpng', #'define_name': 'HAVE_LIBPNG',
+		'args': ['--libs', '--cflags'],
+		'uselib_store': 'LIBPNG'}
+
+	std_args = {'header_name': 'unistd.h', #'define_name':'HAVE_UNISTD',
+		'uselib_store': 'UNISTD'}
+
+	def test(*funs):
+		conf.env.stash()
+		conf.in_msg = 1 # suppress outputs
+		for f in funs:
+			ret = f()
+			if not ret:
+				color = "GREEN"
+			else:
+				color = "RED"
+			if not ret:
+				ret = 'ok'
+			disp(color, "%s\t\t%s" % (f.__doc__, ret))
+		conf.env.revert()
+		conf.in_msg = 0
+		return None
+
+	@test
+	def fun1():
+		"global_define=1 by default -> no DEFINES_X anywhere"
+		conf.check_cfg(package='libpng')
+		conf.check_cc(header_name='unistd.h')
+		for x in conf.env.keys():
+			if x.startswith('DEFINES_') and x != 'DEFINES_ST':
+				return 'conf.env.%s = %r' % (x, conf.env[x])
+
+	@test
+	def fun2():
+		"global_define=1 -> no DEFINES_X anywhere"
+		conf.check_cfg(package='libpng', global_define=1)
+		conf.check_cc(header_name='unistd.h', global_define=1)
+		for x in conf.env.keys():
+			if x.startswith('DEFINES_') and x != 'DEFINES_ST':
+				return 'conf.env.%s = %r' % (x, conf.env[x])
+
+	@test
+	def fun3():
+		"global_define=0 -> DEFINES=[]"
+		conf.check_cfg(package='libpng', global_define=0)
+		conf.check_cc(header_name='unistd.h', global_define=0)
+		if conf.env.DEFINES:
+			return 'conf.env.DEFINES = %r' % conf.env.DEFINES
+
+	@test
+	def fun4():
+		"global_define=0 -> DEFINES_LIBPNG=['HAVE_LIBPNG=1']"
+		conf.check_cfg(package='libpng', global_define=0)
+		val = conf.env.DEFINES_LIBPNG
+		if not isinstance(val, list) or not "HAVE_LIBPNG=1" in val:
+			return 'conf.env.DEFINES_LIBPNG = %r' % val
+
+	@test
+	def fun5():
+		"global_defines=0, uselib_store=UNISTD -> DEFINES_UNISTD=['HAVE_UNISTD_H=1']"
+		conf.check_cc(header_name='unistd.h', uselib_store='UNISTD', global_define=0)
+		val = conf.env.DEFINES_UNISTD
+		if not isinstance(val, list) or not 'HAVE_UNISTD_H=1' in val:
+			return 'conf.env.DEFINES_UNISTD = %r' % val
+
+	@test
+	def fun5():
+		"global_defines=0, uselib_store=UNISTD, define_name=FOO -> DEFINES_UNISTD=['FOO=1']"
+		conf.check_cc(header_name='unistd.h', uselib_store='UNISTD', global_define=0, define_name='FOO')
+		val = conf.env.DEFINES_UNISTD
+		if not isinstance(val, list) or not 'FOO=1' in val:
+			return 'conf.env.DEFINES_UNISTD = %r' % val
+
+	if conf.failure:
+		conf.fatal('One or several test failed, check the outputs above')
+
