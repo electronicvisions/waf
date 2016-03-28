@@ -653,7 +653,7 @@ def post_check(self, *k, **kw):
 
 		# consistency with check_cfg
 		if kw.get('global_define', None):
-			self.env[kw['define_name']] = is_success
+			self.env[kw['define_name']] = int(is_success)
 
 	if 'header_name' in kw:
 		if kw.get('auto_add_header_name', False):
