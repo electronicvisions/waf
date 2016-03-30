@@ -198,6 +198,9 @@ class TaskBase(evil):
 		"""
 		return RUN_ME
 
+	def uid(self):
+		return Utils.SIG_NIL
+
 	def process(self):
 		"""
 		Assume that the task has had a ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
