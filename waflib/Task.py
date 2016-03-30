@@ -144,6 +144,8 @@ class TaskBase(evil):
 	hcode = ''
 	"""String representing an additional hash for the class representation"""
 
+	__slots__ = ('hasrun', 'generator')
+
 	def __init__(self, *k, **kw):
 		"""
 		The base task class requires a task generator, which will be itself if missing
@@ -314,18 +316,6 @@ class TaskBase(evil):
 			kw += ' '
 		return fs % (cur(), total, kw, col1, s, col2)
 
-	def attr(self, att, default=None):
-		"""
-		Retrieve an attribute from the instance or from the class.
-
-		:param att: variable name
-		:type att: string
-		:param default: default value
-		"""
-		ret = getattr(self, att, self)
-		if ret is self: return getattr(self.__class__, att, default)
-		return ret
-
 	def hash_constraints(self):
 		"""
 		Identify a task type for all the constraints relevant for the scheduler: precedence, file production
@@ -410,8 +400,6 @@ class Task(TaskBase):
 
 	shell = False
 	"""Execute the command with the shell (class attribute)"""
-
-	__slots__ = ('env', 'inputs', 'outputs', 'dep_nodes', 'run_after', 'dep_vars', 'cwd', 'last_cmd', 'err_msg', '_uid')
 
 	def __init__(self, *k, **kw):
 		TaskBase.__init__(self, *k, **kw)
