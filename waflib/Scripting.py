@@ -413,7 +413,7 @@ class Dist(Context.Context):
 
 	def add_tar_file(self, x, tar):
 		"""
-		Add a file to the tar archive. Transform symlinks into files if the files lie out of the project tree.
+		Add a file to the tar archive. Symlinks are not verified.
 		"""
 		p = self.get_tar_path(x)
 		tinfo = tar.gettarinfo(name=p, arcname=self.get_tar_prefix() + '/' + x.path_from(self.base_path))
@@ -422,13 +422,14 @@ class Dist(Context.Context):
 		tinfo.uname = 'root'
 		tinfo.gname = 'root'
 
-		fu = None
-		try:
+		if os.path.isfile(p):
 			fu = open(p, 'rb')
-			tar.addfile(tinfo, fileobj=fu)
-		finally:
-			if fu:
+			try:
+				tar.addfile(tinfo, fileobj=fu)
+			finally:
 				fu.close()
+		else:
+			tar.addfile(tinfo)
 
 	def get_tar_prefix(self):
 		try:
