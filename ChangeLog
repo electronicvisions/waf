@@ -30,4 +30,5 @@ NEW IN WAF 1.9
   - Improve the task consumer in Runner.py
   - Use relative paths in apply_incpaths by default (and absolute ones when paths cross drives)
   - Remove Configure.err_handler
+  - Remove TaskBase.attr() as it was never used
   - Task.sig_vars, Task.sig_explit_deps and Task.sig_implicit_deps return None
