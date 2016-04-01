@@ -179,15 +179,6 @@ class Context(ctx):
 		self.exec_dict = {'ctx':self, 'conf':self, 'bld':self, 'opt':self}
 		self.logger = None
 
-	def __hash__(self):
-		"""
-		Return a hash value for storing context objects in dicts or sets. The value is not persistent.
-
-		:return: hash value
-		:rtype: int
-		"""
-		return id(self)
-
 	def finalize(self):
 		"""
 		Use to free resources such as open files potentially held by the logger

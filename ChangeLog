@@ -14,7 +14,7 @@ NEW IN WAF 1.9
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
-  - Remove __hash__ and __eq__ from Node and Task #1629
+  - Remove __hash__ and __eq__ from Context, Node and Task #1629
   - Make lazy visual studio detection the default
   - Remove the uses of run_once that creates unfree-able memory
   - Enable a consistent progress bar output #1641
