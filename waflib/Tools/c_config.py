@@ -561,7 +561,7 @@ def validate_c(self, kw):
 			kw['msg'] = 'Checking for header %s' % kw['header_name']
 
 		l = Utils.to_list(kw['header_name'])
-		assert(len(l), 'list of headers in header_name is empty')
+		assert len(l), 'list of headers in header_name is empty'
 
 		kw['code'] = to_header(kw) + SNIP_EMPTY_PROGRAM
 		if not 'uselib_store' in kw:
