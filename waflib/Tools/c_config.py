@@ -311,7 +311,7 @@ def exec_cfg(self, kw):
 		define_name = kw['define_name']
 		# by default, add HAVE_X to the config.h, else provide DEFINES_X for use=X
 		if kw.get('global_define', 1):
-			self.define(self.have_define(kw['package']), 1, False)
+			self.define(define_name, 1, False)
 		else:
 			self.env.append_unique('DEFINES_%s' % kw['uselib_store'], "%s=1" % define_name)
 
