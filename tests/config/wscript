@@ -91,6 +91,15 @@ def configure(conf):
 		if not isinstance(val, list) or not 'FOO=1' in val:
 			return 'conf.env.DEFINES_UNISTD = %r' % val
 
+	@test
+	def fun6():
+		"global_defines=0,define_name=HAVE_FOO -> DEFINES_LIBPNG=['HAVE_FOO=1']"
+		conf.check_cfg(package='libpng', global_define=0, define_name='HAVE_FOO')
+		val = conf.env.DEFINES_LIBPNG
+		if not isinstance(val, list) or not "HAVE_FOO=1" in val:
+			return 'conf.env.DEFINES_LIBPNG = %r' % val
+
+
 	if conf.failure:
 		conf.fatal('One or several test failed, check the outputs above')
 

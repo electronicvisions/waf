@@ -266,9 +266,6 @@ def validate_cfg(self, kw):
 		pkgname = kw.get('uselib_store', kw['package'].upper())
 		kw['define_name'] = self.have_define(pkgname)
 
-	if not 'uselib_store' in kw:
-		self.undefine(kw['define_name'])
-
 	if not 'msg' in kw:
 		kw['msg'] = 'Checking for %r' % (kw['package'] or kw['path'])
 
@@ -300,15 +297,16 @@ def exec_cfg(self, kw):
 	path = Utils.to_list(kw['path'])
 	env = self.env.env or None
 	def define_it():
+		define_name = kw['define_name']
 		pkgname = kw.get('uselib_store', kw['package'].upper())
 		# by default, add HAVE_X to the config.h, else provide DEFINES_X for use=X
 		if kw.get('global_define', 1):
 			self.define(self.have_define(kw['package']), 1, False)
 		else:
-			self.env.append_unique('DEFINES_%s' % pkgname, "%s=1" % self.have_define(pkgname))
+			self.env.append_unique('DEFINES_%s' % pkgname, "%s=1" % define_name)
 
 		if kw.get('add_have_to_env', 1):
-			self.env[self.have_define(pkgname)] = 1
+			self.env[define_name] = 1
 
 	# pkg-config version
 	if 'atleast_pkgconfig_version' in kw:
