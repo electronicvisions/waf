@@ -99,6 +99,32 @@ def configure(conf):
 		if not isinstance(val, list) or not "HAVE_FOO=1" in val:
 			return 'conf.env.DEFINES_LIBPNG = %r' % val
 
+	@test
+	def fun7():
+		"modversion=libpng -> DEFINES=['LIBPNG_VERSION=X']"
+		conf.check_cfg(modversion='libpng')
+		val = conf.env.DEFINES
+		# automatic uppercase
+		if not isinstance(val, list) or not val[0].startswith("LIBPNG_VERSION="):
+			return 'conf.env.DEFINES = %r' % val
+
+	@test
+	def fun8():
+		"modversion=libpng,uselib_store=foo -> DEFINES=['FOO_VERSION=X']"
+		conf.check_cfg(modversion='libpng', uselib_store='foo')
+		val = conf.env.DEFINES
+		# automatic uppercase
+		if not isinstance(val, list) or not val[0].startswith("FOO_VERSION="):
+			return 'conf.env.DEFINES = %r' % val
+
+	@test
+	def fun9():
+		"modversion=libpng,uselib_store=foo,define_name=bar -> DEFINES=['bar=X']"
+		conf.check_cfg(modversion='libpng', uselib_store='foo', define_name='bar')
+		val = conf.env.DEFINES
+		# automatic uppercase
+		if not isinstance(val, list) or not val[0].startswith("bar="):
+			return 'conf.env.DEFINES = %r' % val
 
 	if conf.failure:
 		conf.fatal('One or several test failed, check the outputs above')

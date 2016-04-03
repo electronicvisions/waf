@@ -249,6 +249,10 @@ def validate_cfg(self, kw):
 	if 'modversion' in kw:
 		if not 'msg' in kw:
 			kw['msg'] = 'Checking for %r version' % kw['modversion']
+		if not 'uselib_store' in kw:
+			kw['uselib_store'] = kw['modversion']
+		if not 'define_name' in kw:
+			kw['define_name'] = '%s_VERSION' % Utils.quote_define_name(kw['uselib_store'])
 		return
 
 	# checking for the version of a module, for the moment, one thing at a time
@@ -262,9 +266,11 @@ def validate_cfg(self, kw):
 				kw['msg'] = 'Checking for %r %s %s' % (kw['package'], cfg_ver[x], kw[y])
 			return
 
+	if not 'uselib_store' in kw:
+		kw['uselib_store'] = kw['package'].upper()
+
 	if not 'define_name' in kw:
-		pkgname = kw.get('uselib_store', kw['package'].upper())
-		kw['define_name'] = self.have_define(pkgname)
+		kw['define_name'] = self.have_define(kw['uselib_store'])
 
 	if not 'msg' in kw:
 		kw['msg'] = 'Checking for %r' % (kw['package'] or kw['path'])
@@ -298,12 +304,11 @@ def exec_cfg(self, kw):
 	env = self.env.env or None
 	def define_it():
 		define_name = kw['define_name']
-		pkgname = kw.get('uselib_store', kw['package'].upper())
 		# by default, add HAVE_X to the config.h, else provide DEFINES_X for use=X
 		if kw.get('global_define', 1):
 			self.define(self.have_define(kw['package']), 1, False)
 		else:
-			self.env.append_unique('DEFINES_%s' % pkgname, "%s=1" % define_name)
+			self.env.append_unique('DEFINES_%s' % kw['uselib_store'], "%s=1" % define_name)
 
 		if kw.get('add_have_to_env', 1):
 			self.env[define_name] = 1
@@ -329,10 +334,10 @@ def exec_cfg(self, kw):
 			define_it()
 			break
 
-	# retrieving the version of a module
+	# single version for a module
 	if 'modversion' in kw:
 		version = self.cmd_and_log(path + ['--modversion', kw['modversion']], env=env).strip()
-		self.define('%s_VERSION' % Utils.quote_define_name(kw.get('uselib_store', kw['modversion'])), version)
+		self.define(kw['define_name'], version)
 		return version
 
 	lst = [] + path
@@ -356,11 +361,10 @@ def exec_cfg(self, kw):
 	# retrieving variables of a module
 	if 'variables' in kw:
 		v_env = kw.get('env', self.env)
-		uselib = kw.get('uselib_store', kw['package'].upper())
 		vars = Utils.to_list(kw['variables'])
 		for v in vars:
 			val = self.cmd_and_log(lst + ['--variable=' + v], env=env).strip()
-			var = '%s_%s' % (uselib, v)
+			var = '%s_%s' % (kw['uselib_store'], v)
 			v_env[var] = val
 		if not 'okmsg' in kw:
 			kw['okmsg'] = 'yes'
@@ -372,7 +376,7 @@ def exec_cfg(self, kw):
 		kw['okmsg'] = 'yes'
 
 	define_it()
-	self.parse_flags(ret, kw.get('uselib_store', kw['package'].upper()), kw.get('env', self.env), force_static=static, posix=kw.get('posix', None))
+	self.parse_flags(ret, kw['uselib_store'], kw.get('env', self.env), force_static=static, posix=kw.get('posix', None))
 	return ret
 
 @conf
