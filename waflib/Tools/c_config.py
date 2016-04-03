@@ -255,16 +255,8 @@ def validate_cfg(self, kw):
 			kw['define_name'] = '%s_VERSION' % Utils.quote_define_name(kw['uselib_store'])
 		return
 
-	# checking for the version of a module, for the moment, one thing at a time
-	for x in cfg_ver.keys():
-		y = x.replace('-', '_')
-		if y in kw:
-			if not 'package' in kw:
-				raise ValueError('%s requires a package' % x)
-
-			if not 'msg' in kw:
-				kw['msg'] = 'Checking for %r %s %s' % (kw['package'], cfg_ver[x], kw[y])
-			return
+	if not 'package' in kw:
+		raise ValueError('a package name is required')
 
 	if not 'uselib_store' in kw:
 		kw['uselib_store'] = kw['package'].upper()
@@ -274,6 +266,19 @@ def validate_cfg(self, kw):
 
 	if not 'msg' in kw:
 		kw['msg'] = 'Checking for %r' % (kw['package'] or kw['path'])
+
+	for x in cfg_ver.keys():
+		# Gotcha: only one predicate is allowed at a time
+		# TODO remove in waf 2.0
+		y = x.replace('-', '_')
+		if y in kw:
+			package = kw['package']
+			if Logs.verbose:
+				Logs.warn('Passing %r to conf.check_cfg() is obsolete, pass parameters directly, eg:' % y)
+				Logs.warn(" conf.check_cfg(package='%s', args=['--libs', '--cflags', '%s >= 1.6'])" % (package, package))
+			if not 'msg' in kw:
+				kw['msg'] = 'Checking for %r %s %s' % (package, cfg_ver[x], kw[y])
+			break
 
 @conf
 def exec_cfg(self, kw):
@@ -321,11 +326,8 @@ def exec_cfg(self, kw):
 			kw['okmsg'] = 'yes'
 		return
 
-	# checking for the version of a module as separate verifications:
-	#   conf.check_cfg(package='libpng', atleast_version='1.0', ...)
-	# this is obsolete since once can use pkg-config arguments directly:
-	#   conf.check_cfg(package='libpng', atleast_version='1.6', args=['--libs', '--cflags', 'libpng >= 1.6'])
 	for x in cfg_ver:
+		# TODO remove in waf 2.0
 		y = x.replace('-', '_')
 		if y in kw:
 			self.cmd_and_log(path + ['--%s=%s' % (x, kw[y]), kw['package']], env=env)
