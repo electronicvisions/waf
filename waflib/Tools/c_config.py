@@ -301,12 +301,14 @@ def exec_cfg(self, kw):
 	env = self.env.env or None
 	def define_it():
 		pkgname = kw.get('uselib_store', kw['package'].upper())
+		# by default, add HAVE_X to the config.h, else provide DEFINES_X for use=X
 		if kw.get('global_define', 1):
-			# compatibility, replace by pkgname in WAF 1.9?
 			self.define(self.have_define(kw['package']), 1, False)
 		else:
 			self.env.append_unique('DEFINES_%s' % pkgname, "%s=1" % self.have_define(pkgname))
-		self.env[self.have_define(pkgname)] = 1
+
+		if kw.get('add_have_to_env', 1):
+			self.env[self.have_define(pkgname)] = 1
 
 	# pkg-config version
 	if 'atleast_pkgconfig_version' in kw:
@@ -665,10 +667,11 @@ def post_check(self, *k, **kw):
 				self.env.append_value(var, '%s=%s' % (define_name, int(is_success)))
 
 		# define conf.env.HAVE_X to 1
-		if kw.get('uselib_store', None):
-			self.env[self.have_define(kw['uselib_store'])] = 1
-		else:
-			self.env[define_name] = int(is_success)
+		if kw.get('add_have_to_env', 1):
+			if kw.get('uselib_store', None):
+				self.env[self.have_define(kw['uselib_store'])] = 1
+			else:
+				self.env[define_name] = int(is_success)
 
 	if 'header_name' in kw:
 		if kw.get('auto_add_header_name', False):

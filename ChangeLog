@@ -22,6 +22,7 @@ NEW IN WAF 1.9
   - Enabled pre-forked builds by default to achieve faster builds, up to 2x speedup on short-lived processes
 
 * API changes:
+  - The minimum Python version required is Python 2.5
   - Remove the duplicate split functions from Utils
   - Remove the command called "update"
   - Add Task.get_cwd()
