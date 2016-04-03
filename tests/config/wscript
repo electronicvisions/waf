@@ -18,13 +18,6 @@ def configure(conf):
 		if color == 'RED':
 			conf.failure=1
 
-	png_args = {'package': 'libpng', #'define_name': 'HAVE_LIBPNG',
-		'args': ['--libs', '--cflags'],
-		'uselib_store': 'LIBPNG'}
-
-	std_args = {'header_name': 'unistd.h', #'define_name':'HAVE_UNISTD',
-		'uselib_store': 'UNISTD'}
-
 	def test(*funs):
 		conf.env.stash()
 		conf.in_msg = 1 # suppress outputs
@@ -34,9 +27,11 @@ def configure(conf):
 				color = "GREEN"
 			else:
 				color = "RED"
-			if not ret:
-				ret = 'ok'
-			disp(color, "%s\t\t%s" % (f.__doc__, ret))
+			if ret:
+				ret = '\t\t' + ret
+			else:
+				ret = ''
+			disp(color, "%s%s" % (f.__doc__, ret))
 		conf.env.revert()
 		conf.in_msg = 0
 		return None
@@ -84,7 +79,7 @@ def configure(conf):
 			return 'conf.env.DEFINES_UNISTD = %r' % val
 
 	@test
-	def fun5():
+	def fun6():
 		"global_defines=0, uselib_store=UNISTD, define_name=FOO -> DEFINES_UNISTD=['FOO=1']"
 		conf.check_cc(header_name='unistd.h', uselib_store='UNISTD', global_define=0, define_name='FOO')
 		val = conf.env.DEFINES_UNISTD
@@ -92,8 +87,8 @@ def configure(conf):
 			return 'conf.env.DEFINES_UNISTD = %r' % val
 
 	@test
-	def fun6():
-		"global_defines=0,define_name=HAVE_FOO -> DEFINES_LIBPNG=['HAVE_FOO=1']"
+	def fun7():
+		"global_defines=0, define_name=HAVE_FOO -> DEFINES_LIBPNG=['HAVE_FOO=1']"
 		conf.check_cfg(package='libpng', global_define=0, define_name='HAVE_FOO')
 		val = conf.env.DEFINES_LIBPNG
 		if not isinstance(val, list) or not "HAVE_FOO=1" in val:
@@ -110,7 +105,7 @@ def configure(conf):
 
 	@test
 	def modversion2():
-		"modversion=libpng,uselib_store=foo -> DEFINES=['FOO_VERSION=X']"
+		"modversion=libpng, uselib_store=foo -> DEFINES=['FOO_VERSION=X']"
 		conf.check_cfg(modversion='libpng', uselib_store='foo')
 		val = conf.env.DEFINES
 		# automatic uppercase
@@ -119,21 +114,33 @@ def configure(conf):
 
 	@test
 	def modversion3():
-		"modversion=libpng,uselib_store=foo,define_name=bar -> DEFINES=['bar=X']"
+		"modversion=libpng, uselib_store=foo, define_name=bar -> DEFINES=['bar=X']"
 		conf.check_cfg(modversion='libpng', uselib_store='foo', define_name='bar')
 		val = conf.env.DEFINES
 		if not isinstance(val, list) or not val[0].startswith("bar="):
 			return 'conf.env.DEFINES = %r' % val
 
 	@test
-	def atleast_version():
-		"atleast_version=1.0,uselib_store=foo -> DEFINES=['HAVE_FOO=1']"
+	def atleast_version1():
+		"atleast_version=1.0, global_define=1 -> DEFINES=['HAVE_LIBPNG=1']"
+		# same in waf 1.8 and 1.9
+		conf.check_cfg(package='libpng', atleast_version='1.0', global_define=1, args='--libs --cflags')
+		val = conf.env.DEFINES
+		if not isinstance(val, list) or not 'HAVE_LIBPNG=1' in val:
+			return 'conf.env.DEFINES = %r' % val
+		if not conf.env.LIB_LIBPNG:
+			return 'expected conf.env.LIB_LIBPNG to be defined :-/'
+
+	@test
+	def atleast_version2():
+		"atleast_version=1.0, uselib_store=foo -> DEFINES=['HAVE_FOO=1']"
 		conf.check_cfg(package='libpng', uselib_store='foo', atleast_version='1.0', args='--libs --cflags')
 		val = conf.env.DEFINES
 		if not isinstance(val, list) or not 'HAVE_FOO=1' in val:
 			return 'conf.env.DEFINES = %r' % val
 		if not conf.env.LIB_foo:
 			return 'expected conf.env.LIB_foo to be defined :-/'
+
 
 	if conf.failure:
 		conf.fatal('One or several test failed, check the outputs above')
