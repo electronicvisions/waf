@@ -691,13 +691,9 @@ def post_check(self, *k, **kw):
 				_vars |= ccroot.USELIB_VARS[x]
 
 		for k in _vars:
-			lk = k.lower()
-			if lk in kw:
-				val = kw[lk]
-				# remove trailing slash
-				if isinstance(val, str):
-					val = val.rstrip(os.path.sep)
-				self.env.append_unique(k + '_' + kw['uselib_store'], Utils.to_list(val))
+			x = k.lower()
+			if x in kw:
+				self.env.append_unique(k + '_' + kw['uselib_store'], kw[x])
 	return is_success
 
 @conf
