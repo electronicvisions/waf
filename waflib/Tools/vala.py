@@ -268,7 +268,7 @@ def find_valac(self, valac_name, min_version):
 	except Exception:
 		valac_version = None
 	else:
-		ver = re.search(r'\d+.\d+.\d+', output).group(0).split('.')
+		ver = re.search(r'\d+.\d+.\d+', output).group().split('.')
 		valac_version = tuple([int(x) for x in ver])
 
 	self.msg('Checking for %s version >= %r' % (valac_name, min_version),

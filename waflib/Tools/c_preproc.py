@@ -137,7 +137,7 @@ skipped   = 's'
 
 def repl(m):
 	"""Replace function used with :py:attr:`waflib.Tools.c_preproc.re_cpp`"""
-	s = m.group(0)
+	s = m.group()
 	if s[0] == '/':
 		return ' '
 	return s
@@ -966,11 +966,11 @@ class c_parser(object):
 					else: state[-1] = ignored
 				elif token == 'ifdef':
 					m = re_mac.match(line)
-					if m and m.group(0) in self.defs: state[-1] = accepted
+					if m and m.group() in self.defs: state[-1] = accepted
 					else: state[-1] = ignored
 				elif token == 'ifndef':
 					m = re_mac.match(line)
-					if m and m.group(0) in self.defs: state[-1] = ignored
+					if m and m.group() in self.defs: state[-1] = ignored
 					else: state[-1] = accepted
 				elif token == 'include' or token == 'import':
 					(kind, inc) = extract_include(line, self.defs)
@@ -995,8 +995,8 @@ class c_parser(object):
 						raise PreprocError("Invalid define line %s" % line)
 				elif token == 'undef':
 					m = re_mac.match(line)
-					if m and m.group(0) in self.defs:
-						self.defs.__delitem__(m.group(0))
+					if m and m.group() in self.defs:
+						self.defs.__delitem__(m.group())
 						#print "undef %s" % name
 				elif token == 'pragma':
 					if re_pragma_once.match(line.lower()):
@@ -1012,7 +1012,7 @@ class c_parser(object):
 		:rtype: string
 		:return: the define name
 		"""
-		return re_mac.match(line).group(0)
+		return re_mac.match(line).group()
 
 def scan(task):
 	"""
