@@ -163,7 +163,10 @@ def jar_files(self):
 	self.jar_task = tsk = self.create_task('jar_create')
 	if manifest:
 		jarcreate = getattr(self, 'jarcreate', 'cfm')
-		node = self.path.find_node(manifest)
+		if not isinstance(manifest,Node.Node):
+			node = self.path.find_or_declare(manifest)
+		else:
+			node = manifest
 		tsk.dep_nodes.append(node)
 		jaropts.insert(0, node.abspath())
 	else:
