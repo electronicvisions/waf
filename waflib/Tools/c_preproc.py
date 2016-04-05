@@ -156,7 +156,7 @@ def filter_comments(filename):
 		for (a, b) in trig_def: code = code.split(a).join(b)
 	code = re_nl.sub('', code)
 	code = re_cpp.sub(repl, code)
-	return [(m.group(1), m.group(2)) for m in re_lines.finditer(code)]
+	return re_lines.findall(code)
 
 prec = {}
 """
@@ -179,6 +179,7 @@ def trimquotes(s):
 	:type s: string
 	:rtype: string
 	"""
+	# TODO remove in waf 2.0
 	if not s: return ''
 	s = s.rstrip()
 	if s[0] == "'" and s[-1] == "'": return s[1:-1]
