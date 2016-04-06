@@ -88,6 +88,14 @@ def configure(conf):
 
 	@test
 	def fun7():
+		"uselib_store=UNISTD -> HAVE_UNISTD=1"
+		conf.check_cc(header_name='unistd.h', uselib_store='UNISTD')
+		val = conf.env.HAVE_UNISTD
+		if val != 1:
+			return 'conf.env.HAVE_UNISTD = %r' % val
+
+	@test
+	def fun8():
 		"global_defines=0, define_name=HAVE_FOO -> DEFINES_LIBPNG=['HAVE_FOO=1']"
 		conf.check_cfg(package='libpng', global_define=0, define_name='HAVE_FOO')
 		val = conf.env.DEFINES_LIBPNG
