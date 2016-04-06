@@ -54,6 +54,7 @@ def get_environ(conf):
         if path not in pp:
             pp.append(path)
     env["PYTHONPATH"] = os.pathsep.join(pp)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
     return env
 
 def get_manual_module_dependencies(ctx):
@@ -329,7 +330,7 @@ Please use the patched pygccxml and pyplusplus provided at:
 git@gitviz.kip.uni-heidelberg.de:pygccxml.git
 git@gitviz.kip.uni-heidelberg.de:pyplusplus.git
 
-Use 'python -v waf configure' to find see where the loaded packageses are located
+Use 'python -v waf configure' to find see where the loaded packages are located
 """
 
 

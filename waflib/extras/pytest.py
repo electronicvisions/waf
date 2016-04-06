@@ -75,6 +75,7 @@ def pytest_create_task(self):
             self.test_environ.get("PYTHONPATH","").split(os.pathsep) +
             os.environ.get("PYTHONPATH", "").split(os.pathsep)
     )
+    self.test_environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
     self.pytest_task = t = self.create_task('pytest', input_nodes)
     t.init(self)
