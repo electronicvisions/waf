@@ -105,7 +105,7 @@ PROJECT_TEMPLATE = r'''<?xml version="1.0" encoding="UTF-8"?>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='${b.configuration}|${b.platform}'" Label="Configuration">
 		<ConfigurationType>Makefile</ConfigurationType>
 		<OutDir>${b.outdir}</OutDir>
-		<PlatformToolset>v110</PlatformToolset>
+		<PlatformToolset>${project.platform_toolset_ver}</PlatformToolset>
 	</PropertyGroup>
 	${endfor}
 
@@ -509,6 +509,7 @@ class vsnode_project(vsnode):
 		self.path = node
 		self.uuid = make_uuid(node.win32path())
 		self.name = node.name
+		self.platform_toolset_ver = getattr(ctx, 'platform_toolset_ver', None)
 		self.title = self.path.win32path()
 		self.source = [] # list of node objects
 		self.build_properties = [] # list of properties (nmake commands, output dir, etc)
@@ -715,6 +716,9 @@ class msvs_generator(BuildContext):
 	'''generates a visual studio 2010 solution'''
 	cmd = 'msvs'
 	fun = 'build'
+	numver = '11.00' # Visual Studio Version Number
+	vsver  = '2010'  # Visual Studio Version Year
+	platform_toolset = 'v110' # Platform Toolset Version Number
 
 	def init(self):
 		"""
@@ -744,8 +748,9 @@ class msvs_generator(BuildContext):
 		if not getattr(self, 'vsnode_project_view', None):
 			self.vsnode_project_view = vsnode_project_view
 
-		self.numver = '11.00'
-		self.vsver  = '2010'
+		self.numver = self.__class__.numver
+		self.vsver  = self.__class__.vsver
+		self.platform_toolset_ver = self.__class__.platform_toolset_ver
 
 	def execute(self):
 		"""
@@ -980,6 +985,8 @@ class msvs_2008_generator(msvs_generator):
 	'''generates a visual studio 2008 solution'''
 	cmd = 'msvs2008'
 	fun = msvs_generator.fun
+	numver = '10.00'
+	vsver = '2008'
 
 	def init(self):
 		if not getattr(self, 'project_extension', None):
@@ -997,8 +1004,6 @@ class msvs_2008_generator(msvs_generator):
 			self.vsnode_project_view = wrap_2008(vsnode_project_view)
 
 		msvs_generator.init(self)
-		self.numver = '10.00'
-		self.vsver  = '2008'
 
 def options(ctx):
 	"""
