@@ -913,6 +913,7 @@ def funex(c):
 	exec(c, dc)
 	return dc['f']
 
+re_cond = re.compile("(?P<var>\w+)|(?P<or>\|)|(?P<and>&)")
 re_novar = re.compile(r"^(SRC|TGT)\W+.*?$")
 reg_act = re.compile(r"(?P<backslash>\\)|(?P<dollar>\$\$)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})", re.M)
 def compile_fun_shell(line):
@@ -928,8 +929,19 @@ def compile_fun_shell(line):
 		elif g('backslash'): return '\\\\'
 		elif g('subst'): extr.append((g('var'), g('code'))); return "%s"
 		return None
-
 	line = reg_act.sub(repl, line) or line
+
+	def replc(m):
+		# performs substitutions and populates dvars
+		if m.group('and'):
+			return ' and '
+		elif m.group('or'):
+			return ' or '
+		else:
+			x = m.group('var')
+			if x not in dvars:
+				dvars.append(x)
+			return 'env[%r]' % x
 
 	parm = []
 	dvars = []
@@ -958,6 +970,10 @@ def compile_fun_shell(line):
 					dvars.append(meth[1:])
 					m = '%r' % m
 				app('" ".join(tsk.colon(%r, %s))' % (var, m))
+			elif meth.startswith('?'):
+				# In A?B|C output env.A if one of env.B or env.C is non-empty
+				expr = re_cond.sub(replc, meth[1:])
+				app('p(%r) if (%s) else ""' % (var, expr))
 			else:
 				app('%s%s' % (var, meth))
 		else:
@@ -981,6 +997,19 @@ def compile_fun_noshell(line):
 	dvars = []
 	merge = False
 	app = buf.append
+
+	def replc(m):
+		# performs substitutions and populates dvars
+		if m.group('and'):
+			return ' and '
+		elif m.group('or'):
+			return ' or '
+		else:
+			x = m.group('var')
+			if x not in dvars:
+				dvars.append(x)
+			return 'env[%r]' % x
+
 	for m in reg_act_noshell.finditer(line):
 		if m.group('space'):
 			merge = False
@@ -1018,6 +1047,10 @@ def compile_fun_noshell(line):
 						dvars.append(m)
 						m = '%r' % m
 					app('tsk.colon(%r, %s)' % (var, m))
+				elif code.startswith('?'):
+					# In A?B|C output env.A if one of env.B or env.C is non-empty
+					expr = re_cond.sub(replc, code[1:])
+					app('to_list(env[%r] if (%s) else [])' % (var, expr))
 				else:
 					# plain code such as ${tsk.inputs[0].abspath()}
 					app('gen.to_list(%s%s)' % (var, code))
