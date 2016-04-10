@@ -124,9 +124,12 @@ def use_javac_files(self):
 			self.uselib.append(x)
 		else:
 			y.post()
-			lst.append(y.jar_task.outputs[0].abspath())
-			self.javac_task.set_run_after(y.jar_task)
-
+			if hasattr(y, 'jar_task'):
+				lst.append(y.jar_task.outputs[0].abspath())
+				self.javac_task.set_run_after(y.jar_task)
+			else:
+				for tsk in y.tasks:
+					self.javac_task.set_run_after(tsk)
 	if lst:
 		self.env.append_value('CLASSPATH', lst)
 
@@ -240,6 +243,12 @@ class javac(Task.Task):
 	"""
 	The javac task will be executed again if the variables CLASSPATH, JAVACFLAGS, JAVAC or OUTDIR change.
 	"""
+	def uid(self):
+		"""Identify java tasks by input&output folder"""
+		lst = [self.__class__.__name__, self.generator.outdir.abspath()]
+		for x in self.srcdir:
+			lst.append(x.abspath())
+		return Utils.h_list(lst)
 
 	def runnable_status(self):
 		"""
