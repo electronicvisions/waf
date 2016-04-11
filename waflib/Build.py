@@ -1348,3 +1348,12 @@ class StepContext(BuildContext):
 				return pattern.match(node.abspath())
 		return match
 
+class EnvContext(BuildContext):
+	"""Subclass EnvContext to create commands that require configuration data in 'env'"""
+	fun = cmd = None
+	def execute(self):
+		self.restore()
+		if not self.all_envs:
+			self.load_envs()
+		self.recurse([self.run_dir])
+

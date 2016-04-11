@@ -1,8 +1,6 @@
 Waf 1.9
 -------
 
-* Better consistency between check_cfg and check_cc variables
-* Let more context commands depend on the configuration
 * Rework qt5
 * Regexps for extension-based processing
 * Other issues listed on https://github.com/waf-project/waf/issues
