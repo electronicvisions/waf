@@ -1,29 +1,44 @@
-
 #!/usr/bin/env python
 # encoding: utf-8
 # Christoph Koke, 2011
 
 """
+Base tool for tests
+
+# Enviroment variable handling:
+
+The enviroment variables are copied from os.environ. These can be overwritten
+by passing a dictionary via the test_environ keyword.
+
+The variables PATH, DYLD_LIBRARY_PATH, LD_LIBRARY_PATH and PYTHONPATH are
+specially handled. The following pathes are added there, in the given order:
+ 1. Any path given by prepend_to_path, prepend_to_pythonpath, ...
+ 2. Any path given via test_environ
+ 3. All output folders of all link_task recursivly found via use
+ 4. The value from os.environ
+
 """
 
 import os
-import sys
 import traceback
 import errno
-import pprint
-from waflib.TaskGen import taskgen_method
-from waflib import Configure, Utils, Task, Logs, Options, Errors
-from os.path import basename, join
-from time import time, sleep
+
 from threading import Thread, Lock
 from subprocess import Popen, PIPE
 from collections import defaultdict
 from xml.etree import ElementTree
+from time import time, sleep
+
+from waflib.TaskGen import taskgen_method
+from waflib import Configure, Utils, Task, Logs, Options, Node, Errors
 
 COLOR = 'CYAN'
 resultlock = Lock()
 
 DEFAULT_TEST_TIMEOUT = 30
+
+SPECIAL_ENV_VARS = [
+    "PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH']
 
 @Utils.run_once
 def options(opt):
@@ -147,6 +162,24 @@ def formatStatisticsBrokenTests(results):
 def removeDuplicates(seq):
     seen = set()
     return [ x for x in seq if x not in seen and not seen.add(x)]
+
+def to_dirs(task_gen, paths):
+    """
+    Convert a list of string/nodes into a list of folders relative to path.
+    """
+    nodes = []
+    for path in task_gen.to_list(paths):
+        if isinstance(path, Node.Node):
+            node = path
+        elif os.path.isabs(path):
+            node = task_gen.root.find_dir(path)
+        else:
+            node = task_gen.path.find_dir(path)
+
+        if node is None:
+            raise Errors.WafError("not found: %r in %r" % (path, task_gen))
+        nodes.append(node)
+    return nodes
 
 def addSummaryMsg(results):
     for result in results:
@@ -305,6 +338,22 @@ class TestBase(Task.Task):
         """
         self.cwd = task_gen.path.abspath()
         self.test_environ = getattr(task_gen, "test_environ", {})
+
+        # Evalutate enviroment variables, see module docstring
+        for var in SPECIAL_ENV_VARS:
+            key = "prepend_to_" + var.lower()
+            # Adding the value of pythonpath to test_env
+            pathes = []
+            pathes = [n.abspath() for n in
+                      to_dirs(task_gen, getattr(task_gen, key, ""))]
+            setattr(task_gen, key, pathes)
+            for use in task_gen.tmp_use_seen:
+                tg = task_gen.bld.get_tgen_by_name(use)
+                pathes.extend(getattr(tg, key, []))
+            if var in self.test_environ:
+                pathes += os.environ.get(var).split(os.pathsep)
+            self.test_environ[var] = os.pathsep.join(pathes)
+
         self.skip_run = getattr(task_gen, "skip_run", False)
         src_dir = task_gen.path.srcpath()
         self.project = task_gen.path.relpath().split(os.sep)[0]
@@ -359,6 +408,7 @@ class TestBase(Task.Task):
         """Add dependency lib pathes to PATH, PYTHON_PATH and LD_LIBRARY_PATH
         Collects all link_task output and adds the pathes to the found outputs to the pathes
         """
+
         env = os.environ.copy()
         env.update(self.test_environ)
 
@@ -369,11 +419,14 @@ class TestBase(Task.Task):
                 pathes.add(tg.link_task.outputs[0].parent.abspath())
 
         # Env polution, hihi
-        envvars =  ["PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH' ]
-        for var in envvars:
-            p = list(pathes) + env.get(var, "").split(os.pathsep)
-            p = removeDuplicates(p)
-            env[var] = os.pathsep.join(p)
+        for var in SPECIAL_ENV_VARS:
+            # Evalutate enviroment variables, see module docstring
+            p = []
+            p.extend(env.get(var, "").split(os.pathsep))
+            p.extend(pathes)
+            if var in os.environ:
+                p.extend(os.environ[var].split(os.pathsep))
+            env[var] = os.pathsep.join(removeDuplicates(p))
         return env
 
     def getXMLFile(self, test):

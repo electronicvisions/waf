@@ -52,9 +52,10 @@ def pytest_process_use(self):
 @feature("pytest")
 @after_method("pytest_process_use")
 def pytest_create_task(self):
+    """Create the unit test task. There can be only one unit test task by task generator."""
     if self.testsDisabled():
         return
-    """Create the unit test task. There can be only one unit test task by task generator."""
+
     input_nodes = self.to_nodes(self.tests)
 
     # Set test name if not given by user
@@ -62,22 +63,10 @@ def pytest_create_task(self):
         fix = re.compile(r'(\.py$)?')
         self.name = "__and__".join(fix.sub('', n.name) for n in input_nodes)
 
-    # Adding the value of pythonpath to test_env
-    self.pythonpath = self.to_incnodes(getattr(self, "pythonpath", ""))
-    for use in self.tmp_use_seen:
-        tg = self.bld.get_tgen_by_name(use)
-        pythonpath = getattr(tg, 'pythonpath', [])
-        self.pythonpath.extend(self.to_incnodes(pythonpath))
-
-    self.test_environ = getattr(self, "test_environ", {})
-    self.test_environ["PYTHONPATH"] = os.pathsep.join(
-            [n.abspath() for n in self.pythonpath] +
-            self.test_environ.get("PYTHONPATH","").split(os.pathsep) +
-            os.environ.get("PYTHONPATH", "").split(os.pathsep)
-    )
-    self.test_environ["PYTHONDONTWRITEBYTECODE"] = "1"
-
     self.pytest_task = t = self.create_task('pytest', input_nodes)
+
+    # Compat, for older wscripts
+    self.prepend_to_pythonpath = getattr(self, "pythonpath", "")
     t.init(self)
     for use in self.tmp_use_seen:
         tg = self.bld.get_tgen_by_name(use)
