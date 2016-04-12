@@ -718,7 +718,7 @@ class msvs_generator(BuildContext):
 	fun = 'build'
 	numver = '11.00' # Visual Studio Version Number
 	vsver  = '2010'  # Visual Studio Version Year
-	platform_toolset = 'v110' # Platform Toolset Version Number
+	platform_toolset_ver = 'v110' # Platform Toolset Version Number
 
 	def init(self):
 		"""
