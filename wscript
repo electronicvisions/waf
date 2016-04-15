@@ -227,7 +227,7 @@ def create_waf(self, *k, **kw):
 	mw = 'tmp-waf-'+VERSION
 	print("-> preparing %r" % mw)
 
-	import tarfile, re, zipfile
+	import tarfile, zipfile
 
 	zipType = Options.options.zip.strip().lower()
 	if zipType not in zip_types:
