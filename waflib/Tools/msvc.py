@@ -653,7 +653,9 @@ def print_all_msvc_detected(conf):
 @conf
 def detect_msvc(conf, arch = False):
 	# Save installed versions only if lazy detection is disabled.
-	lazy_detect = getattr(Options.options, 'msvc_lazy_autodetect', False) or conf.env['MSVC_LAZY_AUTODETECT']
+	lazy_detect = getattr(Options.options, 'msvc_lazy', True)
+	if conf.env['MSVC_LAZY_AUTODETECT'] is False:
+		lazy_detect = False
 	versions = get_msvc_versions(conf, not lazy_detect)
 	return setup_msvc(conf, versions, arch)
 
