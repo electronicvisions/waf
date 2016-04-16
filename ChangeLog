@@ -36,4 +36,5 @@ NEW IN WAF 1.9 preview 1
   - Task.sig_vars, Task.sig_explit_deps and Task.sig_implicit_deps return None
   - Better consistency between check_cfg and check_cc variables
   - Subclass waflib.Build.ConfiguredContext to enable configuration-dependent user commands
+  - Remove Task.dep_vars as it is never used (define Task.vars on instances if necessary)
 

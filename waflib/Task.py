@@ -422,9 +422,6 @@ class Task(TaskBase):
 		self.run_after = set([])
 		"""Set of tasks that must be executed before this one"""
 
-		# Additionally, you may define the following
-		#self.dep_vars  = 'PREFIX DATADIR'
-
 	def __str__(self):
 		"string to display to the user"
 		name = self.__class__.__name__
@@ -662,18 +659,8 @@ class Task(TaskBase):
 		"""
 		Used by :py:meth:`waflib.Task.Task.signature`, hash :py:attr:`waflib.Task.Task.env` variables/values
 		"""
-		bld = self.generator.bld
-		env = self.env
-		upd = self.m.update
-
-		# dependencies on the environment vars
-		act_sig = bld.hash_env_vars(env, self.__class__.vars)
-		upd(act_sig)
-
-		# additional variable dependencies, if provided
-		dep_vars = getattr(self, 'dep_vars', None)
-		if dep_vars:
-			upd(bld.hash_env_vars(env, dep_vars))
+		sig = self.generator.bld.hash_env_vars(self.env, self.__class__.vars)
+		self.m.update(sig)
 
 	scan = None
 	"""

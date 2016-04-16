@@ -736,7 +736,7 @@ class subst_pc(Task.Task):
 
 		code = code % d
 		self.outputs[0].write(code, encoding=getattr(self.generator, 'encoding', 'ISO8859-1'))
-		self.generator.bld.raw_deps[self.uid()] = self.dep_vars = lst
+		self.generator.bld.raw_deps[self.uid()] = lst
 
 		# make sure the signature is updated
 		try: delattr(self, 'cache_sig')
