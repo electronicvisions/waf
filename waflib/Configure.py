@@ -445,7 +445,7 @@ def find_program(self, filename, **kw):
 	else:
 		path_list = environ.get('PATH', '').split(os.pathsep)
 
-	if kw.get('value', None):
+	if kw.get('value'):
 		# user-provided in command-line options and passed to find_program
 		ret = self.cmd_to_list(kw['value'])
 	elif var in environ:
@@ -472,13 +472,13 @@ def find_program(self, filename, **kw):
 		retmsg = False
 
 	self.msg("Checking for program %r" % msg, retmsg, **kw)
-	if not kw.get('quiet', None):
+	if not kw.get('quiet'):
 		self.to_log('find program=%r paths=%r var=%r -> %r' % (filename, path_list, var, ret))
 
 	if not ret:
 		self.fatal(kw.get('errmsg', '') or 'Could not find the program %r' % filename)
 
-	interpreter = kw.get('interpreter', None)
+	interpreter = kw.get('interpreter')
 	if interpreter is None:
 		if not Utils.check_exe(ret[0], env=environ):
 			self.fatal('Program %r is not executable' % ret)
@@ -614,7 +614,7 @@ def test(self, *k, **kw):
 		kw['env'] = self.env.derive()
 
 	# validate_c for example
-	if kw.get('validate', None):
+	if kw.get('validate'):
 		kw['validate'](kw)
 
 	self.start_msg(kw['msg'], **kw)
@@ -630,7 +630,7 @@ def test(self, *k, **kw):
 	else:
 		kw['success'] = ret
 
-	if kw.get('post_check', None):
+	if kw.get('post_check'):
 		ret = kw['post_check'](kw)
 
 	if ret:

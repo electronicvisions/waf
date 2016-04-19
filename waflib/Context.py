@@ -528,7 +528,7 @@ class Context(ctx):
 		except KeyError:
 			result = k[1]
 
-		color = kw.get('color', None)
+		color = kw.get('color')
 		if not isinstance(color, str):
 			color = result and 'GREEN' or 'YELLOW'
 
@@ -538,10 +538,10 @@ class Context(ctx):
 		"""
 		Print the beginning of a 'Checking for xxx' message. See :py:meth:`waflib.Context.Context.msg`
 		"""
-		if kw.get('quiet', None):
+		if kw.get('quiet'):
 			return
 
-		msg = kw.get('msg', None) or k[0]
+		msg = kw.get('msg') or k[0]
 		try:
 			if self.in_msg:
 				self.in_msg += 1
@@ -560,13 +560,13 @@ class Context(ctx):
 
 	def end_msg(self, *k, **kw):
 		"""Print the end of a 'Checking for' message. See :py:meth:`waflib.Context.Context.msg`"""
-		if kw.get('quiet', None):
+		if kw.get('quiet'):
 			return
 		self.in_msg -= 1
 		if self.in_msg:
 			return
 
-		result = kw.get('result', None) or k[0]
+		result = kw.get('result') or k[0]
 
 		defcolor = 'GREEN'
 		if result == True:

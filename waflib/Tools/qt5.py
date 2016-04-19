@@ -479,7 +479,7 @@ def find_qt5_binaries(self):
 	# the qt directory has been given from QT5_ROOT - deduce the qt binary path
 	if not qtdir:
 		qtdir = os.environ.get('QT5_ROOT', '')
-		qtbin = os.environ.get('QT5_BIN', None) or os.path.join(qtdir, 'bin')
+		qtbin = os.environ.get('QT5_BIN') or os.path.join(qtdir, 'bin')
 
 	if qtbin:
 		paths = [qtbin]
@@ -584,7 +584,7 @@ def find_qt5_binaries(self):
 
 @conf
 def find_qt5_libraries(self):
-	qtlibs = getattr(Options.options, 'qtlibs', None) or os.environ.get("QT5_LIBDIR", None)
+	qtlibs = getattr(Options.options, 'qtlibs', None) or os.environ.get("QT5_LIBDIR")
 	if not qtlibs:
 		try:
 			qtlibs = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_LIBS']).strip()
@@ -593,13 +593,13 @@ def find_qt5_libraries(self):
 			qtlibs = os.path.join(qtdir, 'lib')
 	self.msg('Found the Qt5 libraries in', qtlibs)
 
-	qtincludes =  os.environ.get("QT5_INCLUDES", None) or self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_HEADERS']).strip()
+	qtincludes =  os.environ.get("QT5_INCLUDES") or self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_HEADERS']).strip()
 	env = self.env
 	if not 'PKG_CONFIG_PATH' in os.environ:
 		os.environ['PKG_CONFIG_PATH'] = '%s:%s/pkgconfig:/usr/lib/qt5/lib/pkgconfig:/opt/qt5/lib/pkgconfig:/usr/lib/qt5/lib:/opt/qt5/lib' % (qtlibs, qtlibs)
 
 	try:
-		if os.environ.get("QT5_XCOMPILE", None):
+		if os.environ.get("QT5_XCOMPILE"):
 			raise self.errors.ConfigurationError()
 		self.check_cfg(atleast_pkgconfig_version='0.1')
 	except self.errors.ConfigurationError:

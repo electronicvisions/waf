@@ -73,7 +73,7 @@ class ConfigSet(object):
 		"""
 		try:
 			while 1:
-				x = self.table.get(key, None)
+				x = self.table.get(key)
 				if not x is None:
 					return x
 				self = self.parent

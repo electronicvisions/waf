@@ -260,14 +260,14 @@ def python_cross_compile(self, features='pyembed pyext'):
 
 	xx = self.env.CXX_NAME and 'cxx' or 'c'
 	if 'pyext' in features:
-		flags = self.environ.get('PYTHON_PYEXT_LDFLAGS', self.environ.get('PYTHON_LDFLAGS', None))
+		flags = self.environ.get('PYTHON_PYEXT_LDFLAGS', self.environ.get('PYTHON_LDFLAGS'))
 		if flags is None:
 			self.fatal('No flags provided through PYTHON_PYEXT_LDFLAGS as required')
 		else:
 			self.parse_flags(flags, 'PYEXT')
 		self.test_pyext(xx)
 	if 'pyembed' in features:
-		flags = self.environ.get('PYTHON_PYEMBED_LDFLAGS', self.environ.get('PYTHON_LDFLAGS', None))
+		flags = self.environ.get('PYTHON_PYEMBED_LDFLAGS', self.environ.get('PYTHON_LDFLAGS'))
 		if flags is None:
 			self.fatal('No flags provided through PYTHON_PYEMBED_LDFLAGS as required')
 		else:

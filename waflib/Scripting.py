@@ -54,7 +54,7 @@ def waf_entry_point(current_directory, version, wafdir):
 	Context.launch_dir = current_directory
 
 	# if 'configure' is in the commands, do not search any further
-	no_climb = os.environ.get('NOCLIMB', None)
+	no_climb = os.environ.get('NOCLIMB')
 	if not no_climb:
 		for k in no_climb_commands:
 			for y in sys.argv:

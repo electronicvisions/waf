@@ -567,7 +567,7 @@ def wrap_class(class_name):
 	Manifest file processing and @response file workaround for command-line length limits on Windows systems
 	The indicated task class is replaced by a subclass to prevent conflicts in case the class is wrapped more than once
 	"""
-	cls = Task.classes.get(class_name, None)
+	cls = Task.classes.get(class_name)
 
 	if not cls:
 		return None

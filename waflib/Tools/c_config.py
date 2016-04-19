@@ -344,7 +344,7 @@ def exec_cfg(self, kw):
 
 	lst = [] + path
 
-	defi = kw.get('define_variable', None)
+	defi = kw.get('define_variable')
 	if not defi:
 		defi = self.env.PKG_CONFIG_DEFINES or {}
 	for key, val in defi.items():
@@ -378,7 +378,7 @@ def exec_cfg(self, kw):
 		kw['okmsg'] = 'yes'
 
 	define_it()
-	self.parse_flags(ret, kw['uselib_store'], kw.get('env', self.env), force_static=static, posix=kw.get('posix', None))
+	self.parse_flags(ret, kw['uselib_store'], kw.get('env', self.env), force_static=static, posix=kw.get('posix'))
 	return ret
 
 @conf
@@ -443,7 +443,7 @@ def build_fun(bld):
 	for k, v in bld.kw.items():
 		setattr(o, k, v)
 
-	if not bld.kw.get('quiet', None):
+	if not bld.kw.get('quiet'):
 		bld.conf.to_log("==>\n%s\n<==" % bld.kw['code'])
 
 @conf
@@ -484,7 +484,7 @@ def validate_c(self, kw):
 
 	if not 'compiler' in kw and not 'features' in kw:
 		kw['compiler'] = 'c'
-		if env['CXX_NAME'] and Task.classes.get('cxx', None):
+		if env['CXX_NAME'] and Task.classes.get('cxx'):
 			kw['compiler'] = 'cxx'
 			if not self.env.CXX:
 				self.fatal('a c++ compiler is required')
@@ -526,7 +526,7 @@ def validate_c(self, kw):
 			if not 'header_name' in kw:
 				kw['header_name'] = []
 			fwk = '%s/%s.h' % (fwkname, fwkname)
-			if kw.get('remove_dot_h', None):
+			if kw.get('remove_dot_h'):
 				fwk = fwk[:-2]
 			kw['header_name'] = Utils.to_list(kw['header_name']) + [fwk]
 
@@ -652,7 +652,7 @@ def post_check(self, *k, **kw):
 		# TODO this is still way too complicated
 		comment = kw.get('comment', '')
 		define_name = kw['define_name']
-		if kw['execute'] and kw.get('define_ret', None) and isinstance(is_success, str):
+		if kw['execute'] and kw.get('define_ret') and isinstance(is_success, str):
 			if kw.get('global_define', 1):
 				self.define(define_name, is_success, quote=kw.get('quote', 1), comment=comment)
 			else:
@@ -672,7 +672,7 @@ def post_check(self, *k, **kw):
 
 		# define conf.env.HAVE_X to 1
 		if kw.get('add_have_to_env', 1):
-			if kw.get('uselib_store', None):
+			if kw.get('uselib_store'):
 				self.env[self.have_define(kw['uselib_store'])] = 1
 			else:
 				self.env[define_name] = int(is_success)
@@ -1277,7 +1277,7 @@ def multicheck(self, *k, **kw):
 	for x in tasks:
 		if x.hasrun != Task.SUCCESS:
 			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW', **kw)
-			self.fatal(kw.get('fatalmsg', None) or 'One of the tests has failed, read config.log for more information')
+			self.fatal(kw.get('fatalmsg') or 'One of the tests has failed, read config.log for more information')
 
 	self.end_msg('ok', **kw)
 

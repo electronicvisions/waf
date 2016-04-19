@@ -72,7 +72,7 @@ class BuildContext(Context.Context):
 		# output directory - may be set until the nodes are considered
 		self.out_dir = kw.get('out_dir', Context.out_dir)
 
-		self.cache_dir = kw.get('cache_dir', None)
+		self.cache_dir = kw.get('cache_dir')
 		if not self.cache_dir:
 			self.cache_dir = os.path.join(self.out_dir, CACHE_DIR)
 
@@ -160,7 +160,7 @@ class BuildContext(Context.Context):
 		kw['bld'] = self
 		ret = TaskGen.task_gen(*k, **kw)
 		self.task_gen_cache_names = {} # reset the cache, each time
-		self.add_to_group(ret, group=kw.get('group', None))
+		self.add_to_group(ret, group=kw.get('group'))
 		return ret
 
 	def rule(self, *k, **kw):

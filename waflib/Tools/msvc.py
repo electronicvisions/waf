@@ -881,9 +881,9 @@ def find_msvc(conf):
 def visual_studio_add_flags(self):
 	"""visual studio flags found in the system environment"""
 	v = self.env
-	if self.environ.get('INCLUDE', None):
+	if self.environ.get('INCLUDE'):
 		v.prepend_value('INCLUDES', [x for x in self.environ['INCLUDE'].split(';') if x]) # notice the 'S'
-	if self.environ.get('LIB', None):
+	if self.environ.get('LIB'):
 		v.prepend_value('LIBPATH', [x for x in self.environ['LIB'].split(';') if x])
 
 @conf
@@ -1112,7 +1112,7 @@ def wrap_class(class_name):
 	Manifest file processing and @response file workaround for command-line length limits on Windows systems
 	The indicated task class is replaced by a subclass to prevent conflicts in case the class is wrapped more than once
 	"""
-	cls = Task.classes.get(class_name, None)
+	cls = Task.classes.get(class_name)
 
 	if not cls:
 		return None

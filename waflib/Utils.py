@@ -448,7 +448,7 @@ def split_path_msys(path):
 if sys.platform == 'cygwin':
 	split_path = split_path_cygwin
 elif is_win32:
-	if os.environ.get('MSYSTEM', None):
+	if os.environ.get('MSYSTEM'):
 		split_path = split_path_msys
 	else:
 		split_path = split_path_win32
@@ -807,7 +807,7 @@ def run_prefork_process(cmd, kwargs, cargs):
 
 def run_regular_process(cmd, kwargs, cargs={}):
 	proc = subprocess.Popen(cmd, **kwargs)
-	if kwargs.get('stdout', None) or kwargs.get('stderr', None):
+	if kwargs.get('stdout') or kwargs.get('stderr'):
 		out, err = proc.communicate(**cargs)
 		status = proc.returncode
 	else:
@@ -816,7 +816,7 @@ def run_regular_process(cmd, kwargs, cargs={}):
 	return status, out, err
 
 def run_process(cmd, kwargs, cargs={}):
-	if kwargs.get('stdout', None) and kwargs.get('stderr', None):
+	if kwargs.get('stdout') and kwargs.get('stderr'):
 		return run_prefork_process(cmd, kwargs, cargs)
 	else:
 		return run_regular_process(cmd, kwargs, cargs)

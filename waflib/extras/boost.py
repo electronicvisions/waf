@@ -173,7 +173,7 @@ def boost_get_version(self, d):
 
 @conf
 def boost_get_includes(self, *k, **kw):
-	includes = k and k[0] or kw.get('includes', None)
+	includes = k and k[0] or kw.get('includes')
 	if includes and self.__boost_get_version_file(includes):
 		return includes
 	for d in self.environ.get('INCLUDE', '').split(';') + BOOST_INCLUDES:
@@ -206,7 +206,7 @@ def __boost_get_libs_path(self, *k, **kw):
 	''' return the lib path and all the files in it '''
 	if 'files' in kw:
 		return self.root.find_dir('.'), Utils.to_list(kw['files'])
-	libs = k and k[0] or kw.get('libs', None)
+	libs = k and k[0] or kw.get('libs')
 	if libs:
 		path = self.root.find_dir(libs)
 		files = path.ant_glob('*boost_*')
@@ -269,7 +269,7 @@ def boost_get_libs(self, *k, **kw):
 		t = []
 		if kw.get('mt', False):
 			t.append('-mt')
-		if kw.get('abi', None):
+		if kw.get('abi'):
 			t.append('%s%s' % (is_static and '-s' or '-', kw['abi']))
 		elif is_static:
 			t.append('-s')
@@ -303,7 +303,7 @@ def boost_get_libs(self, *k, **kw):
 				self.fatal('The configuration failed')
 		return libs
 
-	return  path.abspath(), match_libs(kw.get('lib', None), False), match_libs(kw.get('stlib', None), True)
+	return  path.abspath(), match_libs(kw.get('lib'), False), match_libs(kw.get('stlib'), True)
 
 
 @conf
@@ -318,8 +318,8 @@ def check_boost(self, *k, **kw):
 		self.fatal('load a c++ compiler first, conf.load("compiler_cxx")')
 
 	params = {
-		'lib': k and k[0] or kw.get('lib', None),
-		'stlib': kw.get('stlib', None)
+		'lib': k and k[0] or kw.get('lib'),
+		'stlib': kw.get('stlib')
 	}
 	for key, value in self.options.__dict__.items():
 		if not key.startswith('boost_'):

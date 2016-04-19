@@ -593,7 +593,7 @@ class Task(TaskBase):
 
 		# compare the signatures of the outputs
 		for node in self.outputs:
-			sig = bld.node_sigs.get(node, None)
+			sig = bld.node_sigs.get(node)
 			if not sig:
 				Logs.debug("task: task %r must run: an output node has no signature", self)
 				return RUN_ME
