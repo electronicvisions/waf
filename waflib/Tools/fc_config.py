@@ -117,8 +117,6 @@ def fortran_modifier_win32(conf):
 
 	v['FCFLAGS_fcshlib']   = []
 
-	v.append_value('FCFLAGS_fcshlib', ['-DDLL_EXPORT']) # TODO adding nonstandard defines like this DLL_EXPORT is not a good idea
-
 	# Auto-import is enabled by default even without this option,
 	# but enabling it explicitly has the nice effect of suppressing the rather boring, debug-level messages
 	# that the linker emits otherwise.
