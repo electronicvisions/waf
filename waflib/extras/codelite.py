@@ -315,7 +315,7 @@ def stealth_write(self, data, flags='wb'):
                 data = data.decode(sys.getfilesystemencoding(), 'replace')
                 data = data.encode('utf-8')
 
-        if self.name.endswith('.project') or self.name.endswith('.project'):
+        if self.name.endswith('.project'):
                 data = BOM + data
 
         try:
