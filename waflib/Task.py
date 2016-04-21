@@ -426,7 +426,7 @@ class Task(TaskBase):
 		"string to display to the user"
 		name = self.__class__.__name__
 		if self.outputs:
-			if (name.endswith('lib') or name.endswith('program')) or not self.inputs:
+			if name.endswith(('lib', 'program')) or not self.inputs:
 				node = self.outputs[0]
 				return node.path_from(node.ctx.launch_node())
 		if not (self.inputs or self.outputs):
@@ -443,7 +443,7 @@ class Task(TaskBase):
 
 	def keyword(self):
 		name = self.__class__.__name__
-		if name.endswith('lib') or name.endswith('program'):
+		if name.endswith(('lib', 'program')):
 			return 'Linking'
 		if len(self.inputs) == 1 and len(self.outputs) == 1:
 			return 'Compiling'

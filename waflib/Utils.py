@@ -435,7 +435,7 @@ def split_path_win32(path):
 
 msysroot = None
 def split_path_msys(path):
-	if (path.startswith('/') or path.startswith('\\')) and not path.startswith('//') and not path.startswith('\\\\'):
+	if path.startswith(('/', '\\')) and not path.startswith(('\\', '\\\\')):
 		# msys paths can be in the form /usr/bin
 		global msysroot
 		if not msysroot:

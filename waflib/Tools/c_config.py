@@ -199,20 +199,20 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			static = False
 		elif x.startswith('-Wl'):
 			app('LINKFLAGS', x)
-		elif x.startswith('-m') or x.startswith('-f') or x.startswith('-dynamic'):
+		elif x.startswith(('-m', '-f', '-dynamic')):
 			app('CFLAGS', x)
 			app('CXXFLAGS', x)
 		elif x.startswith('-bundle'):
 			app('LINKFLAGS', x)
-		elif x.startswith('-undefined') or x.startswith('-Xlinker'):
+		elif x.startswith(('-undefined', '-Xlinker')):
 			arg = lst.pop(0)
 			app('LINKFLAGS', [x, arg])
-		elif x.startswith('-arch') or x.startswith('-isysroot'):
+		elif x.startswith(('-arch', '-isysroot')):
 			tmp = [x, lst.pop(0)]
 			app('CFLAGS', tmp)
 			app('CXXFLAGS', tmp)
 			app('LINKFLAGS', tmp)
-		elif x.endswith('.a') or x.endswith('.so') or x.endswith('.dylib') or x.endswith('.lib'):
+		elif x.endswith(('.a', '.so', '.dylib', '.lib')):
 			appu('LINKFLAGS', x) # not cool, #762
 
 @conf

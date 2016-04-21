@@ -150,14 +150,14 @@ def compile_template(line):
 			app("lst.append(%r)" % params[x])
 
 		f = extr[x]
-		if f.startswith('if') or f.startswith('for'):
+		if f.startswith(('if', 'for')):
 			app(f + ':')
 			indent += 1
 		elif f.startswith('py:'):
 			app(f[3:])
-		elif f.startswith('endif') or f.startswith('endfor'):
+		elif f.startswith(('endif', 'endfor')):
 			indent -= 1
-		elif f.startswith('else') or f.startswith('elif'):
+		elif f.startswith(('else', 'elif')):
 			indent -= 1
 			app(f + ':')
 			indent += 1

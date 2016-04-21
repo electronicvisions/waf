@@ -269,14 +269,14 @@ def compile_template(line):
                         app("lst.append(%r)" % params[x])
 
                 f = extr[x]
-                if f.startswith('if') or f.startswith('for'):
+                if f.startswith(('if', 'for')):
                         app(f + ':')
                         indent += 1
                 elif f.startswith('py:'):
                         app(f[3:])
-                elif f.startswith('endif') or f.startswith('endfor'):
+                elif f.startswith(('endif', 'endfor')):
                         indent -= 1
-                elif f.startswith('else') or f.startswith('elif'):
+                elif f.startswith(('else', 'elif')):
                         indent -= 1
                         app(f + ':')
                         indent += 1
@@ -491,7 +491,7 @@ class vsnode_project(vsnode):
                 required for writing the source files
                 """
                 name = node.name
-                if name.endswith('.cpp') or name.endswith('.c'):
+                if name.endswith(('.cpp', '.c')):
                         return 'sourcefile'
                 return 'headerfile'
 
@@ -511,7 +511,7 @@ class vsnode_project(vsnode):
                                 x.preprocessor_definitions = ''
                                 x.includes_search_path = ''
 
-                                # can specify "deploy_dir" too                                
+                                # can specify "deploy_dir" too
                                 ret.append(x)
                 self.build_properties = ret
 

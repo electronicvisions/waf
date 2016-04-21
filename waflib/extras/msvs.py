@@ -318,14 +318,14 @@ def compile_template(line):
 			app("lst.append(%r)" % params[x])
 
 		f = extr[x]
-		if f.startswith('if') or f.startswith('for'):
+		if f.startswith(('if', 'for')):
 			app(f + ':')
 			indent += 1
 		elif f.startswith('py:'):
 			app(f[3:])
-		elif f.startswith('endif') or f.startswith('endfor'):
+		elif f.startswith(('endif', 'endfor')):
 			indent -= 1
-		elif f.startswith('else') or f.startswith('elif'):
+		elif f.startswith(('else', 'elif')):
 			indent -= 1
 			app(f + ':')
 			indent += 1
@@ -364,7 +364,7 @@ def stealth_write(self, data, flags='wb'):
 		data = data.decode(sys.getfilesystemencoding(), 'replace')
 		data = data.encode('utf-8')
 
-	if self.name.endswith('.vcproj') or self.name.endswith('.vcxproj'):
+	if self.name.endswith(('.vcproj', '.vcxproj')):
 		data = BOM + data
 
 	try:
@@ -549,7 +549,7 @@ class vsnode_project(vsnode):
 		required for writing the source files
 		"""
 		name = node.name
-		if name.endswith('.cpp') or name.endswith('.c'):
+		if name.endswith(('.cpp', '.c')):
 			return 'ClCompile'
 		return 'ClInclude'
 
