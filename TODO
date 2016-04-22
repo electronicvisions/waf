@@ -2,6 +2,5 @@ Waf 1.9
 -------
 
 * Rework qt5
-* Regexps for extension-based processing
 * Other issues listed on https://github.com/waf-project/waf/issues
 

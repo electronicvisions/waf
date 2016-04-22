@@ -15,6 +15,7 @@ NEW IN WAF 1.9 preview 1
   - Add ${VAR?X} constructs in script expressions to enable simple conditional outputs
   - Enable 'waf dist' to package arbitrary symlinks in tarballs #1719
   - Enable regexp objects in @extension besides strings for file extensions
+  - Match extensions in the order of last definition
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
