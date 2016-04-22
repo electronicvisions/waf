@@ -123,20 +123,57 @@ class ordered_iter_dict(dict):
 		dict.__delitem__(self, key)
 		return ret
 
+class lru_node(object):
+	__slots__ = ('next', 'prev', 'key', 'val')
+	def __init__(self):
+		self.next = self
+		self.prev = self
+		self.key = None
+		self.val = None
 
-class lru_cache(ordered_iter_dict):
+class lru_cache(object):
+	"""A simple least-recently used cache that suits our purposes"""
 	def __init__(self, maxlen=100):
-		ordered_iter_dict.__init__(self)
 		self.maxlen = maxlen
-	def __setitem__(self, key, value):
-		if len(self) > self.maxlen:
-			for i in range(int(self.maxlen * 0.15)):
-				self.popitem(last=False)
-		ordered_iter_dict.__setitem__(self, key, value)
+		self.table = {}
+		self.head = lru_node()
+		for x in range(maxlen - 1):
+			node = lru_node()
+			node.prev = self.head.prev
+			node.next = self.head
+			node.prev.next = node
+			node.next.prev = node
+
 	def __getitem__(self, key):
-		ret = ordered_iter_dict.__getitem__(self, key)
-		ordered_iter_dict.__setitem__(self, key, ret)
-		return ret
+		node = self.table[key]
+		# assert(key==node.key)
+		if node is self.head:
+			return node.val
+
+		# detach the node found
+		node.prev.next = node.next
+		node.next.prev = node.prev
+
+		# replace the head
+		node.next = self.head.next
+		node.prev = self.head
+		node.next.prev = node
+		node.prev.next = node
+		self.head = node
+
+		return node.val
+
+	def __setitem__(self, key, val):
+		# go past the head
+		node = self.head = self.head.next
+		try:
+			# remove existing keys if present
+			del self.table[node.key]
+		except KeyError:
+			pass
+		node.key = key
+		node.val = val
+		self.table[key] = node
 
 is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 
