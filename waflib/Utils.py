@@ -91,39 +91,38 @@ rot_chr = ['\\', '|', '/', '-']
 rot_idx = 0
 "Index of the current throbber character (progress bar)"
 
-try:
-	from collections import OrderedDict as ordered_iter_dict
-except ImportError:
-	class ordered_iter_dict(dict):
-		def __init__(self, *k, **kw):
-			self.lst = []
-			dict.__init__(self, *k, **kw)
-		def clear(self):
-			dict.clear(self)
-			self.lst = []
-		def __setitem__(self, key, value):
-			dict.__setitem__(self, key, value)
-			try:
-				self.lst.remove(key)
-			except ValueError:
-				pass
-			self.lst.append(key)
-		def __delitem__(self, key):
-			dict.__delitem__(self, key)
-			try:
-				self.lst.remove(key)
-			except ValueError:
-				pass
-		def __iter__(self):
-			for x in self.lst:
-				yield x
-		def keys(self):
-			return self.lst
-		def popitem(self, last=True):
-			key = self.lst[last and -1 or 0]
-			ret = (key, dict.__getitem__(self, key))
-			dict.__delitem(self, key)
-			return ret
+class ordered_iter_dict(dict):
+	"""An ordered dictionary that provides iteration from the most recently inserted keys first"""
+	def __init__(self, *k, **kw):
+		self.lst = deque()
+		dict.__init__(self, *k, **kw)
+	def clear(self):
+		dict.clear(self)
+		self.lst = deque()
+	def __setitem__(self, key, value):
+		if key in dict.keys(self):
+			self.lst.remove(key)
+		dict.__setitem__(self, key, value)
+		self.lst.append(key)
+	def __delitem__(self, key):
+		dict.__delitem__(self, key)
+		try:
+			self.lst.remove(key)
+		except ValueError:
+			pass
+	def __iter__(self):
+		return reversed(self.lst)
+	def keys(self):
+		return reversed(self.lst)
+	def popitem(self, last=True):
+		if last:
+			key = self.lst.popright()
+		else:
+			key = self.lst.popleft()
+		ret = (key, dict.__getitem__(self, key))
+		dict.__delitem__(self, key)
+		return ret
+
 
 class lru_cache(ordered_iter_dict):
 	def __init__(self, maxlen=100):
