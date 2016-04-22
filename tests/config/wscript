@@ -41,7 +41,7 @@ def configure(conf):
 		"global_define=1 by default -> no DEFINES_X anywhere"
 		conf.check_cfg(package='libpng')
 		conf.check_cc(header_name='unistd.h')
-		for x in conf.env.keys():
+		for x in conf.env:
 			if x.startswith('DEFINES_') and x != 'DEFINES_ST':
 				return 'conf.env.%s = %r' % (x, conf.env[x])
 
@@ -50,7 +50,7 @@ def configure(conf):
 		"global_define=1 -> no DEFINES_X anywhere"
 		conf.check_cfg(package='libpng', global_define=1)
 		conf.check_cc(header_name='unistd.h', global_define=1)
-		for x in conf.env.keys():
+		for x in conf.env:
 			if x.startswith('DEFINES_') and x != 'DEFINES_ST':
 				return 'conf.env.%s = %r' % (x, conf.env[x])
 

@@ -59,6 +59,9 @@ class ConfigSet(object):
 		keys.sort()
 		return keys
 
+	def __iter__(self):
+		return iter(self.keys())
+
 	def __str__(self):
 		"""Text representation of the ConfigSet (for debugging purposes)"""
 		return "\n".join(["%r %r" % (x, self.__getitem__(x)) for x in self.keys()])

@@ -139,8 +139,8 @@ def build(bld):
 	def touch_func(task):
 		for x in task.outputs:
 			x.write('')
-	for x in Task.TaskBase.classes.keys():
-		cls = Task.TaskBase.classes[x]
+	for x in Task.classes:
+		cls = Task.classes[x]
 		cls.func = touch_func
 		cls.color = 'CYAN'
 ---------------

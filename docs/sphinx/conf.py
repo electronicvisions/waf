@@ -199,7 +199,7 @@ for x in lst:
 	for func_name in funcs:
 		thefunc = getattr(TaskGen.task_gen, func_name, None)
 		if getattr(thefunc, "__name__", None) is None: continue
-		for feat in TaskGen.feats.keys():
+		for feat in TaskGen.feats:
 			funcs = list(TaskGen.feats[feat])
 			if func_name in funcs:
 				if x not in tool_to_features:

@@ -329,7 +329,7 @@ class package_reader(Context.Context):
 
 	def solution_to_constraints(self, versions, constraints):
 		solution = []
-		for p in versions.keys():
+		for p in versions:
 			c = constraint()
 			solution.append(c)
 

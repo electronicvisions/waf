@@ -267,7 +267,7 @@ def validate_cfg(self, kw):
 	if not 'msg' in kw:
 		kw['msg'] = 'Checking for %r' % (kw['package'] or kw['path'])
 
-	for x in cfg_ver.keys():
+	for x in cfg_ver:
 		# Gotcha: only one predicate is allowed at a time
 		# TODO remove in waf 2.0
 		y = x.replace('-', '_')

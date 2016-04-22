@@ -103,7 +103,7 @@ class task_gen(object):
 	def __repr__(self):
 		"""for debugging purposes"""
 		lst = []
-		for x in self.__dict__.keys():
+		for x in self.__dict__:
 			if x not in ('env', 'bld', 'compiled_tasks', 'tasks'):
 				lst.append("%s=%s" % (x, repr(getattr(self, x))))
 		return "bld(%s) in %s" % (", ".join(lst), self.path.abspath())
