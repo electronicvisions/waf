@@ -66,12 +66,6 @@ class task_gen(object):
 		Precedence table for sorting the methods in self.meths
 		"""
 
-		self.mappings = {}
-		"""
-		List of mappings {extension -> function} for processing files by extension
-		This is very rarely used, so we do not use an ordered dict here
-		"""
-
 		self.features = []
 		"""
 		List of feature names for bringing new methods in
@@ -243,14 +237,15 @@ class task_gen(object):
 		:rtype: function
 		"""
 		name = node.name
-		if self.mappings:
-			for k in self.mappings:
+		for k in self.mappings:
+			try:
 				if name.endswith(k):
 					return self.mappings[k]
-		for k in task_gen.mappings:
-			if name.endswith(k):
-				return task_gen.mappings[k]
-		raise Errors.WafError("File %r has no mapping in %r (have you forgotten to load a waf tool?)" % (node, task_gen.mappings.keys()))
+			except TypeError:
+				# regexps objects
+				if k.match(name):
+					return self.mappings[k]
+		raise Errors.WafError("File %r has no mapping in %r (have you forgotten to load a waf tool?)" % (node, self.mappings.keys()))
 
 	def create_task(self, name, src=None, tgt=None, **kw):
 		"""
@@ -346,7 +341,6 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 		tsk = self.create_task(name, node)
 		cnt = 0
 
-		keys = set(self.mappings.keys()) | set(self.__class__.mappings.keys())
 		for x in ext:
 			k = node.change_ext(x, ext_in=_ext_in)
 			tsk.outputs.append(k)
@@ -356,7 +350,7 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 					self.source.append(k)
 			else:
 				# reinject downstream files into the build
-				for y in keys: # ~ nfile * nextensions :-/
+				for y in self.mappings: # ~ nfile * nextensions :-/
 					if k.name.endswith(y):
 						self.source.append(k)
 						break

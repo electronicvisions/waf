@@ -14,6 +14,7 @@ NEW IN WAF 1.9 preview 1
   - New --profile command-line option
   - Add ${VAR?X} constructs in script expressions to enable simple conditional outputs
   - Enable 'waf dist' to package arbitrary symlinks in tarballs #1719
+  - Enable regexp objects in @extension besides strings for file extensions
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
@@ -37,4 +38,7 @@ NEW IN WAF 1.9 preview 1
   - Better consistency between check_cfg and check_cc variables
   - Subclass waflib.Build.ConfiguredContext to enable configuration-dependent user commands
   - Remove Task.dep_vars as it is never used (define Task.vars on instances if necessary)
+  - task_gen.mapping is not defined by default on instances anymore, but instances can
+    still define their own mappings to override the defaults, but in that case all mappings
+    must be present. This feature was not used in Waf 1.8.
 
