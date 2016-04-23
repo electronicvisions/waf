@@ -114,14 +114,6 @@ class ordered_iter_dict(dict):
 		return reversed(self.lst)
 	def keys(self):
 		return reversed(self.lst)
-	def popitem(self, last=True):
-		if last:
-			key = self.lst.popright()
-		else:
-			key = self.lst.popleft()
-		ret = (key, dict.__getitem__(self, key))
-		dict.__delitem__(self, key)
-		return ret
 
 class lru_node(object):
 	__slots__ = ('next', 'prev', 'key', 'val')
