@@ -232,7 +232,6 @@ def _match_ignore(line):
 def parse_fortran_link(lines):
 	"""Given the output of verbose link of Fortran compiler, this returns a
 	list of flags necessary for linking using the standard linker."""
-	# TODO: On windows ?
 	final_flags = []
 	for line in lines:
 		if not GCC_DRIVER_LINE.match(line):
