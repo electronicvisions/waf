@@ -43,3 +43,5 @@ NEW IN WAF 1.9 preview 1
     still define their own mappings to override the defaults, but in that case all mappings
     must be present. This feature was not used in Waf 1.8.
   - Unused attribute 'mac_resources' is no longer supported, use mac_files (see demos/mac_app)
+  - The _task suffix is no longer truncated from Task class names
+

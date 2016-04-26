@@ -85,8 +85,6 @@ class store_task_type(type):
 		super(store_task_type, cls).__init__(name, bases, dict)
 		name = cls.__name__
 
-		if name.endswith('_task'):
-			name = name.replace('_task', '')
 		if name != 'evil' and name != 'TaskBase':
 			global classes
 			if getattr(cls, 'run_str', None):
@@ -392,8 +390,6 @@ class Task(TaskBase):
 	uses a hash value (from :py:class:`waflib.Task.Task.signature`) which is persistent from build to build. When the value changes,
 	the task has to be executed. The method :py:class:`waflib.Task.Task.post_run` will assign the task signature to the output
 	nodes (if present).
-
-	.. warning:: For backward compatibility reasons, the suffix "_task" is truncated in derived class names. This limitation will be removed in Waf 1.9.
 	"""
 	vars = []
 	"""Variables to depend on (class attribute used for :py:meth:`waflib.Task.Task.sig_vars`)"""
@@ -439,7 +435,7 @@ class Task(TaskBase):
 		tgt_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.outputs])
 		if self.outputs: sep = ' -> '
 		else: sep = ''
-		return '%s: %s%s%s' % (self.__class__.__name__.replace('_task', ''), src_str, sep, tgt_str)
+		return '%s: %s%s%s' % (self.__class__.__name__, src_str, sep, tgt_str)
 
 	def keyword(self):
 		name = self.__class__.__name__
