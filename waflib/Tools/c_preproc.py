@@ -774,6 +774,8 @@ def format_defines(lst):
 			elif pos > 0:
 				# all others are assumed to be -DX=Y
 				ret.append('%s %s' % (y[:pos], y[pos+1:]))
+			else:
+				raise ValueError('Invalid define expression %r' % y)
 	return ret
 
 class c_parser(object):
