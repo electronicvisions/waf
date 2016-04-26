@@ -239,7 +239,7 @@ def add_settings_enums(self, namespace, filename_list):
 	:type filename_list: file list
 	"""
 	if hasattr(self, 'settings_enum_namespace'):
-		raise Errors.WafError("Tried to add gsettings enums to '%s' more than once" % self.name)
+		raise Errors.WafError("Tried to add gsettings enums to %r more than once" % self.name)
 	self.settings_enum_namespace = namespace
 
 	if type(filename_list) != 'list':
@@ -288,7 +288,7 @@ def process_settings(self):
 
 		schema_node = self.path.find_resource(schema)
 		if not schema_node:
-			raise Errors.WafError("Cannot find the schema file '%s'" % schema)
+			raise Errors.WafError("Cannot find the schema file %r" % schema)
 		install_files.append(schema_node)
 		source_list = enums_tgt_node + [schema_node]
 

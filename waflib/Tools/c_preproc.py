@@ -237,7 +237,7 @@ def get_num(lst):
 	:return: a pair containing the number and the rest of the list
 	:rtype: tuple(value, list)
 	"""
-	if not lst: raise PreprocError("empty list for get_num")
+	if not lst: raise PreprocError('empty list for get_num')
 	(p, v) = lst[0]
 	if p == OP:
 		if v == '(':
@@ -255,7 +255,7 @@ def get_num(lst):
 						count_par += 1
 				i += 1
 			else:
-				raise PreprocError("rparen expected %r" % lst)
+				raise PreprocError('rparen expected %r' % lst)
 
 			(num, _) = get_term(lst[1:i])
 			return (num, lst[i+1:])
@@ -272,14 +272,14 @@ def get_num(lst):
 			num, lst = get_num(lst[1:])
 			return (~ int(num), lst)
 		else:
-			raise PreprocError("Invalid op token %r for get_num" % lst)
+			raise PreprocError('Invalid op token %r for get_num' % lst)
 	elif p == NUM:
 		return v, lst[1:]
 	elif p == IDENT:
 		# all macros should have been replaced, remaining identifiers eval to 0
 		return 0, lst[1:]
 	else:
-		raise PreprocError("Invalid token %r for get_num" % lst)
+		raise PreprocError('Invalid token %r for get_num' % lst)
 
 def get_term(lst):
 	"""
@@ -293,7 +293,7 @@ def get_term(lst):
 	:rtype: value, list
 	"""
 
-	if not lst: raise PreprocError("empty list for get_term")
+	if not lst: raise PreprocError('empty list for get_term')
 	num, lst = get_num(lst)
 	if not lst:
 		return (num, [])
@@ -318,7 +318,7 @@ def get_term(lst):
 							break
 				i += 1
 			else:
-				raise PreprocError("rparen expected %r" % lst)
+				raise PreprocError('rparen expected %r' % lst)
 
 			if int(num):
 				return get_term(lst[1:i])
@@ -336,7 +336,7 @@ def get_term(lst):
 			# operator precedence
 			p2, v2 = lst[0]
 			if p2 != OP:
-				raise PreprocError("op expected %r" % lst)
+				raise PreprocError('op expected %r' % lst)
 
 			if prec[v2] >= prec[v]:
 				num2 = reduce_nums(num, num2, v)
@@ -347,7 +347,7 @@ def get_term(lst):
 				return get_term([(NUM, num), (p, v), (NUM, num3)] + lst)
 
 
-	raise PreprocError("cannot reduce %r" % lst)
+	raise PreprocError('cannot reduce %r' % lst)
 
 def reduce_eval(lst):
 	"""
@@ -432,7 +432,7 @@ def reduce_tokens(lst, defs, ban=[]):
 					else:
 						lst[i] = (NUM, 0)
 				else:
-					raise PreprocError("Invalid define expression %r" % lst)
+					raise PreprocError('Invalid define expression %r' % lst)
 
 		elif p == IDENT and v in defs:
 
@@ -457,11 +457,11 @@ def reduce_tokens(lst, defs, ban=[]):
 				del lst[i]
 
 				if i >= len(lst):
-					raise PreprocError("expected '(' after %r (got nothing)" % v)
+					raise PreprocError('expected ( after %r (got nothing)' % v)
 
 				(p2, v2) = lst[i]
 				if p2 != OP or v2 != '(':
-					raise PreprocError("expected '(' after %r" % v)
+					raise PreprocError('expected ( after %r' % v)
 
 				del lst[i]
 
@@ -479,7 +479,7 @@ def reduce_tokens(lst, defs, ban=[]):
 							if one_param: args.append(one_param)
 							break
 						elif v2 == ',':
-							if not one_param: raise PreprocError("empty param in funcall %s" % v)
+							if not one_param: raise PreprocError('empty param in funcall %r' % v)
 							args.append(one_param)
 							one_param = []
 						else:
@@ -580,7 +580,7 @@ def eval_macro(lst, defs):
 	:rtype: int
 	"""
 	reduce_tokens(lst, defs, [])
-	if not lst: raise PreprocError("missing tokens to evaluate")
+	if not lst: raise PreprocError('missing tokens to evaluate')
 	(p, v) = reduce_eval(lst)
 	return int(v) != 0
 
@@ -601,7 +601,7 @@ def extract_macro(txt):
 		p, name = t[0]
 
 		p, v = t[1]
-		if p != OP: raise PreprocError("expected open parenthesis")
+		if p != OP: raise PreprocError('expected (')
 
 		i = 1
 		pindex = 0
@@ -620,27 +620,27 @@ def extract_macro(txt):
 				elif p == OP and v == ')':
 					break
 				else:
-					raise PreprocError("unexpected token (3)")
+					raise PreprocError('unexpected token (3)')
 			elif prev == IDENT:
 				if p == OP and v == ',':
 					prev = v
 				elif p == OP and v == ')':
 					break
 				else:
-					raise PreprocError("comma or ... expected")
+					raise PreprocError('comma or ... expected')
 			elif prev == ',':
 				if p == IDENT:
 					params[v] = pindex
 					pindex += 1
 					prev = p
 				elif p == OP and v == '...':
-					raise PreprocError("not implemented (1)")
+					raise PreprocError('not implemented (1)')
 				else:
-					raise PreprocError("comma or ... expected (2)")
+					raise PreprocError('comma or ... expected (2)')
 			elif prev == '...':
-				raise PreprocError("not implemented (2)")
+				raise PreprocError('not implemented (2)')
 			else:
-				raise PreprocError("unexpected else")
+				raise PreprocError('unexpected else')
 
 		#~ print (name, [params, t[i+1:]])
 		return (name, [params, t[i+1:]])
@@ -676,7 +676,7 @@ def extract_include(txt, defs):
 	reduce_tokens(toks, defs, ['waf_include'])
 
 	if not toks:
-		raise PreprocError("could not parse include %s" % txt)
+		raise PreprocError('could not parse include %r' % txt)
 
 	if len(toks) == 1:
 		if toks[0][0] == STR:
@@ -686,7 +686,7 @@ def extract_include(txt, defs):
 			ret = '<', stringize(toks).lstrip('<').rstrip('>')
 			return ret
 
-	raise PreprocError("could not parse include %s." % txt)
+	raise PreprocError('could not parse include %r' % txt)
 
 def parse_char(txt):
 	"""
@@ -698,7 +698,8 @@ def parse_char(txt):
 	:rtype: string
 	"""
 
-	if not txt: raise PreprocError("attempted to parse a null char")
+	if not txt:
+		raise PreprocError('attempted to parse a null char')
 	if txt[0] != '\\':
 		return ord(txt)
 	c = txt[1]
@@ -712,7 +713,7 @@ def parse_char(txt):
 				return (1+i, int(txt[1:1+i], 8))
 	else:
 		try: return chr_esc[c]
-		except KeyError: raise PreprocError("could not parse char literal '%s'" % txt)
+		except KeyError: raise PreprocError('could not parse char literal %r' % txt)
 
 def tokenize(s):
 	"""
@@ -902,14 +903,14 @@ class c_parser(object):
 		self.count_files += 1
 		if self.count_files > recursion_limit:
 			# issue #812
-			raise PreprocError("recursion limit exceeded")
+			raise PreprocError('recursion limit exceeded')
 
 		if Logs.verbose:
 			debug('preproc: reading file %r', node)
 		try:
 			lines = self.parse_lines(node)
 		except EnvironmentError:
-			raise PreprocError("could not read the file %r" % node)
+			raise PreprocError('could not read the file %r' % node)
 		except Exception:
 			if Logs.verbose > 0:
 				error("parsing %r failed" % node)
@@ -993,7 +994,7 @@ class c_parser(object):
 					try:
 						self.defs[self.define_name(line)] = line
 					except AttributeError:
-						raise PreprocError("Invalid define line %s" % line)
+						raise PreprocError('Invalid define line %r' % line)
 				elif token == 'undef':
 					m = re_mac.match(line)
 					if m and m.group() in self.defs:

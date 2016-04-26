@@ -541,7 +541,7 @@ def check_python_module(conf, module_name, condition=''):
 	:param module_name: module
 	:type module_name: string
 	"""
-	msg = "Checking for python module '%s'" % module_name
+	msg = "Checking for python module %r" % module_name
 	if condition:
 		msg = '%s (%s)' % (msg, condition)
 	conf.start_msg(msg)
