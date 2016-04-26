@@ -39,9 +39,9 @@ NEW IN WAF 1.9 preview 1
   - Better consistency between check_cfg and check_cc variables
   - Subclass waflib.Build.ConfiguredContext to enable configuration-dependent user commands
   - Remove Task.dep_vars as it is never used (define Task.vars on instances if necessary)
-  - task_gen.mapping is not defined by default on instances anymore, but instances can
-    still define their own mappings to override the defaults, but in that case all mappings
-    must be present. This feature was not used in Waf 1.8.
+  - task_gen.mapping and task_gen.prec are not defined by default on instances anymore, but
+    instances can still define their own mappings to override the defaults, but in
+    that case all mappings/precedences must be present. These features were not used in Waf 1.8.
   - Unused attribute 'mac_resources' is no longer supported, use mac_files (see demos/mac_app)
   - The _task suffix is no longer truncated from Task class names
 

@@ -61,11 +61,6 @@ class task_gen(object):
 		List of method names to execute (it is usually a good idea to avoid touching this)
 		"""
 
-		self.prec = Utils.defaultdict(list)
-		"""
-		Precedence table for sorting the methods in self.meths
-		"""
-
 		self.features = []
 		"""
 		List of feature names for bringing new methods in
@@ -160,7 +155,7 @@ class task_gen(object):
 		#. The tasks created are added to :py:attr:`waflib.TaskGen.task_gen.tasks`
 		"""
 		if getattr(self, 'posted', None):
-			#error("OBJECT ALREADY POSTED" + str( self))
+			#error("Task Generator already posted" + str(self))
 			return False
 		self.posted = True
 
@@ -177,7 +172,7 @@ class task_gen(object):
 
 		# copy the precedence table
 		prec = {}
-		prec_tbl = self.prec or task_gen.prec
+		prec_tbl = self.prec
 		for x in prec_tbl:
 			if x in keys:
 				prec[x] = prec_tbl[x]
