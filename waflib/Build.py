@@ -191,18 +191,6 @@ class BuildContext(Context.Context):
 		"""Implemented to prevents copies of build contexts (raises an exception)"""
 		raise Errors.WafError('build contexts cannot be copied')
 
-	def install_files(self, *k, **kw):
-		"""Actual implementation provided by :py:meth:`waflib.Build.InstallContext.install_files`"""
-		pass
-
-	def install_as(self, *k, **kw):
-		"""Actual implementation provided by :py:meth:`waflib.Build.InstallContext.install_as`"""
-		pass
-
-	def symlink_as(self, *k, **kw):
-		"""Actual implementation provided by :py:meth:`waflib.Build.InstallContext.symlink_as`"""
-		pass
-
 	def load_envs(self):
 		"""
 		The configuration command creates files of the form ``build/c4che/NAMEcache.py``. This method
@@ -800,221 +788,11 @@ class BuildContext(Context.Context):
 			if not tasks: # return something else the build will stop
 				continue
 			yield tasks
+
 		while 1:
 			yield []
 
-class inst(Task.Task):
-	"""
-	Special task used for installing files and symlinks, it behaves both like a task
-	and like a task generator
-	"""
-	color = 'CYAN'
-
-	def uid(self):
-		lst = [self.dest, self.path] + self.source
-		return Utils.h_list(lst)
-
-	def post(self):
-		"""
-		Same interface as in :py:meth:`waflib.TaskGen.task_gen.post`
-		"""
-		buf = []
-		for x in self.source:
-			if isinstance(x, waflib.Node.Node):
-				y = x
-			else:
-				y = self.path.find_resource(x)
-				if not y:
-					if os.path.isabs(x):
-						y = self.bld.root.make_node(x)
-					else:
-						y = self.path.make_node(x)
-			buf.append(y)
-		self.inputs = buf
-
-	def runnable_status(self):
-		"""
-		Installation tasks are always executed, so this method returns either :py:const:`waflib.Task.ASK_LATER` or :py:const:`waflib.Task.RUN_ME`.
-		"""
-		ret = super(inst, self).runnable_status()
-		if ret == Task.SKIP_ME:
-			return Task.RUN_ME
-		return ret
-
-	def __str__(self):
-		"""Return an empty string to disable the display"""
-		return ''
-
-	def run(self):
-		"""The attribute 'exec_task' holds the method to execute"""
-		return self.generator.exec_task()
-
-	def get_install_path(self, destdir=True):
-		"""
-		Installation path obtained from ``self.dest`` and prefixed by the destdir.
-		The variables such as '${PREFIX}/bin' are substituted.
-		"""
-		dest = Utils.subst_vars(self.dest, self.env)
-		dest = dest.replace('/', os.sep)
-		if destdir and Options.options.destdir:
-			dest = os.path.join(Options.options.destdir, os.path.splitdrive(dest)[1].lstrip(os.sep))
-		return dest
-
-	def exec_install_files(self):
-		"""
-		Predefined method for installing files
-		"""
-		destpath = self.get_install_path()
-		if not destpath:
-			raise Errors.WafError('unknown installation path %r' % self.generator)
-		for x, y in zip(self.source, self.inputs):
-			if self.relative_trick:
-				destfile = os.path.join(destpath, y.path_from(self.path))
-			else:
-				destfile = os.path.join(destpath, y.name)
-			self.generator.bld.do_install(y.abspath(), destfile, chmod=self.chmod, tsk=self)
-
-	def exec_install_as(self):
-		"""
-		Predefined method for installing one file with a given name
-		"""
-		destfile = self.get_install_path()
-		self.generator.bld.do_install(self.inputs[0].abspath(), destfile, chmod=self.chmod, tsk=self)
-
-	def exec_symlink_as(self):
-		"""
-		Predefined method for installing a symlink
-		"""
-		destfile = self.get_install_path()
-		src = self.link
-		if self.relative_trick:
-			src = os.path.relpath(src, os.path.dirname(destfile))
-		self.generator.bld.do_link(src, destfile, tsk=self)
-
-class InstallContext(BuildContext):
-	'''installs the targets on the system'''
-	cmd = 'install'
-
-	def __init__(self, **kw):
-		super(InstallContext, self).__init__(**kw)
-
-		# list of targets to uninstall for removing the empty folders after uninstalling
-		self.uninstall = []
-		self.is_install = INSTALL
-
-	def copy_fun(self, src, tgt, **kw):
-		# override this if you want to strip executables
-		# kw['tsk'].source is the task that created the files in the build
-		if Utils.is_win32 and len(tgt) > 259 and not tgt.startswith('\\\\?\\'):
-			tgt = '\\\\?\\' + tgt
-		shutil.copy2(src, tgt)
-		os.chmod(tgt, kw.get('chmod', Utils.O644))
-
-	def do_install(self, src, tgt, **kw):
-		"""
-		Copy a file from src to tgt with given file permissions. The actual copy is not performed
-		if the source and target file have the same size and the same timestamps. When the copy occurs,
-		the file is first removed and then copied (prevent stale inodes).
-
-		This method is overridden in :py:meth:`waflib.Build.UninstallContext.do_install` to remove the file.
-
-		:param src: file name as absolute path
-		:type src: string
-		:param tgt: file destination, as absolute path
-		:type tgt: string
-		:param chmod: installation mode
-		:type chmod: int
-		"""
-		d, _ = os.path.split(tgt)
-		if not d:
-			raise Errors.WafError('Invalid installation given %r->%r' % (src, tgt))
-		Utils.check_dir(d)
-
-		srclbl = src.replace(self.srcnode.abspath() + os.sep, '')
-		if not Options.options.force:
-			# check if the file is already there to avoid a copy
-			try:
-				st1 = os.stat(tgt)
-				st2 = os.stat(src)
-			except OSError:
-				pass
-			else:
-				# same size and identical timestamps -> make no copy
-				if st1.st_mtime + 2 >= st2.st_mtime and st1.st_size == st2.st_size:
-					if not self.progress_bar:
-						Logs.info('- install %s (from %s)' % (tgt, srclbl))
-					return False
-
-		if not self.progress_bar:
-			Logs.info('+ install %s (from %s)' % (tgt, srclbl))
-
-		# Give best attempt at making destination overwritable,
-		# like the 'install' utility used by 'make install' does.
-		try:
-			os.chmod(tgt, Utils.O644 | stat.S_IMODE(os.stat(tgt).st_mode))
-		except EnvironmentError:
-			pass
-
-		# following is for shared libs and stale inodes (-_-)
-		try:
-			os.remove(tgt)
-		except OSError:
-			pass
-
-		try:
-			self.copy_fun(src, tgt, **kw)
-		except IOError:
-			try:
-				os.stat(src)
-			except EnvironmentError:
-				Logs.error('File %r does not exist' % src)
-			raise Errors.WafError('Could not install the file %r' % tgt)
-
-	def do_link(self, src, tgt, **kw):
-		"""
-		Create a symlink from tgt to src.
-
-		This method is overridden in :py:meth:`waflib.Build.UninstallContext.do_link` to remove the symlink.
-
-		:param src: file name as absolute path
-		:type src: string
-		:param tgt: file destination, as absolute path
-		:type tgt: string
-		"""
-		d, _ = os.path.split(tgt)
-		Utils.check_dir(d)
-
-		link = False
-		if not os.path.islink(tgt):
-			link = True
-		elif os.readlink(tgt) != src:
-			link = True
-
-		if link:
-			try: os.remove(tgt)
-			except OSError: pass
-			if not self.progress_bar:
-				Logs.info('+ symlink %s (to %s)' % (tgt, src))
-			os.symlink(src, tgt)
-		else:
-			if not self.progress_bar:
-				Logs.info('- symlink %s (to %s)' % (tgt, src))
-
-	def run_task_now(self, tsk, postpone):
-		"""
-		This method is called by :py:meth:`waflib.Build.InstallContext.install_files`,
-		:py:meth:`waflib.Build.InstallContext.install_as` and :py:meth:`waflib.Build.InstallContext.symlink_as` immediately
-		after the installation task is created. Its role is to force the immediate execution if necessary, that is when
-		``postpone=False`` was given.
-		"""
-		tsk.post()
-		if not postpone:
-			if tsk.runnable_status() == Task.ASK_LATER:
-				raise self.WafError('cannot post the task %r' % tsk)
-			tsk.run()
-			tsk.hasrun = True
-
-	def install_files(self, dest, files, env=None, chmod=Utils.O644, relative_trick=False, cwd=None, add=True, postpone=True, task=None):
+	def install_files(self, dest, files, **kw):
 		"""
 		Create a task to install files on the system::
 
@@ -1037,23 +815,14 @@ class InstallContext(BuildContext):
 		:type postpone: bool
 		"""
 		assert(dest)
-		tsk = inst(env=env or self.env)
-		tsk.bld = self
-		tsk.path = cwd or self.path
-		tsk.chmod = chmod
-		tsk.task = task
-		if isinstance(files, waflib.Node.Node):
-			tsk.source =  [files]
-		else:
-			tsk.source = Utils.to_list(files)
-		tsk.dest = dest
-		tsk.exec_task = tsk.exec_install_files
-		tsk.relative_trick = relative_trick
-		if add: self.add_to_group(tsk)
-		self.run_task_now(tsk, postpone)
-		return tsk
+		tg = self(features='install_it', install_path=dest, install_source=files, **kw)
+		tg.type = 'install_files'
+		# TODO if add: self.add_to_group(tsk)
+		if not kw.get('postpone', True):
+			tg.post()
+		return tg
 
-	def install_as(self, dest, srcfile, env=None, chmod=Utils.O644, cwd=None, add=True, postpone=True, task=None):
+	def install_as(self, dest, srcfile, **kw):
 		"""
 		Create a task to install a file on the system with a different name::
 
@@ -1074,19 +843,14 @@ class InstallContext(BuildContext):
 		:type postpone: bool
 		"""
 		assert(dest)
-		tsk = inst(env=env or self.env)
-		tsk.bld = self
-		tsk.path = cwd or self.path
-		tsk.chmod = chmod
-		tsk.source = [srcfile]
-		tsk.task = task
-		tsk.dest = dest
-		tsk.exec_task = tsk.exec_install_as
-		if add: self.add_to_group(tsk)
-		self.run_task_now(tsk, postpone)
-		return tsk
+		tg = self(features='install_it', install_path=dest, install_source=srcfile, **kw)
+		tg.type = 'install_as'
+		# TODO if add: self.add_to_group(tsk)
+		if not kw.get('postpone', True):
+			tg.post()
+		return tg
 
-	def symlink_as(self, dest, src, env=None, cwd=None, add=True, postpone=True, relative_trick=False, task=None, win32_install=False):
+	def symlink_as(self, dest, src, **kw):
 		"""
 		Create a task to install a symlink::
 
@@ -1106,31 +870,109 @@ class InstallContext(BuildContext):
 		:param relative_trick: make the symlink relative (default: ``False``)
 		:type relative_trick: bool
 		"""
-		if Utils.is_win32 and win32_install:
-			# symlinks *cannot* work on win32, install the file instead
-			# TODO chmod value?
-			return self.install_as(dest, src, env=env, cwd=cwd, add=add, postpone=postpone, task=task)
 		assert(dest)
-		tsk = inst(env=env or self.env)
-		tsk.bld = self
-		tsk.dest = dest
-		tsk.path = cwd or self.path
-		tsk.source = []
-		tsk.task = task
-		tsk.link = src
-		tsk.relative_trick = relative_trick
-		tsk.exec_task = tsk.exec_symlink_as
-		if add: self.add_to_group(tsk)
-		self.run_task_now(tsk, postpone)
-		return tsk
+		tg = self(features='install_it', install_path=dest, install_source=src, **kw)
+		tg.type = 'symlink_as'
+		tg.link = src
+		# TODO if add: self.add_to_group(tsk)
+		if not kw.get('postpone', True):
+			tg.post()
+		return tg
 
-class UninstallContext(InstallContext):
-	'''removes the targets installed'''
-	cmd = 'uninstall'
+@TaskGen.feature('install_it')
+@TaskGen.before_method('process_rule', 'process_source')
+def add_install_tasks(self):
+	if not self.bld.is_install:
+		return
+	if not self.install_path:
+		return
 
-	def __init__(self, **kw):
-		super(UninstallContext, self).__init__(**kw)
-		self.is_install = UNINSTALL
+	if self.type == 'symlink_as' and Utils.is_win32:
+		if getattr(self, 'win32_install'):
+			self.type = 'install_as'
+		else:
+			# just exit
+			return
+
+	if self.type == 'symlink_as':
+		inputs = []
+	else:
+		inputs = self.to_nodes(self.install_source)
+		if self.type == 'install_as':
+			assert len(inputs) == 1
+		else:
+			pass
+
+	tsk = self.install_task = self.create_task('inst')
+	tsk.link = ''
+	tsk.chmod = getattr(self, 'chmod', Utils.O644)
+
+	dest = tsk.get_install_path()
+	self.relative_trick = getattr(self, 'relative_trick', False)
+
+	outputs = []
+	if self.type == 'symlink_as':
+		if self.relative_trick:
+			tsk.link = os.path.relpath(self.link, os.path.dirname(dest))
+		else:
+			tsk.link = self.link
+		outputs.append(self.bld.root.make_node(dest))
+	elif self.type == 'install_as':
+		outputs.append(self.bld.root.make_node(dest))
+	else:
+		for y in inputs:
+			if self.relative_trick:
+				destfile = os.path.join(dest, y.path_from(self.path))
+			else:
+				destfile = os.path.join(dest, y.name)
+			outputs.append(self.bld.root.make_node(destfile))
+
+	tsk.set_inputs(inputs)
+	tsk.set_outputs(outputs)
+
+	if not getattr(self, 'postpone', True):
+		status = self.install_task.runnable_status()
+		if status not in (Task.RUN_ME, Task.SKIP_ME):
+			raise Errors.WafError('Could not process %r (not ready)' % self.install_task)
+		self.install_task.run()
+		self.install_task.hasrun = Task.SUCCESS
+
+class inst(Task.Task):
+	color = 'CYAN'
+
+	def __str__(self):
+		"""Return an empty string to disable the display"""
+		return ''
+
+	def uid(self):
+		lst = self.inputs + self.outputs + [self.link, self.generator.path.abspath()]
+		return Utils.h_list(lst)
+
+	def runnable_status(self):
+		"""
+		Installation tasks are always executed, so this method returns either :py:const:`waflib.Task.ASK_LATER` or :py:const:`waflib.Task.RUN_ME`.
+		"""
+		ret = super(inst, self).runnable_status()
+		if ret == Task.SKIP_ME and self.generator.bld.is_install:
+			return Task.RUN_ME
+		return ret
+
+	def post_run(self):
+		pass
+
+	def get_install_path(self, destdir=True):
+		dest = Utils.subst_vars(self.generator.install_path, self.env)
+		if destdir and Options.options.destdir:
+			dest = os.path.join(Options.options.destdir, os.path.splitdrive(dest)[1].lstrip(os.sep))
+		return dest
+
+	def copy_fun(self, src, tgt):
+		# override this if you want to strip executables
+		# kw['tsk'].source is the task that created the files in the build
+		if Utils.is_win32 and len(tgt) > 259 and not tgt.startswith('\\\\?\\'):
+			tgt = '\\\\?\\' + tgt
+		shutil.copy2(src, tgt)
+		os.chmod(tgt, self.chmod)
 
 	def rm_empty_dirs(self, tgt):
 		while tgt:
@@ -1140,12 +982,99 @@ class UninstallContext(InstallContext):
 			except OSError:
 				break
 
-	def do_install(self, src, tgt, **kw):
-		"""See :py:meth:`waflib.Build.InstallContext.do_install`"""
-		if not self.progress_bar:
+	def run(self):
+		is_install = self.generator.bld.is_install
+		if not is_install: # unnecessary?
+			return
+
+		for x in self.outputs:
+			if is_install == INSTALL:
+				x.parent.mkdir()
+		if self.generator.type == 'symlink_as':
+			fun = is_install == INSTALL and self.do_link or self.do_unlink
+			fun(self.link, self.outputs[0].abspath())
+		else:
+			fun = is_install == INSTALL and self.do_install or self.do_uninstall
+			launch_node = self.generator.bld.launch_node()
+			for x, y in zip(self.inputs, self.outputs):
+				fun(x.abspath(), y.abspath(), x.path_from(launch_node))
+
+	def do_install(self, src, tgt, lbl, **kw):
+		"""
+		Copy a file from src to tgt with given file permissions. The actual copy is not performed
+		if the source and target file have the same size and the same timestamps. When the copy occurs,
+		the file is first removed and then copied (prevent stale inodes).
+
+		:param src: file name as absolute path
+		:type src: string
+		:param tgt: file destination, as absolute path
+		:type tgt: string
+		:param chmod: installation mode
+		:type chmod: int
+		"""
+		if not Options.options.force:
+			# check if the file is already there to avoid a copy
+			try:
+				st1 = os.stat(tgt)
+				st2 = os.stat(src)
+			except OSError:
+				pass
+			else:
+				# same size and identical timestamps -> make no copy
+				if st1.st_mtime + 2 >= st2.st_mtime and st1.st_size == st2.st_size:
+					if not self.generator.bld.progress_bar:
+						Logs.info('- install %s (from %s)' % (tgt, lbl))
+					return False
+
+		if not self.generator.bld.progress_bar:
+			Logs.info('+ install %s (from %s)' % (tgt, lbl))
+
+		# Give best attempt at making destination overwritable,
+		# like the 'install' utility used by 'make install' does.
+		try:
+			os.chmod(tgt, Utils.O644 | stat.S_IMODE(os.stat(tgt).st_mode))
+		except EnvironmentError:
+			pass
+
+		# following is for shared libs and stale inodes (-_-)
+		try:
+			os.remove(tgt)
+		except OSError:
+			pass
+
+		try:
+			self.copy_fun(src, tgt)
+		except IOError:
+			if not src.exists():
+				Logs.error('File %r does not exist' % src)
+			raise Errors.WafError('Could not install the file %r' % tgt)
+
+	def do_link(self, src, tgt, **kw):
+		"""
+		Create a symlink from tgt to src.
+
+		:param src: file name as absolute path
+		:type src: string
+		:param tgt: file destination, as absolute path
+		:type tgt: string
+		"""
+		if not os.path.islink(tgt) or os.readlink(tgt) != src:
+			try:
+				os.remove(tgt)
+			except OSError:
+				pass
+			if not self.generator.bld.progress_bar:
+				Logs.info('+ symlink %s (to %s)' % (tgt, src))
+			os.symlink(src, tgt)
+		else:
+			if not self.generator.bld.progress_bar:
+				Logs.info('- symlink %s (to %s)' % (tgt, src))
+
+	def do_uninstall(self, src, tgt, lbl, **kw):
+		if not self.generator.bld.progress_bar:
 			Logs.info('- remove %s' % tgt)
 
-		self.uninstall.append(tgt)
+		#self.uninstall.append(tgt)
 		try:
 			os.remove(tgt)
 		except OSError as e:
@@ -1155,24 +1084,40 @@ class UninstallContext(InstallContext):
 					Logs.warn('build: some files could not be uninstalled (retry with -vv to list them)')
 				if Logs.verbose > 1:
 					Logs.warn('Could not remove %s (error code %r)' % (e.filename, e.errno))
-
 		self.rm_empty_dirs(tgt)
 
-	def do_link(self, src, tgt, **kw):
-		"""See :py:meth:`waflib.Build.InstallContext.do_link`"""
+	def do_unlink(self, src, tgt, **kw):
+		# TODO do_uninstall with proper amount of args
 		try:
-			if not self.progress_bar:
+			if not self.generator.bld.progress_bar:
 				Logs.info('- remove %s' % tgt)
 			os.remove(tgt)
 		except OSError:
 			pass
-
 		self.rm_empty_dirs(tgt)
+
+class InstallContext(BuildContext):
+	'''installs the targets on the system'''
+	cmd = 'install'
+
+	def __init__(self, **kw):
+		super(InstallContext, self).__init__(**kw)
+		#self.uninstall = []
+		self.is_install = INSTALL
+
+class UninstallContext(InstallContext):
+	'''removes the targets installed'''
+	cmd = 'uninstall'
+
+	def __init__(self, **kw):
+		super(UninstallContext, self).__init__(**kw)
+		self.is_install = UNINSTALL
 
 	def execute(self):
 		"""
 		See :py:func:`waflib.Context.Context.execute`
 		"""
+		# TODO just mark the tasks are already run with hasrun=Task.SKIPPED
 		try:
 			# do not execute any tasks
 			def runnable_status(self):
