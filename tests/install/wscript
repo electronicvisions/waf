@@ -10,16 +10,16 @@ def configure(conf):
 from waflib import TaskGen, Build, Utils
 @TaskGen.feature('ruler')
 @TaskGen.before('process_rule')
-def stuff(self):
+def test(self):
 	if not self.bld.is_install:
-		while self.meths:
+		while self.meths: # cancel everything
 			self.meths.pop()
 		return
 
 	tg = self.bld.get_tgen_by_name(self.bring_in)
-	tg.post() # as a task generator
+	tg.post() # let it create its installation task
 	assert tg.install_task.outputs
-	self.source = tg.install_task.outputs # tg is a task object
+	self.source = tg.install_task.outputs
 
 def build(bld):
 	bld.install_as('${PREFIX}/bin/foo', 'wscript', chmod=Utils.O755)
