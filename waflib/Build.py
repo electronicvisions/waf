@@ -816,6 +816,7 @@ class BuildContext(Context.Context):
 		"""
 		assert(dest)
 		tg = self(features='install_it', install_path=dest, install_source=files, **kw)
+		tg.dest = tg.install_path
 		tg.type = 'install_files'
 		# TODO if add: self.add_to_group(tsk)
 		if not kw.get('postpone', True):
@@ -844,6 +845,7 @@ class BuildContext(Context.Context):
 		"""
 		assert(dest)
 		tg = self(features='install_it', install_path=dest, install_source=srcfile, **kw)
+		tg.dest = tg.install_path
 		tg.type = 'install_as'
 		# TODO if add: self.add_to_group(tsk)
 		if not kw.get('postpone', True):
@@ -872,6 +874,7 @@ class BuildContext(Context.Context):
 		"""
 		assert(dest)
 		tg = self(features='install_it', install_path=dest, install_source=src, **kw)
+		tg.dest = tg.install_path
 		tg.type = 'symlink_as'
 		tg.link = src
 		# TODO if add: self.add_to_group(tsk)
