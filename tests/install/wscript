@@ -7,7 +7,7 @@
 def configure(conf):
 	pass
 
-from waflib import TaskGen, Build
+from waflib import TaskGen, Build, Utils
 @TaskGen.feature('ruler')
 @TaskGen.before('process_rule')
 def stuff(self):
@@ -22,9 +22,9 @@ def stuff(self):
 	self.source = tg.install_task.outputs # tg is a task object
 
 def build(bld):
-	bld.install_as('${PREFIX}/bin/foo', 'wscript', chmod = 0555)
+	bld.install_as('${PREFIX}/bin/foo', 'wscript', chmod=Utils.O755)
 	bld.symlink_as('${PREFIX}/bin/bar', 'foo')
-	tsk = bld.install_files('${PREFIX}/bin', 'wscript', chmod = 0555, name='cheese')
+	tsk = bld.install_files('${PREFIX}/bin', 'wscript', chmod=Utils.O755, name='cheese')
 	bld(rule='ls -l ${SRC}', always=True, bring_in='cheese', features='ruler')
 
 
