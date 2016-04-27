@@ -458,7 +458,7 @@ def check_python_version(conf, minver=None):
 	cmd = pybin + ['-c', 'import sys\nfor x in sys.version_info: print(str(x))']
 	Logs.debug('python: Running python command %r', cmd)
 	lines = conf.cmd_and_log(cmd).split()
-	assert len(lines) == 5, "found %i lines, expected 5: %r" % (len(lines), lines)
+	assert len(lines) == 5, "found %r lines, expected 5: %r" % (len(lines), lines)
 	pyver_tuple = (int(lines[0]), int(lines[1]), int(lines[2]), lines[3], int(lines[4]))
 
 	# compare python version with the minimum required

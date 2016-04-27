@@ -269,13 +269,6 @@ def run_commands():
 
 ###########################################################################################
 
-def _can_distclean(name):
-	# WARNING: this method may disappear anytime
-	for k in '.o .moc .exe'.split():
-		if name.endswith(k):
-			return True
-	return False
-
 def distclean_dir(dirname):
 	"""
 	Distclean function called in the particular case when::
@@ -287,7 +280,7 @@ def distclean_dir(dirname):
 	"""
 	for (root, dirs, files) in os.walk(dirname):
 		for f in files:
-			if _can_distclean(f):
+			if f.endswith(('.o', '.moc', '.exe')):
 				fname = os.path.join(root, f)
 				try:
 					os.remove(fname)
@@ -559,7 +552,7 @@ class DistCheck(Dist):
 		instdir = tempfile.mkdtemp('.inst', self.get_base_name())
 		ret = Utils.subprocess.Popen([sys.executable, sys.argv[0], 'configure', 'install', 'uninstall', '--destdir=' + instdir] + cfg, cwd=self.get_base_name()).wait()
 		if ret:
-			raise Errors.WafError('distcheck failed with code %i' % ret)
+			raise Errors.WafError('distcheck failed with code %r' % ret)
 
 		if os.path.exists(instdir):
 			raise Errors.WafError('distcheck succeeded, but files were left in %s' % instdir)
