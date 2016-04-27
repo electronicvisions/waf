@@ -805,7 +805,7 @@ def get_process():
 		return process_pool.pop()
 	except IndexError:
 		filepath = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'processor.py'
-		cmd = [sys.executable, filepath]
+		cmd = [sys.executable, '-c', readf(filepath)]
 		return subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=0)
 
 def run_prefork_process(cmd, kwargs, cargs):
