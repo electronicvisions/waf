@@ -38,6 +38,7 @@ class strip(Task.Task):
 	run_str = '${STRIP} ${SRC}'
 	color   = 'BLUE'
 	after   = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+	before  = ['inst']
 
 @TaskGen.feature('strip')
 @TaskGen.after('apply_link')
