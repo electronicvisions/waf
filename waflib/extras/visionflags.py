@@ -132,9 +132,7 @@ def configure(conf):
 			content.append(app)
 		return var_name, content
 
-	if cc:
-		conf.env.append_value(*sandwich('CCFLAGS',   compiler.get_ccflags(build_profile)))
-		conf.env.append_value(*sandwich('CCDEFINES', compiler.get_ccdefines(build_profile)))
-	if cxx:
-		conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
-		conf.env.append_value(*sandwich('CXXDEFINES', compiler.get_cxxdefines(build_profile)))
+	conf.env.append_value(*sandwich('CCFLAGS',   compiler.get_ccflags(build_profile)))
+	conf.env.append_value(*sandwich('CCDEFINES', compiler.get_ccdefines(build_profile)))
+	conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
+	conf.env.append_value(*sandwich('CXXDEFINES', compiler.get_cxxdefines(build_profile)))
