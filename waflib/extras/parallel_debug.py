@@ -207,22 +207,16 @@ def map_to_color(name):
 	return color2code['RED']
 
 def process(self):
-	m = self.master
-	if m.stop:
-		m.out.put(self)
-		return
-
-	self.master.set_running(1, id(Utils.threading.currentThread()), self)
-
-	# remove the task signature immediately before it is executed
-	# in case of failure the task will be executed again
+	m = self.generator.bld.producer
 	try:
+		# TODO another place for this?
 		del self.generator.bld.task_sigs[self.uid()]
-	except:
+	except KeyError:
 		pass
 
+	self.generator.bld.producer.set_running(1, id(Utils.threading.currentThread()), self)
+
 	try:
-		self.log_display(self.generator.bld)
 		ret = self.run()
 	except Exception:
 		self.err_msg = Utils.ex_stack()
@@ -230,12 +224,11 @@ def process(self):
 
 		# TODO cleanup
 		m.error_handler(self)
-		m.out.put(self)
 		return
 
 	if ret:
 		self.err_code = ret
-		self.hasrun = Task.CRASHED
+		self.hasrun = CRASHED
 	else:
 		try:
 			self.post_run()
@@ -249,8 +242,8 @@ def process(self):
 	if self.hasrun != Task.SUCCESS:
 		m.error_handler(self)
 
-	self.master.set_running(-1, id(Utils.threading.currentThread()), self)
-	m.out.put(self)
+	self.generator.bld.producer.set_running(-1, id(Utils.threading.currentThread()), self)
+
 Task.TaskBase.process_back = Task.TaskBase.process
 Task.TaskBase.process = process
 
