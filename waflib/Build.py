@@ -354,6 +354,8 @@ class BuildContext(Context.Context):
 
 		if self.producer.error:
 			raise Errors.BuildError(self.producer.error)
+		self.producer.bld = None
+		self.producer = None
 
 	def setup(self, tool, tooldir=None, funs=None):
 		"""

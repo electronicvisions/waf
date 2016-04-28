@@ -86,6 +86,7 @@ class Parallel(object):
 		"""List of :py:class:`waflib.Task.TaskBase` that cannot be executed immediately"""
 
 		self.ready = Queue(0)
+		"""List of :py:class:`waflib.Task.TaskBase` ready to be executed by task consumers"""
 
 		self.out = Queue(0)
 		"""List of :py:class:`waflib.Task.TaskBase` returned by the task consumers"""
@@ -304,8 +305,5 @@ class Parallel(object):
 			self.get_out()
 
 		self.ready.put(None)
-		self.bld = None
-
-		#print loop
 		assert (self.count == 0 or self.stop)
 
