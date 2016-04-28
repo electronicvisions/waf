@@ -228,7 +228,7 @@ def process(self):
 
 	if ret:
 		self.err_code = ret
-		self.hasrun = CRASHED
+		self.hasrun = Task.CRASHED
 	else:
 		try:
 			self.post_run()
