@@ -122,9 +122,19 @@ def configure(conf):
 		          'environment variables: %s' % ', '.join(user_vars))
 		return
 
+	# _PREPEND and _APPEND variables to a given variable
+	def sandwich(var_name, content):
+		pre = os.environ.get('%s_PREPEND' % var_name, '')
+		app = os.environ.get('%s_APPEND' % var_name, '')
+		if pre:
+			content.insert(0, pre)
+		if app:
+			content.append(app)
+		return var_name, content
+
 	if cc:
-		conf.env.append_value('CCFLAGS',    compiler.get_ccflags(build_profile))
-		conf.env.append_value('CCDEFINES',  compiler.get_ccdefines(build_profile))
+		conf.env.append_value(*sandwich('CCFLAGS',   compiler.get_ccflags(build_profile)))
+		conf.env.append_value(*sandwich('CCDEFINES', compiler.get_ccdefines(build_profile)))
 	if cxx:
-		conf.env.append_value('CXXFLAGS',   compiler.get_cxxflags(build_profile))
-		conf.env.append_value('CXXDEFINES', compiler.get_cxxdefines(build_profile))
+		conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
+		conf.env.append_value(*sandwich('CXXDEFINES', compiler.get_cxxdefines(build_profile)))
