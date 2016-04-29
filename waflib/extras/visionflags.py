@@ -8,7 +8,7 @@ DEFAULT_PROFILE = 'debug'
 
 import os
 import shlex
-from waflib import Logs, Options, Utils
+from waflib import Logs, Options, Errors
 
 
 class CompilerTraits(object):
@@ -20,16 +20,19 @@ class CompilerTraits(object):
 	)
 
 	def get_ccdefines(self, level):
-		raise NotImplementedError
+		raise NotImplementedError(type(self))
 
 	def get_ccflags(self, level):
-		raise NotImplementedError
+		raise NotImplementedError(type(self))
 
 	def get_cxxdefines(self, level):
-		raise NotImplementedError
+		raise NotImplementedError(type(self))
 
 	def get_cxxflags(self, level):
-		raise NotImplementedError
+		raise NotImplementedError(type(self))
+
+	def get_linkflags(self, level):
+		raise NotImplementedError(type(self))
 
 
 class GccTraits(CompilerTraits):
@@ -40,11 +43,15 @@ class GccTraits(CompilerTraits):
 		'release_with_debug': '-O2 -g        -Wall -Wextra -pedantic'.split(),
 	}
 
-	def __init__(self, version):
+	def __init__(self, version, linker=None):
 		super(GccTraits, self).__init__()
 		self.version = tuple([int(elem) for elem in version])
 		# copy defaults into instance
 		self.ccflags = GccTraits.ccflags
+		self.linker = linker
+		assert self.linker in ('gold', None)
+		if self.linker == 'gold' and self.version < (4, 8):
+			raise Errors.WafError('GCC >= 4.8 is required for gold linker')
 
 	def get_cpp_language_standard(self):
 		if self.version[0] <= 4:
@@ -59,6 +66,8 @@ class GccTraits(CompilerTraits):
 	def get_ccflags(self, build_profile):
 		if self.version[0] < 4 or (self.version[0] == 4 and self.version[1] <= 9):
 			self.ccflags['debug'] = '-O0 -ggdb -g3 -Wall -Wextra -pedantic'.split()
+		if self.linker is not None:
+			return self.ccflags[build_profile] + ['-fuse-ld={}'.format(self.linker)]
 		return self.ccflags[build_profile]
 
 	def get_cxxdefines(self, build_profile):
@@ -66,6 +75,11 @@ class GccTraits(CompilerTraits):
 
 	def get_cxxflags(self, build_profile):
 		return self.get_cpp_language_standard() + self.get_ccflags(build_profile)
+
+	def get_linkflags(self, build_profile):
+		if self.linker is not None:
+			return ['-fuse-ld={}'.format(self.linker)]
+		return []
 
 
 COMPILER_MAPPING = {
@@ -92,20 +106,25 @@ def options(opt):
 	opt.add_option('--check-profile',
 		help=('print out current build profile'),
 		default=False, dest='check_profile', action="store_true")
+	opt.add_option('--gold-linker', help='Use gold linker.',
+	               action='store_true')
 
 
 def configure(conf):
 	cc = conf.env['COMPILER_CC'] or (conf.env['CC_NAME'] or None)
 	cxx = conf.env['COMPILER_CXX'] or (conf.env['CXX_NAME'] or None)
 	if not (cc or cxx):
-		raise Utils.WafError("neither COMPILER_CC nor COMPILER_CXX are defined; "
+		raise Errors.WafError("neither COMPILER_CC nor COMPILER_CXX are defined; "
 			"maybe the compiler_cc or compiler_cxx tool has not been configured yet?")
 
+	linker = None
+	if Options.options.gold_linker:
+		linker = 'gold'
 	try:
-		compiler = COMPILER_MAPPING[cc](conf.env['CC_VERSION'])
+		compiler = COMPILER_MAPPING[cc](conf.env['CC_VERSION'], linker)
 	except KeyError:
 		try:
-			compiler = COMPILER_MAPPING[cxx](conf.env['CC_VERSION'])
+			compiler = COMPILER_MAPPING[cxx](conf.env['CC_VERSION'], linker)
 		except KeyError:
 			Logs.warn("No compiler flags support for compiler %r or %r" % (cc, cxx))
 			return
@@ -116,7 +135,7 @@ def configure(conf):
 	build_profile = Options.options.build_profile
 	
 	# ECM: Policy => don't touch env vars if they are set! The user knows it better!
-	env_vars = 'CCDEFINES CCFLAGS CXXDEFINES CXXFLAGS'.split()
+	env_vars = 'CCDEFINES CCFLAGS CXXDEFINES CXXFLAGS LINKFLAGS'.split()
 	user_vars = [ var for var in env_vars if os.environ.has_key(var) ]
 	if user_vars:
 		Logs.warn('Visionary build flags have been disabled due to user-defined '
@@ -133,3 +152,4 @@ def configure(conf):
 	conf.env.append_value(*sandwich('CCDEFINES', compiler.get_ccdefines(build_profile)))
 	conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
 	conf.env.append_value(*sandwich('CXXDEFINES', compiler.get_cxxdefines(build_profile)))
+	conf.env.append_value(*sandwich('LINKFLAGS', compiler.get_linkflags(build_profile)))
