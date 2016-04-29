@@ -7,6 +7,7 @@
 DEFAULT_PROFILE = 'debug'
 
 import os
+import shlex
 from waflib import Logs, Options, Utils
 
 
@@ -124,13 +125,9 @@ def configure(conf):
 
 	# _PREPEND and _APPEND variables to a given variable
 	def sandwich(var_name, content):
-		pre = os.environ.get('%s_PREPEND' % var_name, '')
-		app = os.environ.get('%s_APPEND' % var_name, '')
-		if pre:
-			content.insert(0, pre)
-		if app:
-			content.append(app)
-		return var_name, content
+		pre = shlex.split(os.environ.get('%s_PREPEND' % var_name, ''))
+		app = shlex.split(os.environ.get('%s_APPEND' % var_name, ''))
+		return var_name, pre + content + app
 
 	conf.env.append_value(*sandwich('CCFLAGS',   compiler.get_ccflags(build_profile)))
 	conf.env.append_value(*sandwich('CCDEFINES', compiler.get_ccdefines(build_profile)))
