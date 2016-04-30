@@ -264,6 +264,8 @@ class BuildContext(Context.Context):
 				m = self.progress_line(c, c, Logs.colors.BLUE, Logs.colors.NORMAL)
 				Logs.info(m, extra={'stream': sys.stderr, 'c1': Logs.colors.cursor_off, 'c2' : Logs.colors.cursor_on})
 			Logs.info("Waf: Leaving directory `%s'" % self.variant_dir)
+		self.producer.bld = None
+		self.producer = None
 		self.post_build()
 
 	def restore(self):
@@ -354,8 +356,6 @@ class BuildContext(Context.Context):
 
 		if self.producer.error:
 			raise Errors.BuildError(self.producer.error)
-		self.producer.bld = None
-		self.producer = None
 
 	def setup(self, tool, tooldir=None, funs=None):
 		"""
