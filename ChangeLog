@@ -16,6 +16,9 @@ NEW IN WAF 1.9 preview 2
   - Enable 'waf dist' to package arbitrary symlinks in tarballs #1719
   - Enable regexp objects in @extension besides strings for file extensions
   - Match extensions in the order of last definition
+  - Task generators are now processed group-by-group, so the next group is processed
+    when all tasks in the previous group are complete; bld.post_mode=POST_LAZY
+    is now the default (playground/dynamic_build/ examples)
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
@@ -35,6 +38,7 @@ NEW IN WAF 1.9 preview 2
   - Use relative paths in apply_incpaths by default (and absolute ones when paths cross drives)
   - Remove Configure.err_handler
   - Remove TaskBase.attr() which was never used
+  - Remove Build.POST_BOTH which was never used
   - Task.sig_vars, Task.sig_explit_deps and Task.sig_implicit_deps return None
   - Better consistency between check_cfg and check_cc variables
   - Subclass waflib.Build.ConfiguredContext to enable configuration-dependent user commands

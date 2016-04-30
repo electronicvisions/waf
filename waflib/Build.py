@@ -38,13 +38,10 @@ CFG_FILES = 'cfg_files'
 """Files from the build directory to hash before starting the build (``config.h`` written during the configuration)"""
 
 POST_AT_ONCE = 0
-"""Post mode: all task generators are posted before the build really starts"""
+"""Post mode: all task generators are posted before any task executed"""
 
 POST_LAZY = 1
-"""Post mode: post the task generators group after group"""
-
-POST_BOTH = 2
-"""Post mode: post the task generators at once, then re-check them for each group"""
+"""Post mode: post the task generators group after group, the tasks in the next group are created when the tasks in the previous groups are done"""
 
 PROTOCOL = -1
 if sys.platform == 'cli':
@@ -66,8 +63,8 @@ class BuildContext(Context.Context):
 
 		self.run_dir = kw.get('run_dir', Context.run_dir)
 
-		self.post_mode = POST_AT_ONCE
-		"""post the task generators at once, group-by-group, or both"""
+		self.post_mode = POST_LAZY
+		"""post the task generators at once, group-by-group, or both (default is group-by-group)"""
 
 		# output directory - may be set until the nodes are considered
 		self.out_dir = kw.get('out_dir', Context.out_dir)
