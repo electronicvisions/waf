@@ -37,8 +37,6 @@ SKIP_ME = -2
 RUN_ME = -3
 """The task must be executed"""
 
-# To save some memory during the build, consider discarding tsk.last_cmd in the two templates below
-
 COMPILE_TEMPLATE_SHELL = '''
 def f(tsk):
 	env = tsk.env
@@ -715,42 +713,31 @@ class Task(TaskBase):
 			raise Errors.TaskRescan('rescan')
 
 		# no previous run or the signature of the dependencies has changed, rescan the dependencies
-		(nodes, names) = self.scan()
+		(bld.node_deps[key], bld.raw_deps[key]) = self.scan()
 		if Logs.verbose:
-			Logs.debug('deps: scanner for %s returned %s %s', self, nodes, names)
-
-		# store the dependencies in the cache
-		bld.node_deps[key] = nodes
-		bld.raw_deps[key] = names
-
-		# might happen
-		self.are_implicit_nodes_ready()
+			Logs.debug('deps: scanner for %s returned %s %s', self, bld.node_deps[key], bld.raw_deps[key])
 
 		# recompute the signature and return it
 		try:
 			bld.imp_sigs[key] = self.compute_sig_implicit_deps()
-		except Exception:
-			if Logs.verbose:
-				for k in bld.node_deps.get(self.uid(), []):
-					if not k.exists():
-						Logs.warn('Node %r does not exist (may cause rebuilds)' % k)
+		except (OSError, IOError):
+			for k in bld.node_deps.get(self.uid(), []):
+				if not k.exists():
+					Logs.warn('Dependency %r for %r is missing: check the task declaration and the build order!' % (k, self))
+			raise
 
 	def compute_sig_implicit_deps(self):
 		"""
 		Used by :py:meth:`waflib.Task.Task.sig_implicit_deps` for computing the actual hash of the
 		:py:class:`waflib.Node.Node` returned by the scanner.
 		"""
-
 		upd = self.m.update
-
-		bld = self.generator.bld
-
 		self.are_implicit_nodes_ready()
 
 		# scanner returns a node that does not have a signature
 		# just *ignore* the error and let them figure out from the compiler output
 		# waf -k behaviour
-		for k in bld.node_deps.get(self.uid(), []):
+		for k in self.generator.bld.node_deps.get(self.uid(), []):
 			upd(k.get_bld_sig())
 		return self.m.digest()
 
@@ -758,8 +745,7 @@ class Task(TaskBase):
 		"""
 		For each node returned by the scanner, see if there is a task behind it, and force the build order
 
-		The performance impact on null builds is nearly invisible (1.66s->1.86s), but this is due to
-		agressive caching (1.86s->28s)
+		Low performance impact on null builds (1.86s->1.66s) thanks to caching (28s->1.86s)
 		"""
 		bld = self.generator.bld
 		try:
@@ -767,6 +753,7 @@ class Task(TaskBase):
 		except AttributeError:
 			bld.dct_implicit_nodes = cache = {}
 
+		# one cache per build group
 		try:
 			dct = cache[bld.cur]
 		except KeyError:
@@ -1140,7 +1127,7 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 
 def always_run(cls):
 	"""
-	Task class decorator - will be removed in waf 2.0
+	Task class decorator, to be removed in waf 2.0
 
 	Set all task instances of this class to be executed whenever a build is started
 	The task signature is calculated, but the result of the comparison between
@@ -1152,7 +1139,7 @@ def always_run(cls):
 
 def update_outputs(cls):
 	"""
-	Obsolete, will be removed in waf 2.0
+	Obsolete, to be removed in waf 2.0
 	"""
 	return cls
 
