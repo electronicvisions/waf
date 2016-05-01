@@ -470,6 +470,24 @@ def configure(self):
 	self.add_qt5_rpath()
 	self.simplify_qt5_libs()
 
+	# Qt5 may be compiled with '-reduce-relocations' which requires dependent programs to have -fPIE or -fPIC?
+	frag = '#include <QApplication>\nint main(int argc, char **argv) {return 0;}\n'
+	uses = 'QT5CORE QT5WIDGETS QT5GUI'
+	try:
+		self.check(features='qt5 cxx', use=uses, fragment=frag, msg='See if Qt files compile directly')
+	except self.errors.ConfigurationError:
+		self.check(features='qt5 cxx', use=uses, fragment=frag, uselib_store='qt5', cxxflags='-fPIE',
+			msg='Try again with -fPIE', okmsg='-fPIE seems to be required')
+
+	# FreeBSD does not add /usr/local/lib and the pkg-config files do not provide it either :-/
+	from waflib import Utils
+	if Utils.unversioned_sys_platform() == 'freebsd':
+		frag = '#include <QApplication>\nint main(int argc, char **argv) { QApplication app(argc, argv); return NULL != (void*) (&app);}\n'
+		try:
+			self.check(features='qt5 cxx cxxprogram', use=uses, fragment=frag, msg='Can we link Qt programs on FreeBSD directly?')
+		except self.errors.ConfigurationError:
+			self.check(features='qt5 cxx cxxprogram', use=uses, uselib_store='qt5', libpath='/usr/local/lib', fragment=frag, msg='Is /usr/local/lib required?')
+
 @conf
 def find_qt5_binaries(self):
 	env = self.env

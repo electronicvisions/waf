@@ -15,26 +15,17 @@ def configure(conf):
 	conf.load('compiler_cxx qt5')
 	#conf.env.append_value('CXXFLAGS', ['-g']) # test
 
-	# Qt5 may be compiled with '-reduce-relocations' which requires dependent programs to have -fPIE or -fPIC?
-	frag = '#include <QApplication>\nint main(int argc, char **argv) {return 0;}\n'
-	uses = 'QT5CORE QT5WIDGETS QT5GUI'
-	try:
-		conf.check(features='qt5 cxx', use=uses, fragment=frag, msg='See if Qt files compile directly')
-	except conf.errors.ConfigurationError:
-		conf.check(features='qt5 cxx', use=uses, fragment=frag, uselib_store='qt5', cxxflags='-fPIE',
-			msg='Try again with -fPIE', okmsg='-fPIE seems to be required')
-
 def build(bld):
 	# According to the Qt5 documentation:
 	#   Qt classes in foo.h   -> declare foo.h as a header to be processed by moc
-	#                            add the resulting moc_foo.cpp to the source files
+	#			    add the resulting moc_foo.cpp to the source files
 	#   Qt classes in foo.cpp -> include foo.moc at the end of foo.cpp
 	#
 	bld(
 		features = 'qt5 cxx cxxprogram',
 		use      = 'QT5CORE QT5GUI QT5SVG QT5WIDGETS',
 		source   = 'main.cpp res.qrc but.ui foo.cpp',
-                moc      = 'foo.h',
+		moc      = 'foo.h',
 		target   = 'window',
 		includes = '.',
 		lang     = bld.path.ant_glob('linguist/*.ts'),
