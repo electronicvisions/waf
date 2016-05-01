@@ -79,9 +79,9 @@ from waflib.TaskGen import feature, after_method, extension, before_method
 from waflib.Configure import conf
 from waflib import Logs
 
-MOC_H = ['.cpp', '.h', '.hpp', '.hxx', '.hh']
+MOC_H = ['.h', '.hpp', '.hxx', '.hh']
 """
-File extensions associated to the .moc files
+File extensions associated to .moc files
 """
 
 EXT_RCC = ['.qrc']
@@ -199,16 +199,6 @@ class qxx(Task.classes['cxx']):
 			# remove the signature, it must be recomputed with the moc task
 			delattr(self, 'cache_sig')
 
-	def moc_h_ext(self):
-		ext = []
-		try:
-			ext = Options.options.qt_header_ext.split()
-		except AttributeError:
-			pass
-		if not ext:
-			ext = MOC_H
-		return ext
-
 	def add_moc_tasks(self):
 		"""
 		Create the moc tasks by looking in ``bld.raw_deps[self.uid()]``
@@ -241,29 +231,26 @@ class qxx(Task.classes['cxx']):
 
 			# find the source associated with the moc file
 			h_node = None
-
 			base2 = d[:-4]
-			for x in include_nodes:
-				for e in self.moc_h_ext():
-					h_node = x.find_node(base2 + e)
-					if h_node:
-						break
-				if h_node:
-					m_node = h_node.change_ext('.moc')
-					break
-			else:
-				# foo.cpp -> foo.cpp.moc
-				for k in EXT_QT5:
-					if base2.endswith(k):
-						for x in include_nodes:
-							h_node = x.find_node(base2)
-							if h_node:
-								break
-						if h_node:
-							m_node = h_node.change_ext(k + '.moc')
-							break
 
-			if not h_node:
+			# foo.moc from foo.cpp
+			prefix = node.name[:node.name.rfind('.')]
+			if base2 == prefix:
+				h_node = node
+			else:
+				# this deviates from the standard
+				# if bar.cpp includes foo.moc, then assume it is from foo.h
+				for x in include_nodes:
+					for e in MOC_H:
+						h_node = x.find_node(base2 + e)
+						if h_node:
+							break
+					else:
+						continue
+					break
+			if h_node:
+				m_node = h_node.change_ext('.moc')
+			else:
 				raise Errors.WafError('No source found for %r which is a moc file' % d)
 
 			# create the moc task
@@ -322,11 +309,20 @@ def add_lang(self, node):
 @feature('qt5')
 @before_method('process_source')
 def process_mocs(self):
+	"""
+	Process MOC files in headers::
+
+		def build(bld):
+			bld.program(features='qt5', source='main.cpp', target='app', use='QT5CORE', moc='foo.h')
+
+	The build will run moc on foo.h to create moc_foo.n.cpp. The number in the file name
+	is provided to avoid name clashes when the same headers are used by several targets.
+	"""
 	lst = self.to_nodes(getattr(self, 'moc', []))
 	self.source = self.to_list(getattr(self, 'source', []))
 	for x in lst:
 		prefix = x.name[:x.name.rfind('.')] # foo.h -> foo
-		moc_target = 'moc_%s.cpp' % prefix # moc_foo.cpp
+		moc_target = 'moc_%s.%d.cpp' % (prefix, self.idx)
 		moc_node = x.parent.find_or_declare(moc_target)
 		self.source.append(moc_target)
 
@@ -742,13 +738,6 @@ def options(opt):
 	Command-line options
 	"""
 	opt.add_option('--want-rpath', action='store_true', default=False, dest='want_rpath', help='enable the rpath for qt libraries')
-
-	opt.add_option('--header-ext',
-		type='string',
-		default='',
-		help='header extension for moc files',
-		dest='qt_header_ext')
-
 	for i in 'qtdir qtbin qtlibs'.split():
 		opt.add_option('--'+i, type='string', default='', dest=i)
 
