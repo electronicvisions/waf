@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: ISO8859-1
 # Thomas Nagy, 2005-2016
+#
+# This is waf 1.9 p2, the second preview version of waf 1.9
 
 """
 Redistribution and use in source and binary forms, with or without
