@@ -543,7 +543,7 @@ def find_qt5_binaries(self):
 	else:
 		self.fatal('Could not find qmake for qt5')
 
-	self.env.QT_INSTALL_BINS = qtbin = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_BINS']).strip() + os.sep
+	self.env.QT_HOST_BINS = qtbin = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_HOST_BINS']).strip()
 	paths.insert(0, qtbin)
 
 	def find_bin(lst, var):

@@ -1,4 +1,4 @@
-// Thomas Nagy, 2011
+// Thomas Nagy, 2011-2016
 
 #include "foo.h"
 
@@ -17,7 +17,4 @@ class Bar_private : public QWidget {
 Bar_private::Bar_private() : QWidget(NULL) {
 }
 
-#if WAF
 #include "foo.moc"
-#include "foo.cpp.moc"
-#endif

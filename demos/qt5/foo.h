@@ -1,4 +1,4 @@
-// Thomas Nagy, 2011
+// Thomas Nagy, 2011-2016
 
 #ifndef _FOO
 #define _FOO
