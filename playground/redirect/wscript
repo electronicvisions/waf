@@ -4,7 +4,7 @@
 Run: "waf configure clean build"
 
 The program "app" writes to both stdout and stderr, it is executed
-directly or through another python process (just for the fun of it)
+directly or through another python process
 """
 
 top = '.'
