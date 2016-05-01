@@ -494,7 +494,7 @@ def find_qt5_binaries(self):
 	# no qtdir, look in the path and in /usr/local/Trolltech
 	if not qtdir:
 		paths = os.environ.get('PATH', '').split(os.pathsep)
-		paths.append('/usr/share/qt5/bin/')
+		paths.extend(['/usr/share/qt5/bin', '/usr/local/lib/qt5/bin'])
 		try:
 			lst = Utils.listdir('/usr/local/Trolltech/')
 		except OSError:
