@@ -75,11 +75,11 @@ else:
 import os, sys
 from waflib.Tools import cxx
 from waflib import Task, Utils, Options, Errors, Context
-from waflib.TaskGen import feature, after_method, extension
+from waflib.TaskGen import feature, after_method, extension, before_method
 from waflib.Configure import conf
 from waflib import Logs
 
-MOC_H = ['.h', '.hpp', '.hxx', '.hh']
+MOC_H = ['.cpp', '.h', '.hpp', '.hxx', '.hh']
 """
 File extensions associated to the .moc files
 """
@@ -171,9 +171,6 @@ class qxx(Task.classes['cxx']):
 		If several libraries use the same classes, it is possible that moc will run several times (Issue 1318)
 		It is not possible to change the file names, but we can assume that the moc transformation will be identical,
 		and the moc tasks can be shared in a global cache.
-
-		The defines passed to moc will then depend on task generator order. If this is not acceptable, then
-		use the tool slow_qt5 instead (and enjoy the slow builds... :-( )
 		"""
 		try:
 			moc_cache = self.generator.bld.moc_cache
@@ -186,6 +183,7 @@ class qxx(Task.classes['cxx']):
 			tsk = moc_cache[h_node] = Task.classes['moc'](env=self.env, generator=self.generator)
 			tsk.set_inputs(h_node)
 			tsk.set_outputs(m_node)
+			tsk.env.append_unique('MOC_FLAGS', '-i')
 
 			if self.generator:
 				self.generator.tasks.append(tsk)
@@ -320,6 +318,19 @@ def create_uic_task(self, node):
 def add_lang(self, node):
 	"""add all the .ts file into self.lang"""
 	self.lang = self.to_list(getattr(self, 'lang', [])) + [node]
+
+@feature('qt5')
+@before_method('process_source')
+def process_mocs(self):
+	lst = self.to_nodes(getattr(self, 'moc', []))
+	self.source = self.to_list(getattr(self, 'source', []))
+	for x in lst:
+		prefix = x.name[:x.name.rfind('.')] # foo.h -> foo
+		moc_target = 'moc_%s.cpp' % prefix # moc_foo.cpp
+		moc_node = x.parent.find_or_declare(moc_target)
+		self.source.append(moc_target)
+
+		self.create_task('moc', x, moc_node)
 
 @feature('qt5')
 @after_method('apply_link')

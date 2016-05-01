@@ -19,6 +19,7 @@ NEW IN WAF 1.9 preview 2
   - Task generators are now processed group-by-group, so the next group is processed
     when all tasks in the previous group are complete; bld.post_mode=POST_LAZY
     is now the default (playground/dynamic_build/ examples)
+  - Process Qt5 files in the way suggested by the Qt documentation
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs

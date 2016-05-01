@@ -25,13 +25,18 @@ def configure(conf):
 			msg='Try again with -fPIE', okmsg='-fPIE seems to be required')
 
 def build(bld):
+	# According to the Qt5 documentation:
+	#   Qt classes in foo.h   -> declare foo.h as a header to be processed by moc
+	#                            add the resulting moc_foo.cpp to the source files
+	#   Qt classes in foo.cpp -> include foo.moc at the end of foo.cpp
+	#
 	bld(
 		features = 'qt5 cxx cxxprogram',
 		use      = 'QT5CORE QT5GUI QT5SVG QT5WIDGETS',
 		source   = 'main.cpp res.qrc but.ui foo.cpp',
+                moc      = 'foo.h',
 		target   = 'window',
 		includes = '.',
-		defines  = 'WAF=1', # test
 		lang     = bld.path.ant_glob('linguist/*.ts'),
 		langname = 'somefile', # include the .qm files from somefile.qrc
 	)

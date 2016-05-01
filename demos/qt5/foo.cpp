@@ -18,3 +18,4 @@ Bar_private::Bar_private() : QWidget(NULL) {
 }
 
 #include "foo.moc"
+
