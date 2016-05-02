@@ -3,6 +3,7 @@
 bld.shlib(
 	source = 'test_shlib.c',
 	target = 'my_shared_lib',
+	name   = 'xyz',
 	vnum   = '1.2.3',
 	defs   = 'foo.def')
 
@@ -11,7 +12,7 @@ t = bld.program(
 	#features = 'my_precious',
 	source = 'main.c',
 	target = 'test_shared_link',
-	use    = 'my_shared_lib',
+	use    = 'xyz',
 	# 1. settings flags directly
 	#linkflags = ['-L/disk/comp/waf/demos/c/build/shlib', '-lmy_shared_lib']
 	)
