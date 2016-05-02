@@ -58,10 +58,18 @@ def pytest_create_task(self):
 
     input_nodes = self.to_nodes(self.tests)
 
+    inst_to = getattr(self, 'install_path', None)
+    if inst_to:
+        self.bld.install_files(inst_to, input_nodes,
+                               chmod=getattr(self, 'chmod', Utils.O755))
+
     # Set test name if not given by user
     if not getattr(self, 'name', None):
         fix = re.compile(r'(\.py$)?')
         self.name = "__and__".join(fix.sub('', n.name) for n in input_nodes)
+
+    if not self.isTestExecutionEnabled():
+        return
 
     self.pytest_task = t = self.create_task('pytest', input_nodes)
 
@@ -72,10 +80,6 @@ def pytest_create_task(self):
         tg = self.bld.get_tgen_by_name(use)
         if hasattr(tg, "pyext_task"):
             t.dep_nodes.extend(tg.pyext_task.outputs)
-
-    inst_to = getattr(self, 'install_path', None)
-    if inst_to:
-        self.bld.install_files(inst_to, input_nodes, chmod=getattr(self, 'chmod', Utils.O755))
 
 def options(opt):
     test_base.options(opt)

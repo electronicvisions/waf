@@ -134,7 +134,7 @@ def gtest_run_task(self):
     """Create the unit test task. There can be only one unit test task by task generator."""
     if self.testsDisabled():
         return
-    if getattr(self, 'link_task', None):
+    if self.isTestExecutionEnabled() and getattr(self, 'link_task', None):
         t = self.create_task('gtest', self.link_task.outputs)
         t.init(self)
 

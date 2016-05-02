@@ -307,8 +307,22 @@ def runNone():
 
 @taskgen_method
 def testsDisabled(self):
+    """TaskGen method to check, if tests are generally disabled"""
     ctx = self.bld
-    return bool(ctx.env.TEST_DISABLED) or bool(getattr(Options.options, 'test_disabled', False))
+    return (bool(ctx.env.TEST_DISABLED) or
+            bool(getattr(Options.options, 'test_disabled', False)))
+
+@taskgen_method
+def isTestExecutionEnabled(self):
+    """TaskGen method to check, if we should create a test execution task"""
+    # Should this test generally not be executed by setting skip_run=True in
+    # the wscript?
+    skip_run = getattr(self, 'skip_run', False)
+    # Are they disabled for this run by the --test-execnone option?
+    run_none = getattr(Options.options, 'test_run_none', False)
+    # Is this specific test requested by the --test-exec <testname> option?
+    run_this = runByName(self.name)
+    return not (skip_run or (run_none and not run_this))
 
 class TestBase(Task.Task):
     """
@@ -391,17 +405,12 @@ class TestBase(Task.Task):
 
     def runnable_status(self):
         """
-        Always execute the task if `waf --test-execall` was used,
-        but not if `waf --test-execnone` was used
+        Always execute the task if `waf --test-execall` or `--test-exec` was set
         """
         ret = super(TestBase, self).runnable_status()
-        if self.skip_run:
-            ret = Task.SKIP_ME
         if (ret == Task.SKIP_ME and
                 (runAll() or runByName(self.generator.name))):
             ret = Task.RUN_ME
-        if runNone():
-            ret = Task.SKIP_ME
         return ret
 
     def getEnviron(self):
