@@ -771,13 +771,13 @@ def test_exec_fun(self):
 
 @conf
 def check_cxx(self, *k, **kw):
-	# DO NOT USE
+	"""Prefer conf.check(features='cxx cxxprogram', ...) to this alias"""
 	kw['compiler'] = 'cxx'
 	return self.check(*k, **kw)
 
 @conf
 def check_cc(self, *k, **kw):
-	# DO NOT USE
+	"""Prefer conf.check(features='c cprogram', ...) to this alias"""
 	kw['compiler'] = 'c'
 	return self.check(*k, **kw)
 
