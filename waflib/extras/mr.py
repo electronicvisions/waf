@@ -73,7 +73,7 @@ class Repo_DB(object):
         self.db = json.load(open(filepath, "r"))
 
     def get_init(self, name):
-        return self.db[name]["init_cmds"]
+        return self.db[name].get("init_cmds",'')
 
     def get_type(self, name):
         return self.db[name]["type"]
