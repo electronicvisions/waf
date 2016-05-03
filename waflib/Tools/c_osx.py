@@ -105,8 +105,8 @@ def create_task_macapp(self):
 				self.bld.install_as(os.path.join(inst_to, relpath), node)
 
 		if getattr(self.bld, 'is_install', None):
-			# disable the normal binary installation
-			self.install_task.hasrun = Task.SKIP_ME
+			# disable normal binary installation
+			self.install_tg.posted = True
 
 @feature('cprogram', 'cxxprogram')
 @after_method('apply_link')

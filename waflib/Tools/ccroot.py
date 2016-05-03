@@ -229,7 +229,7 @@ def apply_link(self):
 		inst_to = self.link_task.__class__.inst_to
 	if inst_to:
 		# install a copy of the node list we have at this moment (implib not added)
-		self.install_task = self.bld.install_files(inst_to, self.link_task.outputs[:], env=self.env, chmod=self.link_task.chmod, task=self.link_task)
+		self.install_tg = self.bld.install_files(inst_to, self.link_task.outputs[:], env=self.env, chmod=self.link_task.chmod, task=self.link_task)
 
 @taskgen_method
 def use_rec(self, name, **kw):
@@ -485,7 +485,7 @@ def apply_implib(self):
 				self.install_task.dest = '${BINDIR}'
 				if not self.env.IMPLIBDIR:
 					self.env.IMPLIBDIR = self.env.LIBDIR
-		self.implib_install_task = self.bld.install_files(inst_to, implib, env=self.env, chmod=self.link_task.chmod, task=self.link_task)
+		self.implib_install_tg = self.bld.install_files(inst_to, implib, env=self.env, chmod=self.link_task.chmod, task=self.link_task)
 
 # ============ the code above must not know anything about vnum processing on unix platforms =========
 
@@ -554,15 +554,15 @@ def apply_vnum(self):
 		if self.env.DEST_OS == 'openbsd':
 			libname = self.link_task.outputs[0].name
 			t1 = bld.install_as('%s%s%s' % (path, os.sep, libname), node, env=self.env, chmod=self.link_task.chmod)
-			self.vnum_install_task = (t1,)
+			self.vnum_install_tg = (t1,)
 		else:
 			t1 = bld.install_as(path + os.sep + name3, node, env=self.env, chmod=self.link_task.chmod)
 			t3 = bld.symlink_as(path + os.sep + libname, name3)
 			if name2 != name3:
 				t2 = bld.symlink_as(path + os.sep + name2, name3)
-				self.vnum_install_task = (t1, t2, t3)
+				self.vnum_install_tg = (t1, t2, t3)
 			else:
-				self.vnum_install_task = (t1, t3)
+				self.vnum_install_tg = (t1, t3)
 
 	if '-dynamiclib' in self.env['LINKFLAGS']:
 		# this requires after(propagate_uselib_vars)
