@@ -567,7 +567,7 @@ def run_build(self, *k, **kw):
 	if not os.path.exists(bdir):
 		os.makedirs(bdir)
 
-	self.test_bld = bld = Build.BuildContext(top_dir=dir, out_dir=bdir)
+	self.test_bld = bld = Context.create_context('build', top_dir=dir, out_dir=bdir)
 	bld.init_dirs()
 	bld.progress_bar = 0
 	bld.targets = '*'
