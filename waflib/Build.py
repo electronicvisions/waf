@@ -906,6 +906,7 @@ def add_install_task(self, **kw):
 	tsk.link = kw.get('link', '')
 	tsk.relative_trick = kw.get('relative_trick', False)
 	tsk.type = kw['type']
+	tsk.install_to = kw['install_to']
 	tsk.install_from = kw['install_from']
 	tsk.init_files()
 	if not kw.get('postpone', True):
@@ -977,7 +978,7 @@ class inst(Task.Task):
 		pass
 
 	def get_install_path(self, destdir=True):
-		dest = Utils.subst_vars(self.generator.install_to, self.env)
+		dest = Utils.subst_vars(self.install_to, self.env)
 		if destdir and Options.options.destdir:
 			dest = os.path.join(Options.options.destdir, os.path.splitdrive(dest)[1].lstrip(os.sep))
 		return dest
