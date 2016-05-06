@@ -896,42 +896,13 @@ def add_install_tasks(self):
 			# just exit
 			return
 
-	if self.type == 'symlink_as':
-		inputs = []
-	else:
-		inputs = self.to_nodes(self.install_source)
-		if self.type == 'install_as':
-			assert len(inputs) == 1
-		else:
-			pass
-
 	tsk = self.install_task = self.create_task('inst')
-	tsk.link = ''
 	tsk.chmod = getattr(self, 'chmod', Utils.O644)
-
-	dest = tsk.get_install_path()
-	self.relative_trick = getattr(self, 'relative_trick', False)
-
-	outputs = []
-	if self.type == 'symlink_as':
-		if self.relative_trick:
-			tsk.link = os.path.relpath(self.link, os.path.dirname(dest))
-		else:
-			tsk.link = self.link
-		outputs.append(self.bld.root.make_node(dest))
-	elif self.type == 'install_as':
-		outputs.append(self.bld.root.make_node(dest))
-	else:
-		for y in inputs:
-			if self.relative_trick:
-				destfile = os.path.join(dest, y.path_from(self.path))
-			else:
-				destfile = os.path.join(dest, y.name)
-			outputs.append(self.bld.root.make_node(destfile))
-
-	tsk.set_inputs(inputs)
-	tsk.set_outputs(outputs)
-
+	tsk.link = getattr(self, 'link', '')
+	tsk.relative_trick = getattr(self, 'relative_trick', False)
+	tsk.type = self.type
+	tsk.install_source = self.install_source
+	tsk.init_files()
 	if not getattr(self, 'postpone', True):
 		tsk.run_now()
 
@@ -945,6 +916,32 @@ class inst(Task.Task):
 	def uid(self):
 		lst = self.inputs + self.outputs + [self.link, self.generator.path.abspath()]
 		return Utils.h_list(lst)
+
+	def init_files(self):
+		if self.type == 'symlink_as':
+			inputs = []
+		else:
+			inputs = self.generator.to_nodes(self.install_source)
+			if self.type == 'install_as':
+				assert len(inputs) == 1
+		self.set_inputs(inputs)
+
+		dest = self.get_install_path()
+		outputs = []
+		if self.type == 'symlink_as':
+			if self.relative_trick:
+				self.link = os.path.relpath(self.link, os.path.dirname(dest))
+			outputs.append(self.generator.bld.root.make_node(dest))
+		elif self.type == 'install_as':
+			outputs.append(self.generator.bld.root.make_node(dest))
+		else:
+			for y in inputs:
+				if self.relative_trick:
+					destfile = os.path.join(dest, y.path_from(self.generator.path))
+				else:
+					destfile = os.path.join(dest, y.name)
+				outputs.append(self.generator.bld.root.make_node(destfile))
+		self.set_outputs(outputs)
 
 	def runnable_status(self):
 		"""
@@ -988,7 +985,7 @@ class inst(Task.Task):
 		for x in self.outputs:
 			if is_install == INSTALL:
 				x.parent.mkdir()
-		if self.generator.type == 'symlink_as':
+		if self.type == 'symlink_as':
 			fun = is_install == INSTALL and self.do_link or self.do_unlink
 			fun(self.link, self.outputs[0].abspath())
 		else:
