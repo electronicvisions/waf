@@ -933,11 +933,7 @@ def add_install_tasks(self):
 	tsk.set_outputs(outputs)
 
 	if not getattr(self, 'postpone', True):
-		status = self.install_task.runnable_status()
-		if status not in (Task.RUN_ME, Task.SKIP_ME):
-			raise Errors.WafError('Could not process %r (not ready %r)' % (self.install_task, status))
-		self.install_task.run()
-		self.install_task.hasrun = Task.SUCCESS
+		tsk.run_now()
 
 class inst(Task.Task):
 	color = 'CYAN'
@@ -1000,6 +996,14 @@ class inst(Task.Task):
 			launch_node = self.generator.bld.launch_node()
 			for x, y in zip(self.inputs, self.outputs):
 				fun(x.abspath(), y.abspath(), x.path_from(launch_node))
+
+	def run_now(self):
+		"""Try executing the installation task right now"""
+		status = self.runnable_status()
+		if status not in (Task.RUN_ME, Task.SKIP_ME):
+			raise Errors.TaskNotReady('Could not process %r: status %r' % (self, status))
+		self.run()
+		self.hasrun = Task.SUCCESS
 
 	def do_install(self, src, tgt, lbl, **kw):
 		"""
