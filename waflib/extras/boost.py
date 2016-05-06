@@ -445,7 +445,8 @@ def install_boost(self):
 	for lib in self.env.LIB_BOOST:
 		try:
 			file = self.bld.find_file(self.env.cxxshlib_PATTERN % lib, self.env.LIBPATH_BOOST)
-			self.bld.install_files(inst_to, self.bld.root.find_node(file))
+			self.add_install_files(install_to=inst_to, install_from=self.bld.root.find_node(file))
 		except:
 			continue
 install_boost.done = False
+

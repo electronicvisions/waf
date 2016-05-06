@@ -276,7 +276,7 @@ def process_settings(self):
 		enums_task.env['GLIB_MKENUMS_TARGET'] = tgt_node.abspath()
 		enums_tgt_node = [tgt_node]
 
-		install_files.append (tgt_node)
+		install_files.append(tgt_node)
 
 		options = '--comments "<!-- @comment@ -->" --fhead "<schemalist>" --vhead "  <@type@ id=\\"%s.@EnumName@\\">" --vprod "    <value nick=\\"@valuenick@\\" value=\\"@valuenum@\\"/>" --vtail "  </@type@>" --ftail "</schemalist>" ' % (self.settings_enum_namespace)
 		enums_task.env['GLIB_MKENUMS_OPTIONS'] = options
@@ -311,8 +311,7 @@ def process_settings(self):
 			raise Errors.WafError ('GSETTINGSSCHEMADIR not defined (should have been set up automatically during configure)')
 
 		if install_files:
-			self.bld.install_files (self.env['GSETTINGSSCHEMADIR'], install_files)
-
+			self.add_install_files(install_to=self.env['GSETTINGSSCHEMADIR'], install_from=install_files)
 			if not hasattr(self.bld, '_compile_schemas_registered'):
 				self.bld.add_post_fun(compile_schemas_callback)
 				self.bld._compile_schemas_registered = True
@@ -365,7 +364,7 @@ def process_gresource_bundle(self):
 		task = self.create_task('glib_gresource_bundle', node, node.change_ext(''))
 		inst_to = getattr(self, 'install_path', None)
 		if inst_to:
-			self.bld.install_files(inst_to, task.outputs)
+			self.add_install_files(install_to=inst_to, install_from=task.outputs)
 
 class glib_gresource_base(Task.Task):
 	"""

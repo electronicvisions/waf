@@ -982,8 +982,8 @@ def apply_flags_msvc(self):
 				self.link_task.outputs.append(pdbnode)
 
 				if getattr(self, 'install_task', None):
-					self.pdb_install_task = self.bld.install_files(self.install_task.dest, pdbnode, env=self.env)
-
+					self.pdb_install_task = self.add_install_files(
+						install_to=self.install_task.dest, install_from=pdbnode)
 				break
 
 # split the manifest file processing from the link task, like for the rc processing

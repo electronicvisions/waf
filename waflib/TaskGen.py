@@ -352,7 +352,7 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 			cnt += 1
 
 		if install_path:
-			self.install_tg = self.bld.install_files(install_path, tsk.outputs)
+			self.install_task = self.add_install_files(install_to=install_path, install_from=tsk.outputs)
 		return tsk
 
 	for x in cls.ext_in:
@@ -613,7 +613,8 @@ def process_rule(self):
 				x.parent.mkdir() # if a node was given, create the required folders
 				tsk.outputs.append(x)
 		if getattr(self, 'install_path', None):
-			self.install_tg = self.bld.install_files(self.install_path, tsk.outputs, chmod=getattr(self, 'chmod', Utils.O644))
+			self.install_task = self.add_install_files(install_to=self.install_path,
+				install_from=tsk.outputs, chmod=getattr(self, 'chmod', Utils.O644))
 
 	if getattr(self, 'source', None):
 		tsk.inputs = self.to_nodes(self.source)
@@ -767,7 +768,8 @@ def add_pcfile(self, node):
 			bld(source='foo.pc.in', install_path='${LIBDIR}/pkgconfig/')
 	"""
 	tsk = self.create_task('subst_pc', node, node.change_ext('.pc', '.pc.in'))
-	self.install_tg = self.bld.install_files(getattr(self, 'install_path', '${LIBDIR}/pkgconfig/'), tsk.outputs)
+	self.install_task = self.add_install_files(
+		install_to=getattr(self, 'install_path', '${LIBDIR}/pkgconfig/'), install_from=tsk.outputs)
 
 class subst(subst_pc):
 	pass
@@ -843,7 +845,8 @@ def process_subst(self):
 
 		inst_to = getattr(self, 'install_path', None)
 		if inst_to:
-			self.install_tg = self.bld.install_files(inst_to, b, chmod=getattr(self, 'chmod', Utils.O644))
+			self.install_task = self.add_install_files(install_to=inst_to,
+				install_from=b, chmod=getattr(self, 'chmod', Utils.O644))
 
 	self.source = []
 

@@ -88,7 +88,7 @@ def create_task_macapp(self):
 
 		self.apptask = self.create_task('macapp', self.link_task.outputs, n1)
 		inst_to = getattr(self, 'install_path', '/Applications') + '/%s/Contents/MacOS/' % name
-		self.bld.install_files(inst_to, n1, chmod=Utils.O755)
+		self.add_install_files(install_to=inst_to, install_from=n1, chmod=Utils.O755)
 
 		if getattr(self, 'mac_files', None):
 			# this only accepts files; they will be installed as seen from mac_files_root
@@ -102,11 +102,11 @@ def create_task_macapp(self):
 			for node in self.to_nodes(self.mac_files):
 				relpath = node.path_from(mac_files_root or node.parent)
 				self.create_task('macapp', node, res_dir.make_node(relpath))
-				self.bld.install_as(os.path.join(inst_to, relpath), node)
+				self.add_install_as(install_to=os.path.join(inst_to, relpath), install_source=node)
 
 		if getattr(self.bld, 'is_install', None):
-			# disable normal binary installation
-			self.install_tg.posted = True
+			# disable regular binary installation
+			self.install_task.hasrun = Task.SKIP_ME
 
 @feature('cprogram', 'cxxprogram')
 @after_method('apply_link')
@@ -141,7 +141,7 @@ def create_task_macplist(self):
 			plisttask.code = app_info
 
 		inst_to = getattr(self, 'install_path', '/Applications') + '/%s/Contents/' % name
-		self.bld.install_files(inst_to, n1)
+		self.add_install_files(install_to=inst_to, install_from=n1)
 
 @feature('cshlib', 'cxxshlib')
 @before_method('apply_link', 'propagate_uselib_vars')

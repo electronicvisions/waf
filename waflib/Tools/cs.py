@@ -55,7 +55,7 @@ def apply_cs(self):
 	if inst_to:
 		# note: we are making a copy, so the files added to cs_task.outputs won't be installed automatically
 		mod = getattr(self, 'chmod', bintype=='exe' and Utils.O755 or Utils.O644)
-		self.install_task = self.bld.install_files(inst_to, self.cs_task.outputs[:], env=self.env, chmod=mod)
+		self.install_task = self.add_install_files(install_to=inst_to, install_from=self.cs_task.outputs[:], chmod=mod)
 
 @feature('cs')
 @after_method('apply_cs')

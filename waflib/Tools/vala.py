@@ -186,19 +186,20 @@ def init_vala_task(self):
 		try:
 			self.install_vheader.source = headers_list
 		except AttributeError:
-			self.install_vheader = self.bld.install_files(valatask.header_path, headers_list, env=self.env)
+			self.install_vheader = self.add_install_files(install_to=valatask.header_path, install_from=headers_list)
 
 		vapi_list = [o for o in valatask.outputs if (o.suffix() in (".vapi", ".deps"))]
 		try:
 			self.install_vapi.source = vapi_list
 		except AttributeError:
-			self.install_vapi = self.bld.install_files(valatask.vapi_path, vapi_list, env=self.env)
+			self.install_vapi = self.add_install_files(install_to=valatask.vapi_path, install_from=vapi_list)
 
 		gir_list = [o for o in valatask.outputs if o.suffix() == '.gir']
 		try:
 			self.install_gir.source = gir_list
 		except AttributeError:
-			self.install_gir = self.bld.install_files(getattr(self, 'gir_path', '${DATAROOTDIR}/gir-1.0'), gir_list, env=self.env)
+			self.install_gir = self.add_install_files(
+				install_to=getattr(self, 'gir_path', '${DATAROOTDIR}/gir-1.0'), install_from=gir_list)
 
 	if hasattr(self, 'vala_resources'):
 		nodes = self.to_nodes(self.vala_resources)

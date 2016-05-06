@@ -814,8 +814,8 @@ class BuildContext(Context.Context):
 		:type postpone: bool
 		"""
 		assert(dest)
-		tg = self(features='install_it', install_path=dest, install_source=files, **kw)
-		tg.dest = tg.install_path
+		tg = self(features='install_it', install_to=dest, install_from=files, **kw)
+		tg.dest = tg.install_to
 		tg.type = 'install_files'
 		# TODO if add: self.add_to_group(tsk)
 		if not kw.get('postpone', True):
@@ -843,8 +843,8 @@ class BuildContext(Context.Context):
 		:type postpone: bool
 		"""
 		assert(dest)
-		tg = self(features='install_it', install_path=dest, install_source=srcfile, **kw)
-		tg.dest = tg.install_path
+		tg = self(features='install_it', install_to=dest, install_from=srcfile, **kw)
+		tg.dest = tg.install_to
 		tg.type = 'install_as'
 		# TODO if add: self.add_to_group(tsk)
 		if not kw.get('postpone', True):
@@ -872,8 +872,8 @@ class BuildContext(Context.Context):
 		:type relative_trick: bool
 		"""
 		assert(dest)
-		tg = self(features='install_it', install_path=dest, install_source=src, **kw)
-		tg.dest = tg.install_path
+		tg = self(features='install_it', install_to=dest, install_from=src, **kw)
+		tg.dest = tg.install_to
 		tg.type = 'symlink_as'
 		tg.link = src
 		# TODO if add: self.add_to_group(tsk)
@@ -884,27 +884,48 @@ class BuildContext(Context.Context):
 @TaskGen.feature('install_it')
 @TaskGen.before_method('process_rule', 'process_source')
 def add_install_tasks(self):
+	# the problem is that we want to re-use
+	self.add_install_task(**self.__dict__)
+
+@TaskGen.taskgen_method
+def add_install_task(self, **kw):
 	if not self.bld.is_install:
 		return
-	if not self.install_path:
+	if not kw['install_to']:
 		return
 
-	if self.type == 'symlink_as' and Utils.is_win32:
-		if getattr(self, 'win32_install'):
-			self.type = 'install_as'
+	if kw['type'] == 'symlink_as' and Utils.is_win32:
+		if kw.get('win32_install'):
+			kw['type'] = 'install_as'
 		else:
 			# just exit
 			return
 
 	tsk = self.install_task = self.create_task('inst')
-	tsk.chmod = getattr(self, 'chmod', Utils.O644)
-	tsk.link = getattr(self, 'link', '')
-	tsk.relative_trick = getattr(self, 'relative_trick', False)
-	tsk.type = self.type
-	tsk.install_source = self.install_source
+	tsk.chmod = kw.get('chmod', Utils.O644)
+	tsk.link = kw.get('link', '')
+	tsk.relative_trick = kw.get('relative_trick', False)
+	tsk.type = kw['type']
+	tsk.install_from = kw['install_from']
 	tsk.init_files()
-	if not getattr(self, 'postpone', True):
+	if not kw.get('postpone', True):
 		tsk.run_now()
+	return tsk
+
+@TaskGen.taskgen_method
+def add_install_files(self, **kw):
+	kw['type'] = 'install_files'
+	return self.add_install_task(**kw)
+
+@TaskGen.taskgen_method
+def add_install_as(self, **kw):
+	kw['type'] = 'install_as'
+	return self.add_install_task(**kw)
+
+@TaskGen.taskgen_method
+def add_symlink_as(self, **kw):
+	kw['type'] = 'symlink_as'
+	return self.add_install_task(**kw)
 
 class inst(Task.Task):
 	color = 'CYAN'
@@ -921,7 +942,7 @@ class inst(Task.Task):
 		if self.type == 'symlink_as':
 			inputs = []
 		else:
-			inputs = self.generator.to_nodes(self.install_source)
+			inputs = self.generator.to_nodes(self.install_from)
 			if self.type == 'install_as':
 				assert len(inputs) == 1
 		self.set_inputs(inputs)
@@ -956,7 +977,7 @@ class inst(Task.Task):
 		pass
 
 	def get_install_path(self, destdir=True):
-		dest = Utils.subst_vars(self.generator.install_path, self.env)
+		dest = Utils.subst_vars(self.generator.install_to, self.env)
 		if destdir and Options.options.destdir:
 			dest = os.path.join(Options.options.destdir, os.path.splitdrive(dest)[1].lstrip(os.sep))
 		return dest

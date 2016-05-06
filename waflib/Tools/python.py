@@ -84,9 +84,9 @@ def process_py(self, node):
 	# where to install the python file
 	if self.install_path:
 		if self.install_from:
-			self.bld.install_files(self.install_path, [node], cwd=self.install_from, relative_trick=True)
+			self.add_install_files(install_to=self.install_path, install_from=node, cwd=self.install_from, relative_trick=True)
 		else:
-			self.bld.install_files(self.install_path, [node], relative_trick=True)
+			self.add_install_files(install_to=self.install_path, install_from=node, relative_trick=True)
 
 	lst = []
 	if self.env.PYC:
@@ -115,7 +115,7 @@ def process_py(self, node):
 		tsk.pyd = pyd
 
 		if self.install_path:
-			self.bld.install_files(os.path.dirname(pyd), pyobj, cwd=node.parent.get_bld(), relative_trick=True)
+			self.add_install_files(install_to=os.path.dirname(pyd), install_from=pyobj, cwd=node.parent.get_bld(), relative_trick=True)
 
 class pyc(Task.Task):
 	"""

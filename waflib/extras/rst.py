@@ -243,7 +243,7 @@ def apply_rst(self):
 
 	inst_to = getattr(self, 'install_path', None)
 	if inst_to:
-		self.install_task = self.bld.install_files(inst_to, task.outputs[:], env=self.env)
+		self.install_task = self.add_install_files(install_to=inst_to, install_from=task.outputs[:])
 
 	self.source = []
 

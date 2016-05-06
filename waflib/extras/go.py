@@ -127,8 +127,8 @@ include $(GOROOT)/src/Make.pkg
 			install_dir = '${LIBDIR}'
 		#print('===> %s (%s)' % (tgt.abspath(), install_dir))
 		self.generator.bld.install_files(
-		 install_dir,
-		 tgt.abspath(),
+		 install_to=install_dir,
+		 install_from=tgt.abspath(),
 		 relative_trick=False,
 		 postpone=False,
 		)

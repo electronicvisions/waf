@@ -120,7 +120,7 @@ def apply_intltool_in_f(self):
 		task = self.create_task('intltool', node, node.change_ext(''))
 		inst = getattr(self, 'install_path', None)
 		if inst:
-			self.bld.install_files(inst, task.outputs)
+			self.add_install_files(install_to=inst, install_from=task.outputs)
 
 @feature('intltool_po')
 def apply_intltool_po(self):
@@ -171,7 +171,8 @@ def apply_intltool_po(self):
 					filename = task.outputs[0].name
 					(langname, ext) = os.path.splitext(filename)
 					inst_file = inst + os.sep + langname + os.sep + 'LC_MESSAGES' + os.sep + appname + '.mo'
-					self.bld.install_as(inst_file, task.outputs[0], chmod=getattr(self, 'chmod', Utils.O644), env=task.env)
+					self.add_install_as(install_to=inst_file, install_from=task.outputs[0],
+						chmod=getattr(self, 'chmod', Utils.O644))
 
 	else:
 		Logs.pprint('RED', "Error no LINGUAS file found in po directory")
