@@ -14,8 +14,15 @@ def build(bld):
 		return
 
 	bld (
+		features = 'c glib2',
+		use      = 'GLIB GIO GOBJECT',
+		source   = 'test.gresource.xml',
+		target   = 'foo'
+	)
+
+	bld (
 		features         = 'c cprogram glib2',
-		use              = 'GTK3',
+		use              = 'GTK3 foo',
 		packages         = 'gtk+-3.0',
 		source           = 'test.vala',
 		vala_resources   = 'test.gresource.xml', # adds --gresources /path/to/test.gresources.xml
