@@ -935,7 +935,7 @@ def add_install_tasks(self):
 	if not getattr(self, 'postpone', True):
 		status = self.install_task.runnable_status()
 		if status not in (Task.RUN_ME, Task.SKIP_ME):
-			raise Errors.WafError('Could not process %r (not ready)' % self.install_task)
+			raise Errors.WafError('Could not process %r (not ready %r)' % (self.install_task, status))
 		self.install_task.run()
 		self.install_task.hasrun = Task.SUCCESS
 
