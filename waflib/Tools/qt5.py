@@ -400,7 +400,7 @@ class rcc(Task.Task):
 	def scan(self):
 		"""Parse the *.qrc* files"""
 		if not has_xml:
-			Logs.error('no xml support was found, the rcc dependencies will be incomplete!')
+			Logs.error('No xml.sax support was found, rcc dependencies will be incomplete!')
 			return ([], [])
 
 		parser = make_parser()
@@ -469,6 +469,10 @@ def configure(self):
 	self.find_qt5_libraries()
 	self.add_qt5_rpath()
 	self.simplify_qt5_libs()
+
+	# warn about this during the configuration too
+	if not has_xml:
+		Logs.error('No xml.sax support was found, rcc dependencies will be incomplete!')
 
 	# Qt5 may be compiled with '-reduce-relocations' which requires dependent programs to have -fPIE or -fPIC?
 	frag = '#include <QApplication>\nint main(int argc, char **argv) {return 0;}\n'
