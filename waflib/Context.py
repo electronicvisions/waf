@@ -41,7 +41,6 @@ OUT  = 'out'
 WSCRIPT_FILE = 'wscript'
 """Name of the waf script files"""
 
-
 launch_dir = ''
 """Directory from which waf has been called"""
 run_dir = ''
@@ -52,20 +51,6 @@ out_dir = ''
 """Location of the build directory (out), if the project was configured"""
 waf_dir = ''
 """Directory containing the waf modules"""
-
-local_repo = ''
-"""Local repository containing additional Waf tools (plugins)"""
-remote_repo = 'https://raw.githubusercontent.com/waf-project/waf/master/'
-"""
-Remote directory containing downloadable waf tools. The missing tools can be downloaded by using::
-
-	$ waf configure --download
-"""
-
-remote_locs = ['waflib/extras', 'waflib/Tools']
-"""
-Remote directories for use with :py:const:`waflib.Context.remote_repo`
-"""
 
 g_module = None
 """
@@ -81,7 +66,6 @@ classes = []
 List of :py:class:`waflib.Context.Context` subclasses that can be used as waf commands. The classes
 are added automatically by a metaclass.
 """
-
 
 def create_context(cmd_name, *k, **kw):
 	"""
@@ -687,7 +671,7 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 						break
 					except ImportError:
 						x = None
-				if x is None: # raise an exception
+				else: # raise an exception
 					__import__(tool)
 			finally:
 				if not with_sys_path: sys.path.remove(waf_dir)
