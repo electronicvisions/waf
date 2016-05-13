@@ -929,8 +929,6 @@ def add_symlink_as(self, **kw):
 	return self.add_install_task(**kw)
 
 class inst(Task.Task):
-	color = 'CYAN'
-
 	def __str__(self):
 		"""Return an empty string to disable the display"""
 		return ''
@@ -1177,9 +1175,9 @@ class CleanContext(BuildContext):
 
 		if self.bldnode != self.srcnode:
 			# would lead to a disaster if top == out
-			lst=[]
-			for e in self.all_envs.values():
-				lst.extend(self.root.find_or_declare(f) for f in e[CFG_FILES])
+			lst = []
+			for env in self.all_envs.values():
+				lst.extend(self.root.find_or_declare(f) for f in env[CFG_FILES])
 			for n in self.bldnode.ant_glob('**/*', excl='.lock* *conf_check_*/** config.log c4che/*', quiet=True):
 				if n in lst:
 					continue
@@ -1221,11 +1219,10 @@ class ListContext(BuildContext):
 		try:
 			# force the cache initialization
 			self.get_tgen_by_name('')
-		except Exception:
+		except Errors.WafError:
 			pass
-		lst = list(self.task_gen_cache_names.keys())
-		lst.sort()
-		for k in lst:
+
+		for k in sorted(self.task_gen_cache_names.keys()):
 			Logs.pprint('GREEN', k)
 
 class StepContext(BuildContext):
@@ -1249,7 +1246,7 @@ class StepContext(BuildContext):
 			BuildContext.compile(self)
 			return
 
-		targets = None
+		targets = []
 		if self.targets and self.targets != '*':
 			targets = self.targets.split(',')
 
