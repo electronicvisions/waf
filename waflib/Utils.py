@@ -54,8 +54,8 @@ except ImportError:
 
 	class threading(object):
 		"""
-			A fake threading class for platforms lacking the threading module.
-			Use ``waf -j1`` on those platforms
+		A fake threading class for platforms lacking the threading module.
+		Use ``waf -j1`` on those platforms
 		"""
 		pass
 	class Lock(object):
@@ -65,16 +65,6 @@ except ImportError:
 		def release(self):
 			pass
 	threading.Lock = threading.Thread = Lock
-else:
-	run_old = threading.Thread.run
-	def run(*args, **kwargs):
-		try:
-			run_old(*args, **kwargs)
-		except (KeyboardInterrupt, SystemExit):
-			raise
-		except Exception:
-			sys.excepthook(*sys.exc_info())
-	threading.Thread.run = run
 
 SIG_NIL = 'SIG_NIL_SIG_NIL_'.encode()
 """Arbitrary null value for hashes. Modify this value according to the hash function in use"""

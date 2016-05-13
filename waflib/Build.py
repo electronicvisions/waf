@@ -263,7 +263,7 @@ class BuildContext(Context.Context):
 			Logs.info("Waf: Leaving directory `%s'" % self.variant_dir)
 		try:
 			self.producer.bld = None
-			self.producer = None
+			del self.producer
 		except AttributeError:
 			pass
 		self.post_build()
