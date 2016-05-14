@@ -115,6 +115,7 @@ class lru_node(object):
 
 class lru_cache(object):
 	"""A simple least-recently used cache that suits our purposes"""
+	__slots__ = ('maxlen', 'table', 'head')
 	def __init__(self, maxlen=100):
 		self.maxlen = maxlen
 		self.table = {}
@@ -712,17 +713,6 @@ class Timer(object):
 		if days or hours or minutes:
 			result += '%dm' % minutes
 		return '%s%.3fs' % (result, seconds)
-
-if is_win32:
-	old = shutil.copy2
-	def copy2(src, dst):
-		"""
-		shutil.copy2 does not copy the file attributes on windows, so we
-		hack into the shutil module to fix the problem
-		"""
-		old(src, dst)
-		shutil.copystat(src, dst)
-	setattr(shutil, 'copy2', copy2)
 
 def read_la_file(path):
 	"""
