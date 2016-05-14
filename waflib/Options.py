@@ -12,7 +12,7 @@ as well as custom ones, used by the ``options`` wscript function.
 """
 
 import os, tempfile, optparse, sys, re
-from waflib import Logs, Utils, Context
+from waflib import Logs, Utils, Context, Errors
 
 cmds = 'distclean configure build install clean uninstall check dist distcheck'.split()
 """
@@ -186,7 +186,7 @@ class OptionsContext(Context.Context):
 				if not count and os.name not in ('nt', 'java'):
 					try:
 						tmp = self.cmd_and_log(['sysctl', '-n', 'hw.ncpu'], quiet=0)
-					except Exception:
+					except Errors.WafError:
 						pass
 					else:
 						if re.match('^[0-9]+$', tmp):

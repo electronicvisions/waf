@@ -456,7 +456,7 @@ class Context(ctx):
 			self.logger.info('from %s: %s' % (self.path.abspath(), msg))
 		try:
 			msg = '%s\n(complete log in %s)' % (msg, self.logger.handlers[0].baseFilename)
-		except Exception:
+		except AttributeError:
 			pass
 		raise self.errors.ConfigurationError(msg, ex=ex)
 

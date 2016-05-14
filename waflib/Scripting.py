@@ -387,13 +387,11 @@ class Dist(Context.Context):
 			self.fatal('Valid algo types are tar.bz2, tar.gz, tar.xz or zip')
 
 		try:
-			from hashlib import sha1 as sha
+			from hashlib import sha1
 		except ImportError:
-			from sha import sha
-		try:
-			digest = " (sha=%r)" % sha(node.read()).hexdigest()
-		except Exception:
 			digest = ''
+		else:
+			digest = ' (sha=%r)' % sha1(node.read()).hexdigest()
 
 		Logs.info('New archive created: %s%s' % (self.arch_name, digest))
 
@@ -576,7 +574,7 @@ def autoconfigure(execute_method):
 		do_config = False
 		try:
 			env.load(os.path.join(Context.top_dir, Options.lockfile))
-		except Exception:
+		except EnvironmentError:
 			Logs.warn('Configuring the project')
 			do_config = True
 		else:
