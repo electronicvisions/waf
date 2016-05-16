@@ -65,7 +65,7 @@ def get_strace_args(self):
 
 @task_method
 def exec_command(self, cmd, **kw):
-	bld = self.generator.bldA
+	bld = self.generator.bld
 	if not 'cwd' in kw:
 		kw['cwd'] = self.get_cwd()
 
