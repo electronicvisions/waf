@@ -484,7 +484,7 @@ def apply_implib(self):
 			except AttributeError:
 				# else, put the library in BINDIR and the import library in LIBDIR
 				inst_to = '${IMPLIBDIR}'
-				self.install_task.dest = '${BINDIR}'
+				self.install_task.install_to = '${BINDIR}'
 				if not self.env.IMPLIBDIR:
 					self.env.IMPLIBDIR = self.env.LIBDIR
 		self.implib_install_task = self.add_install_files(install_to=inst_to, install_from=implib,
@@ -552,7 +552,7 @@ def apply_vnum(self):
 
 	if getattr(self, 'install_task', None):
 		self.install_task.hasrun = Task.SKIP_ME
-		path = self.install_task.dest
+		path = self.install_task.install_to
 		if self.env.DEST_OS == 'openbsd':
 			libname = self.link_task.outputs[0].name
 			t1 = self.add_install_as(install_to='%s/%s' % (path, libname), install_from=node, chmod=self.link_task.chmod)

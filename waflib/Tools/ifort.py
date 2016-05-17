@@ -442,7 +442,7 @@ def apply_flags_ifort(self):
 				self.link_task.outputs.append(pdbnode)
 
 				if getattr(self, 'install_task', None):
-					self.pdb_install_task = self.add_install_files(install_to=self.install_task.dest, install_from=pdbnode)
+					self.pdb_install_task = self.add_install_files(install_to=self.install_task.install_to, install_from=pdbnode)
 
 				break
 

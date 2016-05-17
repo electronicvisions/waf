@@ -906,7 +906,7 @@ def add_install_task(self, **kw):
 
 	tsk = self.install_task = self.create_task('inst')
 	tsk.chmod = kw.get('chmod', Utils.O644)
-	tsk.link = kw.get('link', '')
+	tsk.link = kw.get('link', '') or kw.get('install_from', '')
 	tsk.relative_trick = kw.get('relative_trick', False)
 	tsk.type = kw['type']
 	tsk.install_to = kw['install_to']
