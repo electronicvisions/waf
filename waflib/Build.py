@@ -1084,7 +1084,10 @@ class inst(Task.Task):
 		:param tgt: file destination, as absolute path
 		:type tgt: string
 		"""
-		if not os.path.islink(tgt) or os.readlink(tgt) != src:
+		if os.path.islink(tgt) and os.readlink(tgt) == src:
+			if not self.generator.bld.progress_bar:
+				Logs.info('- symlink %s (to %s)' % (tgt, src))
+		else:
 			try:
 				os.remove(tgt)
 			except OSError:
@@ -1092,9 +1095,6 @@ class inst(Task.Task):
 			if not self.generator.bld.progress_bar:
 				Logs.info('+ symlink %s (to %s)' % (tgt, src))
 			os.symlink(src, tgt)
-		else:
-			if not self.generator.bld.progress_bar:
-				Logs.info('- symlink %s (to %s)' % (tgt, src))
 
 	def do_uninstall(self, src, tgt, lbl, **kw):
 		if not self.generator.bld.progress_bar:
