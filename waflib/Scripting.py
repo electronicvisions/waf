@@ -531,14 +531,12 @@ class DistCheck(Dist):
 		"""
 		import tempfile, tarfile
 
-		t = None
 		try:
 			t = tarfile.open(self.get_arch_name())
 			for x in t:
 				t.extract(x)
 		finally:
-			if t:
-				t.close()
+			t.close()
 
 		cfg = []
 
