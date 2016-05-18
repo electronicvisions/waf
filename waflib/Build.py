@@ -817,7 +817,7 @@ class BuildContext(Context.Context):
 		:type postpone: bool
 		"""
 		assert(dest)
-		tg = self(features='install_it', install_to=dest, install_from=files, **kw)
+		tg = self(features='install_task', install_to=dest, install_from=files, **kw)
 		tg.dest = tg.install_to
 		tg.type = 'install_files'
 		# TODO if add: self.add_to_group(tsk)
@@ -846,7 +846,7 @@ class BuildContext(Context.Context):
 		:type postpone: bool
 		"""
 		assert(dest)
-		tg = self(features='install_it', install_to=dest, install_from=srcfile, **kw)
+		tg = self(features='install_task', install_to=dest, install_from=srcfile, **kw)
 		tg.dest = tg.install_to
 		tg.type = 'install_as'
 		# TODO if add: self.add_to_group(tsk)
@@ -875,7 +875,7 @@ class BuildContext(Context.Context):
 		:type relative_trick: bool
 		"""
 		assert(dest)
-		tg = self(features='install_it', install_to=dest, install_from=src, **kw)
+		tg = self(features='install_task', install_to=dest, install_from=src, **kw)
 		tg.dest = tg.install_to
 		tg.type = 'symlink_as'
 		tg.link = src
@@ -884,9 +884,9 @@ class BuildContext(Context.Context):
 			tg.post()
 		return tg
 
-@TaskGen.feature('install_it')
+@TaskGen.feature('install_task')
 @TaskGen.before_method('process_rule', 'process_source')
-def add_install_tasks(self):
+def process_install_task(self):
 	# the problem is that we want to re-use
 	self.add_install_task(**self.__dict__)
 
@@ -909,7 +909,7 @@ def add_install_task(self, **kw):
 	tsk.link = kw.get('link', '') or kw.get('install_from', '')
 	tsk.relative_trick = kw.get('relative_trick', False)
 	tsk.type = kw['type']
-	tsk.install_to = kw['install_to']
+	tsk.install_to = tsk.dest = kw['install_to']
 	tsk.install_from = kw['install_from']
 	tsk.init_files()
 	if not kw.get('postpone', True):
