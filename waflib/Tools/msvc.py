@@ -192,18 +192,17 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 		del(env['CL'])
 
 	try:
-		try:
-			conf.cmd_and_log(cxx + ['/help'], env=env)
-		except UnicodeError:
-			st = Utils.ex_stack()
-			if conf.logger:
-				conf.logger.error(st)
-			conf.fatal('msvc: Unicode error - check the code page?')
-		except Exception as e:
-			debug('msvc: get_msvc_version: %r %r %r -> failure %s', compiler, version, target, str(e))
-			conf.fatal('msvc: cannot run the compiler in get_msvc_version (run with -v to display errors)')
-		else:
-			debug('msvc: get_msvc_version: %r %r %r -> OK', compiler, version, target)
+		conf.cmd_and_log(cxx + ['/help'], env=env)
+	except UnicodeError:
+		st = Utils.ex_stack()
+		if conf.logger:
+			conf.logger.error(st)
+		conf.fatal('msvc: Unicode error - check the code page?')
+	except Exception as e:
+		debug('msvc: get_msvc_version: %r %r %r -> failure %s', compiler, version, target, str(e))
+		conf.fatal('msvc: cannot run the compiler in get_msvc_version (run with -v to display errors)')
+	else:
+		debug('msvc: get_msvc_version: %r %r %r -> OK', compiler, version, target)
 	finally:
 		conf.env[compiler_name] = ''
 
