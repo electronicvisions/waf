@@ -911,6 +911,7 @@ def add_install_task(self, **kw):
 	tsk.type = kw['type']
 	tsk.install_to = tsk.dest = kw['install_to']
 	tsk.install_from = kw['install_from']
+	tsk.relative_base = kw.get('cwd') or kw.get('relative_base', self.path)
 	tsk.init_files()
 	if not kw.get('postpone', True):
 		tsk.run_now()
@@ -960,7 +961,7 @@ class inst(Task.Task):
 		else:
 			for y in inputs:
 				if self.relative_trick:
-					destfile = os.path.join(dest, y.path_from(self.generator.path))
+					destfile = os.path.join(dest, y.path_from(self.relative_base))
 				else:
 					destfile = os.path.join(dest, y.name)
 				outputs.append(self.generator.bld.root.make_node(destfile))
