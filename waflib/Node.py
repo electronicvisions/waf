@@ -215,7 +215,10 @@ class Node(object):
 		"""Delete the file/folder, and remove this node from the tree. Do not use this object after calling this method."""
 		try:
 			try:
-				shutil.rmtree(self.abspath())
+				if os.path.isdir(self.abspath()):
+					shutil.rmtree(self.abspath())
+				else:
+					os.remove(self.abspath())
 			except OSError as e:
 				if os.path.exists(self.abspath()):
 					raise e
