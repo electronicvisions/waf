@@ -211,19 +211,17 @@ class Node(object):
 		"""
 		os.chmod(self.abspath(), val)
 
-	def delete(self):
+	def delete(self, evict=True):
 		"""Delete the file/folder, and remove this node from the tree. Do not use this object after calling this method."""
 		try:
 			try:
-				if hasattr(self, 'children'):
-					shutil.rmtree(self.abspath())
-				else:
-					os.remove(self.abspath())
+				shutil.rmtree(self.abspath())
 			except OSError as e:
 				if os.path.exists(self.abspath()):
 					raise e
 		finally:
-			self.evict()
+			if evict:
+				self.evict()
 
 	def evict(self):
 		"""Internal - called when a node is removed"""
