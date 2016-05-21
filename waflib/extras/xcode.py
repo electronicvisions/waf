@@ -57,7 +57,7 @@ part3 = 0
 id = 562000999
 def newid():
 	global id
-	id = id + 1
+	id += 1
 	return "%04X%04X%04X%012d" % (0, 10000, 0, id)
 
 class XCodeNode:

@@ -382,7 +382,7 @@ class CppcheckHtmlFormatter(pygments.formatters.HtmlFormatter):
 				for error in self.errors:
 					if int(error['line']) == line_no:
 						t = t.replace('\n', CPPCHECK_HTML_ERROR % error['msg'])
-				line_no = line_no + 1
+				line_no += 1
 			yield i, t
 
 

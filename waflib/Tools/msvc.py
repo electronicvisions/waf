@@ -230,7 +230,7 @@ def gather_wsdk_versions(conf, versions):
 			version = Utils.winreg.EnumKey(all_versions, index)
 		except WindowsError:
 			break
-		index = index + 1
+		index += 1
 		if not version_pattern.match(version):
 			continue
 		try:
@@ -271,7 +271,7 @@ def gather_wince_supported_platforms():
 			sdk_device = Utils.winreg.EnumKey(ce_sdk, ce_index)
 		except WindowsError:
 			break
-		ce_index = ce_index + 1
+		ce_index += 1
 		sdk = Utils.winreg.OpenKey(ce_sdk, sdk_device)
 		try:
 			path,type = Utils.winreg.QueryValueEx(sdk, 'SDKRootDir')
@@ -314,7 +314,7 @@ def gather_msvc_detected_versions():
 				version = Utils.winreg.EnumKey(all_versions, index)
 			except WindowsError:
 				break
-			index = index + 1
+			index += 1
 			match = version_pattern.match(version)
 			if not match:
 				continue
@@ -504,7 +504,7 @@ def gather_icl_versions(conf, versions):
 			version = Utils.winreg.EnumKey(all_versions, index)
 		except WindowsError:
 			break
-		index = index + 1
+		index += 1
 		if not version_pattern.match(version):
 			continue
 		targets = []
@@ -560,7 +560,7 @@ def gather_intel_composer_versions(conf, versions):
 			version = Utils.winreg.EnumKey(all_versions, index)
 		except WindowsError:
 			break
-		index = index + 1
+		index += 1
 		if not version_pattern.match(version):
 			continue
 		targets = []

@@ -123,7 +123,7 @@ def gather_ifort_versions(conf, versions):
 			version = Utils.winreg.EnumKey(all_versions, index)
 		except WindowsError:
 			break
-		index = index + 1
+		index += 1
 		if not version_pattern.match(version):
 			continue
 		targets = []
