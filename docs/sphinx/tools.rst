@@ -145,6 +145,6 @@ The following tools provide support for specific compilers or configurations. Mo
 	tools/gnu_dirs
 	tools/intltool
 	tools/lua
+	tools/md5_tstamp
 	tools/nobuild
-
 

@@ -2,17 +2,13 @@
 # encoding: utf-8
 
 """
-This module assumes that only one build context is running at a given time, which
-is not the case if you want to execute configuration tests in parallel.
+Re-calculate md5 hashes of files only when the file times or the file
+size have changed.
 
-Store some values on the buildcontext mapping file paths to
-stat values and md5 values (timestamp + md5)
-this way the md5 hashes are computed only when timestamp change (can be faster)
-There is usually little or no gain from enabling this, but it can be used to enable
-the second level cache with timestamps (WAFCACHE)
+The hashes can also reflect either the file contents (STRONGEST=True) or the
+file time and file size.
 
-You may have to run distclean or to remove the build directory before enabling/disabling
-this hashing scheme
+The performance benefits of this module are usually insignificant.
 """
 
 import os, stat
