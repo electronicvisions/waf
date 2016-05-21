@@ -231,18 +231,8 @@ def writef(fname, data, m='w', encoding='ISO8859-1'):
 
 def h_file(fname):
 	"""
-	Compute a hash value for a file by using md5. This method may be replaced by
-	a faster version if necessary. The following uses the file size and the timestamp value.
-	The performance change can be 0.858s to 0.642s on no-op builds::
-
-		import stat
-		from waflib import Utils
-		def h_file(fname):
-			st = os.stat(fname)
-			if stat.S_ISDIR(st[stat.ST_MODE]): raise OSError('not a file')
-			s = "%s%s%s" % (st.st_mtime, st.st_size, fname)
-			return Utils.md5(s.encode()).digest()
-		Utils.h_file = h_file
+	Compute a hash value for a file by using md5. Use the md5_tstamp
+	extension to get faster build hashes if necessary.
 
 	:type fname: string
 	:param fname: path to the file to hash

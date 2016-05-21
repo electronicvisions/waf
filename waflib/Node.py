@@ -793,6 +793,7 @@ class Node(object):
 		return self.parent.bldpath()
 
 	def h_file(self):
+		"Wrapper for Utils.h_file"
 		return Utils.h_file(self.abspath())
 
 	def get_bld_sig(self):
