@@ -792,6 +792,9 @@ class Node(object):
 		"Build path without the file name"
 		return self.parent.bldpath()
 
+	def h_file(self):
+		return Utils.h_file(self.abspath())
+
 	def get_bld_sig(self):
 		"""
 		Node signature. If there is a build directory or and the file is there,
@@ -808,7 +811,7 @@ class Node(object):
 		except KeyError:
 			p = self.abspath()
 			try:
-				ret = cache[self] = Utils.h_file(p)
+				ret = cache[self] = self.h_file()
 			except EnvironmentError:
 				if self.isdir():
 					# allow folders as build nodes, do not use the creation time

@@ -128,6 +128,10 @@ class BuildContext(Context.Context):
 		Map group names to the group lists. See :py:meth:`waflib.Build.BuildContext.add_group`
 		"""
 
+		for v in SAVED_ATTRS:
+			if not hasattr(self, v):
+				setattr(self, v, {})
+
 	def get_variant_dir(self):
 		"""Getter for the variant_dir attribute"""
 		if not self.variant:
