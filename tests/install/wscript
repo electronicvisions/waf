@@ -67,4 +67,6 @@ def configure(conf):
 	assert not tmpdir.make_node('blah/blah/rel2').exists()
 	assert not tmpdir.make_node('blah/rel3').exists()
 
+def build(bld):
+	pass
 
