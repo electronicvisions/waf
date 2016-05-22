@@ -128,29 +128,31 @@ def gather_ifort_versions(conf, versions):
 			continue
 		targets = []
 		for target,arch in all_ifort_platforms:
+			if target=='intel64': targetDir='EM64T_NATIVE'
+			else: targetDir=target
 			try:
-				if target=='intel64': targetDir='EM64T_NATIVE'
-				else: targetDir=target
 				Utils.winreg.OpenKey(all_versions,version+'\\'+targetDir)
 				icl_version=Utils.winreg.OpenKey(all_versions,version)
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
+			except WindowsError:
+				pass
+			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
 					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
-			except WindowsError:
-				pass
+
 		for target,arch in all_ifort_platforms:
 			try:
 				icl_version = Utils.winreg.OpenKey(all_versions, version+'\\'+target)
 				path,type = Utils.winreg.QueryValueEx(icl_version,'ProductDir')
+			except WindowsError:
+				continue
+			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
 					targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
-			except WindowsError:
-				continue
 		major = version[0:2]
 		versions.append(('intel ' + major, targets))
-
 
 def setup_ifort(conf, versions, arch = False):
 	"""

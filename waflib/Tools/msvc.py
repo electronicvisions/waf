@@ -438,9 +438,10 @@ def gather_msvc_versions(conf, versions):
 			except WindowsError:
 				msvc_version = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, reg + "\\Setup\\Microsoft Visual C++")
 			path,type = Utils.winreg.QueryValueEx(msvc_version, 'ProductDir')
-			vc_paths.append((version, os.path.abspath(str(path))))
 		except WindowsError:
 			continue
+		else:
+			vc_paths.append((version, os.path.abspath(str(path))))
 
 	wince_supported_platforms = gather_wince_supported_platforms()
 
@@ -490,26 +491,28 @@ def gather_icl_versions(conf, versions):
 			continue
 		targets = []
 		for target,arch in all_icl_platforms:
+			if target=='intel64': targetDir='EM64T_NATIVE'
+			else: targetDir=target
 			try:
-				if target=='intel64': targetDir='EM64T_NATIVE'
-				else: targetDir=target
 				Utils.winreg.OpenKey(all_versions,version+'\\'+targetDir)
 				icl_version=Utils.winreg.OpenKey(all_versions,version)
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
+			except WindowsError:
+				pass
+			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
 					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
-			except WindowsError:
-				pass
 		for target,arch in all_icl_platforms:
 			try:
 				icl_version = Utils.winreg.OpenKey(all_versions, version+'\\'+target)
 				path,type = Utils.winreg.QueryValueEx(icl_version,'ProductDir')
+			except WindowsError:
+				continue
+			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
 					targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
-			except WindowsError:
-				continue
 		major = version[0:2]
 		versions.append(('intel ' + major, targets))
 
@@ -546,14 +549,17 @@ def gather_intel_composer_versions(conf, versions):
 				try:
 					defaults = Utils.winreg.OpenKey(all_versions,version+'\\Defaults\\C++\\'+targetDir)
 				except WindowsError:
-					if targetDir=='EM64T_NATIVE':
+					if targetDir == 'EM64T_NATIVE':
 						defaults = Utils.winreg.OpenKey(all_versions,version+'\\Defaults\\C++\\EM64T')
 					else:
-						raise WindowsError
+						raise
 				uid,type = Utils.winreg.QueryValueEx(defaults, 'SubKey')
 				Utils.winreg.OpenKey(all_versions,version+'\\'+uid+'\\C++\\'+targetDir)
 				icl_version=Utils.winreg.OpenKey(all_versions,version+'\\'+uid+'\\C++')
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
+			except WindowsError:
+				pass
+			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
 					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
@@ -574,8 +580,6 @@ def gather_intel_composer_versions(conf, versions):
 								'(VSWinExpress.exe) but it does not seem to be installed at %r. '
 								'The intel command line set up will fail to configure unless the file %r'
 								'is patched. See: %s') % (vs_express_path, compilervars_arch, patch_url))
-			except WindowsError:
-				pass
 		major = version[0:2]
 		versions.append(('intel ' + major, targets))
 
