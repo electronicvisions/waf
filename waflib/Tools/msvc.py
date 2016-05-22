@@ -356,8 +356,8 @@ class target_compiler(object):
 			return
 		self.is_done = True
 		try:
-			vs = conf.get_msvc_version(self.compiler, self.version, self.bat_target, self.bat)
-		except conf.errors.ConfigurationError:
+			vs = self.conf.get_msvc_version(self.compiler, self.version, self.bat_target, self.bat)
+		except self.conf.errors.ConfigurationError:
 			self.is_valid = False
 			return
 		if self.callback:
