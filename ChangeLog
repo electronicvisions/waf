@@ -43,6 +43,7 @@ NEW IN WAF 1.9 preview 2
   - Remove Task.dep_vars as it is never used (define Task.vars on instances if necessary)
   - Remove the unused attribute 'mac_resources', use 'mac_files' instead (see demos/mac_app)
   - Remove qt4 and kde4 from the default modules
+  - Refactored msvc.py
   - Task.sig_vars, Task.sig_explit_deps and Task.sig_implicit_deps return None
   - Use relative paths in apply_incpaths by default (and absolute ones when paths cross drives)
   - Modify Utils.run_once so that it accepts a list of *args

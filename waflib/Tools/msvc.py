@@ -327,11 +327,11 @@ def gather_msvc_detected_versions():
 				break
 			index += 1
 			match = version_pattern.match(version)
-			if not match:
-				continue
-			else:
+			if match:
 				versionnumber = float(match.group(1))
-			detected_versions.append((versionnumber, version+vcvar, prefix+"\\"+version))
+			else:
+				continue
+			detected_versions.append((versionnumber, version+vcvar, prefix+'\\'+version))
 	def fun(tup):
 		return tup[0]
 
