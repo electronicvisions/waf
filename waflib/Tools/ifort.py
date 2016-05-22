@@ -299,20 +299,19 @@ class target_compiler(object):
 		return repr((self.bindirs, self.incdirs, self.libdirs))
 
 @conf
+def detect_ifort(conf, arch = False):
+	# Save installed versions only if lazy detection is disabled.
+	return conf.setup_ifort(conf.get_ifort_versions(False), arch)
+
+@conf
 def get_ifort_versions(conf, eval_and_save=True):
 	"""
 	:return: list of compilers installed
-	:rtype: list of string
+	:rtype: list
 	"""
 	lst = []
 	conf.gather_ifort_versions(lst)
 	return lst
-
-@conf
-def detect_ifort(conf, arch = False):
-	# Save installed versions only if lazy detection is disabled.
-	versions = get_ifort_versions(conf, False)
-	return setup_ifort(conf, versions, arch)
 
 def _get_prog_names(conf, compiler):
 	if compiler=='intel':

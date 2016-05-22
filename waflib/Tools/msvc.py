@@ -582,10 +582,14 @@ def gather_intel_composer_versions(conf, versions):
 		versions.append(('intel ' + major, targets))
 
 @conf
+def detect_msvc(conf, arch=False):
+	return self.setup_msvc(self.get_msvc_versions(), arch)
+
+@conf
 def get_msvc_versions(conf):
 	"""
 	:return: list of compilers installed
-	:rtype: list of string
+	:rtype: list
 	"""
 	# Gather all the compiler versions and targets
 	lst = []
@@ -604,11 +608,6 @@ def print_all_msvc_detected(conf):
 		Logs.info(version)
 		for target,l in targets:
 			Logs.info("\t"+target)
-
-@conf
-def detect_msvc(conf, arch=False):
-	versions = get_msvc_versions(conf)
-	return setup_msvc(conf, versions, arch)
 
 @conf
 def find_lt_names_msvc(self, libname, is_static=False):
