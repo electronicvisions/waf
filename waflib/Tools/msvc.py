@@ -393,7 +393,7 @@ def gather_msvc_targets(conf, versions, version, vc_path):
 		for target,realtarget in all_msvc_platforms[::-1]:
 			targets.append((target, get_compiler_env(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'vcvarsall.bat'))))
 	elif os.path.isfile(os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')):
-		targets.append(('x86', get_compiler_env(conf, 'msvc', 'x86', version, 'x86', os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')))))
+		targets.append(('x86', get_compiler_env(conf, 'msvc', 'x86', version, 'x86', os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat'))))
 	elif os.path.isfile(os.path.join(vc_path, 'Bin', 'vcvars32.bat')):
 		targets.append(('x86', get_compiler_env(conf, 'msvc', 'x86', version, '', os.path.join(vc_path, 'Bin', 'vcvars32.bat'))))
 	if targets:
