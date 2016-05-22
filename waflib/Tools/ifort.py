@@ -139,7 +139,7 @@ def gather_ifort_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target, get_compiler_env(conf,'intel', arch, version,target,batch_file)))
+					targets.append((target, target_compiler(conf,'intel', arch, version,target,batch_file)))
 
 		for target,arch in all_ifort_platforms:
 			try:
@@ -150,7 +150,7 @@ def gather_ifort_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target, get_compiler_env(conf, 'intel', arch, version, target, batch_file)))
+					targets.append((target, target_compiler(conf, 'intel', arch, version, target, batch_file)))
 		major = version[0:2]
 		versions.append(('intel ' + major, targets))
 
@@ -256,7 +256,20 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	return (MSVC_PATH, MSVC_INCDIR, MSVC_LIBDIR)
 
 class target_compiler(object):
+	"""
+	Wrap a compiler configuration; call evaluate() to determine
+	whether the configuration is usable.
+	"""
 	def __init__(self, ctx, compiler, cpu, version, bat_target, bat, callback=None):
+		"""
+		:param ctx: configuration context to use to eventually get the version environment
+		:param compiler: compiler name
+		:param cpu: target cpu
+		:param version: compiler version number
+		:param bat_target: ?
+		:param bat: path to the batch file to run
+		:param callback: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
+		"""
 		self.conf = ctx
 		self.name = None
 		self.is_valid = False
@@ -288,19 +301,6 @@ class target_compiler(object):
 
 	def __repr__(self):
 		return repr((self.bindirs, self.incdirs, self.libdirs))
-
-def get_compiler_env(conf, compiler, cpu, version, bat_target, bat, callback=None):
-	"""
-	Gets the compiler environment variables
-
-	:param conf: configuration context to use to eventually get the version environment
-	:param compiler: compiler name
-	:param version: compiler version number
-	:param bat: path to the batch file to run
-	:param select: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
-	"""
-	ret = target_compiler(conf, compiler, cpu, version, bat_target, bat, callback)
-	return ret
 
 @conf
 def get_ifort_versions(conf, eval_and_save=True):
