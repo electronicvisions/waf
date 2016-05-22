@@ -132,20 +132,20 @@ def setup_msvc(conf, versions, arch=False):
 	for version in desired_versions:
 		try:
 			targets = dict(versiondict[version])
-			for target in platforms:
-				try:
-					realtarget,cfg = targets[target]
-					cfg.evaluate()
-					if cfg.is_valid:
-						compiler,revision = version.rsplit(' ', 1)
-						p1 = cfg.bindirs
-						p2 = cfg.incdirs
-						p3 = cfg.libdirs
-						return compiler,revision,p1,p2,p3,realtarget
-				except KeyError:
-					continue
 		except KeyError:
 			continue
+		for p in platforms:
+			try:
+				realtarget,cfg = targets[p]
+			except KeyError:
+				continue
+			cfg.evaluate()
+			if cfg.is_valid:
+				compiler,revision = version.rsplit(' ', 1)
+				p1 = cfg.bindirs
+				p2 = cfg.incdirs
+				p3 = cfg.libdirs
+				return compiler,revision,p1,p2,p3,realtarget
 	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_msvc)')
 
 @conf
@@ -373,10 +373,7 @@ class target_compiler(object):
 
 def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
 	"""
-	Gets the compiler environment variables as a tuple. Evaluation is lazy by default,
-	which means destructuring can throw :py:class:`conf.errors.ConfigurationError`
-	If ``--no-msvc-lazy`` or ``env.MSVC_LAZY_AUTODETECT`` are set, then the values are
-	evaluated at once.
+	Gets the compiler environment variables
 
 	:param conf: configuration context to use to eventually get the version environment
 	:param compiler: compiler name

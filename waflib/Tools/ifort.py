@@ -136,10 +136,7 @@ def gather_ifort_versions(conf, versions):
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					try:
-						targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
-					except conf.errors.ConfigurationError:
-						pass
+					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
 			except WindowsError:
 				pass
 		for target,arch in all_ifort_platforms:
@@ -148,10 +145,7 @@ def gather_ifort_versions(conf, versions):
 				path,type = Utils.winreg.QueryValueEx(icl_version,'ProductDir')
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					try:
-						targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
-					except conf.errors.ConfigurationError:
-						pass
+					targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
 			except WindowsError:
 				continue
 		major = version[0:2]
@@ -179,23 +173,21 @@ def setup_ifort(conf, versions, arch = False):
 	for version in desired_versions:
 		try:
 			targets = dict(versiondict[version])
-			for target in platforms:
-				try:
-					try:
-						realtarget,(p1,p2,p3) = targets[target]
-					except conf.errors.ConfigurationError:
-						# lazytup target evaluation errors
-						del(targets[target])
-					else:
-						compiler,revision = version.rsplit(' ', 1)
-						if arch:
-							return compiler,revision,p1,p2,p3,realtarget
-						else:
-							return compiler,revision,p1,p2,p3
-				except KeyError:
-					continue
 		except KeyError:
 			continue
+		for p in platforms:
+			try:
+				realtarget,cfg = targets[p]
+			except KeyError:
+				continue
+			cfg.evaluate()
+			if cfg.is_valid:
+				compiler,revision = version.rsplit(' ', 1)
+				p1 = cfg.bindirs
+				p2 = cfg.incdirs
+				p3 = cfg.libdirs
+				return compiler,revision,p1,p2,p3,realtarget
+
 	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_ifort)')
 
 @conf
@@ -261,66 +253,51 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 
 	return (MSVC_PATH, MSVC_INCDIR, MSVC_LIBDIR)
 
-def get_compiler_env(conf, compiler, version, bat_target, bat, select=None):
+class target_compiler(object):
+	def __init__(self, ctx, compiler, version, bat_target, bat, callback=None):
+		self.conf = ctx
+		self.name = None
+		self.is_valid = False
+		self.is_done = False
+
+		self.compiler = compiler
+		self.version = version
+		self.bat_target = bat_target
+		self.bat = bat
+		self.callback = callback
+
+	def evaluate(self):
+		if self.is_done:
+			return
+		self.is_done = True
+		try:
+			vs = self.conf.get_msvc_version(self.compiler, self.version, self.bat_target, self.bat)
+		except self.conf.errors.ConfigurationError:
+			self.is_valid = False
+			return
+		if self.callback:
+			vs = self.callback(self, vs)
+		self.is_valid = True
+		(self.bindirs, self.incdirs, self.libdirs) = vs
+
+	def __str__(self):
+		return str((self.bindirs, self.incdirs, self.libdirs))
+
+	def __repr__(self):
+		return repr((self.bindirs, self.incdirs, self.libdirs))
+
+def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
 	"""
-	Gets the compiler environment variables as a tuple. Evaluation is lazy by default,
-	which means destructuring can throw :py:class:`conf.errors.ConfigurationError`
-	If ``--no-msvc-lazy`` or ``env.MSVC_LAZY_AUTODETECT`` are set, then the values are
-	evaluated at once.
+	Gets the compiler environment variables
 
 	:param conf: configuration context to use to eventually get the version environment
 	:param compiler: compiler name
 	:param version: compiler version number
 	:param bat: path to the batch file to run
-	:param select: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
+	:param callback: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
 	"""
-	lazy = getattr(Options.options, 'msvc_lazy', True)
-	if conf.env.MSVC_LAZY_AUTODETECT is False:
-		lazy = False
-
-	def msvc_thunk():
-		vs = conf.get_ifort_version_win32(compiler, version, bat_target, bat)
-		if select:
-			return select(vs)
-		else:
-			return vs
-	return lazytup(msvc_thunk, lazy, ([], [], []))
-
-class lazytup(object):
-	"""
-	A tuple that evaluates its elements from a function when iterated or destructured.
-
-	:param fn: thunk to evaluate the tuple on demand
-	:param lazy: whether to delay evaluation or evaluate in the constructor
-	:param default: optional default for :py:func:`repr` if it should not evaluate
-	"""
-	def __init__(self, fn, lazy=True, default=None):
-		self.fn = fn
-		self.default = default
-		if not lazy:
-			self.evaluate()
-	def __len__(self):
-		self.evaluate()
-		return len(self.value)
-	def __iter__(self):
-		self.evaluate()
-		for i, v in enumerate(self.value):
-			yield v
-	def __getitem__(self, i):
-		self.evaluate()
-		return self.value[i]
-	def __repr__(self):
-		if hasattr(self, 'value'):
-			return repr(self.value)
-		elif self.default:
-			return repr(self.default)
-		else:
-			self.evaluate()
-			return repr(self.value)
-	def evaluate(self):
-		if hasattr(self, 'value'):
-			return
-		self.value = self.fn()
+	ret = target_compiler(conf, compiler, version, bat_target, bat, callback)
+	return ret
 
 @conf
 def get_ifort_versions(conf, eval_and_save=True):
@@ -328,27 +305,8 @@ def get_ifort_versions(conf, eval_and_save=True):
 	:return: list of compilers installed
 	:rtype: list of string
 	"""
-	if conf.env['IFORT_INSTALLED_VERSIONS']:
-		return conf.env['IFORT_INSTALLED_VERSIONS']
-
-	# Gather all the compiler versions and targets. This phase can be lazy
-	# per lazy detection settings.
 	lst = []
 	conf.gather_ifort_versions(lst)
-
-	# Override lazy detection by evaluating after the fact.
-	if eval_and_save:
-		def checked_target(t):
-			target,(arch,paths) = t
-			try:
-				paths.evaluate()
-			except conf.errors.ConfigurationError:
-				return None
-			else:
-				return t
-		lst = [(version, list(filter(checked_target, targets))) for version, targets in lst]
-		conf.env['IFORT_INSTALLED_VERSIONS'] = lst
-
 	return lst
 
 @conf
