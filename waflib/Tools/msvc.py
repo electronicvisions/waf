@@ -368,6 +368,9 @@ class target_compiler(object):
 	def __str__(self):
 		return str((self.bindirs, self.incdirs, self.libdirs))
 
+	def __repr__(self):
+		return repr((self.bindirs, self.incdirs, self.libdirs))
+
 def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
 	"""
 	Gets the compiler environment variables as a tuple. Evaluation is lazy by default,
