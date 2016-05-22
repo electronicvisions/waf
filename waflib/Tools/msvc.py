@@ -96,7 +96,7 @@ def options(opt):
 	opt.add_option('--msvc_targets', type='string', help = 'msvc targets, eg: "x64,arm"', default='')
 	opt.add_option('--no-msvc-lazy', action='store_false', help = 'lazily check msvc target environments', default=True, dest='msvc_lazy')
 
-def setup_msvc(conf, versions, arch = False):
+def setup_msvc(conf, versions, arch=False):
 	"""
 	Checks installed compilers and targets and returns the first combination from the user's
 	options, env, or the global supported lists that checks.
@@ -114,24 +114,38 @@ def setup_msvc(conf, versions, arch = False):
 		desired_versions = conf.env['MSVC_VERSIONS'] or [v for v,_ in versions][::-1]
 	versiondict = dict(versions)
 
+	# Override lazy detection by evaluating after the fact.
+	lazy_detect = getattr(Options.options, 'msvc_lazy', True)
+	if conf.env['MSVC_LAZY_AUTODETECT'] is False:
+		lazy_detect = False
+
+	if not lazy_detect:
+		def checked_target(t):
+			target,(_arch,paths) = t
+			paths.evaluate()
+			if not paths.is_valid:
+				return None
+			return t
+		versions = [(version, list(filter(checked_target, targets))) for version, targets in versions]
+		conf.env['MSVC_INSTALLED_VERSIONS'] = versions
+
 	for version in desired_versions:
 		try:
 			targets = dict(versiondict[version])
 			for target in platforms:
 				try:
-					try:
-						realtarget,(p1,p2,p3) = targets[target]
-					except conf.errors.ConfigurationError:
-						# lazytup target evaluation errors
-						del(targets[target])
-					else:
+					realtarget,cfg = targets[target]
+					cfg.evaluate()
+					if cfg.is_valid:
 						compiler,revision = version.rsplit(' ', 1)
-						if arch:
-							return compiler,revision,p1,p2,p3,realtarget
-						else:
-							return compiler,revision,p1,p2,p3
-				except KeyError: continue
-		except KeyError: continue
+						p1 = cfg.bindirs
+						p2 = cfg.incdirs
+						p3 = cfg.libdirs
+						return compiler,revision,p1,p2,p3,realtarget
+				except KeyError:
+					continue
+		except KeyError:
+			continue
 	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_msvc)')
 
 @conf
@@ -241,10 +255,7 @@ def gather_wsdk_versions(conf, versions):
 		if path and os.path.isfile(os.path.join(path, 'bin', 'SetEnv.cmd')):
 			targets = []
 			for target,arch in all_msvc_platforms:
-				try:
-					targets.append((target, (arch, get_compiler_env(conf, 'wsdk', version, '/'+target, os.path.join(path, 'bin', 'SetEnv.cmd')))))
-				except conf.errors.ConfigurationError:
-					pass
+				targets.append((target, (arch, get_compiler_env(conf, 'wsdk', version, '/'+target, os.path.join(path, 'bin', 'SetEnv.cmd')))))
 			versions.append(('wsdk ' + version[1:], targets))
 
 def gather_wince_supported_platforms():
@@ -327,7 +338,37 @@ def gather_msvc_detected_versions():
 	detected_versions.sort(key = fun)
 	return detected_versions
 
-def get_compiler_env(conf, compiler, version, bat_target, bat, select=None):
+class target_compiler(object):
+	def __init__(self, ctx, compiler, version, bat_target, bat, callback=None):
+		self.conf = ctx
+		self.name = None
+		self.is_valid = False
+		self.is_done = False
+
+		self.compiler = compiler
+		self.version = version
+		self.bat_target = bat_target
+		self.bat = bat
+		self.callback = callback
+
+	def evaluate(self):
+		if self.is_done:
+			return
+		self.is_done = True
+		try:
+			vs = conf.get_msvc_version(self.compiler, self.version, self.bat_target, self.bat)
+		except conf.errors.ConfigurationError:
+			self.is_valid = False
+			return
+		if self.callback:
+			vs = self.callback(self, vs)
+		self.is_valid = True
+		(self.bindirs, self.incdirs, self.libdirs) = vs
+
+	def __str__(self):
+		return str((self.bindirs, self.incdirs, self.libdirs))
+
+def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
 	"""
 	Gets the compiler environment variables as a tuple. Evaluation is lazy by default,
 	which means destructuring can throw :py:class:`conf.errors.ConfigurationError`
@@ -340,53 +381,8 @@ def get_compiler_env(conf, compiler, version, bat_target, bat, select=None):
 	:param bat: path to the batch file to run
 	:param select: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
 	"""
-	lazy = getattr(Options.options, 'msvc_lazy', True)
-	if conf.env.MSVC_LAZY_AUTODETECT is False:
-		lazy = False
-
-	def msvc_thunk():
-		vs = conf.get_msvc_version(compiler, version, bat_target, bat)
-		if select:
-			return select(vs)
-		else:
-			return vs
-	return lazytup(msvc_thunk, lazy, ([], [], []))
-
-class lazytup(object):
-	"""
-	A tuple that evaluates its elements from a function when iterated or destructured.
-
-	:param fn: thunk to evaluate the tuple on demand
-	:param lazy: whether to delay evaluation or evaluate in the constructor
-	:param default: optional default for :py:func:`repr` if it should not evaluate
-	"""
-	def __init__(self, fn, lazy=True, default=None):
-		self.fn = fn
-		self.default = default
-		if not lazy:
-			self.evaluate()
-	def __len__(self):
-		self.evaluate()
-		return len(self.value)
-	def __iter__(self):
-		self.evaluate()
-		for i, v in enumerate(self.value):
-			yield v
-	def __getitem__(self, i):
-		self.evaluate()
-		return self.value[i]
-	def __repr__(self):
-		if hasattr(self, 'value'):
-			return repr(self.value)
-		elif self.default:
-			return repr(self.default)
-		else:
-			self.evaluate()
-			return repr(self.value)
-	def evaluate(self):
-		if hasattr(self, 'value'):
-			return
-		self.value = self.fn()
+	ret = target_compiler(conf, compiler, version, bat_target, bat, callback)
+	return ret
 
 @conf
 def gather_msvc_targets(conf, versions, version, vc_path):
@@ -394,20 +390,11 @@ def gather_msvc_targets(conf, versions, version, vc_path):
 	targets = []
 	if os.path.isfile(os.path.join(vc_path, 'vcvarsall.bat')):
 		for target,realtarget in all_msvc_platforms[::-1]:
-			try:
-				targets.append((target, (realtarget, get_compiler_env(conf, 'msvc', version, target, os.path.join(vc_path, 'vcvarsall.bat')))))
-			except conf.errors.ConfigurationError:
-				pass
+			targets.append((target, (realtarget, get_compiler_env(conf, 'msvc', version, target, os.path.join(vc_path, 'vcvarsall.bat')))))
 	elif os.path.isfile(os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')):
-		try:
-			targets.append(('x86', ('x86', get_compiler_env(conf, 'msvc', version, 'x86', os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')))))
-		except conf.errors.ConfigurationError:
-			pass
+		targets.append(('x86', ('x86', get_compiler_env(conf, 'msvc', version, 'x86', os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')))))
 	elif os.path.isfile(os.path.join(vc_path, 'Bin', 'vcvars32.bat')):
-		try:
-			targets.append(('x86', ('x86', get_compiler_env(conf, 'msvc', version, '', os.path.join(vc_path, 'Bin', 'vcvars32.bat')))))
-		except conf.errors.ConfigurationError:
-			pass
+		targets.append(('x86', ('x86', get_compiler_env(conf, 'msvc', version, '', os.path.join(vc_path, 'Bin', 'vcvars32.bat')))))
 	if targets:
 		versions.append(('msvc '+ version, targets))
 
@@ -425,13 +412,10 @@ def gather_wince_targets(conf, versions, version, vc_path, vsvars, supported_pla
 				bindirs = [os.path.join(winCEpath, 'bin', compiler), os.path.join(winCEpath, 'bin', 'x86_'+compiler)]
 				incdirs = [os.path.join(winCEpath, 'include'), os.path.join(winCEpath, 'atlmfc', 'include'), include]
 				libdirs = [os.path.join(winCEpath, 'lib', platform), os.path.join(winCEpath, 'atlmfc', 'lib', platform), lib]
-				def combine_common(compiler_env):
+				def combine_common(obj, compiler_env):
 					(common_bindirs,_1,_2) = compiler_env
 					return (bindirs + common_bindirs, incdirs, libdirs)
-				try:
-					cetargets.append((platform, (platform, get_compiler_env(conf, 'msvc', version, 'x86', vsvars, combine_common))))
-				except conf.errors.ConfigurationError:
-					continue
+				cetargets.append((platform, (platform, get_compiler_env(conf, 'msvc', version, 'x86', vsvars, combine_common))))
 		if cetargets:
 			versions.append((device + ' ' + version, cetargets))
 
@@ -440,10 +424,7 @@ def gather_winphone_targets(conf, versions, version, vc_path, vsvars):
 	#Looking for WinPhone compilers
 	targets = []
 	for target,realtarget in all_msvc_platforms[::-1]:
-		try:
-			targets.append((target, (realtarget, get_compiler_env(conf, 'winphone', version, target, vsvars))))
-		except conf.errors.ConfigurationError:
-			pass
+		targets.append((target, (realtarget, get_compiler_env(conf, 'winphone', version, target, vsvars))))
 	if targets:
 		versions.append(('winphone '+ version, targets))
 
@@ -517,10 +498,7 @@ def gather_icl_versions(conf, versions):
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					try:
-						targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
-					except conf.errors.ConfigurationError:
-						pass
+					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
 			except WindowsError:
 				pass
 		for target,arch in all_icl_platforms:
@@ -529,10 +507,7 @@ def gather_icl_versions(conf, versions):
 				path,type = Utils.winreg.QueryValueEx(icl_version,'ProductDir')
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					try:
-						targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
-					except conf.errors.ConfigurationError:
-						pass
+					targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
 			except WindowsError:
 				continue
 		major = version[0:2]
@@ -581,10 +556,7 @@ def gather_intel_composer_versions(conf, versions):
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					try:
-						targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
-					except conf.errors.ConfigurationError:
-						pass
+					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
 				# The intel compilervar_arch.bat is broken when used with Visual Studio Express 2012
 				# http://software.intel.com/en-us/forums/topic/328487
 				compilervars_warning_attr = '_compilervars_warning_key'
@@ -608,35 +580,17 @@ def gather_intel_composer_versions(conf, versions):
 		versions.append(('intel ' + major, targets))
 
 @conf
-def get_msvc_versions(conf, eval_and_save=True):
+def get_msvc_versions(conf):
 	"""
 	:return: list of compilers installed
 	:rtype: list of string
 	"""
-	if conf.env['MSVC_INSTALLED_VERSIONS']:
-		return conf.env['MSVC_INSTALLED_VERSIONS']
-
-	# Gather all the compiler versions and targets. This phase can be lazy
-	# per lazy detection settings.
+	# Gather all the compiler versions and targets
 	lst = []
 	conf.gather_icl_versions(lst)
 	conf.gather_intel_composer_versions(lst)
 	conf.gather_wsdk_versions(lst)
 	conf.gather_msvc_versions(lst)
-
-	# Override lazy detection by evaluating after the fact.
-	if eval_and_save:
-		def checked_target(t):
-			target,(arch,paths) = t
-			try:
-				paths.evaluate()
-			except conf.errors.ConfigurationError:
-				return None
-			else:
-				return t
-		lst = [(version, list(filter(checked_target, targets))) for version, targets in lst]
-		conf.env['MSVC_INSTALLED_VERSIONS'] = lst
-
 	return lst
 
 @conf
@@ -650,12 +604,8 @@ def print_all_msvc_detected(conf):
 			Logs.info("\t"+target)
 
 @conf
-def detect_msvc(conf, arch = False):
-	# Save installed versions only if lazy detection is disabled.
-	lazy_detect = getattr(Options.options, 'msvc_lazy', True)
-	if conf.env['MSVC_LAZY_AUTODETECT'] is False:
-		lazy_detect = False
-	versions = get_msvc_versions(conf, not lazy_detect)
+def detect_msvc(conf, arch=False):
+	versions = get_msvc_versions(conf)
 	return setup_msvc(conf, versions, arch)
 
 @conf
@@ -793,15 +743,14 @@ def no_autodetect(conf):
 	configure(conf)
 
 @conf
-def autodetect(conf, arch = False):
+def autodetect(conf, arch=False):
 	v = conf.env
 	if v.NO_MSVC_DETECT:
 		return
+
+	compiler, version, path, includes, libdirs, arch_val = conf.detect_msvc(arch=arch)
 	if arch:
-		compiler, version, path, includes, libdirs, arch = conf.detect_msvc(True)
-		v['DEST_CPU'] = arch
-	else:
-		compiler, version, path, includes, libdirs = conf.detect_msvc()
+		v['DEST_CPU'] = arch_val
 
 	v['PATH'] = path
 	v['INCLUDES'] = includes
@@ -813,7 +762,7 @@ def autodetect(conf, arch = False):
 		v['MSVC_VERSION'] = float(version[:-3])
 
 def _get_prog_names(conf, compiler):
-	if compiler=='intel':
+	if compiler == 'intel':
 		compiler_name = 'ICL'
 		linker_name = 'XILINK'
 		lib_name = 'XILIB'
