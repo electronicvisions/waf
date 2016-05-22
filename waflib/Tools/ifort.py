@@ -154,6 +154,7 @@ def gather_ifort_versions(conf, versions):
 		major = version[0:2]
 		versions.append(('intel ' + major, targets))
 
+@conf
 def setup_ifort(conf, versions, arch = False):
 	"""
 	Checks installed compilers and targets and returns the first combination from the user's

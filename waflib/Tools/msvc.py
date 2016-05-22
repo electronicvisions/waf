@@ -96,6 +96,7 @@ def options(opt):
 	opt.add_option('--msvc_targets', type='string', help = 'msvc targets, eg: "x64,arm"', default='')
 	opt.add_option('--no-msvc-lazy', action='store_false', help = 'lazily check msvc target environments', default=True, dest='msvc_lazy')
 
+@conf
 def setup_msvc(conf, versions, arch=False):
 	"""
 	Checks installed compilers and targets and returns the first combination from the user's
