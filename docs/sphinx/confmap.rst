@@ -469,10 +469,6 @@ Configuration methods
 
 * post_check_
 
-.. _print_all_msvc_detected: tools/msvc.html#waflib.Tools.msvc.print_all_msvc_detected
-
-* print_all_msvc_detected_
-
 .. _program: tools/c_aliases.html#waflib.Tools.c_aliases.program
 
 * program_

@@ -591,23 +591,13 @@ def get_msvc_versions(self):
 	:return: list of compilers installed
 	:rtype: list
 	"""
-	# Gather all the compiler versions and targets
+	# Gather all compiler versions and targets
 	lst = []
 	self.gather_icl_versions(lst)
 	self.gather_intel_composer_versions(lst)
 	self.gather_wsdk_versions(lst)
 	self.gather_msvc_versions(lst)
 	return lst
-
-@conf
-def print_all_msvc_detected(self):
-	"""
-	Print the contents of *self.env.MSVC_INSTALLED_VERSIONS*
-	"""
-	for version,targets in self.env['MSVC_INSTALLED_VERSIONS']:
-		Logs.info(version)
-		for target,l in targets:
-			Logs.info("\t"+target)
 
 @conf
 def find_lt_names_msvc(self, libname, is_static=False):
