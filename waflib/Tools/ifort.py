@@ -299,21 +299,21 @@ class target_compiler(object):
 		return repr((self.bindirs, self.incdirs, self.libdirs))
 
 @conf
-def detect_ifort(conf, arch = False):
+def detect_ifort(self, arch = False):
 	# Save installed versions only if lazy detection is disabled.
-	return conf.setup_ifort(conf.get_ifort_versions(False), arch)
+	return self.setup_ifort(self.get_ifort_versions(False), arch)
 
 @conf
-def get_ifort_versions(conf, eval_and_save=True):
+def get_ifort_versions(self, eval_and_save=True):
 	"""
 	:return: list of compilers installed
 	:rtype: list
 	"""
 	lst = []
-	conf.gather_ifort_versions(lst)
+	self.gather_ifort_versions(lst)
 	return lst
 
-def _get_prog_names(conf, compiler):
+def _get_prog_names(self, compiler):
 	if compiler=='intel':
 		compiler_name = 'ifort'
 		linker_name = 'XILINK'

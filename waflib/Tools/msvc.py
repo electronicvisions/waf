@@ -582,29 +582,29 @@ def gather_intel_composer_versions(conf, versions):
 		versions.append(('intel ' + major, targets))
 
 @conf
-def detect_msvc(conf, arch=False):
+def detect_msvc(self, arch=False):
 	return self.setup_msvc(self.get_msvc_versions(), arch)
 
 @conf
-def get_msvc_versions(conf):
+def get_msvc_versions(self):
 	"""
 	:return: list of compilers installed
 	:rtype: list
 	"""
 	# Gather all the compiler versions and targets
 	lst = []
-	conf.gather_icl_versions(lst)
-	conf.gather_intel_composer_versions(lst)
-	conf.gather_wsdk_versions(lst)
-	conf.gather_msvc_versions(lst)
+	self.gather_icl_versions(lst)
+	self.gather_intel_composer_versions(lst)
+	self.gather_wsdk_versions(lst)
+	self.gather_msvc_versions(lst)
 	return lst
 
 @conf
-def print_all_msvc_detected(conf):
+def print_all_msvc_detected(self):
 	"""
-	Print the contents of *conf.env.MSVC_INSTALLED_VERSIONS*
+	Print the contents of *self.env.MSVC_INSTALLED_VERSIONS*
 	"""
-	for version,targets in conf.env['MSVC_INSTALLED_VERSIONS']:
+	for version,targets in self.env['MSVC_INSTALLED_VERSIONS']:
 		Logs.info(version)
 		for target,l in targets:
 			Logs.info("\t"+target)
