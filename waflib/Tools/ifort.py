@@ -185,10 +185,7 @@ def setup_ifort(conf, versions, arch = False):
 			cfg.evaluate()
 			if cfg.is_valid:
 				compiler,revision = version.rsplit(' ', 1)
-				p1 = cfg.bindirs
-				p2 = cfg.incdirs
-				p3 = cfg.libdirs
-				return compiler,revision,p1,p2,p3,cfg.cpu
+				return compiler,revision,cfg.bindirs,cfg.incdirs,cfg.libdirs,cfg.cpu
 
 	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_ifort)')
 

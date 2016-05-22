@@ -142,10 +142,7 @@ def setup_msvc(conf, versions, arch=False):
 			cfg.evaluate()
 			if cfg.is_valid:
 				compiler,revision = version.rsplit(' ', 1)
-				p1 = cfg.bindirs
-				p2 = cfg.incdirs
-				p3 = cfg.libdirs
-				return compiler,revision,p1,p2,p3,cfg.cpu
+				return compiler,revision,cfg.bindirs,cfg.incdirs,cfg.libdirs,cfg.cpu
 	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_msvc)')
 
 @conf
@@ -280,19 +277,19 @@ def gather_wince_supported_platforms():
 	while 1:
 		try:
 			sdk_device = Utils.winreg.EnumKey(ce_sdk, ce_index)
+			sdk = Utils.winreg.OpenKey(ce_sdk, sdk_device)
 		except WindowsError:
 			break
 		ce_index += 1
-		sdk = Utils.winreg.OpenKey(ce_sdk, sdk_device)
 		try:
 			path,type = Utils.winreg.QueryValueEx(sdk, 'SDKRootDir')
 		except WindowsError:
 			try:
 				path,type = Utils.winreg.QueryValueEx(sdk,'SDKInformation')
-				path,xml = os.path.split(path)
 			except WindowsError:
 				continue
-		path=str(path)
+			path,xml = os.path.split(path)
+		path = str(path)
 		path,device = os.path.split(path)
 		if not device:
 			path,device = os.path.split(path)
@@ -309,12 +306,12 @@ def gather_msvc_detected_versions():
 	version_pattern = re.compile('^(\d\d?\.\d\d?)(Exp)?$')
 	detected_versions = []
 	for vcver,vcvar in (('VCExpress','Exp'), ('VisualStudio','')):
+		prefix = 'SOFTWARE\\Wow6432node\\Microsoft\\' + vcver
 		try:
-			prefix = 'SOFTWARE\\Wow6432node\\Microsoft\\'+vcver
 			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, prefix)
 		except WindowsError:
+			prefix = 'SOFTWARE\\Microsoft\\' + vcver
 			try:
-				prefix = 'SOFTWARE\\Microsoft\\'+vcver
 				all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, prefix)
 			except WindowsError:
 				continue
