@@ -166,7 +166,7 @@ def setup_ifort(conf, versiondict):
 	:rtype: tuple of strings
 	"""
 	platforms = Utils.to_list(conf.env['MSVC_TARGETS']) or [i for i,j in all_ifort_platforms]
-	desired_versions = conf.env['MSVC_VERSIONS'] or [v for v,_ in versions][::-1]
+	desired_versions = conf.env['MSVC_VERSIONS'] or list(reversed(list(versiondict.keys())))
 	for version in desired_versions:
 		try:
 			targets = versiondict[version]

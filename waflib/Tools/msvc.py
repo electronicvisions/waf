@@ -112,7 +112,7 @@ def setup_msvc(conf, versiondict):
 		platforms=Utils.to_list(conf.env['MSVC_TARGETS']) or [i for i,j in all_msvc_platforms+all_icl_platforms+all_wince_platforms]
 	desired_versions = getattr(Options.options, 'msvc_version', '').split(',')
 	if desired_versions == ['']:
-		desired_versions = conf.env['MSVC_VERSIONS'] or [v for v,_ in versions][::-1]
+		desired_versions = conf.env['MSVC_VERSIONS'] or list(reversed(list(versiondict.keys())))
 
 	# Override lazy detection by evaluating after the fact.
 	lazy_detect = getattr(Options.options, 'msvc_lazy', True)
@@ -120,7 +120,7 @@ def setup_msvc(conf, versiondict):
 		lazy_detect = False
 
 	if not lazy_detect:
-		for val in versions.values():
+		for val in versiondict.values():
 			for arch in list(val.keys()):
 				cfg = val[arch]
 				cfg.evaluate()
