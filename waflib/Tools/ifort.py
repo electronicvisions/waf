@@ -186,8 +186,7 @@ def setup_ifort(conf, versions, arch = False):
 			if cfg.is_valid:
 				compiler,revision = version.rsplit(' ', 1)
 				return compiler,revision,cfg.bindirs,cfg.incdirs,cfg.libdirs,cfg.cpu
-
-	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_ifort)')
+	conf.fatal('ifort: Impossible to find a valid architecture for building %r - %r' % (desired_versions, list(versiondict.keys())))
 
 @conf
 def get_ifort_version_win32(conf, compiler, version, target, vcvars):
@@ -222,7 +221,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 		elif line.startswith('LIB='):
 			MSVC_LIBDIR = [i for i in line[4:].split(';') if i]
 	if None in (MSVC_PATH, MSVC_INCDIR, MSVC_LIBDIR):
-		conf.fatal('msvc: Could not find a valid architecture for building (get_ifort_version_win32)')
+		conf.fatal('ifort: Could not find a valid architecture for building (get_ifort_version_win32)')
 
 	# Check if the compiler is usable at all.
 	# The detection may return 64-bit versions even on 32-bit systems, and these would fail to run.
@@ -241,12 +240,12 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 		st = Utils.ex_stack()
 		if conf.logger:
 			conf.logger.error(st)
-		conf.fatal('msvc: Unicode error - check the code page?')
+		conf.fatal('ifort: Unicode error - check the code page?')
 	except Exception as e:
-		debug('msvc: get_ifort_version: %r %r %r -> failure %s', compiler, version, target, str(e))
-		conf.fatal('msvc: cannot run the compiler in get_ifort_version (run with -v to display errors)')
+		debug('ifort: get_ifort_version: %r %r %r -> failure %s', compiler, version, target, str(e))
+		conf.fatal('ifort: cannot run the compiler in get_ifort_version (run with -v to display errors)')
 	else:
-		debug('msvc: get_ifort_version: %r %r %r -> OK', compiler, version, target)
+		debug('ifort: get_ifort_version: %r %r %r -> OK', compiler, version, target)
 	finally:
 		conf.env[compiler_name] = ''
 
@@ -450,7 +449,7 @@ def exec_mf(self):
 	elif 'fcshlib' in self.generator.features:
 		mode = '2'
 
-	debug('msvc: embedding manifest in mode %r', mode)
+	debug('ifort: embedding manifest in mode %r', mode)
 
 	lst = [] + mtool
 	lst.extend(Utils.to_list(env['MTFLAGS']))

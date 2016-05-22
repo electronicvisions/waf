@@ -143,7 +143,7 @@ def setup_msvc(conf, versions, arch=False):
 			if cfg.is_valid:
 				compiler,revision = version.rsplit(' ', 1)
 				return compiler,revision,cfg.bindirs,cfg.incdirs,cfg.libdirs,cfg.cpu
-	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_msvc)')
+	conf.fatal('msvc: Impossible to find a valid architecture for building %r - %r' % (desired_versions, list(versiondict.keys())))
 
 @conf
 def get_msvc_version(conf, compiler, version, target, vcvars):
