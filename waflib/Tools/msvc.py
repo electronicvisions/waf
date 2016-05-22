@@ -543,9 +543,9 @@ def gather_intel_composer_versions(conf, versions):
 			continue
 		targets = []
 		for target,arch in all_icl_platforms:
+			if target=='intel64': targetDir='EM64T_NATIVE'
+			else: targetDir=target
 			try:
-				if target=='intel64': targetDir='EM64T_NATIVE'
-				else: targetDir=target
 				try:
 					defaults = Utils.winreg.OpenKey(all_versions,version+'\\Defaults\\C++\\'+targetDir)
 				except WindowsError:
@@ -616,7 +616,8 @@ def detect_msvc(conf, arch=False):
 def find_lt_names_msvc(self, libname, is_static=False):
 	"""
 	Win32/MSVC specific code to glean out information from libtool la files.
-	this function is not attached to the task_gen class
+	this function is not attached to the task_gen class. Returns a triplet:
+	(library absolute path, library name without extension, whether the library is static)
 	"""
 	lt_names=[
 		'lib%s.la' % libname,
@@ -848,6 +849,7 @@ def msvc_common_flags(conf):
 	v['DEST_BINFMT'] = 'pe'
 	v.append_value('CFLAGS', ['/nologo'])
 	v.append_value('CXXFLAGS', ['/nologo'])
+	v.append_value('LINKFLAGS', ['/nologo'])
 	v['DEFINES_ST']     = '/D%s'
 
 	v['CC_SRC_F']     = ''
@@ -883,7 +885,6 @@ def msvc_common_flags(conf):
 	v['STLIB_ST']          = '%s.lib'
 	v['STLIBPATH_ST']      = '/LIBPATH:%s'
 
-	v.append_value('LINKFLAGS', ['/NOLOGO'])
 	if v['MSVC_MANIFEST']:
 		v.append_value('LINKFLAGS', ['/MANIFEST'])
 
@@ -1098,8 +1099,7 @@ for k in 'c cxx cprogram cxxprogram cshlib cxxshlib cstlib cxxstlib'.split():
 def make_winapp(self, family):
 	append = self.env.append_unique
 	append('DEFINES', 'WINAPI_FAMILY=%s' % family)
-	append('CXXFLAGS', '/ZW')
-	append('CXXFLAGS', '/TP')
+	append('CXXFLAGS', ['/ZW', '/TP'])
 	for lib_path in self.env.LIBPATH:
 		append('CXXFLAGS','/AI%s'%lib_path)
 
@@ -1111,9 +1111,7 @@ def make_winphone_app(self):
 	Insert configuration flags for windows phone applications (adds /ZW, /TP...)
 	"""
 	make_winapp(self, 'WINAPI_FAMILY_PHONE_APP')
-	conf.env.append_unique('LINKFLAGS', '/NODEFAULTLIB:ole32.lib')
-	conf.env.append_unique('LINKFLAGS', 'PhoneAppModelHost.lib')
-
+	conf.env.append_unique('LINKFLAGS', ['/NODEFAULTLIB:ole32.lib', 'PhoneAppModelHost.lib'])
 
 @feature('winapp')
 @after_method('process_use')
