@@ -139,7 +139,7 @@ def gather_ifort_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
+					targets.append((target, get_compiler_env(conf,'intel', arch, version,target,batch_file)))
 
 		for target,arch in all_ifort_platforms:
 			try:
@@ -150,7 +150,7 @@ def gather_ifort_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
+					targets.append((target, get_compiler_env(conf, 'intel', arch, version, target, batch_file)))
 		major = version[0:2]
 		versions.append(('intel ' + major, targets))
 
@@ -179,7 +179,7 @@ def setup_ifort(conf, versions, arch = False):
 			continue
 		for p in platforms:
 			try:
-				realtarget,cfg = targets[p]
+				cfg = targets[p]
 			except KeyError:
 				continue
 			cfg.evaluate()
@@ -188,7 +188,7 @@ def setup_ifort(conf, versions, arch = False):
 				p1 = cfg.bindirs
 				p2 = cfg.incdirs
 				p3 = cfg.libdirs
-				return compiler,revision,p1,p2,p3,realtarget
+				return compiler,revision,p1,p2,p3,cfg.cpu
 
 	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_ifort)')
 
@@ -256,13 +256,14 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	return (MSVC_PATH, MSVC_INCDIR, MSVC_LIBDIR)
 
 class target_compiler(object):
-	def __init__(self, ctx, compiler, version, bat_target, bat, callback=None):
+	def __init__(self, ctx, compiler, cpu, version, bat_target, bat, callback=None):
 		self.conf = ctx
 		self.name = None
 		self.is_valid = False
 		self.is_done = False
 
 		self.compiler = compiler
+		self.cpu = cpu
 		self.version = version
 		self.bat_target = bat_target
 		self.bat = bat
@@ -288,7 +289,7 @@ class target_compiler(object):
 	def __repr__(self):
 		return repr((self.bindirs, self.incdirs, self.libdirs))
 
-def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
+def get_compiler_env(conf, compiler, cpu, version, bat_target, bat, callback=None):
 	"""
 	Gets the compiler environment variables
 
@@ -296,9 +297,9 @@ def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
 	:param compiler: compiler name
 	:param version: compiler version number
 	:param bat: path to the batch file to run
-	:param callback: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
+	:param select: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
 	"""
-	ret = target_compiler(conf, compiler, version, bat_target, bat, callback)
+	ret = target_compiler(conf, compiler, cpu, version, bat_target, bat, callback)
 	return ret
 
 @conf

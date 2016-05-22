@@ -121,7 +121,7 @@ def setup_msvc(conf, versions, arch=False):
 
 	if not lazy_detect:
 		def checked_target(t):
-			target,(_arch,paths) = t
+			target,paths = t
 			paths.evaluate()
 			if not paths.is_valid:
 				return None
@@ -136,7 +136,7 @@ def setup_msvc(conf, versions, arch=False):
 			continue
 		for p in platforms:
 			try:
-				realtarget,cfg = targets[p]
+				cfg = targets[p]
 			except KeyError:
 				continue
 			cfg.evaluate()
@@ -145,7 +145,7 @@ def setup_msvc(conf, versions, arch=False):
 				p1 = cfg.bindirs
 				p2 = cfg.incdirs
 				p3 = cfg.libdirs
-				return compiler,revision,p1,p2,p3,realtarget
+				return compiler,revision,p1,p2,p3,cfg.cpu
 	conf.fatal('msvc: Impossible to find a valid architecture for building (in setup_msvc)')
 
 @conf
@@ -255,7 +255,7 @@ def gather_wsdk_versions(conf, versions):
 		if path and os.path.isfile(os.path.join(path, 'bin', 'SetEnv.cmd')):
 			targets = []
 			for target,arch in all_msvc_platforms:
-				targets.append((target, (arch, get_compiler_env(conf, 'wsdk', version, '/'+target, os.path.join(path, 'bin', 'SetEnv.cmd')))))
+				targets.append((target, get_compiler_env(conf, 'wsdk', arch, version, '/'+target, os.path.join(path, 'bin', 'SetEnv.cmd'))))
 			versions.append(('wsdk ' + version[1:], targets))
 
 def gather_wince_supported_platforms():
@@ -339,13 +339,14 @@ def gather_msvc_detected_versions():
 	return detected_versions
 
 class target_compiler(object):
-	def __init__(self, ctx, compiler, version, bat_target, bat, callback=None):
+	def __init__(self, ctx, compiler, cpu, version, bat_target, bat, callback=None):
 		self.conf = ctx
 		self.name = None
 		self.is_valid = False
 		self.is_done = False
 
 		self.compiler = compiler
+		self.cpu = cpu
 		self.version = version
 		self.bat_target = bat_target
 		self.bat = bat
@@ -371,7 +372,7 @@ class target_compiler(object):
 	def __repr__(self):
 		return repr((self.bindirs, self.incdirs, self.libdirs))
 
-def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
+def get_compiler_env(conf, compiler, cpu, version, bat_target, bat, callback=None):
 	"""
 	Gets the compiler environment variables
 
@@ -381,7 +382,7 @@ def get_compiler_env(conf, compiler, version, bat_target, bat, callback=None):
 	:param bat: path to the batch file to run
 	:param select: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
 	"""
-	ret = target_compiler(conf, compiler, version, bat_target, bat, callback)
+	ret = target_compiler(conf, compiler, cpu, version, bat_target, bat, callback)
 	return ret
 
 @conf
@@ -390,11 +391,11 @@ def gather_msvc_targets(conf, versions, version, vc_path):
 	targets = []
 	if os.path.isfile(os.path.join(vc_path, 'vcvarsall.bat')):
 		for target,realtarget in all_msvc_platforms[::-1]:
-			targets.append((target, (realtarget, get_compiler_env(conf, 'msvc', version, target, os.path.join(vc_path, 'vcvarsall.bat')))))
+			targets.append((target, get_compiler_env(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'vcvarsall.bat'))))
 	elif os.path.isfile(os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')):
-		targets.append(('x86', ('x86', get_compiler_env(conf, 'msvc', version, 'x86', os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')))))
+		targets.append(('x86', get_compiler_env(conf, 'msvc', 'x86', version, 'x86', os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')))))
 	elif os.path.isfile(os.path.join(vc_path, 'Bin', 'vcvars32.bat')):
-		targets.append(('x86', ('x86', get_compiler_env(conf, 'msvc', version, '', os.path.join(vc_path, 'Bin', 'vcvars32.bat')))))
+		targets.append(('x86', get_compiler_env(conf, 'msvc', 'x86', version, '', os.path.join(vc_path, 'Bin', 'vcvars32.bat'))))
 	if targets:
 		versions.append(('msvc '+ version, targets))
 
@@ -415,7 +416,7 @@ def gather_wince_targets(conf, versions, version, vc_path, vsvars, supported_pla
 				def combine_common(obj, compiler_env):
 					(common_bindirs,_1,_2) = compiler_env
 					return (bindirs + common_bindirs, incdirs, libdirs)
-				cetargets.append((platform, (platform, get_compiler_env(conf, 'msvc', version, 'x86', vsvars, combine_common))))
+				cetargets.append((platform, get_compiler_env(conf, 'msvc', platform, version, 'x86', vsvars, combine_common)))
 		if cetargets:
 			versions.append((device + ' ' + version, cetargets))
 
@@ -424,7 +425,7 @@ def gather_winphone_targets(conf, versions, version, vc_path, vsvars):
 	#Looking for WinPhone compilers
 	targets = []
 	for target,realtarget in all_msvc_platforms[::-1]:
-		targets.append((target, (realtarget, get_compiler_env(conf, 'winphone', version, target, vsvars))))
+		targets.append((target, get_compiler_env(conf, 'winphone', realtarget, version, target, vsvars)))
 	if targets:
 		versions.append(('winphone '+ version, targets))
 
@@ -502,7 +503,7 @@ def gather_icl_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
+					targets.append((target, get_compiler_env(conf, 'intel', arch, version, target, batch_file)))
 		for target,arch in all_icl_platforms:
 			try:
 				icl_version = Utils.winreg.OpenKey(all_versions, version+'\\'+target)
@@ -512,7 +513,7 @@ def gather_icl_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target, (arch, get_compiler_env(conf, 'intel', version, target, batch_file))))
+					targets.append((target, get_compiler_env(conf, 'intel', arch, version, target, batch_file)))
 		major = version[0:2]
 		versions.append(('intel ' + major, targets))
 
@@ -562,7 +563,7 @@ def gather_intel_composer_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target,(arch,get_compiler_env(conf,'intel',version,target,batch_file))))
+					targets.append((target, get_compiler_env(conf, 'intel', arch, version, target, batch_file)))
 				# The intel compilervar_arch.bat is broken when used with Visual Studio Express 2012
 				# http://software.intel.com/en-us/forums/topic/328487
 				compilervars_warning_attr = '_compilervars_warning_key'
@@ -753,9 +754,9 @@ def autodetect(conf, arch=False):
 	if v.NO_MSVC_DETECT:
 		return
 
-	compiler, version, path, includes, libdirs, arch_val = conf.detect_msvc(arch=arch)
+	compiler, version, path, includes, libdirs, cpu = conf.detect_msvc(arch=arch)
 	if arch:
-		v['DEST_CPU'] = arch_val
+		v['DEST_CPU'] = cpu
 
 	v['PATH'] = path
 	v['INCLUDES'] = includes
