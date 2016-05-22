@@ -126,7 +126,7 @@ def gather_ifort_versions(conf, versions):
 		index += 1
 		if not version_pattern.match(version):
 			continue
-		targets = []
+		targets = {}
 		for target,arch in all_ifort_platforms:
 			if target=='intel64': targetDir='EM64T_NATIVE'
 			else: targetDir=target
@@ -139,7 +139,7 @@ def gather_ifort_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target, target_compiler(conf,'intel', arch, version,target,batch_file)))
+					targets[target] = target_compiler(conf, 'intel', arch, version, target, batch_file)
 
 		for target,arch in all_ifort_platforms:
 			try:
@@ -150,37 +150,31 @@ def gather_ifort_versions(conf, versions):
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
 				if os.path.isfile(batch_file):
-					targets.append((target, target_compiler(conf, 'intel', arch, version, target, batch_file)))
+					targets[target] = target_compiler(conf, 'intel', arch, version, target, batch_file)
 		major = version[0:2]
-		versions.append(('intel ' + major, targets))
+		versions['intel ' + major] = targets
 
 @conf
-def setup_ifort(conf, versions, arch = False):
+def setup_ifort(conf, versiondict):
 	"""
 	Checks installed compilers and targets and returns the first combination from the user's
 	options, env, or the global supported lists that checks.
 
-	:param versions: A list of tuples of all installed compilers and available targets.
-	:param arch: Whether to return the target architecture.
-	:return: the compiler, revision, path, include dirs, library paths, and (optionally) target architecture
+	:param versiondict: dict(platform -> dict(architecture -> configuration))
+	:type versiondict: dict(string -> dict(string -> target_compiler)
+	:return: the compiler, revision, path, include dirs, library paths and target architecture
 	:rtype: tuple of strings
 	"""
-	#platforms = getattr(Options.options, 'msvc_targets', '').split(',')
-	#if platforms == ['']:
-	platforms=Utils.to_list(conf.env['MSVC_TARGETS']) or [i for i,j in all_ifort_platforms]
-	#desired_versions = getattr(Options.options, 'msvc_version', '').split(',')
-	#if desired_versions == ['']:
+	platforms = Utils.to_list(conf.env['MSVC_TARGETS']) or [i for i,j in all_ifort_platforms]
 	desired_versions = conf.env['MSVC_VERSIONS'] or [v for v,_ in versions][::-1]
-	versiondict = dict(versions)
-
 	for version in desired_versions:
 		try:
-			targets = dict(versiondict[version])
+			targets = versiondict[version]
 		except KeyError:
 			continue
-		for p in platforms:
+		for arch in platforms:
 			try:
-				cfg = targets[p]
+				cfg = targets[arch]
 			except KeyError:
 				continue
 			cfg.evaluate()
@@ -300,19 +294,19 @@ class target_compiler(object):
 		return repr((self.bindirs, self.incdirs, self.libdirs))
 
 @conf
-def detect_ifort(self, arch = False):
+def detect_ifort(self):
 	# Save installed versions only if lazy detection is disabled.
-	return self.setup_ifort(self.get_ifort_versions(False), arch)
+	return self.setup_ifort(self.get_ifort_versions(False))
 
 @conf
 def get_ifort_versions(self, eval_and_save=True):
 	"""
-	:return: list of compilers installed
-	:rtype: list
+	:return: platforms to compiler configurations
+	:rtype: dict
 	"""
-	lst = []
-	self.gather_ifort_versions(lst)
-	return lst
+	dct = {}
+	self.gather_ifort_versions(dct)
+	return dct
 
 def _get_prog_names(self, compiler):
 	if compiler=='intel':
@@ -355,12 +349,12 @@ def find_ifort_win32(conf):
 	# staticlib linker
 	if not v['AR']:
 		conf.find_program(lib_name, path_list=path, var='AR', mandatory=True)
-		v['ARFLAGS'] = ['/NOLOGO']
+		v['ARFLAGS'] = ['/nologo']
 
 	# manifest tool. Not required for VS 2003 and below. Must have for VS 2005 and later
 	if v.IFORT_MANIFEST:
 		conf.find_program('MT', path_list=path, var='MT')
-		v['MTFLAGS'] = ['/NOLOGO']
+		v['MTFLAGS'] = ['/nologo']
 
 	try:
 		conf.load('winres')
