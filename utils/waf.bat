@@ -43,6 +43,7 @@ REG QUERY "!REGPATH!" /ve 1>nul 2>nul
 if !ERRORLEVEL! equ 0 (
   for /F "%TOKEN% delims=	 " %%A IN ('REG QUERY "!REGPATH!" /ve') do @set REG_PYTHON_DIR=%%B
   if exist !REG_PYTHON_DIR!  (
+    IF NOT "!REG_PYTHON_DIR:~-1!"=="\" SET REG_PYTHON_DIR=!REG_PYTHON_DIR!\
     set REG_PYTHON=!REG_PYTHON_DIR!!REG_PYTHON_EXE!
     rem set PYTHON_DIR_OK=TRUE
     if "!PYTHON_DIR_OK!"=="FALSE" (
