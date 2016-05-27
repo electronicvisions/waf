@@ -17,7 +17,7 @@ try:
 	up = os.path.dirname(Context.g_module.__file__)
 except AttributeError:
 	up = '.'
-LOGFILE = os.path.join(up, 'logs', '%s.log' % time.strftime('%Y_%m_%d_%H_%M'))
+LOGFILE = os.path.join(up, 'logs', time.strftime('%Y_%m_%d_%H_%M.log'))
 
 wlock = threading.Lock()
 class log_to_file(object):
