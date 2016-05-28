@@ -59,7 +59,7 @@ def stale_rec(node, nodes):
 		else:
 			if not node in nodes:
 				if can_delete(node):
-					Logs.warn("Removing stale file -> %s" % node.abspath())
+					Logs.warn('Removing stale file -> %r', node)
 					node.delete()
 
 old = Parallel.refill_task_list

@@ -96,7 +96,7 @@ def exit_cleanup():
 		fileobj.close()
 		filename = sys.stdout.filename
 
-		Logs.info('Output logged to %r' % filename)
+		Logs.info('Output logged to %r', filename)
 
 		# then copy the log file to "latest.log" if possible
 		up = os.path.dirname(os.path.abspath(filename))

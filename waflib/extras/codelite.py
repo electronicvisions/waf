@@ -325,7 +325,7 @@ def stealth_write(self, data, flags='wb'):
         except (IOError, ValueError):
                 self.write(data, flags=flags)
         else:
-                Logs.debug('codelite: skipping %s' % self.abspath())
+                Logs.debug('codelite: skipping %r', self)
 Node.Node.stealth_write = stealth_write
 
 re_quote = re.compile("[^a-zA-Z0-9-]")
@@ -470,7 +470,7 @@ class vsnode_project(vsnode):
                 return lst
 
         def write(self):
-                Logs.debug('codelite: creating %r' % self.path)
+                Logs.debug('codelite: creating %r', self.path)
                 #print "self.name:",self.name
 
                 # first write the project file
@@ -737,22 +737,20 @@ class codelite_generator(BuildContext):
                                 return ''
                         return getattr(x, 'path', None) and x.path.abspath() or x.name
                 self.all_projects.sort(key=sortfun)
-                
 
         def write_files(self):
-                
                 """
                 Write the project and solution files from the data collected
                 so far. It is unlikely that you will want to change this
                 """
-                for p in self.all_projects:                        
+                for p in self.all_projects:
                         p.write()
 
                 # and finally write the solution file
                 node = self.get_solution_node()
                 node.parent.mkdir()
-                Logs.warn('Creating %r' % node)
-                #a = dir(self.root)                
+                Logs.warn('Creating %r', node)
+                #a = dir(self.root)
                 #for b in a:
                 #        print b
                 #print self.group_names

@@ -274,8 +274,8 @@ def validate_cfg(self, kw):
 		if y in kw:
 			package = kw['package']
 			if Logs.verbose:
-				Logs.warn('Passing %r to conf.check_cfg() is obsolete, pass parameters directly, eg:' % y)
-				Logs.warn(" conf.check_cfg(package='%s', args=['--libs', '--cflags', '%s >= 1.6'])" % (package, package))
+				Logs.warn('Passing %r to conf.check_cfg() is obsolete, pass parameters directly, eg:', y)
+				Logs.warn(" conf.check_cfg(package='%s', args=['--libs', '--cflags', '%s >= 1.6'])", package, package)
 			if not 'msg' in kw:
 				kw['msg'] = 'Checking for %r %s %s' % (package, cfg_ver[x], kw[y])
 			break

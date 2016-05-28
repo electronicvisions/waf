@@ -146,7 +146,7 @@ def check_cache(conn, ssig):
 			ret = ''.join(buf)
 
 		all_sigs_in_cache = (time.time(), ret.splitlines())
-		Logs.debug('netcache: server cache has %r entries' % len(all_sigs_in_cache[1]))
+		Logs.debug('netcache: server cache has %r entries', len(all_sigs_in_cache[1]))
 
 	if not ssig in all_sigs_in_cache[1]:
 		raise ValueError('no file %s in cache' % ssig)
@@ -215,11 +215,11 @@ def can_retrieve_cache(self):
 				recv_file(conn, ssig, cnt, p)
 				cnt += 1
 		except MissingFile as e:
-			Logs.debug('netcache: file is not in the cache %r' % e)
+			Logs.debug('netcache: file is not in the cache %r', e)
 			err = True
 
 		except Exception as e:
-			Logs.debug('netcache: could not get the files %r' % e)
+			Logs.debug('netcache: could not get the files %r', e)
 			err = True
 
 			# broken connection? remove this one
@@ -259,7 +259,7 @@ def put_files_cache(self):
 					conn = get_connection(push=True)
 				sock_send(conn, ssig, cnt, node.abspath())
 			except Exception as e:
-				Logs.debug("netcache: could not push the files %r" % e)
+				Logs.debug('netcache: could not push the files %r', e)
 
 				# broken connection? remove this one
 				close_connection(conn)

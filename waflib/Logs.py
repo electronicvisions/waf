@@ -344,5 +344,5 @@ def pprint(col, msg, label='', sep='\n'):
 	:param sep: a string to append at the end (line separator)
 	:type sep: string
 	"""
-	info("%s%s%s %s" % (colors(col), msg, colors.NORMAL, label), extra={'terminator':sep})
+	info('%s%s%s %s', colors(col), msg, colors.NORMAL, label, extra={'terminator':sep})
 

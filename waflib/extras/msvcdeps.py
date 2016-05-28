@@ -130,7 +130,7 @@ def wrap_compiled_task(classname):
                 if not c_preproc.go_absolute:
                     if not (node.is_child_of(bld.srcnode) or node.is_child_of(bld.bldnode)):
                         # System library
-                        Logs.debug('msvcdeps: Ignoring system include %r' % node)
+                        Logs.debug('msvcdeps: Ignoring system include %r', node)
                         continue
 
                 if id(node) == id(self.inputs[0]):
@@ -144,7 +144,7 @@ def wrap_compiled_task(classname):
 
         try:
             del self.cache_sig
-        except:
+        except AttributeError:
             pass
 
         Task.Task.post_run(self)
@@ -222,7 +222,7 @@ def wrap_compiled_task(classname):
                 for line in raw_out.splitlines():
                     if line.startswith(INCLUDE_PATTERN):
                         inc_path = line[len(INCLUDE_PATTERN):].strip()
-                        Logs.debug('msvcdeps: Regex matched %s' % inc_path)
+                        Logs.debug('msvcdeps: Regex matched %s', inc_path)
                         self.msvcdeps_paths.append(inc_path)
                     else:
                         out.append(line)

@@ -113,7 +113,7 @@ def process_valadoc(self):
 			try:
 				task.vapi_dirs.append(self.path.find_dir(vapi_dir).abspath())
 			except AttributeError:
-				Logs.warn("Unable to locate Vala API directory: '%s'" % vapi_dir)
+				Logs.warn('Unable to locate Vala API directory: %r', vapi_dir)
 	if getattr(self, 'files', None):
 		task.files = self.files
 	else:

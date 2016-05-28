@@ -374,7 +374,7 @@ def stealth_write(self, data, flags='wb'):
 	except (IOError, ValueError):
 		self.write(data, flags=flags)
 	else:
-		Logs.debug('msvs: skipping %s' % self.win32path())
+		Logs.debug('msvs: skipping %s', self.win32path())
 Node.Node.stealth_write = stealth_write
 
 re_win32 = re.compile(r'^([/\\]cygdrive)?[/\\]([a-z])([^a-z0-9_-].*)', re.I)
@@ -529,7 +529,7 @@ class vsnode_project(vsnode):
 		return lst
 
 	def write(self):
-		Logs.debug('msvs: creating %r' % self.path)
+		Logs.debug('msvs: creating %r', self.path)
 
 		# first write the project file
 		template1 = compile_template(PROJECT_TEMPLATE)
@@ -794,7 +794,7 @@ class msvs_generator(BuildContext):
 		# and finally write the solution file
 		node = self.get_solution_node()
 		node.parent.mkdir()
-		Logs.warn('Creating %r' % node)
+		Logs.warn('Creating %r', node)
 		template1 = compile_template(SOLUTION_TEMPLATE)
 		sln_str = template1(self)
 		sln_str = rm_blank_lines(sln_str)
@@ -973,7 +973,7 @@ def wrap_2008(cls):
 			return ''
 
 		def write(self):
-			Logs.debug('msvs: creating %r' % self.path)
+			Logs.debug('msvs: creating %r', self.path)
 			template1 = compile_template(self.project_template)
 			proj_str = template1(self)
 			proj_str = rm_blank_lines(proj_str)

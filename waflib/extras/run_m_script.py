@@ -55,8 +55,8 @@ class run_m_script(run_m_script_base):
 				mode = 'rb'
 			with open(logfile, mode=mode) as f:
 				tail = f.readlines()[-10:]
-			Logs.error("""Running Matlab on %s returned the error %r\n\nCheck the log file %s, last 10 lines\n\n%s\n\n\n""" % (
-				self.inputs[0].abspath(), ret, logfile, '\n'.join(tail)))
+			Logs.error("""Running Matlab on %r returned the error %r\n\nCheck the log file %s, last 10 lines\n\n%s\n\n\n""",
+				self.inputs[0], ret, logfile, '\n'.join(tail))
 		else:
 			os.remove(logfile)
 		return ret
@@ -83,7 +83,7 @@ def apply_run_m_script(tg):
 		if not node:
 			tg.bld.fatal('Could not find dependency %r for running %r' % (x, src_node.abspath()))
 		tsk.dep_nodes.append(node)
-	Logs.debug('deps: found dependencies %r for running %r' % (tsk.dep_nodes, src_node.abspath()))
+	Logs.debug('deps: found dependencies %r for running %r', tsk.dep_nodes, src_node.abspath())
 
 	# Bypass the execution of process_source by setting the source to an empty list
 	tg.source = []

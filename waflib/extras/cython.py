@@ -2,7 +2,7 @@
 # encoding: utf-8
 # Thomas Nagy, 2010-2015
 
-import os, re
+import re
 from waflib import Task, Logs
 from waflib.TaskGen import extension
 
@@ -70,7 +70,7 @@ class cython(Task.Task):
 			if x.name.endswith('.h'):
 				if not x.exists():
 					if Logs.verbose:
-						Logs.warn('Expected %r' % x.abspath())
+						Logs.warn('Expected %r', x.abspath())
 					x.write('')
 		return Task.Task.post_run(self)
 
@@ -92,7 +92,7 @@ class cython(Task.Task):
 			else:
 				mods.append(m.group(2))
 
-		Logs.debug("cython: mods %r" % mods)
+		Logs.debug('cython: mods %r', mods)
 		incs = getattr(self.generator, 'cython_includes', [])
 		incs = [self.generator.path.find_dir(x) for x in incs]
 		incs.append(node.parent)
@@ -113,7 +113,7 @@ class cython(Task.Task):
 		if implicit:
 			found.append(implicit)
 
-		Logs.debug("cython: found %r" % found)
+		Logs.debug('cython: found %r', found)
 
 		# Now the .h created - store them in bld.raw_deps for later use
 		has_api = False

@@ -38,7 +38,7 @@ The Waf module 'Logs' replaces the Python module logging. In the source code, tr
 
 [source,python]
 ---------------
-Logs.debug("task: executing %r - it was never run before or its class changed" % self)
+Logs.debug('task: executing %r - it was never run before or its class changed', self)
 ---------------
 
 The following zones are used in Waf:

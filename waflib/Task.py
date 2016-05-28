@@ -723,7 +723,7 @@ class Task(TaskBase):
 		except (OSError, IOError):
 			for k in bld.node_deps.get(self.uid(), []):
 				if not k.exists():
-					Logs.warn('Dependency %r for %r is missing: check the task declaration and the build order!' % (k, self))
+					Logs.warn('Dependency %r for %r is missing: check the task declaration and the build order!', k, self)
 			raise
 
 	def compute_sig_implicit_deps(self):

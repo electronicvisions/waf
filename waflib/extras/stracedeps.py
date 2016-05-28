@@ -162,7 +162,7 @@ def parse_strace_deps(self, path, cwd):
 
 	# record the dependencies then force the task signature recalculation for next time
 	if Logs.verbose:
-		Logs.debug('deps: real scanner for %s returned %s' % (str(self), str(nodes)))
+		Logs.debug('deps: real scanner for %r returned %r', self, nodes)
 	bld = self.generator.bld
 	bld.node_deps[self.uid()] = nodes
 	bld.raw_deps[self.uid()] = []

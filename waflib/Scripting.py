@@ -28,7 +28,7 @@ def waf_entry_point(current_directory, version, wafdir):
 	Logs.init_log()
 
 	if Context.WAFVERSION != version:
-		Logs.error('Waf script %r and library %r do not match (directory %r)' % (version, Context.WAFVERSION, wafdir))
+		Logs.error('Waf script %r and library %r do not match (directory %r)', version, Context.WAFVERSION, wafdir)
 		sys.exit(1)
 
 	if '--version' in sys.argv:
@@ -80,7 +80,7 @@ def waf_entry_point(current_directory, version, wafdir):
 			lst = os.listdir(cur)
 		except OSError:
 			lst = []
-			Logs.error('Directory %r is unreadable!' % cur)
+			Logs.error('Directory %r is unreadable!', cur)
 		if Options.lockfile in lst:
 			env = ConfigSet.ConfigSet()
 			try:
@@ -106,7 +106,7 @@ def waf_entry_point(current_directory, version, wafdir):
 								load = True
 								break
 				else:
-					Logs.warn('invalid lock file in %s' % cur)
+					Logs.warn('invalid lock file in %s', cur)
 					load = False
 
 				if load:
@@ -135,13 +135,13 @@ def waf_entry_point(current_directory, version, wafdir):
 			ctx.curdir = current_directory
 			ctx.parse_args()
 			sys.exit(0)
-		Logs.error('Waf: Run from a directory containing a file named %r' % Context.WSCRIPT_FILE)
+		Logs.error('Waf: Run from a directory containing a file named %r', Context.WSCRIPT_FILE)
 		sys.exit(1)
 
 	try:
 		os.chdir(Context.run_dir)
 	except OSError:
-		Logs.error('Waf: The folder %r is unreadable' % Context.run_dir)
+		Logs.error('Waf: The folder %r is unreadable', Context.run_dir)
 		sys.exit(1)
 
 	try:
@@ -151,7 +151,7 @@ def waf_entry_point(current_directory, version, wafdir):
 		Logs.error(str(e))
 		sys.exit(1)
 	except Exception as e:
-		Logs.error('Waf: The wscript in %r is unreadable' % Context.run_dir, e)
+		Logs.error('Waf: The wscript in %r is unreadable', Context.run_dir)
 		traceback.print_exc(file=sys.stdout)
 		sys.exit(2)
 
@@ -264,7 +264,7 @@ def run_commands():
 	while Options.commands:
 		cmd_name = Options.commands.pop(0)
 		ctx = run_command(cmd_name)
-		Logs.info('%r finished successfully (%s)' % (cmd_name, str(ctx.log_timer)))
+		Logs.info('%r finished successfully (%s)', cmd_name, ctx.log_timer)
 	run_command('shutdown')
 
 ###########################################################################################
@@ -285,7 +285,7 @@ def distclean_dir(dirname):
 				try:
 					os.remove(fname)
 				except OSError:
-					Logs.warn('Could not remove %r' % fname)
+					Logs.warn('Could not remove %r', fname)
 
 	for x in (Context.DBFILE, 'config.log'):
 		try:
@@ -306,7 +306,7 @@ def distclean(ctx):
 			try:
 				proj = ConfigSet.ConfigSet(f)
 			except IOError:
-				Logs.warn('Could not read %r' % f)
+				Logs.warn('Could not read %r', f)
 				continue
 
 			if proj['out_dir'] != proj['top_dir']:
@@ -316,7 +316,7 @@ def distclean(ctx):
 					pass
 				except OSError as e:
 					if e.errno != errno.ENOENT:
-						Logs.warn('Could not remove %r' % proj['out_dir'])
+						Logs.warn('Could not remove %r', proj['out_dir'])
 			else:
 				distclean_dir(proj['out_dir'])
 
@@ -326,7 +326,7 @@ def distclean(ctx):
 					os.remove(p)
 				except OSError as e:
 					if e.errno != errno.ENOENT:
-						Logs.warn('Could not remove %r' % p)
+						Logs.warn('Could not remove %r', p)
 
 		# remove local waf cache folders
 		if not Options.commands:
@@ -393,7 +393,7 @@ class Dist(Context.Context):
 		else:
 			digest = ' (sha=%r)' % sha1(node.read()).hexdigest()
 
-		Logs.info('New archive created: %s%s' % (self.arch_name, digest))
+		Logs.info('New archive created: %s%s', self.arch_name, digest)
 
 	def get_tar_path(self, node):
 		"""

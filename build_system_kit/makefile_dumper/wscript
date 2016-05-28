@@ -73,7 +73,7 @@ def dump(bld):
 	def output_makefile(self):
 		self.commands.insert(0, "all: %s" % " ".join(self.targets))
 		node = self.bldnode.make_node('Makefile')
-		node.write("\n".join(self.commands))
-		Logs.warn('Wrote %s' % node.abspath())
+		node.write('\n'.join(self.commands))
+		Logs.warn('Wrote %r', node)
 	bld.add_post_fun(output_makefile)
 

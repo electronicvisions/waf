@@ -49,13 +49,13 @@ def parse_rst_node(task, node, nodes, names, seen, dirs=None):
 	for match in re_rst.finditer(code):
 		ipath = match.group('file')
 		itype = match.group('type')
-		Logs.debug("rst: visiting %s: %s" % (itype, ipath))
+		Logs.debug('rst: visiting %s: %s', itype, ipath)
 		found = False
 		for d in dirs:
-			Logs.debug("rst: looking for %s in %s" % (ipath, d.abspath()))
+			Logs.debug('rst: looking for %s in %s', ipath, d.abspath())
 			found = d.find_node(ipath)
 			if found:
-				Logs.debug("rst: found %s as %s" % (ipath, found.abspath()))
+				Logs.debug('rst: found %s as %s', ipath, found.abspath())
 				nodes.append((itype, found))
 				if itype == 'include':
 					parse_rst_node(task, found, nodes, names, seen)
@@ -84,9 +84,9 @@ class docutils(Task.Task):
 
 		parse_rst_node(self, node, nodes, names, seen)
 
-		Logs.debug("rst: %s: found the following file deps: %s" % (repr(self), nodes))
+		Logs.debug('rst: %r: found the following file deps: %r', self, nodes)
 		if names:
-			Logs.warn("rst: %s: could not find the following file deps: %s" % (repr(self), names))
+			Logs.warn('rst: %r: could not find the following file deps: %r', self, names)
 
 		return ([v for (t,v) in nodes], [v for (t,v) in names])
 
@@ -100,7 +100,7 @@ class docutils(Task.Task):
 		:type retcode: boolean
 		"""
 		if retcode != 0:
-			raise Errors.WafError("%r command exit status %r" % (msg, retcode))
+			raise Errors.WafError('%r command exit status %r' % (msg, retcode))
 
 	def run(self):
 		"""
@@ -124,7 +124,7 @@ class rst2html(docutils):
 			if stylesheet is not None:
 				ssnode = self.generator.to_nodes(stylesheet)[0]
 				nodes.append(ssnode)
-				Logs.debug("rst: adding dep to %s %s" % (attribute, stylesheet))
+				Logs.debug('rst: adding dep to %s %s', attribute, stylesheet)
 
 		return nodes, names
 

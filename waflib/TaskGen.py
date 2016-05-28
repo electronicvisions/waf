@@ -167,7 +167,7 @@ class task_gen(object):
 			st = feats[x]
 			if not st:
 				if not x in Task.classes:
-					Logs.warn('feature %r does not exist - bind at least one method to it' % x)
+					Logs.warn('feature %r does not exist - bind at least one method to it', x)
 			keys.update(list(st)) # ironpython 2.7 wants the cast to list
 
 		# copy the precedence table

@@ -58,16 +58,16 @@ def check_same_targets(self):
 			Logs.error(msg)
 			for x in v:
 				if Logs.verbose > 1:
-					Logs.error('  %d. %r' % (1 + v.index(x), x.generator))
+					Logs.error('  %d. %r', 1 + v.index(x), x.generator)
 				else:
-					Logs.error('  %d. %r in %r' % (1 + v.index(x), x.generator.name, getattr(x.generator, 'path', None)))
+					Logs.error('  %d. %r in %r', 1 + v.index(x), x.generator.name, getattr(x.generator, 'path', None))
 
 	if not dupe:
 		for (k, v) in uids.items():
 			if len(v) > 1:
 				Logs.error('* Several tasks use the same identifier. Please check the information on\n   https://waf.io/apidocs/Task.html?highlight=uid#waflib.Task.Task.uid')
 				for tsk in v:
-					Logs.error('  - object %r (%r) defined in %r' % (tsk.__class__.__name__, tsk, tsk.generator))
+					Logs.error('  - object %r (%r) defined in %r', tsk.__class__.__name__, tsk, tsk.generator)
 
 def check_invalid_constraints(self):
 	feat = set([])
@@ -81,7 +81,7 @@ def check_invalid_constraints(self):
 		ext.add(x.__name__)
 	invalid = ext & feat
 	if invalid:
-		Logs.error('The methods %r have invalid annotations:  @extension <-> @feature/@before_method/@after_method' % list(invalid))
+		Logs.error('The methods %r have invalid annotations:  @extension <-> @feature/@before_method/@after_method', list(invalid))
 
 	# the build scripts have been read, so we can check for invalid after/before attributes on task classes
 	for cls in list(Task.classes.values()):
@@ -91,9 +91,9 @@ def check_invalid_constraints(self):
 		for x in ('before', 'after'):
 			for y in Utils.to_list(getattr(cls, x, [])):
 				if not Task.classes.get(y):
-					Logs.error('Erroneous order constraint %r=%r on task class %r' % (x, y, cls.__name__))
+					Logs.error('Erroneous order constraint %r=%r on task class %r', x, y, cls.__name__)
 		if getattr(cls, 'rule', None):
-			Logs.error('Erroneous attribute "rule" on task class %r (rename to "run_str")' % cls.__name__)
+			Logs.error('Erroneous attribute "rule" on task class %r (rename to "run_str")', cls.__name__)
 
 def replace(m):
 	"""
@@ -107,7 +107,7 @@ def replace(m):
 			if x in kw:
 				if x == 'iscopy' and 'subst' in getattr(self, 'features', ''):
 					continue
-				Logs.error('Fix the typo %r -> %r on %r' % (x, typos[x], ret))
+				Logs.error('Fix the typo %r -> %r on %r', x, typos[x], ret)
 		return ret
 	setattr(Build.BuildContext, m, call)
 
@@ -124,11 +124,11 @@ def enhance_lib():
 			lst=Utils.to_list(k[0])
 			for pat in lst:
 				if '..' in pat.split('/'):
-					Logs.error("In ant_glob pattern %r: '..' means 'two dots', not 'parent directory'" % k[0])
+					Logs.error("In ant_glob pattern %r: '..' means 'two dots', not 'parent directory'", k[0])
 		if kw.get('remove', True):
 			try:
 				if self.is_child_of(self.ctx.bldnode) and not kw.get('quiet', False):
-					Logs.error('Using ant_glob on the build folder (%r) is dangerous (quiet=True to disable this warning)' % self)
+					Logs.error('Using ant_glob on the build folder (%r) is dangerous (quiet=True to disable this warning)', self)
 			except AttributeError:
 				pass
 		return self.old_ant_glob(*k, **kw)
@@ -140,7 +140,7 @@ def enhance_lib():
 	def is_before(t1, t2):
 		ret = old(t1, t2)
 		if ret and old(t2, t1):
-			Logs.error('Contradictory order constraints in classes %r %r' % (t1, t2))
+			Logs.error('Contradictory order constraints in classes %r %r', t1, t2)
 		return ret
 	Task.is_before = is_before
 
@@ -152,7 +152,7 @@ def enhance_lib():
 			Logs.error('feature shlib -> cshlib, dshlib or cxxshlib')
 		for x in ('c', 'cxx', 'd', 'fc'):
 			if not x in lst and lst and lst[0] in [x+y for y in ('program', 'shlib', 'stlib')]:
-				Logs.error('%r features is probably missing %r' % (self, x))
+				Logs.error('%r features is probably missing %r', self, x)
 	TaskGen.feature('*')(check_err_features)
 
 	# check for erroneous order constraints
@@ -160,12 +160,12 @@ def enhance_lib():
 		if not hasattr(self, 'rule') and not 'subst' in Utils.to_list(self.features):
 			for x in ('before', 'after', 'ext_in', 'ext_out'):
 				if hasattr(self, x):
-					Logs.warn('Erroneous order constraint %r on non-rule based task generator %r' % (x, self))
+					Logs.warn('Erroneous order constraint %r on non-rule based task generator %r', x, self)
 		else:
 			for x in ('before', 'after'):
 				for y in self.to_list(getattr(self, x, [])):
 					if not Task.classes.get(y, None):
-						Logs.error('Erroneous order constraint %s=%r on %r (no such class)' % (x, y, self))
+						Logs.error('Erroneous order constraint %s=%r on %r (no such class)', x, y, self)
 	TaskGen.feature('*')(check_err_order)
 
 	# check for @extension used with @feature/@before_method/@after_method

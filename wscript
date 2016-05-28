@@ -267,8 +267,8 @@ def create_waf(self, *k, **kw):
 			files = [x.name for x in tar.getmembers()]
 			if set(files) ^ set(oldfiles):
 				Logs.warn('The archive model has differences:')
-				Logs.warn('- Added %r' % list(set(files) - set(oldfiles)))
-				Logs.warn('- Removed %r' % list(set(oldfiles) - set(files)))
+				Logs.warn('- Added %r', list(set(files) - set(oldfiles)))
+				Logs.warn('- Removed %r', list(set(oldfiles) - set(files)))
 
 	#open a file as tar.[extension] for writing
 	tar = tarfile.open('%s.tar.%s' % (mw, zipType), "w:%s" % zipType)

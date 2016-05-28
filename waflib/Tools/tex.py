@@ -239,7 +239,7 @@ class tex(Task.Task):
 			try:
 				ct = aux_node.read()
 			except EnvironmentError:
-				Logs.error('Error reading %s: %r' % aux_node.abspath())
+				Logs.error('Error reading %s: %r', aux_node.abspath())
 				continue
 
 			if g_bibtex_re.findall(ct):
@@ -312,7 +312,7 @@ class tex(Task.Task):
 			try:
 				ct = aux_node.read()
 			except EnvironmentError:
-				Logs.error('Error reading %s: %r' % aux_node.abspath())
+				Logs.error('Error reading %s: %r', aux_node.abspath())
 				continue
 
 			if g_glossaries_re.findall(ct):
@@ -477,9 +477,9 @@ def apply_tex(self):
 						if p:
 							task.texinputs_nodes.append(p)
 						else:
-							Logs.error('Invalid TEXINPUTS folder %s' % x)
+							Logs.error('Invalid TEXINPUTS folder %s', x)
 					else:
-						Logs.error('Cannot resolve relative paths in TEXINPUTS %s' % x)
+						Logs.error('Cannot resolve relative paths in TEXINPUTS %s', x)
 
 		if self.type == 'latex':
 			if 'ps' in outs:

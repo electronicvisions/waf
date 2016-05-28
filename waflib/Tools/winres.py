@@ -70,7 +70,7 @@ class rc_parser(c_preproc.c_parser):
 			raise c_preproc.PreprocError("could not read the file %s" % filepath)
 		except Exception:
 			if Logs.verbose > 0:
-				Logs.error("parsing %s failed" % filepath)
+				Logs.error("parsing %s failed", filepath)
 				traceback.print_exc()
 
 class winrc(Task.Task):

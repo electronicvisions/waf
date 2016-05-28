@@ -120,7 +120,7 @@ if Utils.is_win32:
 			find     = FindFirstFile(TP % curpath, ctypes.byref(findData))
 
 			if find == INVALID_HANDLE_VALUE:
-				Logs.error("invalid win32 handle isfile_cached %r" % self.abspath())
+				Logs.error("invalid win32 handle isfile_cached %r", self.abspath())
 				return os.path.isfile(self.abspath())
 
 			try:
@@ -132,7 +132,7 @@ if Utils.is_win32:
 					if not FindNextFile(find, ctypes.byref(findData)):
 						break
 			except Exception as e:
-				Logs.error('exception while listing a folder %r %r' % (self.abspath(), e))
+				Logs.error('exception while listing a folder %r %r', self.abspath(), e)
 				return os.path.isfile(self.abspath())
 			finally:
 				FindClose(find)

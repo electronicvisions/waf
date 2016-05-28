@@ -87,7 +87,7 @@ class swig(Task.Task):
 						to_see.append(u)
 						break
 				else:
-					Logs.warn('could not find %r' % n)
+					Logs.warn('could not find %r', n)
 
 		return (lst_src, [])
 

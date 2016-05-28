@@ -57,7 +57,7 @@ def are_implicit_nodes_ready(self):
 	if modified:
 		for tsk in self.run_after:
 			if not tsk.hasrun:
-				Logs.warn("task %r is not ready..." % self)
+				Logs.warn('task %r is not ready...', self)
 				raise Errors.TaskNotReady('not ready')
 Task.Task.are_implicit_nodes_ready = are_implicit_nodes_ready
 

@@ -422,7 +422,7 @@ def make_picture(producer):
 
 	node = producer.bld.path.make_node('pdebug.svg')
 	node.write(txt)
-	Logs.warn('Created the diagram %r' % node.abspath())
+	Logs.warn('Created the diagram %r', node)
 
 def options(opt):
 	opt.add_option('--dtitle', action='store', default='Parallel build representation for %r' % ' '.join(sys.argv),

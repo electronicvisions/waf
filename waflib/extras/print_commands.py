@@ -20,8 +20,8 @@ def exec_command(self, cmd, **kw):
 	else:
 		txt = ' '.join(repr(x) if ' ' in x else x for x in cmd)
 
-	Logs.debug('runner: %s' % txt)
-	Logs.debug('runner_env: kw=%s' % kw)
+	Logs.debug('runner: %s', txt)
+	Logs.debug('runner_env: kw=%s', kw)
 
 	if self.logger:
 		self.logger.info(cmd)

@@ -144,14 +144,14 @@ def post_run(self):
 			continue
 		nodes.append(node)
 
-	Logs.debug('deps: gccdeps for %s returned %s' % (str(self), str(nodes)))
+	Logs.debug('deps: gccdeps for %s returned %s', self, nodes)
 
 	bld.node_deps[self.uid()] = nodes
 	bld.raw_deps[self.uid()] = []
 
 	try:
 		del self.cache_sig
-	except:
+	except AttributeError:
 		pass
 
 	Task.Task.post_run(self)

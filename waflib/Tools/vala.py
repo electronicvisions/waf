@@ -82,7 +82,7 @@ def init_vala_task(self):
 				self.use.append('GTHREAD')
 		else:
 			#Vala doesn't have threading support for dova nor posix
-			Logs.warn("Profile %s means no threading support" % self.profile)
+			Logs.warn('Profile %s means no threading support', self.profile)
 			self.thread = False
 
 		if self.thread:
@@ -172,7 +172,7 @@ def init_vala_task(self):
 		else:
 			v_node = self.path.find_dir(vapi_dir)
 		if not v_node:
-			Logs.warn('Unable to locate Vala API directory: %r' % vapi_dir)
+			Logs.warn('Unable to locate Vala API directory: %r', vapi_dir)
 		else:
 			addflags('--vapidir=%s' % v_node.abspath())
 

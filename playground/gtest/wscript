@@ -42,12 +42,12 @@ def gtest_results(bld):
                 if '    OK ]' in output[i]:
                     continue
                 while not '[ ' in output[i]:
-                    Logs.warn('%s' % output[i])
+                    Logs.warn(output[i])
                     i += 1
             elif ' FAILED  ]' in line and code:
-                Logs.error('%s' % line)
+                Logs.error(line)
             elif ' PASSED  ]' in line:
-                Logs.info('%s' % line)
+                Logs.info(line)
 
 def build(bld):
     bld.recurse('src tests')

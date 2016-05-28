@@ -250,7 +250,7 @@ class BuildContext(Context.Context):
 		* calling :py:meth:`waflib.Build.BuildContext.post_build` to call user build functions
 		"""
 
-		Logs.info("Waf: Entering directory `%s'" % self.variant_dir)
+		Logs.info("Waf: Entering directory `%s'", self.variant_dir)
 		self.recurse([self.run_dir])
 		self.pre_build()
 
@@ -264,7 +264,7 @@ class BuildContext(Context.Context):
 				c = self.producer.processed or 1
 				m = self.progress_line(c, c, Logs.colors.BLUE, Logs.colors.NORMAL)
 				Logs.info(m, extra={'stream': sys.stderr, 'c1': Logs.colors.cursor_off, 'c2' : Logs.colors.cursor_on})
-			Logs.info("Waf: Leaving directory `%s'" % self.variant_dir)
+			Logs.info("Waf: Leaving directory `%s'", self.variant_dir)
 		try:
 			self.producer.bld = None
 			del self.producer
@@ -630,7 +630,7 @@ class BuildContext(Context.Context):
 		#if self.groups and not self.groups[0].tasks:
 		#	error('add_group: an empty group is already present')
 		if name and name in self.group_names:
-			Logs.error('add_group: name %s already present' % name)
+			Logs.error('add_group: name %s already present', name)
 		g = []
 		self.group_names[name] = g
 		self.groups.append(g)
@@ -731,7 +731,7 @@ class BuildContext(Context.Context):
 				Logs.warn('Building from the build directory, forcing --targets=*')
 				ln = self.srcnode
 			elif not ln.is_child_of(self.srcnode):
-				Logs.warn('CWD %s is not under %s, forcing --targets=* (run distclean?)' % (ln.abspath(), self.srcnode.abspath()))
+				Logs.warn('CWD %s is not under %s, forcing --targets=* (run distclean?)', ln.abspath(), self.srcnode.abspath())
 				ln = self.srcnode
 			for tg in self.groups[self.cur]:
 				try:
@@ -1054,11 +1054,11 @@ class inst(Task.Task):
 				# same size and identical timestamps -> make no copy
 				if st1.st_mtime + 2 >= st2.st_mtime and st1.st_size == st2.st_size:
 					if not self.generator.bld.progress_bar:
-						Logs.info('- install %s (from %s)' % (tgt, lbl))
+						Logs.info('- install %s (from %s)', tgt, lbl)
 					return False
 
 		if not self.generator.bld.progress_bar:
-			Logs.info('+ install %s (from %s)' % (tgt, lbl))
+			Logs.info('+ install %s (from %s)', tgt, lbl)
 
 		# Give best attempt at making destination overwritable,
 		# like the 'install' utility used by 'make install' does.
@@ -1077,7 +1077,7 @@ class inst(Task.Task):
 			self.copy_fun(src, tgt)
 		except IOError:
 			if not src.exists():
-				Logs.error('File %r does not exist' % src)
+				Logs.error('File %r does not exist', src)
 			raise Errors.WafError('Could not install the file %r' % tgt)
 
 	def do_link(self, src, tgt, **kw):
@@ -1091,19 +1091,19 @@ class inst(Task.Task):
 		"""
 		if os.path.islink(tgt) and os.readlink(tgt) == src:
 			if not self.generator.bld.progress_bar:
-				Logs.info('- symlink %s (to %s)' % (tgt, src))
+				Logs.info('- symlink %s (to %s)', tgt, src)
 		else:
 			try:
 				os.remove(tgt)
 			except OSError:
 				pass
 			if not self.generator.bld.progress_bar:
-				Logs.info('+ symlink %s (to %s)' % (tgt, src))
+				Logs.info('+ symlink %s (to %s)', tgt, src)
 			os.symlink(src, tgt)
 
 	def do_uninstall(self, src, tgt, lbl, **kw):
 		if not self.generator.bld.progress_bar:
-			Logs.info('- remove %s' % tgt)
+			Logs.info('- remove %s', tgt)
 
 		#self.uninstall.append(tgt)
 		try:
@@ -1114,14 +1114,14 @@ class inst(Task.Task):
 					self.uninstall_error = True
 					Logs.warn('build: some files could not be uninstalled (retry with -vv to list them)')
 				if Logs.verbose > 1:
-					Logs.warn('Could not remove %s (error code %r)' % (e.filename, e.errno))
+					Logs.warn('Could not remove %s (error code %r)', e.filename, e.errno)
 		self.rm_empty_dirs(tgt)
 
 	def do_unlink(self, src, tgt, **kw):
 		# TODO do_uninstall with proper amount of args
 		try:
 			if not self.generator.bld.progress_bar:
-				Logs.info('- remove %s' % tgt)
+				Logs.info('- remove %s', tgt)
 			os.remove(tgt)
 		except OSError:
 			pass
@@ -1289,7 +1289,7 @@ class StepContext(BuildContext):
 								break
 						if do_exec:
 							ret = tsk.run()
-							Logs.info('%s -> exit %r' % (str(tsk), ret))
+							Logs.info('%s -> exit %r', tsk, ret)
 
 	def get_matcher(self, pat):
 		# this returns a function

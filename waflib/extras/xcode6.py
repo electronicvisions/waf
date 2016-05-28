@@ -53,9 +53,8 @@ $ waf configure xcode6
 
 # TODO: support iOS projects
 
-from waflib import Context, TaskGen, Build, Utils, ConfigSet, Configure, Errors
-from waflib.Build import BuildContext
-import os, sys, random, time
+from waflib import Context, TaskGen, Build, Utils, Errors
+import os, sys
 
 HEADERS_GLOB = '**/(*.h|*.hpp|*.H|*.inl)'
 
