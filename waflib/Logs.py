@@ -106,8 +106,8 @@ class log_filter(logging.Filter):
 
 		$ waf --zones=test
 	"""
-	def __init__(self, name=None):
-		pass
+	def __init__(self, name=''):
+		logging.Filter.__init__(self, name)
 
 	def filter(self, rec):
 		"""
