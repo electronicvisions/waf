@@ -204,7 +204,10 @@ class formatter(logging.Formatter):
 			# and other terminal commands
 			msg = re.sub(r'\r(?!\n)|\x1B\[(K|.*?(m|h|l))', '', msg)
 
-		if rec.levelno >= logging.INFO: # ??
+		if rec.levelno >= logging.INFO:
+			# the goal of this is to format without the leading "Logs, hour" prefix
+			if rec.args:
+				return msg % rec.args
 			return msg
 
 		rec.msg = msg
