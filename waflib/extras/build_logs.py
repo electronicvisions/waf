@@ -28,7 +28,7 @@ class log_to_file(object):
 		self.filename = filename
 		self.is_valid = True
 	def replace_colors(self, data):
-		for x in Logs.colors_lst.values(): 
+		for x in Logs.colors_lst.values():
 			if isinstance(x, str):
 				data = data.replace(x, '')
 		return data
@@ -104,7 +104,6 @@ def exit_cleanup():
 			shutil.copy(filename, os.path.join(up, 'latest.log'))
 		except OSError:
 			# this may fail on windows due to processes spawned
-			# 
 			pass
 
 atexit.register(exit_cleanup)

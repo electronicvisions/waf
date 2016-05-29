@@ -4,7 +4,9 @@
 """
 Windows-specific optimizations
 
-This module can help reducing the overhead of listing files on windows (more than 10000 files).
+This module can help reducing the overhead of listing files on windows
+(more than 10000 files). Python 3.5 already provides the listdir
+optimization though.
 """
 
 import os

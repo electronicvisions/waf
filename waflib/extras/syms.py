@@ -41,7 +41,7 @@ class gen_sym(Task):
 				re_nm=re.compile(r'T\s+(_?'+self.generator.export_symbols_regex+r')\b')
 			else:
 				re_nm = re.compile(r'T\s+(' + self.generator.export_symbols_regex + r')\b')
-			cmd = [self.env.NM[0] or 'nm', '-g', obj.abspath()]
+			cmd = self.env.NM or ['nm'] + ['-g', obj.abspath()]
 		syms = re_nm.findall(self.generator.bld.cmd_and_log(cmd, quiet=STDOUT, **kw))
 		self.outputs[0].write('%r' % syms)
 
