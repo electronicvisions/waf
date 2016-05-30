@@ -2,8 +2,6 @@
 # encoding: ISO8859-1
 # Thomas Nagy, 2005-2016
 #
-# This is waf 1.9 p3, the last milestone before waf 1.9.0
-
 """
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions

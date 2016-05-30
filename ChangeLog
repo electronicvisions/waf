@@ -1,5 +1,5 @@
-NEW IN WAF 1.9 preview 3
-------------------------
+NEW IN WAF 1.9
+--------------
 
 * General enhancements:
   - Have Clang detected first on many platforms, in particular on FreeBSD #1528
