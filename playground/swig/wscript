@@ -39,7 +39,7 @@ def build(bld):
 
 	# embedding
 	#
-	# use swig_flags = '-c++ -python -dump_classes' for debugging
+	# use swig_flags = '-c++ -python -debug-classes' for debugging
 
 	obj = bld(
 		features = 'cxx cxxprogram pyembed',
