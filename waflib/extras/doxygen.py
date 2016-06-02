@@ -121,7 +121,7 @@ class doxygen(Task.Task):
 		exclude_patterns = self.pars.get('EXCLUDE_PATTERNS','').split()
 		file_patterns = self.pars.get('FILE_PATTERNS','').split()
 		if not file_patterns:
-			file_patterns = DOXY_FILE_PATTERNS
+			file_patterns = DOXY_FILE_PATTERNS.split()
 		if self.pars.get('RECURSIVE') == 'YES':
 			file_patterns = ["**/%s" % pattern for pattern in file_patterns]
 		nodes = []
