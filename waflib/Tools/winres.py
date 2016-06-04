@@ -29,8 +29,8 @@ re_lines = re.compile(
 	re.IGNORECASE | re.MULTILINE)
 
 class rc_parser(c_preproc.c_parser):
-	def filter_comments(self, filepath):
-		code = Utils.readf(filepath)
+	def filter_comments(self, node):
+		code = node.read()
 		if c_preproc.use_trigraphs:
 			for (a, b) in c_preproc.trig_def: code = code.split(a).join(b)
 		code = c_preproc.re_nl.sub('', code)
