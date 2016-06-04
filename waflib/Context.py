@@ -151,7 +151,7 @@ class Context(ctx):
 			rd = run_dir
 
 		# binds the context to the nodes in use to avoid a context singleton
-		self.node_class = type("Nod3", (waflib.Node.Node,), {})
+		self.node_class = type('Nod3', (waflib.Node.Node,), {})
 		self.node_class.__module__ = "waflib.Node"
 		self.node_class.ctx = self
 
@@ -317,7 +317,7 @@ class Context(ctx):
 			kw['stderr'] = subprocess.PIPE
 
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
-			raise Errors.WafError("Program %s not found!" % cmd[0])
+			raise Errors.WafError('Program %s not found!' % cmd[0])
 
 		wargs = {}
 		if 'timeout' in kw:
@@ -391,7 +391,7 @@ class Context(ctx):
 			to_ret = STDOUT
 
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
-			raise Errors.WafError("Program %r not found!" % cmd[0])
+			raise Errors.WafError('Program %r not found!' % cmd[0])
 
 		kw['stdout'] = kw['stderr'] = subprocess.PIPE
 		if quiet is None:
@@ -584,12 +584,12 @@ class Context(ctx):
 			waflibs = PyZipFile(waf_dir)
 			lst = waflibs.namelist()
 			for x in lst:
-				if not re.match("waflib/extras/%s" % var.replace("*", ".*"), var):
+				if not re.match('waflib/extras/%s' % var.replace('*', '.*'), var):
 					continue
 				f = os.path.basename(x)
 				doban = False
 				for b in ban:
-					r = b.replace("*", ".*")
+					r = b.replace('*', '.*')
 					if re.match(r, f):
 						doban = True
 				if not doban:

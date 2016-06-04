@@ -96,11 +96,10 @@ def configure(conf):
 
 import os, sys, re, tempfile
 from waflib import Task, Logs, Options, Errors
-from waflib.Logs import debug, warn
 from waflib.TaskGen import after_method, feature
 
 from waflib.Configure import conf
-from waflib.Tools import ccroot, ar, winres
+from waflib.Tools import ccroot, ar
 
 
 all_ifort_platforms = [ ('intel64', 'amd64'), ('em64t', 'amd64'), ('ia32', 'x86'), ('Itanium', 'ia64')]
@@ -237,10 +236,10 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 			conf.logger.error(st)
 		conf.fatal('ifort: Unicode error - check the code page?')
 	except Exception as e:
-		debug('ifort: get_ifort_version: %r %r %r -> failure %s', compiler, version, target, str(e))
+		Logs.debug('ifort: get_ifort_version: %r %r %r -> failure %s', compiler, version, target, str(e))
 		conf.fatal('ifort: cannot run the compiler in get_ifort_version (run with -v to display errors)')
 	else:
-		debug('ifort: get_ifort_version: %r %r %r -> OK', compiler, version, target)
+		Logs.debug('ifort: get_ifort_version: %r %r %r -> OK', compiler, version, target)
 	finally:
 		conf.env[compiler_name] = ''
 
@@ -279,7 +278,7 @@ class target_compiler(object):
 		self.is_done = True
 		try:
 			vs = self.conf.get_msvc_version(self.compiler, self.version, self.bat_target, self.bat)
-		except self.conf.errors.ConfigurationError:
+		except Errors.ConfigurationError:
 			self.is_valid = False
 			return
 		if self.callback:
@@ -359,7 +358,7 @@ def find_ifort_win32(conf):
 	try:
 		conf.load('winres')
 	except Errors.WafError:
-		warn('Resource compiler not found. Compiling resource file is disabled')
+		Logs.warn('Resource compiler not found. Compiling resource file is disabled')
 
 #######################################################################################################
 ##### conf above, build below
@@ -443,7 +442,7 @@ def exec_mf(self):
 	elif 'fcshlib' in self.generator.features:
 		mode = '2'
 
-	debug('ifort: embedding manifest in mode %r', mode)
+	Logs.debug('ifort: embedding manifest in mode %r', mode)
 
 	lst = [] + mtool
 	lst.extend(Utils.to_list(env['MTFLAGS']))

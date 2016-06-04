@@ -579,7 +579,7 @@ class Node(object):
 							#print "pattern", k
 							accu.append(re.compile(k, flags=reflags))
 						except Exception as e:
-							raise Errors.WafError("Invalid pattern: %s" % k, e)
+							raise Errors.WafError('Invalid pattern: %s' % k, e)
 				ret.append(accu)
 			return ret
 

@@ -54,11 +54,10 @@ Setting PYTHONUNBUFFERED gives the unbuffered output.
 
 import os, sys, re, tempfile
 from waflib import Utils, Task, Logs, Options, Errors
-from waflib.Logs import debug, warn
 from waflib.TaskGen import after_method, feature
 
 from waflib.Configure import conf
-from waflib.Tools import ccroot, c, cxx, ar, winres
+from waflib.Tools import ccroot, c, cxx, ar
 
 g_msvc_systemlibs = '''
 aclui activeds ad1 adptif adsiid advapi32 asycfilt authz bhsupp bits bufferoverflowu cabinet
@@ -157,7 +156,7 @@ def get_msvc_version(conf, compiler, version, target, vcvars):
 	:return: the location of the compiler executable, the location of include dirs, and the library paths
 	:rtype: tuple of strings
 	"""
-	debug('msvc: get_msvc_version: %r %r %r', compiler, version, target)
+	Logs.debug('msvc: get_msvc_version: %r %r %r', compiler, version, target)
 
 	try:
 		conf.msvc_cnt += 1
@@ -209,10 +208,10 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 			conf.logger.error(st)
 		conf.fatal('msvc: Unicode error - check the code page?')
 	except Exception as e:
-		debug('msvc: get_msvc_version: %r %r %r -> failure %s', compiler, version, target, str(e))
+		Logs.debug('msvc: get_msvc_version: %r %r %r -> failure %s', compiler, version, target, str(e))
 		conf.fatal('msvc: cannot run the compiler in get_msvc_version (run with -v to display errors)')
 	else:
-		debug('msvc: get_msvc_version: %r %r %r -> OK', compiler, version, target)
+		Logs.debug('msvc: get_msvc_version: %r %r %r -> OK', compiler, version, target)
 	finally:
 		conf.env[compiler_name] = ''
 
@@ -367,7 +366,7 @@ class target_compiler(object):
 		self.is_done = True
 		try:
 			vs = self.conf.get_msvc_version(self.compiler, self.version, self.bat_target, self.bat)
-		except self.conf.errors.ConfigurationError:
+		except Errors.ConfigurationError:
 			self.is_valid = False
 			return
 		if self.callback:
@@ -684,11 +683,11 @@ def libname_msvc(self, libname, is_static=False):
 	for path in _libpaths:
 		for libn in libnames:
 			if os.path.exists(os.path.join(path, libn)):
-				debug('msvc: lib found: %s', os.path.join(path,libn))
+				Logs.debug('msvc: lib found: %s', os.path.join(path,libn))
 				return re.sub('\.lib$', '',libn)
 
 	#if no lib can be found, just return the libname as msvc expects it
-	self.fatal("The library %r could not be found" % libname)
+	self.fatal('The library %r could not be found' % libname)
 	return re.sub('\.lib$', '', libname)
 
 @conf
@@ -812,8 +811,8 @@ def find_msvc(conf):
 
 	try:
 		conf.load('winres')
-	except Errors.WafError:
-		warn('Resource compiler not found. Compiling resource file is disabled')
+	except Errors.ConfigurationError:
+		Logs.warn('Resource compiler not found. Compiling resource file is disabled')
 
 @conf
 def visual_studio_add_flags(self):
@@ -974,7 +973,7 @@ def exec_mf(self):
 	elif 'cshlib' in self.generator.features or 'cxxshlib' in self.generator.features:
 		mode = '2'
 
-	debug('msvc: embedding manifest in mode %r', mode)
+	Logs.debug('msvc: embedding manifest in mode %r', mode)
 
 	lst = [] + mtool
 	lst.extend(Utils.to_list(env['MTFLAGS']))

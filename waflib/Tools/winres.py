@@ -4,7 +4,7 @@
 
 "Process *.rc* files for C/C++: X{.rc -> [.res|.rc.o]}"
 
-import re, traceback
+import re
 from waflib import Task, Logs, Utils
 from waflib.TaskGen import extension
 from waflib.Tools import c_preproc
@@ -15,7 +15,7 @@ def rc_file(self, node):
 	Bind the .rc extension to a winrc task
 	"""
 	obj_ext = '.rc.o'
-	if self.env['WINRC_TGT_F'] == '/fo':
+	if self.env.WINRC_TGT_F == '/fo':
 		obj_ext = '.res'
 	rctask = self.create_task('winrc', node, node.change_ext(obj_ext))
 	try:

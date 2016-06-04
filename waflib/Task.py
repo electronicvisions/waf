@@ -578,24 +578,24 @@ class Task(TaskBase):
 		try:
 			prev_sig = bld.task_sigs[key]
 		except KeyError:
-			Logs.debug("task: task %r must run: it was never run before or the task code changed", self)
+			Logs.debug('task: task %r must run: it was never run before or the task code changed', self)
 			return RUN_ME
 
 		if new_sig != prev_sig:
-			Logs.debug("task: task %r must run: the task signature changed", self)
+			Logs.debug('task: task %r must run: the task signature changed', self)
 			return RUN_ME
 
 		# compare the signatures of the outputs
 		for node in self.outputs:
 			sig = bld.node_sigs.get(node)
 			if not sig:
-				Logs.debug("task: task %r must run: an output node has no signature", self)
+				Logs.debug('task: task %r must run: an output node has no signature', self)
 				return RUN_ME
 			if sig != key:
-				Logs.debug("task: task %r must run: an output node was produced by another task", self)
+				Logs.debug('task: task %r must run: an output node was produced by another task', self)
 				return RUN_ME
 			if not node.exists():
-				Logs.debug("task: task %r must run: an output node does not exist", self)
+				Logs.debug('task: task %r must run: an output node does not exist', self)
 				return RUN_ME
 
 		return (self.always_run and RUN_ME) or SKIP_ME
@@ -883,9 +883,9 @@ def funex(c):
 	exec(c, dc)
 	return dc['f']
 
-re_cond = re.compile("(?P<var>\w+)|(?P<or>\|)|(?P<and>&)")
-re_novar = re.compile(r"^(SRC|TGT)\W+.*?$")
-reg_act = re.compile(r"(?P<backslash>\\)|(?P<dollar>\$\$)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})", re.M)
+re_cond = re.compile('(?P<var>\w+)|(?P<or>\|)|(?P<and>&)')
+re_novar = re.compile(r'^(SRC|TGT)\W+.*?$')
+reg_act = re.compile(r'(?P<backslash>\\)|(?P<dollar>\$\$)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})', re.M)
 def compile_fun_shell(line):
 	"""
 	Create a compiled function to execute a process with the shell
@@ -993,12 +993,12 @@ def compile_fun_noshell(line):
 				if code:
 					app('[tsk.inputs%s]' % code)
 				else:
-					app("[a.path_from(cwdx) for a in tsk.inputs]")
+					app('[a.path_from(cwdx) for a in tsk.inputs]')
 			elif var == 'TGT':
 				if code:
 					app('[tsk.outputs%s]' % code)
 				else:
-					app("[a.path_from(cwdx) for a in tsk.outputs]")
+					app('[a.path_from(cwdx) for a in tsk.outputs]')
 			elif code:
 				if code.startswith(':'):
 					# a composed variable ${FOO:OUT}

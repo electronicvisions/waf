@@ -69,6 +69,6 @@ def r4(code):
 	return code.replace('next(self.biter)', 'self.biter.next()')
 
 @subst('Context.py')
-def r4(code):
+def r5(code):
 	return code.replace("('Execution failure: %s'%str(e),ex=e)", "('Execution failure: %s'%str(e),ex=e),None,sys.exc_info()[2]")
 

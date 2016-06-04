@@ -291,7 +291,7 @@ class ConfigurationContext(Context.Context):
 		for x in self.rules:
 			f = getattr(self, x)
 			if not f:
-				self.fatal("No such configuration function %r" % x)
+				self.fatal('No such configuration function %r' % x)
 			f()
 
 def conf(f):
@@ -471,7 +471,7 @@ def find_program(self, filename, **kw):
 	else:
 		retmsg = False
 
-	self.msg("Checking for program %r" % msg, retmsg, **kw)
+	self.msg('Checking for program %r' % msg, retmsg, **kw)
 	if not kw.get('quiet'):
 		self.to_log('find program=%r paths=%r var=%r -> %r' % (filename, path_list, var, ret))
 
