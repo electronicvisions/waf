@@ -410,8 +410,8 @@ class BuildContext(Context.Context):
 		:param value: value to depend on
 		:type value: :py:class:`waflib.Node.Node`, string, or function returning a string
 		"""
-		if path is None:
-			raise ValueError('Invalid input')
+		if not path:
+			raise ValueError('Invalid input path %r' % path)
 
 		if isinstance(path, waflib.Node.Node):
 			node = path
@@ -419,6 +419,8 @@ class BuildContext(Context.Context):
 			node = self.root.find_resource(path)
 		else:
 			node = self.path.find_resource(path)
+		if not node:
+			raise ValueError('Could not find the path %r' % path)
 
 		if isinstance(value, list):
 			self.deps_man[node].extend(value)
@@ -440,6 +442,8 @@ class BuildContext(Context.Context):
 
 			def build(bld):
 				bld.hash_env_vars(bld.env, ['CXX', 'CC'])
+
+		This method uses an internal cache.
 
 		:param env: Configuration Set
 		:type env: :py:class:`waflib.ConfigSet.ConfigSet`
@@ -464,11 +468,8 @@ class BuildContext(Context.Context):
 				pass
 
 		lst = [env[a] for a in vars_lst]
-		ret = Utils.h_list(lst)
+		cache[idx] = ret = Utils.h_list(lst)
 		Logs.debug('envhash: %s %r', Utils.to_hex(ret), lst)
-
-		cache[idx] = ret
-
 		return ret
 
 	def get_tgen_by_name(self, name):
@@ -509,7 +510,7 @@ class BuildContext(Context.Context):
 
 		pc = (100.*state)/total
 		eta = str(self.timer)
-		fs = "[%%%dd/%%%dd][%%s%%2d%%%%%%s][%s][" % (n, n, ind)
+		fs = "[%%%dd/%%d][%%s%%2d%%%%%%s][%s][" % (n, ind)
 		left = fs % (state, total, col1, pc, col2)
 		right = '][%s%s%s]' % (col1, eta, col2)
 
@@ -592,7 +593,14 @@ class BuildContext(Context.Context):
 		self.get_group(group).append(tgen)
 
 	def get_group_name(self, g):
-		"""name for the group g (utility)"""
+		"""
+		Return the name of the input build group
+
+		:param g: build group object or build group index
+		:type g: integer or list
+		:return: name
+		:rtype: string
+		"""
 		if not isinstance(g, list):
 			g = self.groups[g]
 		for x in self.group_names:
@@ -620,15 +628,14 @@ class BuildContext(Context.Context):
 
 	def add_group(self, name=None, move=True):
 		"""
-		Add a new group of tasks/task generators. By default the new group becomes the default group for new task generators.
+		Add a new group of tasks/task generators. By default the new group becomes
+		the default group for new task generators. Make sure to create build groups in order.
 
 		:param name: name for this group
 		:type name: string
 		:param move: set the group created as default group (True by default)
 		:type move: bool
 		"""
-		#if self.groups and not self.groups[0].tasks:
-		#	error('add_group: an empty group is already present')
 		if name and name in self.group_names:
 			Logs.error('add_group: name %s already present', name)
 		g = []
@@ -750,7 +757,7 @@ class BuildContext(Context.Context):
 		for tg in self.groups[idx]:
 			try:
 				tasks.extend(tg.tasks)
-			except AttributeError: # not a task generator, can be the case for installation tasks
+			except AttributeError: # not a task generator
 				tasks.append(tg)
 		return tasks
 

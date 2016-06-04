@@ -720,7 +720,7 @@ class Task(TaskBase):
 		# recompute the signature and return it
 		try:
 			bld.imp_sigs[key] = self.compute_sig_implicit_deps()
-		except (OSError, IOError):
+		except EnvironmentError:
 			for k in bld.node_deps.get(self.uid(), []):
 				if not k.exists():
 					Logs.warn('Dependency %r for %r is missing: check the task declaration and the build order!', k, self)

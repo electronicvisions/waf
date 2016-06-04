@@ -368,11 +368,11 @@ def cmd_to_list(self, cmd):
 	return cmd
 
 @conf
-def check_waf_version(self, mini='1.7.99', maxi='1.9.0', **kw):
+def check_waf_version(self, mini='1.8.99', maxi='2.0.0', **kw):
 	"""
 	Raise a Configuration error if the Waf version does not strictly match the given bounds::
 
-		conf.check_waf_version(mini='1.8.0', maxi='1.9.0')
+		conf.check_waf_version(mini='1.8.99', maxi='2.0.0')
 
 	:type  mini: number, tuple or string
 	:param mini: Minimum required version
@@ -552,9 +552,7 @@ def run_build(self, *k, **kw):
 	if cachemode == 1:
 		try:
 			proj = ConfigSet.ConfigSet(os.path.join(dir, 'cache_run_build'))
-		except OSError:
-			pass
-		except IOError:
+		except EnvironmentError:
 			pass
 		else:
 			ret = proj['cache_run_build']
@@ -576,11 +574,9 @@ def run_build(self, *k, **kw):
 	bld.all_envs.update(self.all_envs) # not really necessary
 	bld.env = kw['env']
 
-	# OMG huge hack
 	bld.kw = kw
 	bld.conf = self
 	kw['build_fun'](bld)
-
 	ret = -1
 	try:
 		try:
@@ -598,7 +594,6 @@ def run_build(self, *k, **kw):
 			proj.store(os.path.join(dir, 'cache_run_build'))
 		else:
 			shutil.rmtree(dir)
-
 	return ret
 
 @conf

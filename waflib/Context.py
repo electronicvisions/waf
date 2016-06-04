@@ -96,7 +96,7 @@ class store_context(type):
 		super(store_context, cls).__init__(name, bases, dict)
 		name = cls.__name__
 
-		if name == 'ctx' or name == 'Context':
+		if name in ('ctx', 'Context'):
 			return
 
 		try:

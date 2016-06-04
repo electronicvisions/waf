@@ -312,9 +312,7 @@ def distclean(ctx):
 			if proj['out_dir'] != proj['top_dir']:
 				try:
 					shutil.rmtree(proj['out_dir'])
-				except IOError:
-					pass
-				except OSError as e:
+				except EnvironmentError as e:
 					if e.errno != errno.ENOENT:
 						Logs.warn('Could not remove %r', proj['out_dir'])
 			else:

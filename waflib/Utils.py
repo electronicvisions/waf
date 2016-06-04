@@ -562,7 +562,7 @@ def h_fun(fun):
 	except AttributeError:
 		try:
 			h = inspect.getsource(fun)
-		except IOError:
+		except EnvironmentError:
 			h = "nocode"
 		try:
 			fun.code = h

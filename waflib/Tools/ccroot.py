@@ -663,7 +663,7 @@ def process_lib(self):
 			if node:
 				try:
 					Utils.h_file(node.abspath())
-				except (IOError, OSError):
+				except EnvironmentError:
 					raise ValueError('Could not read %r' % y)
 				break
 		else:
