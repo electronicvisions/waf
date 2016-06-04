@@ -43,36 +43,6 @@ class rc_parser(c_preproc.c_parser):
 				ret.append(('include', m.group(5)))
 		return ret
 
-	def addlines(self, node):
-		self.currentnode_stack.append(node.parent)
-		filepath = node.abspath()
-
-		self.count_files += 1
-		if self.count_files > c_preproc.recursion_limit:
-			raise c_preproc.PreprocError("recursion limit exceeded")
-		pc = self.parse_cache
-		Logs.debug('preproc: reading file %r', filepath)
-		try:
-			lns = pc[filepath]
-		except KeyError:
-			pass
-		else:
-			self.lines.extend(lns)
-			return
-
-		try:
-			lines = self.filter_comments(filepath)
-			lines.append((c_preproc.POPFILE, ''))
-			lines.reverse()
-			pc[filepath] = lines
-			self.lines.extend(lines)
-		except IOError:
-			raise c_preproc.PreprocError("could not read the file %s" % filepath)
-		except Exception:
-			if Logs.verbose > 0:
-				Logs.error("parsing %s failed", filepath)
-				traceback.print_exc()
-
 class winrc(Task.Task):
 	"""
 	Task for compiling resource files
@@ -83,32 +53,26 @@ class winrc(Task.Task):
 	def scan(self):
 		tmp = rc_parser(self.generator.includes_nodes)
 		tmp.start(self.inputs[0], self.env)
-		nodes = tmp.nodes
-		names = tmp.names
-
 		if Logs.verbose:
-			Logs.debug('deps: deps for %s: %r; unresolved %r', str(self), nodes, names)
-
-		return (nodes, names)
+			Logs.debug('deps: deps for %s: %r; unresolved %r', self.inputs, tmp.nodes, tmp.names)
+		return (tmp.nodes, tmp.names)
 
 def configure(conf):
 	"""
 	Detect the programs RC or windres, depending on the C/C++ compiler in use
 	"""
 	v = conf.env
-	v['WINRC_TGT_F'] = '-o'
-	v['WINRC_SRC_F'] = '-i'
+	v.WINRC_TGT_F = '-o'
+	v.WINRC_SRC_F = '-i'
 
 	# find rc.exe
-	if not conf.env.WINRC:
+	if not v.WINRC:
 		if v.CC_NAME == 'msvc':
-			conf.find_program('RC', var='WINRC', path_list = v['PATH'])
-			v['WINRC_TGT_F'] = '/fo'
-			v['WINRC_SRC_F'] = ''
+			conf.find_program('RC', var='WINRC', path_list=v.PATH)
+			v.WINRC_TGT_F = '/fo'
+			v.WINRC_SRC_F = ''
 		else:
-			conf.find_program('windres', var='WINRC', path_list = v['PATH'])
-	if not conf.env.WINRC:
+			conf.find_program('windres', var='WINRC', path_list=v.PATH)
+	if not v.WINRC:
 		conf.fatal('winrc was not found!')
-
-	v['WINRCFLAGS'] = []
 

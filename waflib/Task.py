@@ -700,7 +700,7 @@ class Task(TaskBase):
 			except Errors.TaskNotReady:
 				raise
 			except EnvironmentError:
-				# when a file was renamed (IOError usually), remove the stale nodes (headers in folders without source files)
+				# when a file was renamed, remove the stale nodes (headers in folders without source files)
 				# this will break the order calculation for headers created during the build in the source directory (should be uncommon)
 				# the behaviour will differ when top != out
 				for x in bld.node_deps.get(self.uid(), []):

@@ -28,7 +28,6 @@ A dumb preprocessor is also available in the tool *c_dumbpreproc*
 
 import re, string, traceback
 from waflib import Logs, Utils, Errors
-from waflib.Logs import debug, error
 
 class PreprocError(Errors.WafError):
 	pass
@@ -908,14 +907,14 @@ class c_parser(object):
 			raise PreprocError('recursion limit exceeded')
 
 		if Logs.verbose:
-			debug('preproc: reading file %r', node)
+			Logs.debug('preproc: reading file %r', node)
 		try:
 			lines = self.parse_lines(node)
 		except EnvironmentError:
 			raise PreprocError('could not read the file %r' % node)
 		except Exception:
 			if Logs.verbose > 0:
-				error("parsing %r failed" % node)
+				Logs.error('parsing %r failed', node)
 				traceback.print_exc()
 		else:
 			self.lines.extend(lines)
@@ -930,7 +929,7 @@ class c_parser(object):
 		:param env: config set containing additional defines to take into account
 		:type env: :py:class:`waflib.ConfigSet.ConfigSet`
 		"""
-		debug('preproc: scanning %s (in %s)', node.name, node.parent.name)
+		Logs.debug('preproc: scanning %s (in %s)', node.name, node.parent.name)
 
 		self.current_file = node
 		self.addlines(node)
@@ -950,7 +949,7 @@ class c_parser(object):
 
 			try:
 				ve = Logs.verbose
-				if ve: debug('preproc: line is %s - %s state is %s', token, line, self.state)
+				if ve: Logs.debug('preproc: line is %s - %s state is %s', token, line, self.state)
 				state = self.state
 
 				# make certain we define the state if we are about to enter in an if block
@@ -978,7 +977,7 @@ class c_parser(object):
 					else: state[-1] = accepted
 				elif token == 'include' or token == 'import':
 					(kind, inc) = extract_include(line, self.defs)
-					if ve: debug('preproc: include found %s    (%s) ', inc, kind)
+					if ve: Logs.debug('preproc: include found %s    (%s) ', inc, kind)
 					if kind == '"' or not strict_quotes:
 						self.current_file = self.tryfind(inc)
 						if token == 'import':
@@ -1007,7 +1006,7 @@ class c_parser(object):
 						self.ban_includes.add(self.current_file)
 			except Exception as e:
 				if Logs.verbose:
-					debug('preproc: line parsing failed (%s): %s %s', e, line, Utils.ex_stack())
+					Logs.debug('preproc: line parsing failed (%s): %s %s', e, line, Utils.ex_stack())
 
 	def define_name(self, line):
 		"""
@@ -1042,6 +1041,6 @@ def scan(task):
 	tmp = c_parser(nodepaths)
 	tmp.start(task.inputs[0], task.env)
 	if Logs.verbose:
-		debug('deps: deps for %r: %r; unresolved %r', task.inputs, tmp.nodes, tmp.names)
+		Logs.debug('deps: deps for %r: %r; unresolved %r', task.inputs, tmp.nodes, tmp.names)
 	return (tmp.nodes, tmp.names)
 

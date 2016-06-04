@@ -289,7 +289,7 @@ class BuildContext(Context.Context):
 		dbfn = os.path.join(self.variant_dir, Context.DBFILE)
 		try:
 			data = Utils.readf(dbfn, 'rb')
-		except (IOError, EOFError):
+		except (EnvironmentError, EOFError):
 			# handle missing file/empty file
 			Logs.debug('build: Could not load the build cache %s (missing)', dbfn)
 		else:
