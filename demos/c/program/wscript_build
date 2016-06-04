@@ -4,7 +4,7 @@ def write_header(tsk):
 	tsk.outputs[0].write('int abc = 423;\n')
 bld(rule=write_header, target='b.h', ext_out=['.h'])
 
-bld.program(
+tg = bld.program(
 	features = 'aaa',
 	source   = 'main.c',
 	includes = '. ..',
@@ -34,3 +34,6 @@ class foo(waflib.Task.Task):
 	def run(self):
 		self.outputs[0].write('int kik = 343;\n')
 
+
+if bld.env.CC_NAME == 'msvc':
+	tg.source += ' msvc_resource.rc'
