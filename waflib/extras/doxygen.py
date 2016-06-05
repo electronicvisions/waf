@@ -119,6 +119,7 @@ class doxygen(Task.Task):
 
 	def scan(self):
 		exclude_patterns = self.pars.get('EXCLUDE_PATTERNS','').split()
+		exclude_patterns = [pattern.replace('*/', '**/') for pattern in exclude_patterns]
 		file_patterns = self.pars.get('FILE_PATTERNS','').split()
 		if not file_patterns:
 			file_patterns = DOXY_FILE_PATTERNS.split()
