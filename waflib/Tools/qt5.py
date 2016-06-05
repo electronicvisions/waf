@@ -21,7 +21,7 @@ The following snippet illustrates the tool usage::
 	def build(bld):
 		bld(
 			features = 'qt5 cxx cxxprogram',
-			uselib   = 'QTCORE QTGUI QTOPENGL QTSVG',
+			uselib   = 'QT5CORE QT5GUI QT5OPENGL QT5SVG',
 			source   = 'main.cpp textures.qrc aboutDialog.ui',
 			target   = 'window',
 		)
@@ -335,7 +335,7 @@ def apply_qt5(self):
 	Add MOC_FLAGS which may be necessary for moc::
 
 		def build(bld):
-			bld.program(features='qt5', source='main.cpp', target='app', use='QTCORE')
+			bld.program(features='qt5', source='main.cpp', target='app', use='QT5CORE')
 
 	The additional parameters are:
 
