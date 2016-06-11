@@ -127,7 +127,7 @@ class utest(Task.Task):
 
 		testcmd = getattr(self.generator, 'ut_cmd', False) or getattr(Options.options, 'testcmd', False)
 		if testcmd:
-			self.ut_exec = (testcmd % self.ut_exec[0]).split(' ')
+			self.ut_exec = (testcmd % " ".join(self.ut_exec)).split(' ')
 
 		proc = Utils.subprocess.Popen(self.ut_exec, cwd=cwd, env=self.get_test_env(), stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE)
 		(stdout, stderr) = proc.communicate()
