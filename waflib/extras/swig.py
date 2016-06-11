@@ -64,6 +64,7 @@ class swig(Task.Task):
 		lst_src = []
 
 		seen = []
+		missing = []
 		to_see = [self.inputs[0]]
 
 		while to_see:
@@ -87,9 +88,8 @@ class swig(Task.Task):
 						to_see.append(u)
 						break
 				else:
-					Logs.warn('could not find %r', n)
-
-		return (lst_src, [])
+					missing.append(n)
+		return (lst_src, missing)
 
 # provide additional language processing
 swig_langs = {}
