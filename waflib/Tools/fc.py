@@ -58,8 +58,6 @@ class fc(Task.Task):
 		tmp = fc_scan.fortran_parser(self.generator.includes_nodes)
 		tmp.task = self
 		tmp.start(self.inputs[0])
-		if Logs.verbose:
-			Logs.debug('deps: deps for %r: %r; unresolved %r', self.inputs, tmp.nodes, tmp.names)
 		return (tmp.nodes, tmp.names)
 
 	def runnable_status(self):

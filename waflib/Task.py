@@ -715,7 +715,7 @@ class Task(TaskBase):
 		# no previous run or the signature of the dependencies has changed, rescan the dependencies
 		(bld.node_deps[key], bld.raw_deps[key]) = self.scan()
 		if Logs.verbose:
-			Logs.debug('deps: scanner for %s returned %s %s', self, bld.node_deps[key], bld.raw_deps[key])
+			Logs.debug('deps: scanner for %s: %r; unresolved: %r', self, bld.node_deps[key], bld.raw_deps[key])
 
 		# recompute the signature and return it
 		try:

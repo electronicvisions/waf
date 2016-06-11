@@ -53,8 +53,6 @@ class winrc(Task.Task):
 	def scan(self):
 		tmp = rc_parser(self.generator.includes_nodes)
 		tmp.start(self.inputs[0], self.env)
-		if Logs.verbose:
-			Logs.debug('deps: deps for %s: %r; unresolved %r', self.inputs, tmp.nodes, tmp.names)
 		return (tmp.nodes, tmp.names)
 
 def configure(conf):
