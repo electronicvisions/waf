@@ -126,41 +126,9 @@ class mcs(Task.Task):
 	run_str = '${MCS} ${CSTYPE} ${CSFLAGS} ${ASS_ST:ASSEMBLIES} ${RES_ST:RESOURCES} ${OUT} ${SRC}'
 
 	def exec_command(self, cmd, **kw):
-		if not 'cwd' in kw:
-			kw['cwd'] = self.get_cwd()
-
-		try:
-			tmp = None
-			if isinstance(cmd, list) and len(' '.join(cmd)) >= 8192:
-				program = cmd[0] #unquoted program name, otherwise exec_command will fail
-				cmd = [self.quote_response_command(x) for x in cmd]
-				(fd, tmp) = tempfile.mkstemp()
-				os.write(fd, '\r\n'.join(i.replace('\\', '\\\\') for i in cmd[1:]).encode())
-				os.close(fd)
-				cmd = [program, '@' + tmp]
-			# no return here, that's on purpose
-			ret = self.generator.bld.exec_command(cmd, **kw)
-		finally:
-			if tmp:
-				try:
-					os.remove(tmp)
-				except OSError:
-					pass # anti-virus and indexers can keep the files open -_-
-		return ret
-
-	def quote_response_command(self, flag):
-		# /noconfig is not allowed when using response files
-		if flag.lower() == '/noconfig':
-			return ''
-
-		if flag.find(' ') > -1:
-			for x in ('/r:', '/reference:', '/resource:', '/lib:', '/out:'):
-				if flag.startswith(x):
-					flag = '%s"%s"' % (x, '","'.join(flag[len(x):].split(',')))
-					break
-			else:
-				flag = '"%s"' % flag
-		return flag
+		if '/noconfig' in cmd:
+			raise ValueError('/noconfig is not allowed when using response files, check your flags!')
+		return super(self.__class__, self).exec_command(cmd, **kw)
 
 def configure(conf):
 	"""

@@ -94,8 +94,8 @@ def configure(conf):
 		conf.fc_add_flags()
 		conf.ifort_modifier_platform()
 
-import os, sys, re, tempfile
-from waflib import Task, Logs, Options, Errors
+import os, re
+from waflib import Task, Logs, Errors
 from waflib.TaskGen import after_method, feature
 
 from waflib.Configure import conf
@@ -449,38 +449,7 @@ def exec_mf(self):
 	lst.extend(['-manifest', manifest])
 	lst.append('-outputresource:%s;%s' % (outfile, mode))
 
-	return self.exec_command(lst)
-
-def quote_response_command(self, flag):
-	if flag.find(' ') > -1:
-		for x in ('/LIBPATH:', '/IMPLIB:', '/OUT:', '/I'):
-			if flag.startswith(x):
-				flag = '%s"%s"' % (x, flag[len(x):])
-				break
-		else:
-			flag = '"%s"' % flag
-	return flag
-
-def exec_response_command(self, cmd, **kw):
-	# not public yet
-	try:
-		tmp = None
-		if sys.platform.startswith('win') and isinstance(cmd, list) and len(' '.join(cmd)) >= 8192:
-			program = cmd[0] #unquoted program name, otherwise exec_command will fail
-			cmd = [self.quote_response_command(x) for x in cmd]
-			(fd, tmp) = tempfile.mkstemp()
-			os.write(fd, '\r\n'.join(i.replace('\\', '\\\\') for i in cmd[1:]).encode())
-			os.close(fd)
-			cmd = [program, '@' + tmp]
-		# no return here, that's on purpose
-		ret = super(self.__class__, self).exec_command(cmd, **kw)
-	finally:
-		if tmp:
-			try:
-				os.remove(tmp)
-			except OSError:
-				pass # anti-virus and indexers can keep the files open -_-
-	return ret
+	return super(self.__class__, self).exec_command(lst)
 
 def exec_command_ifort(self, *k, **kw):
 	"""
@@ -503,10 +472,9 @@ def exec_command_ifort(self, *k, **kw):
 		env.update(PATH = ';'.join(self.env['PATH']))
 		kw['env'] = env
 
-
 	if not 'cwd' in kw:
 		kw['cwd'] = self.get_cwd()
-	ret = self.exec_response_command(k[0], **kw)
+	ret = super(self.__class__, self).exec_command(k[0], **kw)
 	if not ret and getattr(self, 'do_manifest', None):
 		ret = self.exec_mf()
 	return ret
@@ -527,15 +495,13 @@ def wrap_class(class_name):
 		if self.env.IFORT_WIN32:
 			return self.exec_command_ifort(*k, **kw)
 		else:
-			return super(derived_class, self).exec_command(*k, **kw)
+			return super(self.__class__, self).exec_command(*k, **kw)
 
 	# Chain-up monkeypatch needed since exec_command() is in base class API
 	derived_class.exec_command = exec_command
 
 	# No chain-up behavior needed since the following methods aren't in
 	# base class API
-	derived_class.exec_response_command = exec_response_command
-	derived_class.quote_response_command = quote_response_command
 	derived_class.exec_command_ifort = exec_command_ifort
 	derived_class.exec_mf = exec_mf
 

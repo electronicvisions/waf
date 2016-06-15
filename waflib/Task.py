@@ -6,7 +6,7 @@
 Tasks represent atomic operations such as processes.
 """
 
-import re, sys
+import os, re, sys, tempfile
 from waflib import Utils, Logs, Errors
 
 # task states
@@ -174,6 +174,19 @@ class TaskBase(evil):
 			self.generator.bld.fatal('Working folders given to tasks must be Node objects')
 		return ret
 
+	def quote_flag(self, x):
+		old = x
+		if '\\' in x:
+			x = x.replace('\\', '\\\\')
+		if '"' in x:
+			x = x.replace('"', '\\"')
+		if old != x or ' ' in x or '\t' in x or "'" in x:
+			x = '"%s"' % x
+		return x
+
+	def split_argfile(self, cmd):
+		return ([cmd[0]], [self.quote_flag(x) for x in cmd[1:]])
+
 	def exec_command(self, cmd, **kw):
 		"""
 		Wrapper for :py:meth:`waflib.Context.Context.exec_command` which sets a current working directory to ``build.variant_dir``
@@ -183,7 +196,24 @@ class TaskBase(evil):
 		"""
 		if not 'cwd' in kw:
 			kw['cwd'] = self.get_cwd()
-		return self.generator.bld.exec_command(cmd, **kw)
+
+		# workaround for command line length limit:
+		# http://support.microsoft.com/kb/830473
+		if not isinstance(cmd, str) and len(repr(cmd)) >= 8192:
+			cmd, args = self.split_argfile(cmd)
+			try:
+				(fd, tmp) = tempfile.mkstemp()
+				os.write(fd, '\r\n'.join(args).encode())
+				os.close(fd)
+				return self.generator.bld.exec_command(cmd + ['@' + tmp], **kw)
+			finally:
+				try:
+					os.remove(tmp)
+				except OSError:
+					# anti-virus and indexers can keep files open -_-
+					pass
+		else:
+			return self.generator.bld.exec_command(cmd, **kw)
 
 	def runnable_status(self):
 		"""

@@ -26,8 +26,8 @@ You would have to run::
 [1] http://www.jython.org/
 """
 
-import os, tempfile, shutil
-from waflib import Task, Utils, Errors, Node, Logs
+import os, shutil
+from waflib import Task, Utils, Errors, Node
 from waflib.Configure import conf
 from waflib.TaskGen import feature, before_method, after_method
 
@@ -210,7 +210,19 @@ def use_jar_files(self):
 			y.post()
 			self.jar_task.run_after.update(y.tasks)
 
-class jar_create(Task.Task):
+class JTask(Task.Task):
+	def split_argfile(self, cmd):
+		inline = [cmd[0]]
+		infile = []
+		for x in cmd[1:]:
+			# jar and javac do not want -J flags in @file
+			if x.startswith('-J'):
+				inline.append(x)
+			else:
+				infile.append(self.quote_flag(x))
+		return (inline, infile)
+
+class jar_create(JTask):
 	"""
 	Create a jar file
 	"""
@@ -233,12 +245,12 @@ class jar_create(Task.Task):
 				raise Errors.WafError('Could not find the basedir %r for %r' % (self.basedir, self))
 		return super(jar_create, self).runnable_status()
 
-class javac(Task.Task):
+class javac(JTask):
 	"""
 	Compile java files
 	"""
 	color   = 'BLUE'
-
+	run_str = '${JAVAC} -classpath ${CLASSPATH} -d ${OUTDIR} ${JAVACFLAGS} ${SRC}'
 	vars = ['CLASSPATH', 'JAVACFLAGS', 'JAVAC', 'OUTDIR']
 	"""
 	The javac task will be executed again if the variables CLASSPATH, JAVACFLAGS, JAVAC or OUTDIR change.
@@ -264,50 +276,6 @@ class javac(Task.Task):
 			for x in self.srcdir:
 				self.inputs.extend(x.ant_glob(SOURCE_RE, remove=False))
 		return super(javac, self).runnable_status()
-
-	def run(self):
-		"""
-		Execute the javac compiler
-		"""
-		env = self.env
-		gen = self.generator
-		bld = gen.bld
-		wd = bld.bldnode
-		def to_list(xx):
-			if isinstance(xx, str): return [xx]
-			return xx
-		cmd = []
-		cmd.extend(to_list(env['JAVAC']))
-		cmd.extend(['-classpath'])
-		cmd.extend(to_list(env['CLASSPATH']))
-		cmd.extend(['-d'])
-		cmd.extend(to_list(env['OUTDIR']))
-		cmd.extend(to_list(env['JAVACFLAGS']))
-
-		files = [a.path_from(self.get_cwd()) for a in self.inputs]
-
-		# workaround for command line length limit:
-		# http://support.microsoft.com/kb/830473
-		tmp = None
-		try:
-			if len(str(files)) + len(str(cmd)) > 8192:
-				(fd, tmp) = tempfile.mkstemp(dir=bld.bldnode.abspath())
-				try:
-					os.write(fd, '\n'.join(files).encode())
-				finally:
-					if tmp:
-						os.close(fd)
-				if Logs.verbose:
-					Logs.debug('runner: %r', cmd + files)
-				cmd.append('@' + tmp)
-			else:
-				cmd += files
-
-			ret = self.exec_command(cmd, cwd=wd, env=env.env or None)
-		finally:
-			if tmp:
-				os.remove(tmp)
-		return ret
 
 	def post_run(self):
 		"""
