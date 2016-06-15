@@ -52,4 +52,4 @@ NEW IN WAF 1.9
     instances can still define their own mappings to override the defaults, but in
     that case all mappings/precedences must be present. These features were not used in Waf 1.8.
   - Do not truncate the _task suffix from Task class names
-
+  - Task.exec_command will use @argfile when command-line limits are exceeded

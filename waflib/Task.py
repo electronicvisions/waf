@@ -199,7 +199,7 @@ class TaskBase(evil):
 
 		# workaround for command line length limit:
 		# http://support.microsoft.com/kb/830473
-		if not isinstance(cmd, str) and len(repr(cmd)) >= 8192:
+		if not isinstance(cmd, str) and (len(repr(cmd)) >= 8192 if Utils.is_win32 else len(cmd) > 200000):
 			cmd, args = self.split_argfile(cmd)
 			try:
 				(fd, tmp) = tempfile.mkstemp()
