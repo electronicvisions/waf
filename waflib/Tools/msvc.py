@@ -1008,7 +1008,7 @@ def wrap_class(class_name):
 
 	return derived_class
 
-for k in 'c cxx cprogram cxxprogram cshlib cxxshlib cstlib cxxstlib'.split():
+for k in 'cprogram cxxprogram cshlib cxxshlib cstlib cxxstlib'.split():
 	wrap_class(k)
 
 def make_winapp(self, family):

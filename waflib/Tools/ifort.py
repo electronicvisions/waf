@@ -477,6 +477,6 @@ def wrap_class(class_name):
 
 	return derived_class
 
-for k in 'fc fcprogram fcprogram_test fcshlib fcstlib'.split():
+for k in 'fcprogram fcprogram_test fcshlib fcstlib'.split():
 	wrap_class(k)
 
