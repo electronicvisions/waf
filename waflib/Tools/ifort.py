@@ -395,8 +395,6 @@ def apply_flags_ifort(self):
 
 				break
 
-# split the manifest file processing from the link task, like for the rc processing
-
 @feature('fcprogram', 'fcshlib', 'fcprogram_test')
 @after_method('apply_link')
 def apply_manifest_ifort(self):
@@ -408,75 +406,5 @@ def apply_manifest_ifort(self):
 		out_node = self.link_task.outputs[0]
 		man_node = out_node.parent.find_or_declare(out_node.name + '.manifest')
 		self.link_task.outputs.append(man_node)
-		self.link_task.do_manifest = True
-
-def exec_mf(self):
-	"""
-	Create the manifest file
-	"""
-	env = self.env
-	mtool = env['MT']
-	if not mtool:
-		return 0
-
-	self.do_manifest = False
-
-	outfile = self.outputs[0].abspath()
-
-	manifest = None
-	for out_node in self.outputs:
-		if out_node.name.endswith('.manifest'):
-			manifest = out_node.abspath()
-			break
-	if manifest is None:
-		# Should never get here.  If we do, it means the manifest file was
-		# never added to the outputs list, thus we don't have a manifest file
-		# to embed, so we just return.
-		return 0
-
-	# embedding mode. Different for EXE's and DLL's.
-	# see: http://msdn2.microsoft.com/en-us/library/ms235591(VS.80).aspx
-	mode = ''
-	if 'fcprogram' in self.generator.features or 'fcprogram_test' in self.generator.features:
-		mode = '1'
-	elif 'fcshlib' in self.generator.features:
-		mode = '2'
-
-	Logs.debug('ifort: embedding manifest in mode %r', mode)
-
-	lst = [] + mtool
-	lst.extend(Utils.to_list(env['MTFLAGS']))
-	lst.extend(['-manifest', manifest])
-	lst.append('-outputresource:%s;%s' % (outfile, mode))
-
-	return super(self.__class__, self).exec_command(lst)
-
-def wrap_class(class_name):
-	"""
-	Manifest file processing and @response file workaround for command-line length limits on Windows systems
-	The indicated task class is replaced by a subclass to prevent conflicts in case the class is wrapped more than once
-	"""
-	cls = Task.classes.get(class_name)
-
-	if not cls:
-		return None
-
-	derived_class = type(class_name, (cls,), {})
-
-	def exec_command(self, *k, **kw):
-		ret = super(self.__class__, self).exec_command(*k, **kw)
-		if not ret and self.env.IFORT_WIN32 and getattr(self, 'do_manifest', None):
-			ret = self.exec_mf()
-		return ret
-
-	derived_class.exec_command = exec_command
-	derived_class.exec_mf = exec_mf
-
-	if hasattr(cls, 'hcode'):
-		derived_class.hcode = cls.hcode
-
-	return derived_class
-
-for k in 'fcprogram fcprogram_test fcshlib fcstlib'.split():
-	wrap_class(k)
+		self.env.DO_MANIFEST = True
 

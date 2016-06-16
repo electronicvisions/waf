@@ -53,3 +53,5 @@ NEW IN WAF 1.9
     that case all mappings/precedences must be present. These features were not used in Waf 1.8.
   - Do not truncate the _task suffix from Task class names
   - Task.exec_command will use @argfile when command-line limits are exceeded
+  - Task.exec_command will add tsk.env.PATH to the child process environment
+

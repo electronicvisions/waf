@@ -8,7 +8,7 @@ as C/C++/D/Assembly/Go (this support module is almost never used alone).
 """
 
 import os, re
-from waflib import Task, Utils, Node, Errors
+from waflib import Task, Utils, Node, Errors, Logs
 from waflib.TaskGen import after_method, before_method, feature, taskgen_method, extension
 from waflib.Tools import c_aliases, c_preproc, c_config, c_osx, c_tests
 from waflib.Configure import conf
@@ -171,6 +171,48 @@ class link_task(Task.Task):
 				tmp = pattern % name
 			target = base.find_or_declare(tmp)
 		self.set_outputs(target)
+
+	def exec_command(self, *k, **kw):
+		ret = super(link_task, self).exec_command(*k, **kw)
+		if not ret and self.env.DO_MANIFEST:
+			ret = self.exec_mf()
+		return ret
+
+	def exec_mf(self):
+		"""
+		Create manifest files for VS-like compilers (msvc, ifort, ...)
+		"""
+		if not self.env.MT:
+			return 0
+
+		manifest = None
+		for out_node in self.outputs:
+			if out_node.name.endswith('.manifest'):
+				manifest = out_node.abspath()
+				break
+		else:
+			# Should never get here.  If we do, it means the manifest file was
+			# never added to the outputs list, thus we don't have a manifest file
+			# to embed, so we just return.
+			return 0
+
+		# embedding mode. Different for EXE's and DLL's.
+		# see: http://msdn2.microsoft.com/en-us/library/ms235591(VS.80).aspx
+		mode = ''
+		for x in Utils.to_list(self.generator.features):
+			if x in ('cprogram', 'cxxprogram', 'fcprogram', 'fcprogram_test'):
+				mode = 1
+			elif x in ('cshlib', 'cxxshlib', 'fcshlib'):
+				mode = 2
+
+		Logs.debug('msvc: embedding manifest in mode %r', mode)
+
+		lst = [] + self.env.MT
+		lst.extend(Utils.to_list(self.env.MTFLAGS))
+		lst.extend(['-manifest', manifest])
+		lst.append('-outputresource:%s;%s' % (self.outputs[0].abspath(), mode))
+
+		return super(link_task, self).exec_command(lst)
 
 class stlink_task(link_task):
 	"""
