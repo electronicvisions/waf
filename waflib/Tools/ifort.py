@@ -451,16 +451,6 @@ def exec_mf(self):
 
 	return super(self.__class__, self).exec_command(lst)
 
-def exec_command_ifort(self, *k, **kw):
-	"""
-	Change the command-line execution for msvc programs.
-	Instead of quoting all the paths and keep using the shell, we can just join the options msvc is interested in
-	"""
-	ret = super(self.__class__, self).exec_command(k[0], **kw)
-	if not ret and getattr(self, 'do_manifest', None):
-		ret = self.exec_mf()
-	return ret
-
 def wrap_class(class_name):
 	"""
 	Manifest file processing and @response file workaround for command-line length limits on Windows systems
