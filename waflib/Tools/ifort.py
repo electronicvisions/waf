@@ -456,17 +456,6 @@ def exec_command_ifort(self, *k, **kw):
 	Change the command-line execution for msvc programs.
 	Instead of quoting all the paths and keep using the shell, we can just join the options msvc is interested in
 	"""
-	if isinstance(k[0], list):
-		lst = []
-		carry = ''
-		for a in k[0]:
-			if a == '/Fo' or a == '/doc' or a[-1] == ':':
-				carry = a
-			else:
-				lst.append(carry + a)
-				carry = ''
-		k = [lst]
-
 	if self.env['PATH']:
 		env = dict(self.env.env or os.environ)
 		env.update(PATH = ';'.join(self.env['PATH']))
