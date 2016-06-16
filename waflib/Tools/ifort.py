@@ -472,8 +472,6 @@ def exec_command_ifort(self, *k, **kw):
 		env.update(PATH = ';'.join(self.env['PATH']))
 		kw['env'] = env
 
-	if not 'cwd' in kw:
-		kw['cwd'] = self.get_cwd()
 	ret = super(self.__class__, self).exec_command(k[0], **kw)
 	if not ret and getattr(self, 'do_manifest', None):
 		ret = self.exec_mf()
