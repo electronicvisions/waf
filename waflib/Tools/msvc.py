@@ -982,23 +982,6 @@ def exec_mf(self):
 
 	return super(self.__class__, self).exec_command(lst)
 
-########## stupid evil command modification: concatenate the tokens /Fx, /doc, and /x: with the next token
-
-def exec_command_msvc(self, *k, **kw):
-	"""
-	Change the command-line execution for msvc programs.
-	Instead of quoting all the paths and keep using the shell, we can just join the options msvc is interested in
-	"""
-	if self.env['PATH']:
-		env = dict(self.env.env or os.environ)
-		env.update(PATH = ';'.join(self.env['PATH']))
-		kw['env'] = env
-
-	ret = super(self.__class__, self).exec_command(k[0], **kw)
-	if not ret and getattr(self, 'do_manifest', None):
-		ret = self.exec_mf()
-	return ret
-
 def wrap_class(class_name):
 	"""
 	Manifest file processing and @response file workaround for command-line length limits on Windows systems
@@ -1012,17 +995,12 @@ def wrap_class(class_name):
 	derived_class = type(class_name, (cls,), {})
 
 	def exec_command(self, *k, **kw):
-		if self.env['CC_NAME'] == 'msvc':
-			return self.exec_command_msvc(*k, **kw)
-		else:
-			return super(self.__class__, self).exec_command(*k, **kw)
+		ret = super(self.__class__, self).exec_command(*k, **kw)
+		if not ret and self.env.CC_NAME == 'msvc' and getattr(self, 'do_manifest', None):
+			ret = self.exec_mf()
+		return ret
 
-	# Chain-up monkeypatch needed since exec_command() is in base class API
 	derived_class.exec_command = exec_command
-
-	# No chain-up behavior needed since the following methods aren't in
-	# base class API
-	derived_class.exec_command_msvc = exec_command_msvc
 	derived_class.exec_mf = exec_mf
 
 	if hasattr(cls, 'hcode'):

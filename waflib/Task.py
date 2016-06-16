@@ -197,6 +197,10 @@ class TaskBase(evil):
 		if not 'cwd' in kw:
 			kw['cwd'] = self.get_cwd()
 
+		if self.env.PATH:
+			env = kw['env'] = dict(kw.get('env') or self.env.env or os.environ)
+			env['PATH'] = os.sep.join(self.env.PATH)
+
 		# workaround for command line length limit:
 		# http://support.microsoft.com/kb/830473
 		if not isinstance(cmd, str) and (len(repr(cmd)) >= 8192 if Utils.is_win32 else len(cmd) > 200000):
