@@ -348,7 +348,7 @@ def process_use(self):
 			del use_prec[x]
 
 	# topological sort
-	out = []
+	out = self.tmp_use_sorted = []
 	tmp = []
 	for x in self.tmp_use_seen:
 		for k in use_prec.values():
