@@ -169,6 +169,7 @@ class ConfigurationContext(Context.Context):
 		env = ConfigSet.ConfigSet()
 		env['argv'] = sys.argv
 		env['options'] = Options.options.__dict__
+		env['config_cmd'] = self.cmd
 
 		env.run_dir = Context.run_dir
 		env.top_dir = Context.top_dir
