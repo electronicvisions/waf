@@ -199,7 +199,7 @@ class TaskBase(evil):
 
 		if self.env.PATH:
 			env = kw['env'] = dict(kw.get('env') or self.env.env or os.environ)
-			env['PATH'] = os.sep.join(self.env.PATH)
+			env['PATH'] = self.env.PATH if isinstance(self.env.PATH, str) else os.pathsep.join(self.env.PATH)
 
 		# workaround for command line length limit:
 		# http://support.microsoft.com/kb/830473

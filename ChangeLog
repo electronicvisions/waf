@@ -20,6 +20,8 @@ NEW IN WAF 1.9
   - Installation methods install_files/install_as/symlink_as create regular task generators
     and regular tasks so that installation outputs can be re-used easily
   - Subclass waflib.Build.ConfiguredContext to enable configuration-dependent user commands
+  - Task.exec_command will use @argfile when command-line limits are exceeded
+  - Task.exec_command will add tsk.env.PATH to the child process environment
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
@@ -52,6 +54,4 @@ NEW IN WAF 1.9
     instances can still define their own mappings to override the defaults, but in
     that case all mappings/precedences must be present. These features were not used in Waf 1.8.
   - Do not truncate the _task suffix from Task class names
-  - Task.exec_command will use @argfile when command-line limits are exceeded
-  - Task.exec_command will add tsk.env.PATH to the child process environment
 
