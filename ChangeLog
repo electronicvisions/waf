@@ -22,6 +22,9 @@ NEW IN WAF 1.9
   - Subclass waflib.Build.ConfiguredContext to enable configuration-dependent user commands
   - Task.exec_command will use @argfile when command-line limits are exceeded
   - Task.exec_command will add tsk.env.PATH to the child process environment
+  - Enable ut_str to process scriptlet expressions for c/c++ unit tests
+  - Reduce the amount of paths added to unit test environment variable
+  - Restore configuration values with Configure.autoconfig='clobber' #1758
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
