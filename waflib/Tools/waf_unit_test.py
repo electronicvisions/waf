@@ -43,8 +43,19 @@ testlock = Utils.threading.Lock()
 def make_test(self):
 	"""Create the unit test task. There can be only one unit test task by task generator."""
 	if getattr(self, 'link_task', None):
-		self.create_task('utest', self.link_task.outputs)
+		tsk = self.create_task('utest', self.link_task.outputs)
+		if getattr(self, 'ut_str', None):
+			tsk.ut_run, lst = Task.compile_fun(self.ut_str, shell=getattr(self, 'ut_shell', False))
+			tsk.vars = lst + tsk.vars
 
+		if getattr(self, 'ut_cwd', None):
+			if isinstance(self.ut_cwd, str):
+				if os.path.isabs(self.ut_cwd):
+					self.ut_cwd = self.bld.root.make_node(self.ut_cwd)
+				else:
+					self.ut_cwd = self.path.make_node(self.ut_cwd)
+		else:
+			self.ut_cwd = tsk.inputs[0].parent
 
 @taskgen_method
 def add_test_results(self, tup):
@@ -63,6 +74,7 @@ class utest(Task.Task):
 	color = 'PINK'
 	after = ['vnum', 'inst']
 	vars = []
+
 	def runnable_status(self):
 		"""
 		Always execute the task if `waf --alltests` was used or no
@@ -109,6 +121,11 @@ class utest(Task.Task):
 			self.generator.bld.all_test_paths = fu
 		return fu
 
+	def post_run(self):
+		super(utest, self).post_run()
+		if getattr(Options.options, 'clear_failed_tests', False) and self.waf_unit_test_results[1]:
+			self.generator.bld.task_sigs[self.uid()] = None
+
 	def run(self):
 		"""
 		Execute the test. The execution is always successful, and the results
@@ -116,33 +133,33 @@ class utest(Task.Task):
 
 		Override ``add_test_results`` to interrupt the build
 		"""
+		if hasattr(self, 'ut_run'):
+			return self.ut_run(self)
 
-		filename = self.inputs[0].abspath()
-		self.ut_exec = getattr(self.generator, 'ut_exec', [filename])
+		self.ut_exec = getattr(self.generator, 'ut_exec', [self.inputs[0].abspath()])
 		if getattr(self.generator, 'ut_fun', None):
 			self.generator.ut_fun(self)
 
-
-		cwd = getattr(self.generator, 'ut_cwd', '') or self.inputs[0].parent.abspath()
-
 		testcmd = getattr(self.generator, 'ut_cmd', False) or getattr(Options.options, 'testcmd', False)
 		if testcmd:
-			self.ut_exec = (testcmd % " ".join(self.ut_exec)).split(' ')
+			self.ut_exec = (testcmd % ' '.join(self.ut_exec)).split(' ')
 
-		proc = Utils.subprocess.Popen(self.ut_exec, cwd=cwd, env=self.get_test_env(), stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE)
+		return self.exec_command(self.ut_exec)
+
+	def exec_command(self, cmd, **kw):
+		Logs.debug('runner: %r', cmd)
+		proc = Utils.subprocess.Popen(cmd, cwd=self.get_cwd().abspath(), env=self.get_test_env(),
+			stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE)
 		(stdout, stderr) = proc.communicate()
-
-		self.waf_unit_test_results = tup = (filename, proc.returncode, stdout, stderr)
+		self.waf_unit_test_results = tup = (self.inputs[0].abspath(), proc.returncode, stdout, stderr)
 		testlock.acquire()
 		try:
 			return self.generator.add_test_results(tup)
 		finally:
 			testlock.release()
 
-	def post_run(self):
-		super(utest, self).post_run()
-		if getattr(Options.options, 'clear_failed_tests', False) and self.waf_unit_test_results[1]:
-			self.generator.bld.task_sigs[self.uid()] = None
+	def get_cwd(self):
+		return self.generator.ut_cwd
 
 def summary(bld):
 	"""
