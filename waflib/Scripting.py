@@ -583,15 +583,16 @@ def autoconfigure(execute_method):
 				do_config = h != env.hash
 
 		if do_config:
+			cmd = env['config_cmd'] or 'configure'
 			if Configure.autoconfig == 'clobber':
 				tmp = Options.options.__dict__
 				Options.options.__dict__ = env.options
 				try:
-					run_command(env['config_cmd'])
+					run_command(cmd)
 				finally:
 					Options.options.__dict__ = tmp
 			else:
-				run_command(env['configure'])
+				run_command(cmd)
 		return execute_method(self)
 	return execute
 Build.BuildContext.execute = autoconfigure(Build.BuildContext.execute)
