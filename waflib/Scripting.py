@@ -593,7 +593,9 @@ def autoconfigure(execute_method):
 					Options.options.__dict__ = tmp
 			else:
 				run_command(cmd)
-		return execute_method(self)
+				run_command(self.cmd)
+		else:
+			return execute_method(self)
 	return execute
 Build.BuildContext.execute = autoconfigure(Build.BuildContext.execute)
 
