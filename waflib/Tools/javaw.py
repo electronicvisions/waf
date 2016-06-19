@@ -440,6 +440,8 @@ def check_jni_headers(conf):
 	if f:
 		libDirs = [[x, y.parent.abspath()] for x in libDirs for y in f]
 
+	if conf.env.DEST_OS == 'freebsd':
+		conf.env.append_unique('LINKFLAGS_JAVA', '-pthread')
 	for d in libDirs:
 		try:
 			conf.check(header_name='jni.h', define_name='HAVE_JNI_H', lib='jvm',
