@@ -461,7 +461,7 @@ def check_python_version(conf, minver=None):
 	assert len(lines) == 5, "found %r lines, expected 5: %r" % (len(lines), lines)
 	pyver_tuple = (int(lines[0]), int(lines[1]), int(lines[2]), lines[3], int(lines[4]))
 
-	# compare python version with the minimum required
+	# Compare python version with the minimum required
 	result = (minver is None) or (pyver_tuple >= minver)
 
 	if result:
@@ -515,7 +515,7 @@ def check_python_version(conf, minver=None):
 		conf.msg('Checking for python version', pyver_full)
 	else:
 		minver_str = '.'.join(map(str, minver))
-		conf.msg('Checking for python version', pyver_tuple, ">= %s" % (minver_str,) and 'GREEN' or 'YELLOW')
+		conf.msg('Checking for python version', pyver_full, ">= %s" % (minver_str,) and 'GREEN' or 'YELLOW')
 
 	if not result:
 		conf.fatal('The python version is too old, expecting %r' % (minver,))
