@@ -324,7 +324,7 @@ def process_mocs(self):
 		prefix = x.name[:x.name.rfind('.')] # foo.h -> foo
 		moc_target = 'moc_%s.%d.cpp' % (prefix, self.idx)
 		moc_node = x.parent.find_or_declare(moc_target)
-		self.source.append(moc_target)
+		self.source.append(moc_node)
 
 		self.create_task('moc', x, moc_node)
 
@@ -477,11 +477,18 @@ def configure(self):
 	# Qt5 may be compiled with '-reduce-relocations' which requires dependent programs to have -fPIE or -fPIC?
 	frag = '#include <QApplication>\nint main(int argc, char **argv) {return 0;}\n'
 	uses = 'QT5CORE QT5WIDGETS QT5GUI'
-	try:
-		self.check(features='qt5 cxx', use=uses, fragment=frag, msg='See if Qt files compile directly')
-	except self.errors.ConfigurationError:
-		self.check(features='qt5 cxx', use=uses, fragment=frag, uselib_store='qt5', cxxflags='-fPIE',
-			msg='Try again with -fPIE', okmsg='-fPIE seems to be required')
+	for flag in [[], '-fPIE', '-fPIC']:
+		msg = 'See if Qt files compile '
+		if flag:
+			msg += 'with %s' % flag
+		try:
+			self.check(features='qt5 cxx', use=uses, uselib_store='qt5', cxxflags=flag, fragment=frag, msg=msg)
+		except self.errors.ConfigurationError:
+			pass
+		else:
+			break
+	else:
+		self.fatal('Could not build a simple Qt application')
 
 	# FreeBSD does not add /usr/local/lib and the pkg-config files do not provide it either :-/
 	from waflib import Utils
