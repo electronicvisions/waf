@@ -168,7 +168,7 @@ def check_swig_version(conf, minver=None):
 
 	If successful, SWIG_VERSION is defined as 'MAJOR.MINOR'
 	(eg. '1.3') of the actual swig version found.
-	
+
 	:param minver: minimum version
 	:type minver: tuple of int
 	:return: swig version
@@ -178,22 +178,22 @@ def check_swig_version(conf, minver=None):
 	swigbin = conf.env['SWIG']
 	if not swigbin:
 		conf.fatal('could not find the swig executable')
-	
+
 	# Get swig version string
 	cmd = swigbin + ['-version']
 	Logs.debug('swig: Running swig command %r', cmd)
 	reg_swig = re.compile(r'SWIG Version\s(.*)', re.M)
 	swig_out = conf.cmd_and_log(cmd)
 	swigver_tuple = tuple([int(s) for s in reg_swig.findall(swig_out)[0].split('.')])
-	
+
 	# Compare swig version with the minimum required
 	result = (minver is None) or (swigver_tuple >= minver)
-	
+
 	if result:
 		# Define useful environment variables
 		swigver = '.'.join([str(x) for x in swigver_tuple[:2]])
 		conf.env['SWIG_VERSION'] = swigver
-	
+
 	# Feedback
 	swigver_full = '.'.join(map(str, swigver_tuple[:3]))
 	if minver is None:
@@ -201,10 +201,10 @@ def check_swig_version(conf, minver=None):
 	else:
 		minver_str = '.'.join(map(str, minver))
 		conf.msg('Checking for swig version >= %s' % (minver_str,), swigver_full, color=result and 'GREEN' or 'YELLOW')
-	
+
 	if not result:
 		conf.fatal('The swig version is too old, expecting %r' % (minver,))
-	
+
 	return swigver_tuple
 
 def configure(conf):
