@@ -76,7 +76,7 @@ def make_test(self):
 	if not hasattr(self, 'ut_env'):
 		self.ut_env = dct = dict(os.environ)
 		def add_path(var):
-			dct[var] = self.ut_paths + dct[var]
+			dct[var] = self.ut_paths + dct.get(var,'')
 		if Utils.is_win32:
 			add_path('PATH')
 		elif Utils.unversioned_sys_platform() == 'darwin':
