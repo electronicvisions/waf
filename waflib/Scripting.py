@@ -593,7 +593,7 @@ def autoconfigure(execute_method):
 					Options.options.__dict__ = tmp
 			else:
 				run_command(cmd)
-				run_command(self.cmd)
+			run_command(self.cmd)
 		else:
 			return execute_method(self)
 	return execute
