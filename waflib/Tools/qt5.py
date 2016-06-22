@@ -299,7 +299,7 @@ def create_rcc_task(self, node):
 def create_uic_task(self, node):
 	"hook for uic tasks"
 	uictask = self.create_task('ui5', node)
-	uictask.outputs = [self.path.find_or_declare(self.env['ui_PATTERN'] % node.name[:-3])]
+	uictask.outputs = [node.parent.find_or_declare(self.env['ui_PATTERN'] % node.name[:-3])]
 
 @extension('.ts')
 def add_lang(self, node):
