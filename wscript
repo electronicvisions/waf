@@ -9,7 +9,7 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 ./waf-light  --tools=compat15,/comp/waf/aba.py --prelude=$'\tfrom waflib.extras import aba\n\taba.foo()'
 """
 
-VERSION="1.9.0"
+VERSION='1.9.0'
 APPNAME='waf'
 REVISION=''
 
@@ -49,7 +49,7 @@ def to_bytes(x):
 		return x.encode()
 	return x
 
-print("------> Executing code from the top-level wscript <-----")
+Logs.warn('------> Executing code from the top-level wscript <-----')
 def init(ctx):
 	if Options.options.setver: # maintainer only (ita)
 		ver = Options.options.setver
@@ -157,7 +157,7 @@ def process_tokens(tokens):
 		if token != '\n':
 			prev = type
 
-	body = "".join(accu)
+	body = ''.join(accu)
 	return body
 
 deco_re = re.compile('(def|class)\\s+(\w+)\\(.*')
@@ -174,19 +174,18 @@ def process_decorators(body):
 			if not name:
 				raise IOError("decorator not followed by a function!" + line)
 			for x in buf:
-				all_deco.append("%s(%s)" % (x, name))
+				all_deco.append('%s(%s)' % (x, name))
 			accu.append(line)
 			buf = []
 		else:
 			accu.append(line)
-	return "\n".join(accu+all_deco)
+	return '\n'.join(accu+all_deco)
 
 def sfilter(path):
-
 	if path.endswith('.py') :
 		if Options.options.strip_comments:
 			if sys.version_info[0] >= 3:
-				f = open(path, "rb")
+				f = open(path, 'rb')
 				try:
 					tk = tokenize.tokenize(f.readline)
 					next(tk) # the first one is always tokenize.ENCODING for Python 3, ignore it
@@ -194,13 +193,13 @@ def sfilter(path):
 				finally:
 					f.close()
 			else:
-				f = open(path, "r")
+				f = open(path, 'r')
 				try:
 					cnt = process_tokens(tokenize.generate_tokens(f.readline))
 				finally:
 					f.close()
 		else:
-			f = open(path, "r")
+			f = open(path, 'r')
 			try:
 				cnt = f.read()
 			finally:
@@ -213,7 +212,7 @@ def sfilter(path):
 		cnt = '#! /usr/bin/env python\n# encoding: utf-8\n# WARNING! Do not edit! https://waf.io/book/index.html#_obtaining_the_waf_file\n\n' + cnt
 
 	else:
-		f = open(path, "r")
+		f = open(path, 'r')
 		try:
 			cnt = f.read()
 		finally:
@@ -225,7 +224,7 @@ def sfilter(path):
 
 def create_waf(self, *k, **kw):
 	mw = 'tmp-waf-'+VERSION
-	print("-> preparing %r" % mw)
+	print('-> preparing %r' % mw)
 
 	import tarfile, zipfile
 
@@ -287,10 +286,10 @@ def create_waf(self, *k, **kw):
 		if os.path.isabs(x):
 			tarinfo.name = 'waflib/extras/' + os.path.split(x)[1]
 
-		print("   adding %s as %s" % (x, tarinfo.name))
+		print('   adding %s as %s' % (x, tarinfo.name))
 		def dest(x):
 			if os.path.isabs(x):
-				return os.path.join("extras", os.path.basename(x))
+				return os.path.join('extras', os.path.basename(x))
 			else:
 				return os.path.normpath(os.path.relpath(x, "."))
 
@@ -312,7 +311,7 @@ def create_waf(self, *k, **kw):
 	# when possible, set the git revision in the waf file
 	bld = self.generator.bld
 	try:
-		rev = bld.cmd_and_log("git rev-parse HEAD", quiet=0).strip()
+		rev = bld.cmd_and_log('git rev-parse HEAD', quiet=0).strip()
 	except Exception:
 		rev = ''
 	else:

@@ -15,14 +15,27 @@ docs/sphinx       project extracting the docstrings from the source code to crea
 Documentation
 -------------------------------------------------
 
-API documentation                      https://waf.io/apidocs/
-The Waf Book                           https://waf.io/book/
+API documentation        https://waf.io/apidocs/
+The Waf Book             https://waf.io/book/
 
-Coding guidelines
------------------
+General coding guidelines
+-------------------------
 
-* We use tabs, no spaces
+* The code must run in both Python 2.6 to Python 3
+* Use tabs for Python file indentation
 * Use x.splitlines() instead of x.split('\n')
-* No "except:" and and no "except Exception:" unless there is a very good reason
-* File handles are too easy to get wrong, use Node.readf/Node.writef/Utils.readf/Utils.writef
+* Avoid "except:" and "except Exception:"
+* Use Node.readf/Node.writef/Utils.readf/Utils.writef
+
+Pull requests
+-------------
+
+See https://github.com/waf-project/waf
+
+When implementing complex features, please add examples in the showcase folder demos/
+for modules under waflib/Tools, under tests/ for platform-independent unit tests,
+or in playground/ for modules under waflib/extras.
+
+The files under waflib/Tools/ are kept API-compatible for the duration
+of a middle version (currently 1.9).
 

@@ -2,11 +2,11 @@ NEW IN WAF 1.9
 --------------
 
 * General enhancements:
-  - Have Clang detected first on many platforms, in particular on FreeBSD #1528
-  - Remove Node.cache_sig and Node.sig so that dependencies are on file contents #1580
+  - Detect Clang first on many platforms, in particular on FreeBSD #1528
+  - Remove Node.cache_sig and Node.sig so that dependencies involve file contents by default #1580
   - Change cflags in the beginning / cppflags at the end #1505
-  - Merge ${FOO}${BAR} flags in commands executed without a shell (no space added)
-  - Interpret empty command-line defines as integer values #1704
+  - Merge ${FOO}${BAR} flags in commands executed without a shell (no spaces inserted)
+  - Interpret empty command-line defines as integer values for dependency calculation #1704
   - Waf tools are not cached on "waf configure" by default anymore; pass conf.load(.., cache=True)
   - Enable a consistent progress bar output #1641
   - Add ${VAR?X} constructs in script expressions to enable simple conditional outputs
@@ -20,16 +20,16 @@ NEW IN WAF 1.9
   - Installation methods install_files/install_as/symlink_as create regular task generators
     and regular tasks so that installation outputs can be re-used easily
   - Subclass waflib.Build.ConfiguredContext to enable configuration-dependent user commands
-  - Task.exec_command will use @argfile when command-line limits are exceeded
-  - Task.exec_command will add tsk.env.PATH to the child process environment
-  - Enable ut_str to process scriptlet expressions for c/c++ unit tests
-  - Reduce the amount of paths added to unit test environment variable
+  - Enable @argfile procesing in Task.exec_command when argument limits are exceeded
+  - Apply optional tsk.env.PATH values in Task.exec_command
+  - Enable ut_str to process scriptlet expressions for C/C++ unit tests
+  - Minimize the amount of paths added to unit test environment variable
   - Restore configuration values with Configure.autoconfig='clobber' #1758
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
   - Remove __hash__ and __eq__ from Context, Node and Task #1629
-  - Make lazy visual studio detection the default
+  - Detect visual studio versions lazily by default
   - Remove the uses of run_once that can consume a lot of memory; add a proper LRU cache
   - Enable pre-forked builds by default to achieve faster builds, up to 2x speedup on short-lived processes
   - Enable faster consumers in Runner.py
@@ -56,5 +56,5 @@ NEW IN WAF 1.9
   - task_gen.mapping and task_gen.prec are not defined by default on instances anymore, but
     instances can still define their own mappings to override the defaults, but in
     that case all mappings/precedences must be present. These features were not used in Waf 1.8.
-  - Do not truncate the _task suffix from Task class names
+  - Do not truncate _task suffixes from Task class names if present
 

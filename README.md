@@ -11,11 +11,11 @@ Waf is a Python-based framework for configuring, compiling and installing applic
   * *Documentation*: the application is based on a robust model documented in [The Waf Book](https://waf.io/book/) and in the [API docs](https://waf.io/apidocs/)
   * *Python compatibility*: cPython 2.5 to 3.4, Jython 2.5, IronPython, and Pypy
 
-Waf is used in particular by innovative companies such as [Avalanche Studios](http://www.avalanchestudios.se) and by open-source projects such as [the Samba project](https://www.samba.org/). Learn more about Waf by reading [The Waf Book](https://waf.io/book/).
+Waf is used in particular by innovative companies such as [Avalanche Studios](http://www.avalanchestudios.se) and by open-source projects such as [RTEMS](https://www.rtems.org/). Learn more about Waf by reading [The Waf Book](https://waf.io/book/).
 
 For researchers and build system writers, Waf also provides a framework for creating [custom build systems](https://github.com/waf-project/waf/tree/master/build_system_kit) and [package distribution systems](https://github.com/waf-project/waf/tree/master/playground/distnet/README.rst).
 
-Download the project from our page on [waf.io](https://waf.io/) or from the mirror on [freehackers.org](http://www.freehackers.org/~tnagy/release/), consult the [manual](https://waf.io/book/), the [API documentation](https://waf.io/apidocs/) and the [showcases](https://github.com/waf-project/waf/tree/master/demos) and [experiments](https://github.com/waf-project/waf/tree/master/playground).
+Download the project from our page on [waf.io](https://waf.io/) or from a mirror on [freehackers.org](http://www.freehackers.org/~tnagy/release/), consult the [manual](https://waf.io/book/), the [API documentation](https://waf.io/apidocs/) and the [showcases](https://github.com/waf-project/waf/tree/master/demos) and [experiments](https://github.com/waf-project/waf/tree/master/playground).
 
 ## HOW TO CREATE THE WAF SCRIPT
 
