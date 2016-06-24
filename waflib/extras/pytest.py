@@ -56,6 +56,8 @@ def pytest_create_task(self):
     if self.testsDisabled():
         return
 
+    if not hasattr(self, 'tests'):
+        self.bld.fatal('"tests" parameter was not provided')
     input_nodes = self.to_nodes(self.tests)
 
     inst_to = getattr(self, 'install_path', None)
