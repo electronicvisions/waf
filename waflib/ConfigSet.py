@@ -6,7 +6,7 @@
 
 ConfigSet: a special dict
 
-The values put in :py:class:`ConfigSet` must be lists
+The values put in :py:class:`ConfigSet` must be serializable (dicts, lists, strings)
 """
 
 import copy, re, os
