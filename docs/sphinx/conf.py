@@ -482,7 +482,7 @@ htmlhelp_basename = 'wafdoc'
 # -- Options for LaTeX output --------------------------------------------------
 
 # The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
+latex_paper_size = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
 #latex_font_size = '10pt'
@@ -535,12 +535,10 @@ def maybe_skip_member(app, what, name, obj, skip, options):
 
 	# from http://sphinx.pocoo.org/ext/autodoc.html#event-autodoc-skip-member
 	# param name: the fully qualified name of the object <- it is not, the name does not contain the module path
-	if name == 'Nod3':
+	if name in ('__doc__', '__module__', 'Nod3', '__weakref__'):
 		return True
 	global exclude_taskgen
 	if what == 'class' and name in exclude_taskgen:
-		return True
-	if name == '__weakref__':
 		return True
 	if obj.__doc__:
 		return False
