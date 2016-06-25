@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2010 (ita)
+# Thomas Nagy, 2005-2016 (ita)
 
 "Module called for configuring, compiling and installing targets"
 
@@ -208,7 +208,7 @@ def set_main_module(file_path):
 
 def parse_options():
 	"""
-	Parse the command-line options and initialize the logging system.
+	Parses the command-line options and initialize the logging system.
 	Called by :py:func:`waflib.Scripting.waf_entry_point` during the initialization.
 	"""
 	Context.create_context('options').execute()
@@ -237,7 +237,7 @@ def parse_options():
 
 def run_command(cmd_name):
 	"""
-	Execute a single command. Called by :py:func:`waflib.Scripting.run_commands`.
+	Executes a single Waf command. Called by :py:func:`waflib.Scripting.run_commands`.
 
 	:param cmd_name: command to execute, like ``build``
 	:type cmd_name: string
@@ -255,7 +255,7 @@ def run_command(cmd_name):
 
 def run_commands():
 	"""
-	Execute the commands that were given on the command-line, and the other options
+	Execute the Waf commands that were given on the command-line, and the other options
 	Called by :py:func:`waflib.Scripting.waf_entry_point` during the initialization, and executed
 	after :py:func:`waflib.Scripting.parse_options`.
 	"""
@@ -348,7 +348,7 @@ class Dist(Context.Context):
 
 	def archive(self):
 		"""
-		Create the archive.
+		Creates the source archive.
 		"""
 		import tarfile
 
@@ -395,14 +395,20 @@ class Dist(Context.Context):
 
 	def get_tar_path(self, node):
 		"""
-		return the path to use for a node in the tar archive, the purpose of this
+		Return the path to use for a node in the tar archive, the purpose of this
 		is to let subclases resolve symbolic links or to change file names
+
+		:return: absolute path
+		:rtype: string
 		"""
 		return node.abspath()
 
 	def add_tar_file(self, x, tar):
 		"""
-		Add a file to the tar archive. Symlinks are not verified.
+		Adds a file to the tar archive. Symlinks are not verified.
+
+		:param x: file path
+		:param tar: tar file object
 		"""
 		p = self.get_tar_path(x)
 		tinfo = tar.gettarinfo(name=p, arcname=self.get_tar_prefix() + '/' + x.path_from(self.base_path))
@@ -421,6 +427,11 @@ class Dist(Context.Context):
 			tar.addfile(tinfo)
 
 	def get_tar_prefix(self):
+		"""
+		Returns the base path for files added into the archive tar file
+
+		:rtype: string
+		"""
 		try:
 			return self.tar_prefix
 		except AttributeError:
@@ -428,7 +439,8 @@ class Dist(Context.Context):
 
 	def get_arch_name(self):
 		"""
-		Return the name of the archive to create. Change the default value by setting *arch_name*::
+		Returns the archive file name.
+		Set the attribute *arch_name* to change the default value::
 
 			def dist(ctx):
 				ctx.arch_name = 'ctx.tar.bz2'
@@ -443,7 +455,7 @@ class Dist(Context.Context):
 
 	def get_base_name(self):
 		"""
-		Return the default name of the main directory in the archive, which is set to *appname-version*.
+		Returns the default name of the main directory in the archive, which is set to *appname-version*.
 		Set the attribute *base_name* to change the default value::
 
 			def dist(ctx):
@@ -461,8 +473,8 @@ class Dist(Context.Context):
 
 	def get_excl(self):
 		"""
-		Return the patterns to exclude for finding the files in the top-level directory. Set the attribute *excl*
-		to change the default value::
+		Returns the patterns to exclude for finding the files in the top-level directory.
+		Set the attribute *excl* to change the default value::
 
 			def dist(ctx):
 				ctx.excl = 'build **/*.o **/*.class'
@@ -481,13 +493,13 @@ class Dist(Context.Context):
 
 	def get_files(self):
 		"""
-		The files to package are searched automatically by :py:func:`waflib.Node.Node.ant_glob`. Set
-		*files* to prevent this behaviour::
+		Files to package are searched automatically by :py:func:`waflib.Node.Node.ant_glob`.
+		Set *files* to prevent this behaviour::
 
 			def dist(ctx):
 				ctx.files = ctx.path.find_node('wscript')
 
-		The files are searched from the directory 'base_path', to change it, set::
+		Files are also searched from the directory 'base_path', to change it, set::
 
 			def dist(ctx):
 				ctx.base_path = path
@@ -500,18 +512,16 @@ class Dist(Context.Context):
 			files = self.base_path.ant_glob('**/*', excl=self.get_excl())
 		return files
 
-
 def dist(ctx):
 	'''makes a tarball for redistributing the sources'''
 	pass
 
 class DistCheck(Dist):
 	"""
-	Create an archive of the project, and try to build the project in a temporary directory::
+	Creates an archive of the project, then attempts to build the project in a temporary directory::
 
 		$ waf distcheck
 	"""
-
 	fun = 'distcheck'
 	cmd = 'distcheck'
 
@@ -525,7 +535,7 @@ class DistCheck(Dist):
 
 	def check(self):
 		"""
-		Create the archive, uncompress it and try to build the project
+		Creates the archive, uncompresses it and tries to build the project
 		"""
 		import tempfile, tarfile
 
@@ -560,9 +570,12 @@ def distcheck(ctx):
 
 def autoconfigure(execute_method):
 	"""
-	Decorator used to set the commands that can be configured automatically
+	Decorator that enables context commands to run *configure* as needed.
 	"""
 	def execute(self):
+		"""
+		Wraps :py:func:`waflib.Context.Context.execute` on the context class
+		"""
 		if not Configure.autoconfig:
 			return execute_method(self)
 

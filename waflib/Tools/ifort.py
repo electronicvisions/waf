@@ -398,6 +398,10 @@ def apply_flags_ifort(self):
 @feature('fcprogram', 'fcshlib', 'fcprogram_test')
 @after_method('apply_link')
 def apply_manifest_ifort(self):
+	"""
+	Enables manifest embedding in Fortran DLLs when using ifort on Windows
+	See: http://msdn2.microsoft.com/en-us/library/ms235542(VS.80).aspx
+	"""
 	if self.env.IFORT_WIN32 and getattr(self, 'link_task', None):
 		# it seems ifort.exe cannot be called for linking
 		self.link_task.env.FC = self.env.LINK_FC

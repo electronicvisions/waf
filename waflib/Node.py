@@ -76,7 +76,7 @@ class Node(object):
 	__slots__ = ('name', 'parent', 'children', 'cache_abspath', 'cache_isdir')
 	def __init__(self, name, parent):
 		"""
-		.. note:: Use :py:func:`Node.make_node` or :py:func:`Node.find_node`.
+		.. note:: Use :py:func:`Node.make_node` or :py:func:`Node.find_node` instead of calling this constructor
 		"""
 		self.name = name
 		self.parent = parent

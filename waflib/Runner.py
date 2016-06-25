@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2010 (ita)
+# Thomas Nagy, 2005-2016 (ita)
 
 """
 Runner.py: Task scheduling and execution
-
 """
 
 import random
@@ -16,18 +15,28 @@ from waflib import Utils, Task, Errors, Logs
 
 GAP = 20
 """
-Wait for free tasks if there are at least ``GAP * njobs`` in queue
+Wait for at least ``GAP * njobs`` before trying to enqueue more tasks to run
 """
 
 class Consumer(Utils.threading.Thread):
+	"""
+	Daemon thread object that executes a task. It shares a semaphore with
+	the coordinator :py:class:`waflib.Runner.Spawner`. There is one
+	instance per task to consume.
+	"""
 	__slots__ = ('task', 'spawner')
 	def __init__(self, spawner, task):
 		Utils.threading.Thread.__init__(self)
 		self.task = task
+		"""Task to execute"""
 		self.spawner = spawner
+		"""Coordinator object"""
 		self.setDaemon(1)
 		self.start()
 	def run(self):
+		"""
+		Processes a single task
+		"""
 		try:
 			if not self.spawner.master.stop:
 				self.task.process()
@@ -38,13 +47,23 @@ class Consumer(Utils.threading.Thread):
 			self.spawner = None
 
 class Spawner(Utils.threading.Thread):
+	"""
+	Daemon thread that consumes tasks from :py:class:`waflib.Runner.Parallel` producer and
+	spawns a consuming thread :py:class:`waflib.Runner.Consumer` for each
+	:py:class:`waflib.Task.TaskBase` instance.
+	"""
 	def __init__(self, master):
 		Utils.threading.Thread.__init__(self)
 		self.master = master
+		""":py:class:`waflib.Runner.Parallel` producer instance"""
 		self.sem = Utils.threading.Semaphore(master.numjobs)
+		"""Bounded semaphore that prevents spawning more than *n* concurrent consumers"""
 		self.setDaemon(1)
 		self.start()
 	def run(self):
+		"""
+		Spawns new consumers to execute tasks by delegating to :py:meth:`waflib.Runner.Spawner.loop`
+		"""
 		try:
 			self.loop()
 		except Exception:
@@ -52,6 +71,10 @@ class Spawner(Utils.threading.Thread):
 			# we also want to stop the thread properly
 			pass
 	def loop(self):
+		"""
+		Consumes task objects from the producer; ends when the producer has no more
+		task to provide.
+		"""
 		master = self.master
 		while 1:
 			task = master.ready.get()
@@ -71,7 +94,7 @@ class Parallel(object):
 
 		self.numjobs = j
 		"""
-		Number of consumers in the pool
+		Amount of parallel consumers to use
 		"""
 
 		self.bld = bld
@@ -83,10 +106,10 @@ class Parallel(object):
 		"""List of :py:class:`waflib.Task.TaskBase` that may be ready to be executed"""
 
 		self.frozen = Utils.deque()
-		"""List of :py:class:`waflib.Task.TaskBase` that cannot be executed immediately"""
+		"""List of :py:class:`waflib.Task.TaskBase` that are not ready yet"""
 
 		self.ready = Queue(0)
-		"""List of :py:class:`waflib.Task.TaskBase` ready to be executed by task consumers"""
+		"""List of :py:class:`waflib.Task.TaskBase` ready to be executed by consumers"""
 
 		self.out = Queue(0)
 		"""List of :py:class:`waflib.Task.TaskBase` returned by the task consumers"""
@@ -107,13 +130,18 @@ class Parallel(object):
 		"""Task iterator which must give groups of parallelizable tasks when calling ``next()``"""
 
 		self.dirty = False
-		"""Flag to indicate that tasks have been executed, and that the build cache must be saved (call :py:meth:`waflib.Build.BuildContext.store`)"""
+		"""
+		Flag that indicates that the build cache must be saved when a task was executed
+		(calls :py:meth:`waflib.Build.BuildContext.store`)"""
 
 		self.spawner = Spawner(self)
+		"""
+		Coordinating daemon thread that spawns thread consumers
+		"""
 
 	def get_next_task(self):
 		"""
-		Obtain the next task to execute.
+		Obtains the next Task instance to run
 
 		:rtype: :py:class:`waflib.Task.TaskBase`
 		"""
@@ -123,9 +151,10 @@ class Parallel(object):
 
 	def postpone(self, tsk):
 		"""
-		A task cannot be executed at this point, put it in the list :py:attr:`waflib.Runner.Parallel.frozen`.
+		Adds the task to the list :py:attr:`waflib.Runner.Parallel.frozen`.
+		The order is scrambled so as to consume as many tasks in parallel as possible.
 
-		:param tsk: task
+		:param tsk: task instance
 		:type tsk: :py:class:`waflib.Task.TaskBase`
 		"""
 		if random.randint(0, 1):
@@ -135,7 +164,7 @@ class Parallel(object):
 
 	def refill_task_list(self):
 		"""
-		Put the next group of tasks to execute in :py:attr:`waflib.Runner.Parallel.outstanding`.
+		Adds the next group of tasks to execute in :py:attr:`waflib.Runner.Parallel.outstanding`.
 		"""
 		while self.count > self.numjobs * GAP:
 			self.get_out()
@@ -171,9 +200,10 @@ class Parallel(object):
 
 	def add_more_tasks(self, tsk):
 		"""
-		Tasks may be added dynamically during the build by binding them to the task :py:attr:`waflib.Task.TaskBase.more_tasks`
+		If a task provides :py:attr:`waflib.Task.TaskBase.more_tasks`, then the tasks contained
+		in that list are added to the current build and will be processed before the next build group.
 
-		:param tsk: task
+		:param tsk: task instance
 		:type tsk: :py:attr:`waflib.Task.TaskBase`
 		"""
 		if getattr(tsk, 'more_tasks', None):
@@ -182,8 +212,8 @@ class Parallel(object):
 
 	def get_out(self):
 		"""
-		Obtain one task returned from the task consumers, and update the task count. Add more tasks if necessary through
-		:py:attr:`waflib.Runner.Parallel.add_more_tasks`.
+		Waits for a Task that task consumers add to :py:attr:`waflib.Runner.Parallel.out` after execution.
+		Adds more Tasks if necessary through :py:attr:`waflib.Runner.Parallel.add_more_tasks`.
 
 		:rtype: :py:attr:`waflib.Task.TaskBase`
 		"""
@@ -196,14 +226,17 @@ class Parallel(object):
 
 	def add_task(self, tsk):
 		"""
-		Pass a task to a consumer.
+		Enqueue a Task to :py:attr:`waflib.Runner.Parallel.ready` so that consumers can run them.
 
-		:param tsk: task
+		:param tsk: task instance
 		:type tsk: :py:attr:`waflib.Task.TaskBase`
 		"""
 		self.ready.put(tsk)
 
 	def skip(self, tsk):
+		"""
+		Mark a task as skipped/up-to-date
+		"""
 		tsk.hasrun = Task.SKIPPED
 
 	def error_handler(self, tsk):
@@ -213,11 +246,11 @@ class Parallel(object):
 
 			$ waf build -k
 
-		:param tsk: task
+		:param tsk: task instance
 		:type tsk: :py:attr:`waflib.Task.TaskBase`
 		"""
 		if hasattr(tsk, 'scan') and hasattr(tsk, 'uid'):
-			# TODO waf 1.9 - this breaks encapsulation
+			# TODO waf 2.0 - this breaks encapsulation
 			try:
 				del self.bld.imp_sigs[tsk.uid()]
 			except KeyError:
@@ -227,6 +260,12 @@ class Parallel(object):
 		self.error.append(tsk)
 
 	def task_status(self, tsk):
+		"""
+		Obtains the task status to decide whether to run it immediately or not.
+
+		:return: the exit status, for example :py:attr:`waflib.Task.ASK_LATER`
+		:rtype: integer
+		"""
 		try:
 			return tsk.runnable_status()
 		except Exception:
@@ -250,10 +289,12 @@ class Parallel(object):
 
 	def start(self):
 		"""
-		Give tasks to :py:class:`waflib.Runner.TaskConsumer` instances until the build finishes or the ``stop`` flag is set.
-		If only one job is used, then execute the tasks one by one, without consumers.
+		Obtains Task instances from the BuildContext instance and adds the ones that need to be executed to
+		:py:class:`waflib.Runner.Parallel.ready` so that the :py:class:`waflib.Runner.Spawner` consumer thread
+		has them executed. Obtains the executed Tasks back from :py:class:`waflib.Runner.Parallel.out`
+		and marks the build as failed by setting the ``stop`` flag.
+		If only one job is used, then executes the tasks one by one, without consumers.
 		"""
-
 		self.total = self.bld.total()
 
 		while not self.stop:
