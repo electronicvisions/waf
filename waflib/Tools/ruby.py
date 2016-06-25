@@ -41,7 +41,7 @@ def init_rubyext(self):
 		self.uselib.append('RUBYEXT')
 
 @feature('rubyext')
-@before_method('apply_link', 'propagate_uselib')
+@before_method('apply_link', 'propagate_uselib_vars')
 def apply_ruby_so_name(self):
 	"""
 	Strip the *lib* prefix from ruby extensions
