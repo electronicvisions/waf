@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2010 (ita)
+# Thomas Nagy, 2005-2016 (ita)
 
 """
 logging, colors, terminal width and pretty-print
@@ -81,8 +81,9 @@ get_term_cols.__doc__ = """
 	"""
 
 def get_color(cl):
-	if not colors_lst['USE']: return ''
-	return colors_lst.get(cl, '')
+	if colors_lst['USE']:
+		return colors_lst.get(cl, '')
+	return ''
 
 class color_dict(object):
 	"""attribute-based color access, eg: colors.PINK"""

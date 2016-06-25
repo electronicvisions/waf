@@ -2,23 +2,19 @@
 # encoding: utf-8
 # Thomas Nagy, 2010-2015 (ita)
 
-"""
-burn a book, save a tree
-"""
-
 import os
 
 all_modifs = {}
 
 def fixdir(dir):
-	"""call all the substitution functions on the waf folders"""
+	"""Call all substitution functions on Waf folders"""
 	global all_modifs
 	for k in all_modifs:
 		for v in all_modifs[k]:
 			modif(os.path.join(dir, 'waflib'), k, v)
 
 def modif(dir, name, fun):
-	"""execute a substitution function"""
+	"""Call a substitution function"""
 	if name == '*':
 		lst = []
 		for y in '. Tools extras'.split():
