@@ -249,18 +249,18 @@ for z in lst:
 		if str(m.__module__).find('.Tools') > 0:
 			k = 'tools/' + k
 
-		ms.append('\t\t"%s" [style="setlinewidth(0.5)",URL="%s",target="_blank",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape="rectangle",fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
+		ms.append('\t\t%s [style="setlinewidth(0.5)",URL="%s",target="_top",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape="rectangle",fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
 
 	for x, y in links:
 		ms.append('\t\t"%s" -> "%s" [arrowsize=0.5,style="setlinewidth(0.5)"];' % (x, y))
 
-	rs = '\tdigraph feature_%s {\n\tsize="8.0, 12.0";\n\t%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
+	rs = '\tdigraph feature_%s {\n\t\tsize="8.0, 12.0";\n%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
 	title = "Feature %s" % (z == '*' and '\\*' or z)
 	title += "\n" + len(title) * '='
 
 	accu.append("%s\n\n.. graphviz::\n\n%s\n\n" % (title, rs))
 
-f = open('tmpmap', 'w')
+f = open('featuremap.rst', 'w')
 f.write(""".. _featuremap:
 
 Feature reference
@@ -305,7 +305,7 @@ for x in confmeths:
 	accu.append('.. _%s: %s#waflib.%s.%s\n' % (x, d, modname, x))
 	accu.append('* %s_\n' % x)
 
-f = open('tmpconf', 'w')
+f = open('confmap.rst', 'w')
 f.write(""".. _confmap:
 
 Configuration methods

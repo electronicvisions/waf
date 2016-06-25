@@ -13,6 +13,10 @@ Configuration methods
 
 * add_os_flags_
 
+.. _add_qt5_rpath: tools/qt5.html#waflib.Tools.qt5.add_qt5_rpath
+
+* add_qt5_rpath_
+
 .. _autodetect: tools/msvc.html#waflib.Tools.msvc.autodetect
 
 * autodetect_
@@ -44,6 +48,14 @@ Configuration methods
 .. _check_dlibrary: tools/d_config.html#waflib.Tools.d_config.check_dlibrary
 
 * check_dlibrary_
+
+.. _check_endianness: tools/c_tests.html#waflib.Tools.c_tests.check_endianness
+
+* check_endianness_
+
+.. _check_fc: tools/fc_config.html#waflib.Tools.fc_config.check_fc
+
+* check_fc_
 
 .. _check_fortran: tools/fc_config.html#waflib.Tools.fc_config.check_fortran
 
@@ -121,6 +133,10 @@ Configuration methods
 
 * check_ruby_ext_devel_
 
+.. _check_ruby_module: tools/ruby.html#waflib.Tools.ruby.check_ruby_module
+
+* check_ruby_module_
+
 .. _check_ruby_version: tools/ruby.html#waflib.Tools.ruby.check_ruby_version
 
 * check_ruby_version_
@@ -153,6 +169,10 @@ Configuration methods
 
 * common_flags_ldc_
 
+.. _common_flags_ldc2: tools/ldc2.html#waflib.Tools.ldc2.common_flags_ldc2
+
+* common_flags_ldc2_
+
 .. _cxx_add_flags: tools/c_config.html#waflib.Tools.c_config.cxx_add_flags
 
 * cxx_add_flags_
@@ -173,9 +193,25 @@ Configuration methods
 
 * define_cond_
 
+.. _detect_ifort: tools/ifort.html#waflib.Tools.ifort.detect_ifort
+
+* detect_ifort_
+
+.. _detect_msvc: tools/msvc.html#waflib.Tools.msvc.detect_msvc
+
+* detect_msvc_
+
+.. _detect_openmp: tools/fc_config.html#waflib.Tools.fc_config.detect_openmp
+
+* detect_openmp_
+
 .. _exec_cfg: tools/c_config.html#waflib.Tools.c_config.exec_cfg
 
 * exec_cfg_
+
+.. _fc_add_flags: tools/fc_config.html#waflib.Tools.fc_config.fc_add_flags
+
+* fc_add_flags_
 
 .. _fc_flags: tools/fc_config.html#waflib.Tools.fc_config.fc_flags
 
@@ -184,6 +220,14 @@ Configuration methods
 .. _find_ar: tools/ar.html#waflib.Tools.ar.find_ar
 
 * find_ar_
+
+.. _find_clang: tools/clang.html#waflib.Tools.clang.find_clang
+
+* find_clang_
+
+.. _find_clangxx: tools/clangxx.html#waflib.Tools.clangxx.find_clangxx
+
+* find_clangxx_
 
 .. _find_dmd: tools/dmd.html#waflib.Tools.dmd.find_dmd
 
@@ -209,6 +253,22 @@ Configuration methods
 
 * find_gfortran_
 
+.. _find_glib_compile_resources: tools/glib2.html#waflib.Tools.glib2.find_glib_compile_resources
+
+* find_glib_compile_resources_
+
+.. _find_glib_compile_schemas: tools/glib2.html#waflib.Tools.glib2.find_glib_compile_schemas
+
+* find_glib_compile_schemas_
+
+.. _find_glib_genmarshal: tools/glib2.html#waflib.Tools.glib2.find_glib_genmarshal
+
+* find_glib_genmarshal_
+
+.. _find_glib_mkenums: tools/glib2.html#waflib.Tools.glib2.find_glib_mkenums
+
+* find_glib_mkenums_
+
 .. _find_gxx: tools/gxx.html#waflib.Tools.gxx.find_gxx
 
 * find_gxx_
@@ -225,9 +285,29 @@ Configuration methods
 
 * find_ifort_
 
+.. _find_ifort_win32: tools/ifort.html#waflib.Tools.ifort.find_ifort_win32
+
+* find_ifort_win32_
+
+.. _find_intltool_merge: tools/intltool.html#waflib.Tools.intltool.find_intltool_merge
+
+* find_intltool_merge_
+
+.. _find_irixcc: tools/irixcc.html#waflib.Tools.irixcc.find_irixcc
+
+* find_irixcc_
+
+.. _find_ldc2: tools/ldc2.html#waflib.Tools.ldc2.find_ldc2
+
+* find_ldc2_
+
 .. _find_lt_names_msvc: tools/msvc.html#waflib.Tools.msvc.find_lt_names_msvc
 
 * find_lt_names_msvc_
+
+.. _find_msgfmt: tools/intltool.html#waflib.Tools.intltool.find_msgfmt
+
+* find_msgfmt_
 
 .. _find_msvc: tools/msvc.html#waflib.Tools.msvc.find_msvc
 
@@ -240,6 +320,14 @@ Configuration methods
 .. _find_program: Configure.html#waflib.Configure.find_program
 
 * find_program_
+
+.. _find_qt5_binaries: tools/qt5.html#waflib.Tools.qt5.find_qt5_binaries
+
+* find_qt5_binaries_
+
+.. _find_qt5_libraries: tools/qt5.html#waflib.Tools.qt5.find_qt5_libraries
+
+* find_qt5_libraries_
 
 .. _find_scc: tools/suncc.html#waflib.Tools.suncc.find_scc
 
@@ -297,9 +385,29 @@ Configuration methods
 
 * gather_icl_versions_
 
+.. _gather_ifort_versions: tools/ifort.html#waflib.Tools.ifort.gather_ifort_versions
+
+* gather_ifort_versions_
+
+.. _gather_intel_composer_versions: tools/msvc.html#waflib.Tools.msvc.gather_intel_composer_versions
+
+* gather_intel_composer_versions_
+
+.. _gather_msvc_targets: tools/msvc.html#waflib.Tools.msvc.gather_msvc_targets
+
+* gather_msvc_targets_
+
 .. _gather_msvc_versions: tools/msvc.html#waflib.Tools.msvc.gather_msvc_versions
 
 * gather_msvc_versions_
+
+.. _gather_wince_targets: tools/msvc.html#waflib.Tools.msvc.gather_wince_targets
+
+* gather_wince_targets_
+
+.. _gather_winphone_targets: tools/msvc.html#waflib.Tools.msvc.gather_winphone_targets
+
+* gather_winphone_targets_
 
 .. _gather_wsdk_versions: tools/msvc.html#waflib.Tools.msvc.gather_wsdk_versions
 
@@ -325,6 +433,18 @@ Configuration methods
 
 * gcc_modifier_hpux_
 
+.. _gcc_modifier_openbsd: tools/gcc.html#waflib.Tools.gcc.gcc_modifier_openbsd
+
+* gcc_modifier_openbsd_
+
+.. _gcc_modifier_osf1V: tools/gxx.html#waflib.Tools.gxx.gcc_modifier_osf1V
+
+* gcc_modifier_osf1V_
+
+.. _gcc_modifier_osf1V: tools/gxx.html#waflib.Tools.gxx.gcc_modifier_osf1V
+
+* gcc_modifier_osf1V_
+
 .. _gcc_modifier_platform: tools/gcc.html#waflib.Tools.gcc.gcc_modifier_platform
 
 * gcc_modifier_platform_
@@ -345,6 +465,10 @@ Configuration methods
 
 * get_define_
 
+.. _get_define_comment: tools/c_config.html#waflib.Tools.c_config.get_define_comment
+
+* get_define_comment_
+
 .. _get_g95_version: tools/g95.html#waflib.Tools.g95.get_g95_version
 
 * get_g95_version_
@@ -357,6 +481,14 @@ Configuration methods
 
 * get_ifort_version_
 
+.. _get_ifort_version_win32: tools/ifort.html#waflib.Tools.ifort.get_ifort_version_win32
+
+* get_ifort_version_win32_
+
+.. _get_ifort_versions: tools/ifort.html#waflib.Tools.ifort.get_ifort_versions
+
+* get_ifort_versions_
+
 .. _get_msvc_version: tools/msvc.html#waflib.Tools.msvc.get_msvc_version
 
 * get_msvc_version_
@@ -368,6 +500,14 @@ Configuration methods
 .. _get_python_variables: tools/python.html#waflib.Tools.python.get_python_variables
 
 * get_python_variables_
+
+.. _get_suncc_version: tools/c_config.html#waflib.Tools.c_config.get_suncc_version
+
+* get_suncc_version_
+
+.. _get_xlc_version: tools/c_config.html#waflib.Tools.c_config.get_xlc_version
+
+* get_xlc_version_
 
 .. _gfortran_flags: tools/gfortran.html#waflib.Tools.gfortran.gfortran_flags
 
@@ -409,6 +549,10 @@ Configuration methods
 
 * gxx_modifier_hpux_
 
+.. _gxx_modifier_openbsd: tools/gxx.html#waflib.Tools.gxx.gxx_modifier_openbsd
+
+* gxx_modifier_openbsd_
+
 .. _gxx_modifier_platform: tools/gxx.html#waflib.Tools.gxx.gxx_modifier_platform
 
 * gxx_modifier_platform_
@@ -421,13 +565,21 @@ Configuration methods
 
 * have_define_
 
-.. _ifort_modifier_cygwin: tools/ifort.html#waflib.Tools.ifort.ifort_modifier_cygwin
+.. _ifort_modifier_darwin: tools/ifort.html#waflib.Tools.ifort.ifort_modifier_darwin
 
-* ifort_modifier_cygwin_
+* ifort_modifier_darwin_
 
 .. _ifort_modifier_platform: tools/ifort.html#waflib.Tools.ifort.ifort_modifier_platform
 
 * ifort_modifier_platform_
+
+.. _ifort_modifier_win32: tools/ifort.html#waflib.Tools.ifort.ifort_modifier_win32
+
+* ifort_modifier_win32_
+
+.. _irixcc_common_flags: tools/irixcc.html#waflib.Tools.irixcc.irixcc_common_flags
+
+* irixcc_common_flags_
 
 .. _is_defined: tools/c_config.html#waflib.Tools.c_config.is_defined
 
@@ -444,6 +596,10 @@ Configuration methods
 .. _link_add_flags: tools/c_config.html#waflib.Tools.c_config.link_add_flags
 
 * link_add_flags_
+
+.. _modfile: tools/fc.html#waflib.Tools.fc.modfile
+
+* modfile_
 
 .. _msvc_common_flags: tools/msvc.html#waflib.Tools.msvc.msvc_common_flags
 
@@ -473,9 +629,17 @@ Configuration methods
 
 * program_
 
+.. _python_cross_compile: tools/python.html#waflib.Tools.python.python_cross_compile
+
+* python_cross_compile_
+
 .. _read_csshlib: tools/cs.html#waflib.Tools.cs.read_csshlib
 
 * read_csshlib_
+
+.. _read_object: tools/ccroot.html#waflib.Tools.ccroot.read_object
+
+* read_object_
 
 .. _read_shlib: tools/ccroot.html#waflib.Tools.ccroot.read_shlib
 
@@ -485,17 +649,37 @@ Configuration methods
 
 * read_stlib_
 
-.. _ret_msg: tools/c_config.html#waflib.Tools.c_config.ret_msg
-
-* ret_msg_
-
 .. _scc_common_flags: tools/suncc.html#waflib.Tools.suncc.scc_common_flags
 
 * scc_common_flags_
 
+.. _set_define_comment: tools/c_config.html#waflib.Tools.c_config.set_define_comment
+
+* set_define_comment_
+
+.. _set_qt5_defines: tools/qt5.html#waflib.Tools.qt5.set_qt5_defines
+
+* set_qt5_defines_
+
+.. _set_qt5_libs_to_check: tools/qt5.html#waflib.Tools.qt5.set_qt5_libs_to_check
+
+* set_qt5_libs_to_check_
+
+.. _setup_ifort: tools/ifort.html#waflib.Tools.ifort.setup_ifort
+
+* setup_ifort_
+
+.. _setup_msvc: tools/msvc.html#waflib.Tools.msvc.setup_msvc
+
+* setup_msvc_
+
 .. _shlib: tools/c_aliases.html#waflib.Tools.c_aliases.shlib
 
 * shlib_
+
+.. _simplify_qt5_libs: tools/qt5.html#waflib.Tools.qt5.simplify_qt5_libs
+
+* simplify_qt5_libs_
 
 .. _stlib: tools/c_aliases.html#waflib.Tools.c_aliases.stlib
 
@@ -504,6 +688,14 @@ Configuration methods
 .. _sxx_common_flags: tools/suncxx.html#waflib.Tools.suncxx.sxx_common_flags
 
 * sxx_common_flags_
+
+.. _test_pyembed: tools/python.html#waflib.Tools.python.test_pyembed
+
+* test_pyembed_
+
+.. _test_pyext: tools/python.html#waflib.Tools.python.test_pyext
+
+* test_pyext_
 
 .. _undefine: tools/c_config.html#waflib.Tools.c_config.undefine
 
@@ -516,6 +708,10 @@ Configuration methods
 .. _validate_cfg: tools/c_config.html#waflib.Tools.c_config.validate_cfg
 
 * validate_cfg_
+
+.. _visual_studio_add_flags: tools/msvc.html#waflib.Tools.msvc.visual_studio_add_flags
+
+* visual_studio_add_flags_
 
 .. _write_config_header: tools/c_config.html#waflib.Tools.c_config.write_config_header
 
