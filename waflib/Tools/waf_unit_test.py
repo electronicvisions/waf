@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # Carlos Rafael Giani, 2006
-# Thomas Nagy, 2010
+# Thomas Nagy, 2010-2016 (ita)
 
 """
 Unit testing system for C/C++/D providing test execution:

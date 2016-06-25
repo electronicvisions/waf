@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2010 (ita)
+# Thomas Nagy, 2005-2016 (ita)
 
 """
 C/C++/D configuration helpers
@@ -75,7 +75,7 @@ MACRO_TO_DESTOS = {
 '_WIN64'                                         : 'win32',
 '_WIN32'                                         : 'win32',
 # Note about darwin: this is also tested with 'defined __APPLE__ && defined __MACH__' somewhere below in this file.
-'__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__'  : 'darwin', 
+'__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__'  : 'darwin',
 '__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__' : 'darwin', # iphone
 '__QNX__'                                        : 'qnx',
 '__native_client__'                              : 'nacl' # google native client platform

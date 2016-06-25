@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy 2008-2010
+# Thomas Nagy 2008-2016 (ita)
 
 """
 MacOSX related tools
