@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2010 (ita)
+# Thomas Nagy, 2005-2016 (ita)
 
 """
 Classes related to the build phase (build, clean, install, step, etc)
@@ -1173,10 +1173,12 @@ class inst(Task.Task):
 
 		try:
 			self.copy_fun(src, tgt)
-		except IOError:
-			if not src.exists():
+		except EnvironmentError as e:
+			if not os.path.exists(src):
 				Logs.error('File %r does not exist', src)
-			raise Errors.WafError('Could not install the file %r' % tgt)
+			elif not os.path.isfile(src):
+				Logs.error('Input %r is not a file', src)
+			raise Errors.WafError('Could not install the file %r' % tgt, e)
 
 	def do_link(self, src, tgt, **kw):
 		"""
