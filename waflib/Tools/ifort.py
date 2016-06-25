@@ -68,7 +68,7 @@ def get_ifort_version(conf, fc):
 	if not match:
 		conf.fatal('cannot determine ifort version.')
 	k = match.groupdict()
-	conf.env['FC_VERSION'] = (k['major'], k['minor'])
+	conf.env.FC_VERSION = (k['major'], k['minor'])
 
 def configure(conf):
 	if Utils.is_win32:
@@ -158,8 +158,8 @@ def setup_ifort(conf, versiondict):
 	:return: the compiler, revision, path, include dirs, library paths and target architecture
 	:rtype: tuple of strings
 	"""
-	platforms = Utils.to_list(conf.env['MSVC_TARGETS']) or [i for i,j in all_ifort_platforms]
-	desired_versions = conf.env['MSVC_VERSIONS'] or list(reversed(list(versiondict.keys())))
+	platforms = Utils.to_list(conf.env.MSVC_TARGETS) or [i for i,j in all_ifort_platforms]
+	desired_versions = conf.env.MSVC_VERSIONS or list(reversed(list(versiondict.keys())))
 	for version in desired_versions:
 		try:
 			targets = versiondict[version]
@@ -317,9 +317,9 @@ def _get_prog_names(self, compiler):
 def find_ifort_win32(conf):
 	# the autodetection is supposed to be performed before entering in this method
 	v = conf.env
-	path = v['PATH']
-	compiler = v['MSVC_COMPILER']
-	version = v['MSVC_VERSION']
+	path = v.PATH
+	compiler = v.MSVC_COMPILER
+	version = v.MSVC_VERSION
 
 	compiler_name, linker_name, lib_name = _get_prog_names(conf, compiler)
 	v.IFORT_MANIFEST = (compiler == 'intel' and version >= 11)
@@ -333,21 +333,19 @@ def find_ifort_win32(conf):
 	if not conf.cmd_and_log(fc + ['/nologo', '/help'], env=env):
 		conf.fatal('not intel fortran compiler could not be identified')
 
-	v['FC_NAME'] = 'IFORT'
+	v.FC_NAME = 'IFORT'
 
-	# linker
-	if not v['LINK_FC']:
+	if not v.LINK_FC:
 		conf.find_program(linker_name, var='LINK_FC', path_list=path, mandatory=True)
 
-	# staticlib linker
-	if not v['AR']:
+	if not v.AR:
 		conf.find_program(lib_name, path_list=path, var='AR', mandatory=True)
-		v['ARFLAGS'] = ['/nologo']
+		v.ARFLAGS = ['/nologo']
 
 	# manifest tool. Not required for VS 2003 and below. Must have for VS 2005 and later
 	if v.IFORT_MANIFEST:
 		conf.find_program('MT', path_list=path, var='MT')
-		v['MTFLAGS'] = ['/nologo']
+		v.MTFLAGS = ['/nologo']
 
 	try:
 		conf.load('winres')

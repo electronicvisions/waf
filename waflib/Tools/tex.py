@@ -20,7 +20,7 @@ Example::
 			outs     = 'ps', # 'pdf' or 'ps pdf'
 			deps     = 'crossreferencing.lst', # to give dependencies directly
 			prompt   = 1, # 0 for the batch mode
-			)
+		)
 
 Notes:
 
@@ -28,10 +28,9 @@ Notes:
 
      $ PDFLATEX=luatex waf configure
 
-- This tool doesn't use the target attribute of the task generator
+- This tool does not use the target attribute of the task generator
   (``bld(target=...)``); the target file name is built from the source
-  base name and the out type(s)
-
+  base name and the output type(s)
 """
 
 import os, re
@@ -41,7 +40,7 @@ from waflib.TaskGen import feature, before_method
 re_bibunit = re.compile(r'\\(?P<type>putbib)\[(?P<file>[^\[\]]*)\]',re.M)
 def bibunitscan(self):
 	"""
-	Parse the inputs and try to find the *bibunit* dependencies
+	Parses TeX inputs and try to find the *bibunit* file dependencies
 
 	:return: list of bibunit files
 	:rtype: list of :py:class:`waflib.Node.Node`
@@ -52,7 +51,6 @@ def bibunitscan(self):
 	if not node: return nodes
 
 	code = node.read()
-
 	for match in re_bibunit.finditer(code):
 		path = match.group('file')
 		if path:
@@ -66,7 +64,7 @@ def bibunitscan(self):
 			else:
 				Logs.debug('tex: could not find %s', path)
 
-	Logs.debug("tex: found the following bibunit files: %s", nodes)
+	Logs.debug('tex: found the following bibunit files: %s', nodes)
 	return nodes
 
 exts_deps_tex = ['', '.ltx', '.tex', '.bib', '.pdf', '.png', '.eps', '.ps', '.sty']
@@ -86,7 +84,7 @@ g_glossaries_re = re.compile('\\@newglossary', re.M)
 
 class tex(Task.Task):
 	"""
-	Compile a tex/latex file.
+	Compiles a tex/latex file.
 
 	.. inheritance-diagram:: waflib.Tools.tex.latex waflib.Tools.tex.xelatex waflib.Tools.tex.pdflatex
 	"""
@@ -108,7 +106,7 @@ class tex(Task.Task):
 
 	def exec_command(self, cmd, **kw):
 		"""
-		Override :py:meth:`waflib.Task.Task.exec_command` to execute the command without buffering (latex may prompt for inputs)
+		Executes TeX commands without buffering (latex may prompt for inputs)
 
 		:return: the return code
 		:rtype: int
@@ -118,7 +116,7 @@ class tex(Task.Task):
 
 	def scan_aux(self, node):
 		"""
-		A recursive regex-based scanner that finds included auxiliary files.
+		Recursive regex-based scanner that finds included auxiliary files.
 		"""
 		nodes = [node]
 		re_aux = re.compile(r'\\@input{(?P<file>[^{}]*)}', re.M)
@@ -132,13 +130,12 @@ class tex(Task.Task):
 					Logs.debug('tex: found aux node %r', found)
 					nodes.append(found)
 					parse_node(found)
-
 		parse_node(node)
 		return nodes
 
 	def scan(self):
 		"""
-		A recursive regex-based scanner that finds latex dependencies. It uses :py:attr:`waflib.Tools.tex.re_tex`
+		Recursive regex-based scanner that finds latex dependencies. It uses :py:attr:`waflib.Tools.tex.re_tex`
 
 		Depending on your needs you might want:
 
@@ -220,7 +217,7 @@ class tex(Task.Task):
 
 	def check_status(self, msg, retcode):
 		"""
-		Check an exit status and raise an error with a particular message
+		Checks an exit status and raise an error with a particular message
 
 		:param msg: message to display if the code is non-zero
 		:type msg: string
@@ -228,12 +225,12 @@ class tex(Task.Task):
 		:type retcode: boolean
 		"""
 		if retcode != 0:
-			raise Errors.WafError("%r command exit status %r" % (msg, retcode))
+			raise Errors.WafError('%r command exit status %r' % (msg, retcode))
 
 	def bibfile(self):
 		"""
-		Parse the *.aux* files to find bibfiles to process.
-		If yes, execute :py:meth:`waflib.Tools.tex.tex.bibtex_fun`
+		Parses *.aux* files to find bibfiles to process.
+		If present, execute :py:meth:`waflib.Tools.tex.tex.bibtex_fun`
 		"""
 		for aux_node in self.aux_nodes:
 			try:
@@ -260,8 +257,8 @@ class tex(Task.Task):
 
 	def bibunits(self):
 		"""
-		Parse the *.aux* file to find bibunit files. If there are bibunit files,
-		execute :py:meth:`waflib.Tools.tex.tex.bibtex_fun`.
+		Parses *.aux* file to find bibunit files. If there are bibunit files,
+		runs :py:meth:`waflib.Tools.tex.tex.bibtex_fun`.
 		"""
 		try:
 			bibunits = bibunitscan(self)
@@ -280,8 +277,8 @@ class tex(Task.Task):
 
 	def makeindex(self):
 		"""
-		Look on the filesystem if there is a *.idx* file to process. If yes, execute
-		:py:meth:`waflib.Tools.tex.tex.makeindex_fun`
+		Searches the filesystem for *.idx* files to process. If present,
+		runs :py:meth:`waflib.Tools.tex.tex.makeindex_fun`
 		"""
 		self.idx_node = self.inputs[0].change_ext('.idx')
 		try:
@@ -298,13 +295,16 @@ class tex(Task.Task):
 
 	def bibtopic(self):
 		"""
-		Additional .aux files from the bibtopic package
+		Lists additional .aux files from the bibtopic package
 		"""
 		p = self.inputs[0].parent.get_bld()
 		if os.path.exists(os.path.join(p.abspath(), 'btaux.aux')):
 			self.aux_nodes += p.ant_glob('*[0-9].aux')
 
 	def makeglossaries(self):
+		"""
+		Lists additional glossaries from .aux files. If present, runs the makeglossaries program.
+		"""
 		src_file = self.inputs[0].abspath()
 		base_file = os.path.basename(src_file)
 		base, _ = os.path.splitext(base_file)
@@ -324,21 +324,24 @@ class tex(Task.Task):
 				return
 
 	def texinputs(self):
+		"""
+		Returns the list of texinput nodes as a string suitable for the TEXINPUTS environment variables
+
+		:rtype: string
+		"""
 		return os.pathsep.join([k.abspath() for k in self.texinputs_nodes]) + os.pathsep
 
 	def run(self):
 		"""
-		Runs the TeX build process.
+		Runs the whole TeX build process
 
-		It may require multiple passes, depending on the usage of cross-references,
-		bibliographies, content susceptible of needing such passes.
+		Multiple passes are required depending on the usage of cross-references,
+		bibliographies, glossaries, indexes and additional contents
 		The appropriate TeX compiler is called until the *.aux* files stop changing.
-
-		Makeindex and bibtex are called if necessary.
 		"""
 		env = self.env
 
-		if not env['PROMPT_LATEX']:
+		if not env.PROMPT_LATEX:
 			env.append_value('LATEXFLAGS', '-interaction=batchmode')
 			env.append_value('PDFLATEXFLAGS', '-interaction=batchmode')
 			env.append_value('XELATEXFLAGS', '-interaction=batchmode')
@@ -376,6 +379,11 @@ class tex(Task.Task):
 			self.call_latex()
 
 	def hash_aux_nodes(self):
+		"""
+		Returns a hash of the .aux file contents
+
+		:rtype: string or bytes
+		"""
 		try:
 			self.aux_nodes
 		except AttributeError:
@@ -386,31 +394,41 @@ class tex(Task.Task):
 		return Utils.h_list([Utils.h_file(x.abspath()) for x in self.aux_nodes])
 
 	def call_latex(self):
+		"""
+		Runs the TeX compiler once
+		"""
 		self.env.env = {}
 		self.env.env.update(os.environ)
 		self.env.env.update({'TEXINPUTS': self.texinputs()})
 		self.env.SRCFILE = self.inputs[0].abspath()
 		self.check_status('error when calling latex', self.texfun())
 
-
 class latex(tex):
+	"Compiles LaTeX files"
 	texfun, vars = Task.compile_fun('${LATEX} ${LATEXFLAGS} ${SRCFILE}', shell=False)
+
 class pdflatex(tex):
+	"Compiles PdfLaTeX files"
 	texfun, vars =  Task.compile_fun('${PDFLATEX} ${PDFLATEXFLAGS} ${SRCFILE}', shell=False)
+
 class xelatex(tex):
+	"XeLaTeX files"
 	texfun, vars = Task.compile_fun('${XELATEX} ${XELATEXFLAGS} ${SRCFILE}', shell=False)
 
 class dvips(Task.Task):
+	"Converts dvi files to postscript"
 	run_str = '${DVIPS} ${DVIPSFLAGS} ${SRC} -o ${TGT}'
 	color   = 'BLUE'
 	after   = ['latex', 'pdflatex', 'xelatex']
 
 class dvipdf(Task.Task):
+	"Converts dvi files to pdf"
 	run_str = '${DVIPDF} ${DVIPDFFLAGS} ${SRC} ${TGT}'
 	color   = 'BLUE'
 	after   = ['latex', 'pdflatex', 'xelatex']
 
 class pdf2ps(Task.Task):
+	"Converts pdf files to postscript"
 	run_str = '${PDF2PS} ${PDF2PSFLAGS} ${SRC} ${TGT}'
 	color   = 'BLUE'
 	after   = ['latex', 'pdflatex', 'xelatex']
@@ -419,7 +437,8 @@ class pdf2ps(Task.Task):
 @before_method('process_source')
 def apply_tex(self):
 	"""
-	Create :py:class:`waflib.Tools.tex.tex` objects, and dvips/dvipdf/pdf2ps tasks if necessary (outs='ps', etc).
+	Creates :py:class:`waflib.Tools.tex.tex` objects, and
+	dvips/dvipdf/pdf2ps tasks if necessary (outs='ps', etc).
 	"""
 	if not getattr(self, 'type', None) in ('latex', 'pdflatex', 'xelatex'):
 		self.type = 'pdflatex'
@@ -427,7 +446,7 @@ def apply_tex(self):
 	outs = Utils.to_list(getattr(self, 'outs', []))
 
 	# prompt for incomplete files (else the batchmode is used)
-	self.env['PROMPT_LATEX'] = getattr(self, 'prompt', 1)
+	self.env.PROMPT_LATEX = getattr(self, 'prompt', 1)
 
 	deps_lst = []
 
@@ -444,7 +463,6 @@ def apply_tex(self):
 				deps_lst.append(dep)
 
 	for node in self.to_nodes(self.source):
-
 		if self.type == 'latex':
 			task = self.create_task('latex', node, node.change_ext('.dvi'))
 		elif self.type == 'pdflatex':
@@ -495,8 +513,7 @@ def apply_tex(self):
 
 def configure(self):
 	"""
-	Try to find the programs tex, latex and others. Do not raise any error if they
-	are not found.
+	Find the programs tex, latex and others without raising errors.
 	"""
 	v = self.env
 	for p in 'tex latex pdflatex xelatex bibtex dvips dvipdf ps2pdf makeindex pdf2ps makeglossaries'.split():
@@ -504,5 +521,5 @@ def configure(self):
 			self.find_program(p, var=p.upper())
 		except self.errors.ConfigurationError:
 			pass
-	v['DVIPSFLAGS'] = '-Ppdf'
+	v.DVIPSFLAGS = '-Ppdf'
 

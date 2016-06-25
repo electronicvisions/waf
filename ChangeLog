@@ -25,6 +25,7 @@ NEW IN WAF 1.9
   - Enable ut_str to process scriptlet expressions for C/C++ unit tests
   - Minimize the amount of paths added to unit test environment variable
   - Restore configuration values with Configure.autoconfig='clobber' #1758
+  - Rebuilds are applied on file contents so that update_outputs is no longer needed
 
 * Performance highlights:
   - Reduce the key size in bld.task_sigs by adding bld.node_sigs and bld.imp_sigs
@@ -39,7 +40,7 @@ NEW IN WAF 1.9
 * API changes:
   - The minimum Python version required is Python 2.5
   - Add Task.get_cwd()
-  - Remove the command called "update"
+  - Remove the command called 'update'
   - Remove unused variables and functions:
     - TaskBase.attr()
     - Build.POST_BOTH

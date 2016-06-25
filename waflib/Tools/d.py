@@ -57,7 +57,7 @@ def d_hook(self, node):
 
 	if getattr(self, 'generate_headers', None):
 		tsk = create_compiled_task(self, 'd_with_header', node)
-		tsk.outputs.append(node.change_ext(self.env['DHEADER_ext']))
+		tsk.outputs.append(node.change_ext(self.env.DHEADER_ext))
 	else:
 		tsk = create_compiled_task(self, 'd', node)
 	return tsk

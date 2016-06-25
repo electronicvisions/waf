@@ -295,9 +295,9 @@ class BuildContext(Context.Context):
 		except EnvironmentError:
 			pass
 		else:
-			if env['version'] < Context.HEXVERSION:
+			if env.version < Context.HEXVERSION:
 				raise Errors.WafError('Version mismatch! reconfigure the project')
-			for t in env['tools']:
+			for t in env.tools:
 				self.setup(**t)
 
 		dbfn = os.path.join(self.variant_dir, Context.DBFILE)

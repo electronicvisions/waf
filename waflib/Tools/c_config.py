@@ -484,7 +484,7 @@ def validate_c(self, kw):
 
 	if not 'compiler' in kw and not 'features' in kw:
 		kw['compiler'] = 'c'
-		if env['CXX_NAME'] and Task.classes.get('cxx'):
+		if env.CXX_NAME and Task.classes.get('cxx'):
 			kw['compiler'] = 'cxx'
 			if not self.env.CXX:
 				self.fatal('a c++ compiler is required')
@@ -820,7 +820,7 @@ def define(self, key, val, quote=True, comment=''):
 	app = s % (key, str(val))
 
 	ban = key + '='
-	lst = self.env['DEFINES']
+	lst = self.env.DEFINES
 	for x in lst:
 		if x.startswith(ban):
 			lst[lst.index(x)] = app
@@ -842,8 +842,8 @@ def undefine(self, key, comment=''):
 	assert key and isinstance(key, str)
 
 	ban = key + '='
-	lst = [x for x in self.env['DEFINES'] if not x.startswith(ban)]
-	self.env['DEFINES'] = lst
+	lst = [x for x in self.env.DEFINES if not x.startswith(ban)]
+	self.env.DEFINES = lst
 	self.env.append_unique(DEFKEYS, key)
 	self.set_define_comment(key, comment)
 
@@ -881,7 +881,7 @@ def is_defined(self, key):
 	assert key and isinstance(key, str)
 
 	ban = key + '='
-	for x in self.env['DEFINES']:
+	for x in self.env.DEFINES:
 		if x.startswith(ban):
 			return True
 	return False
@@ -896,7 +896,7 @@ def get_define(self, key):
 	assert key and isinstance(key, str)
 
 	ban = key + '='
-	for x in self.env['DEFINES']:
+	for x in self.env.DEFINES:
 		if x.startswith(ban):
 			return x[len(ban):]
 	return None
@@ -993,7 +993,7 @@ def get_config_header(self, defines=True, headers=False, define_prefix=''):
 
 	if defines:
 		tbl = {}
-		for k in self.env['DEFINES']:
+		for k in self.env.DEFINES:
 			a, _, b = k.partition('=')
 			tbl[a] = b
 
@@ -1125,13 +1125,13 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 		Logs.debug('ccroot: dest platform: ' + ' '.join([conf.env[x] or '?' for x in ('DEST_OS', 'DEST_BINFMT', 'DEST_CPU')]))
 		if icc:
 			ver = k['__INTEL_COMPILER']
-			conf.env['CC_VERSION'] = (ver[:-2], ver[-2], ver[-1])
+			conf.env.CC_VERSION = (ver[:-2], ver[-2], ver[-1])
 		else:
 			if isD('__clang__') and isD('__clang_major__'):
-				conf.env['CC_VERSION'] = (k['__clang_major__'], k['__clang_minor__'], k['__clang_patchlevel__'])
+				conf.env.CC_VERSION = (k['__clang_major__'], k['__clang_minor__'], k['__clang_patchlevel__'])
 			else:
 				# older clang versions and gcc
-				conf.env['CC_VERSION'] = (k['__GNUC__'], k['__GNUC_MINOR__'], k.get('__GNUC_PATCHLEVEL__', '0'))
+				conf.env.CC_VERSION = (k['__GNUC__'], k['__GNUC_MINOR__'], k.get('__GNUC_PATCHLEVEL__', '0'))
 	return k
 
 @conf
@@ -1150,7 +1150,7 @@ def get_xlc_version(conf, cc):
 		match = version_re(out or err)
 		if match:
 			k = match.groupdict()
-			conf.env['CC_VERSION'] = (k['major'], k['minor'])
+			conf.env.CC_VERSION = (k['major'], k['minor'])
 			break
 	else:
 		conf.fatal('Could not determine the XLC version.')
@@ -1179,7 +1179,7 @@ def get_suncc_version(conf, cc):
 	match = version_re(version)
 	if match:
 		k = match.groupdict()
-		conf.env['CC_VERSION'] = (k['major'], k['minor'])
+		conf.env.CC_VERSION = (k['major'], k['minor'])
 	else:
 		conf.fatal('Could not determine the suncc version.')
 

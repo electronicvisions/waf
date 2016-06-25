@@ -298,7 +298,7 @@ def create_rcc_task(self, node):
 def create_uic_task(self, node):
 	"hook for uic tasks"
 	uictask = self.create_task('ui5', node)
-	uictask.outputs = [node.parent.find_or_declare(self.env['ui_PATTERN'] % node.name[:-3])]
+	uictask.outputs = [node.parent.find_or_declare(self.env.ui_PATTERN % node.name[:-3])]
 
 @extension('.ts')
 def add_lang(self, node):
@@ -368,7 +368,7 @@ def apply_qt5(self):
 			self.link_task.inputs.append(k.outputs[0])
 
 	lst = []
-	for flag in self.to_list(self.env['CXXFLAGS']):
+	for flag in self.to_list(self.env.CXXFLAGS):
 		if len(flag) < 2: continue
 		f = flag[0:2]
 		if f in ('-D', '-I', '/D', '/I'):
@@ -610,10 +610,10 @@ def find_qt5_binaries(self):
 	find_bin(['lrelease-qt5', 'lrelease'], 'QT_LRELEASE')
 	find_bin(['lupdate-qt5', 'lupdate'], 'QT_LUPDATE')
 
-	env['UIC_ST'] = '%s -o %s'
-	env['MOC_ST'] = '-o'
-	env['ui_PATTERN'] = 'ui_%s.h'
-	env['QT_LRELEASE_FLAGS'] = ['-silent']
+	env.UIC_ST = '%s -o %s'
+	env.MOC_ST = '-o'
+	env.ui_PATTERN = 'ui_%s.h'
+	env.QT_LRELEASE_FLAGS = ['-silent']
 	env.MOCCPPPATH_ST = '-I%s'
 	env.MOCDEFINES_ST = '-D%s'
 

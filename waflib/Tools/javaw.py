@@ -77,7 +77,7 @@ def apply_java(self):
 		outdir = self.path.get_bld()
 	outdir.mkdir()
 	self.outdir = outdir
-	self.env['OUTDIR'] = outdir.abspath()
+	self.env.OUTDIR = outdir.abspath()
 
 	self.javac_task = tsk = self.create_task('javac')
 	tmp = []
@@ -185,8 +185,8 @@ def jar_files(self):
 	jaropts.append(basedir.bldpath())
 	jaropts.append('.')
 
-	tsk.env['JAROPTS'] = jaropts
-	tsk.env['JARCREATE'] = jarcreate
+	tsk.env.JAROPTS = jaropts
+	tsk.env.JARCREATE = jarcreate
 
 	if getattr(self, 'javac_task', None):
 		tsk.set_run_after(self.javac_task)
@@ -318,7 +318,7 @@ class javadoc(Task.Task):
 		classpath = "".join(classpath)
 
 		self.last_cmd = lst = []
-		lst.extend(Utils.to_list(env['JAVADOC']))
+		lst.extend(Utils.to_list(env.JAVADOC))
 		lst.extend(['-d', self.generator.javadoc_output.abspath()])
 		lst.extend(['-sourcepath', srcpath])
 		lst.extend(['-classpath', classpath])
@@ -344,19 +344,21 @@ def configure(self):
 
 	if 'JAVA_HOME' in self.environ:
 		java_path = [os.path.join(self.environ['JAVA_HOME'], 'bin')] + java_path
-		self.env['JAVA_HOME'] = [self.environ['JAVA_HOME']]
+		self.env.JAVA_HOME = [self.environ['JAVA_HOME']]
 
 	for x in 'javac java jar javadoc'.split():
 		self.find_program(x, var=x.upper(), path_list=java_path)
 
 	if 'CLASSPATH' in self.environ:
-		v['CLASSPATH'] = self.environ['CLASSPATH']
+		v.CLASSPATH = self.environ['CLASSPATH']
 
-	if not v['JAR']: self.fatal('jar is required for making java packages')
-	if not v['JAVAC']: self.fatal('javac is required for compiling java classes')
+	if not v.JAR:
+		self.fatal('jar is required for making java packages')
+	if not v.JAVAC:
+		self.fatal('javac is required for compiling java classes')
 
-	v['JARCREATE'] = 'cf' # can use cvf
-	v['JAVACFLAGS'] = []
+	v.JARCREATE = 'cf' # can use cvf
+	v.JAVACFLAGS = []
 
 @conf
 def check_java_class(self, classname, with_classpath=None):
@@ -368,12 +370,11 @@ def check_java_class(self, classname, with_classpath=None):
 	:param with_classpath: additional classpath to give
 	:type with_classpath: string
 	"""
-
 	javatestdir = '.waf-javatest'
 
 	classpath = javatestdir
-	if self.env['CLASSPATH']:
-		classpath += os.pathsep + self.env['CLASSPATH']
+	if self.env.CLASSPATH:
+		classpath += os.pathsep + self.env.CLASSPATH
 	if isinstance(with_classpath, str):
 		classpath += os.pathsep + with_classpath
 
@@ -383,10 +384,10 @@ def check_java_class(self, classname, with_classpath=None):
 	Utils.writef(os.path.join(javatestdir, 'Test.java'), class_check_source)
 
 	# Compile the source
-	self.exec_command(self.env['JAVAC'] + [os.path.join(javatestdir, 'Test.java')], shell=False)
+	self.exec_command(self.env.JAVAC + [os.path.join(javatestdir, 'Test.java')], shell=False)
 
 	# Try to run the app
-	cmd = self.env['JAVA'] + ['-cp', classpath, 'Test', classname]
+	cmd = self.env.JAVA + ['-cp', classpath, 'Test', classname]
 	self.to_log("%s\n" % str(cmd))
 	found = self.exec_command(cmd, shell=False)
 
@@ -419,7 +420,7 @@ def check_jni_headers(conf):
 		conf.fatal('set JAVA_HOME in the system environment')
 
 	# jni requires the jvm
-	javaHome = conf.env['JAVA_HOME'][0]
+	javaHome = conf.env.JAVA_HOME[0]
 
 	dir = conf.root.find_dir(conf.env.JAVA_HOME[0] + '/include')
 	if dir is None:

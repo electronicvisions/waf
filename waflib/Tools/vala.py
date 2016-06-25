@@ -124,7 +124,7 @@ def init_vala_task(self):
 	valatask.install_path = getattr(self, 'install_path', '')
 
 	valatask.vapi_path = getattr(self, 'vapi_path', '${DATAROOTDIR}/vala/vapi')
-	valatask.pkg_name = getattr(self, 'pkg_name', self.env['PACKAGE'])
+	valatask.pkg_name = getattr(self, 'pkg_name', self.env.PACKAGE)
 	valatask.header_path = getattr(self, 'header_path', '${INCLUDEDIR}/%s-%s' % (valatask.pkg_name, _get_api_version()))
 	valatask.install_binding = getattr(self, 'install_binding', True)
 
@@ -275,7 +275,7 @@ def find_valac(self, valac_name, min_version):
 	if valac and valac_version < min_version:
 		self.fatal("%s version %r is too old, need >= %r" % (valac_name, valac_version, min_version))
 
-	self.env['VALAC_VERSION'] = valac_version
+	self.env.VALAC_VERSION = valac_version
 	return valac
 
 @conf
@@ -305,7 +305,7 @@ def check_vala_deps(self):
 	"""
 	Load the gobject and gthread packages if they are missing.
 	"""
-	if not self.env['HAVE_GOBJECT']:
+	if not self.env.HAVE_GOBJECT:
 		pkg_args = {'package':      'gobject-2.0',
 		            'uselib_store': 'GOBJECT',
 		            'args':         '--cflags --libs'}
@@ -313,7 +313,7 @@ def check_vala_deps(self):
 			pkg_args['atleast_version'] = Options.options.vala_target_glib
 		self.check_cfg(**pkg_args)
 
-	if not self.env['HAVE_GTHREAD']:
+	if not self.env.HAVE_GTHREAD:
 		pkg_args = {'package':      'gthread-2.0',
 		            'uselib_store': 'GTHREAD',
 		            'args':         '--cflags --libs'}

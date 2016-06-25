@@ -167,7 +167,7 @@ def process_enums(self):
 			raise Errors.WafError('missing source ' + str(enum))
 		source_list = [self.path.find_resource(k) for k in source_list]
 		inputs += source_list
-		env['GLIB_MKENUMS_SOURCE'] = [k.abspath() for k in source_list]
+		env.GLIB_MKENUMS_SOURCE = [k.abspath() for k in source_list]
 
 		# find the target
 		if not enum['target']:
@@ -175,7 +175,7 @@ def process_enums(self):
 		tgt_node = self.path.find_or_declare(enum['target'])
 		if tgt_node.name.endswith('.c'):
 			self.source.append(tgt_node)
-		env['GLIB_MKENUMS_TARGET'] = tgt_node.abspath()
+		env.GLIB_MKENUMS_TARGET = tgt_node.abspath()
 
 
 		options = []
@@ -196,7 +196,7 @@ def process_enums(self):
 			if enum[param]:
 				options.append('%s %r' % (option, enum[param]))
 
-		env['GLIB_MKENUMS_OPTIONS'] = ' '.join(options)
+		env.GLIB_MKENUMS_OPTIONS = ' '.join(options)
 
 		# update the task instance
 		task.set_inputs(inputs)
@@ -257,7 +257,7 @@ def process_settings(self):
 	install_files = []
 
 	settings_schema_files = getattr(self, 'settings_schema_files', [])
-	if settings_schema_files and not self.env['GLIB_COMPILE_SCHEMAS']:
+	if settings_schema_files and not self.env.GLIB_COMPILE_SCHEMAS:
 		raise Errors.WafError ("Unable to process GSettings schemas - glib-compile-schemas was not found during configure")
 
 	# 1. process gsettings_enum_files (generate .enums.xml)
@@ -268,18 +268,18 @@ def process_settings(self):
 		source_list = self.settings_enum_files
 		source_list = [self.path.find_resource(k) for k in source_list]
 		enums_task.set_inputs(source_list)
-		enums_task.env['GLIB_MKENUMS_SOURCE'] = [k.abspath() for k in source_list]
+		enums_task.env.GLIB_MKENUMS_SOURCE = [k.abspath() for k in source_list]
 
 		target = self.settings_enum_namespace + '.enums.xml'
 		tgt_node = self.path.find_or_declare(target)
 		enums_task.set_outputs(tgt_node)
-		enums_task.env['GLIB_MKENUMS_TARGET'] = tgt_node.abspath()
+		enums_task.env.GLIB_MKENUMS_TARGET = tgt_node.abspath()
 		enums_tgt_node = [tgt_node]
 
 		install_files.append(tgt_node)
 
 		options = '--comments "<!-- @comment@ -->" --fhead "<schemalist>" --vhead "  <@type@ id=\\"%s.@EnumName@\\">" --vprod "    <value nick=\\"@valuenick@\\" value=\\"@valuenum@\\"/>" --vtail "  </@type@>" --ftail "</schemalist>" ' % (self.settings_enum_namespace)
-		enums_task.env['GLIB_MKENUMS_OPTIONS'] = options
+		enums_task.env.GLIB_MKENUMS_OPTIONS = options
 
 	# 2. process gsettings_schema_files (validate .gschema.xml files)
 	#
@@ -293,11 +293,11 @@ def process_settings(self):
 		source_list = enums_tgt_node + [schema_node]
 
 		schema_task.set_inputs (source_list)
-		schema_task.env['GLIB_COMPILE_SCHEMAS_OPTIONS'] = [("--schema-file=" + k.abspath()) for k in source_list]
+		schema_task.env.GLIB_COMPILE_SCHEMAS_OPTIONS = [("--schema-file=" + k.abspath()) for k in source_list]
 
 		target_node = schema_node.change_ext('.xml.valid')
 		schema_task.set_outputs (target_node)
-		schema_task.env['GLIB_VALIDATE_SCHEMA_OUTPUT'] = target_node.abspath()
+		schema_task.env.GLIB_VALIDATE_SCHEMA_OUTPUT = target_node.abspath()
 
 	# 3. schemas install task
 	def compile_schemas_callback(bld):
@@ -307,11 +307,11 @@ def process_settings(self):
 		self.bld.exec_command(command)
 
 	if self.bld.is_install:
-		if not self.env['GSETTINGSSCHEMADIR']:
+		if not self.env.GSETTINGSSCHEMADIR:
 			raise Errors.WafError ('GSETTINGSSCHEMADIR not defined (should have been set up automatically during configure)')
 
 		if install_files:
-			self.add_install_files(install_to=self.env['GSETTINGSSCHEMADIR'], install_from=install_files)
+			self.add_install_files(install_to=self.env.GSETTINGSSCHEMADIR, install_from=install_files)
 			if not hasattr(self.bld, '_compile_schemas_registered'):
 				self.bld.add_post_fun(compile_schemas_callback)
 				self.bld._compile_schemas_registered = True
@@ -330,7 +330,7 @@ def process_gresource_source(self, node):
 	"""
 	Hook to process .gresource.xml to generate C source files
 	"""
-	if not self.env['GLIB_COMPILE_RESOURCES']:
+	if not self.env.GLIB_COMPILE_RESOURCES:
 		raise Errors.WafError ("Unable to process GResource file - glib-compile-resources was not found during configure")
 
 	if 'gresource' in self.features:
@@ -445,11 +445,11 @@ def find_glib_compile_schemas(conf):
 	if not gsettingsschemadir:
 		datadir = getstr('DATADIR')
 		if not datadir:
-			prefix = conf.env['PREFIX']
+			prefix = conf.env.PREFIX
 			datadir = os.path.join(prefix, 'share')
 		gsettingsschemadir = os.path.join(datadir, 'glib-2.0', 'schemas')
 
-	conf.env['GSETTINGSSCHEMADIR'] = gsettingsschemadir
+	conf.env.GSETTINGSSCHEMADIR = gsettingsschemadir
 
 @conf
 def find_glib_compile_resources(conf):

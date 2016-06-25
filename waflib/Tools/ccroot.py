@@ -118,10 +118,10 @@ def apply_incpaths(self):
 	and the list of include paths in ``tg.env.INCLUDES``.
 	"""
 
-	lst = self.to_incnodes(self.to_list(getattr(self, 'includes', [])) + self.env['INCLUDES'])
+	lst = self.to_incnodes(self.to_list(getattr(self, 'includes', [])) + self.env.INCLUDES)
 	self.includes_nodes = lst
 	cwd = self.get_cwd()
-	self.env['INCPATHS'] = [x.path_from(cwd) for x in lst]
+	self.env.INCPATHS = [x.path_from(cwd) for x in lst]
 
 class link_task(Task.Task):
 	"""
@@ -498,9 +498,9 @@ def apply_implib(self):
 		name = self.target.name
 	else:
 		name = os.path.split(self.target)[1]
-	implib = self.env['implib_PATTERN'] % name
+	implib = self.env.implib_PATTERN % name
 	implib = dll.parent.find_or_declare(implib)
-	self.env.append_value('LINKFLAGS', self.env['IMPLIB_ST'] % implib.bldpath())
+	self.env.append_value('LINKFLAGS', self.env.IMPLIB_ST % implib.bldpath())
 	self.link_task.outputs.append(implib)
 
 	if getattr(self, 'defs', None) and self.env.DEST_BINFMT == 'pe':
@@ -608,7 +608,7 @@ def apply_vnum(self):
 			else:
 				self.vnum_install_task = (t1, t3)
 
-	if '-dynamiclib' in self.env['LINKFLAGS']:
+	if '-dynamiclib' in self.env.LINKFLAGS:
 		# this requires after(propagate_uselib_vars)
 		try:
 			inst_to = self.install_path

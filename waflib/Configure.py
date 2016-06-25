@@ -167,9 +167,9 @@ class ConfigurationContext(Context.Context):
 		# consider the current path as the root directory (see prepare_impl).
 		# to remove: use 'waf distclean'
 		env = ConfigSet.ConfigSet()
-		env['argv'] = sys.argv
-		env['options'] = Options.options.__dict__
-		env['config_cmd'] = self.cmd
+		env.argv = sys.argv
+		env.options = Options.options.__dict__
+		env.config_cmd = self.cmd
 
 		env.run_dir = Context.run_dir
 		env.top_dir = Context.top_dir
@@ -177,9 +177,9 @@ class ConfigurationContext(Context.Context):
 
 		# conf.hash & conf.files hold wscript files paths and hash
 		# (used only by Configure.autoconfig)
-		env['hash'] = self.hash
-		env['files'] = self.files
-		env['environ'] = dict(self.environ)
+		env.hash = self.hash
+		env.files = self.files
+		env.environ = dict(self.environ)
 
 		if not self.env.NO_LOCK_IN_RUN and not getattr(Options.options, 'no_lock_in_run'):
 			env.store(os.path.join(Context.run_dir, Options.lockfile))

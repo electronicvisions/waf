@@ -46,7 +46,7 @@ def apply_ruby_so_name(self):
 	"""
 	Strip the *lib* prefix from ruby extensions
 	"""
-	self.env['cshlib_PATTERN'] = self.env['cxxshlib_PATTERN'] = self.env['rubyext_PATTERN']
+	self.env.cshlib_PATTERN = self.env.cxxshlib_PATTERN = self.env.rubyext_PATTERN
 
 @conf
 def check_ruby_version(self, minver=()):
@@ -171,7 +171,7 @@ class run_ruby(Task.Task):
 			ctx.check_ruby_version()
 
 		def build(bld):
-			bld.env['RBFLAGS'] = '-e puts "hello world"'
+			bld.env.RBFLAGS = '-e puts "hello world"'
 			bld(source='a_ruby_file.rb')
 	"""
 	run_str = '${RUBY} ${RBFLAGS} -I ${SRC[0].parent.abspath()} ${SRC}'

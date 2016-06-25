@@ -37,8 +37,8 @@ def set_macosx_deployment_target(self):
 	"""
 	see WAF issue 285 and also and also http://trac.macports.org/ticket/17059
 	"""
-	if self.env['MACOSX_DEPLOYMENT_TARGET']:
-		os.environ['MACOSX_DEPLOYMENT_TARGET'] = self.env['MACOSX_DEPLOYMENT_TARGET']
+	if self.env.MACOSX_DEPLOYMENT_TARGET:
+		os.environ['MACOSX_DEPLOYMENT_TARGET'] = self.env.MACOSX_DEPLOYMENT_TARGET
 	elif 'MACOSX_DEPLOYMENT_TARGET' not in os.environ:
 		if Utils.unversioned_sys_platform() == 'darwin':
 			os.environ['MACOSX_DEPLOYMENT_TARGET'] = '.'.join(platform.mac_ver()[0].split('.')[:2])
@@ -78,7 +78,7 @@ def create_task_macapp(self):
 			bld.env.MACAPP = True
 			bld.shlib(source='a.c', target='foo')
 	"""
-	if self.env['MACAPP'] or getattr(self, 'mac_app', False):
+	if self.env.MACAPP or getattr(self, 'mac_app', False):
 		out = self.link_task.outputs[0]
 
 		name = bundle_name_for_output(out)
@@ -114,7 +114,7 @@ def create_task_macplist(self):
 	"""
 	Creates a :py:class:`waflib.Tools.c_osx.macplist` instance.
 	"""
-	if  self.env['MACAPP'] or getattr(self, 'mac_app', False):
+	if  self.env.MACAPP or getattr(self, 'mac_app', False):
 		out = self.link_task.outputs[0]
 
 		name = bundle_name_for_output(out)
@@ -158,9 +158,9 @@ def apply_bundle(self):
 			bld.env.MACBUNDLE = True
 			bld.shlib(source='a.c', target='foo')
 	"""
-	if self.env['MACBUNDLE'] or getattr(self, 'mac_bundle', False):
-		self.env['LINKFLAGS_cshlib'] = self.env['LINKFLAGS_cxxshlib'] = [] # disable the '-dynamiclib' flag
-		self.env['cshlib_PATTERN'] = self.env['cxxshlib_PATTERN'] = self.env['macbundle_PATTERN']
+	if self.env.MACBUNDLE or getattr(self, 'mac_bundle', False):
+		self.env.LINKFLAGS_cshlib = self.env.LINKFLAGS_cxxshlib = [] # disable the '-dynamiclib' flag
+		self.env.cshlib_PATTERN = self.env.cxxshlib_PATTERN = self.env.macbundle_PATTERN
 		use = self.use = self.to_list(getattr(self, 'use', []))
 		if not 'MACBUNDLE' in use:
 			use.append('MACBUNDLE')

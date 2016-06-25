@@ -49,7 +49,7 @@ $ ./waf-light --make-waf --tools=compat15,/comp/waf/aba.py --prelude=$'\tfrom wa
 
 Or, to avoid regenerating the waf file all the time, just set the `WAFDIR` environment variable to the directory containing "waflib".
 
-## HOW TO TRY THE EXAMPLES
+## HOW TO RUN THE EXAMPLES
 
 Try this:
 ```sh

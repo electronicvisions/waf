@@ -22,7 +22,7 @@ def big_bison(self, node):
 	"""
 	Creates a bison task, which must be executed from the directory of the output file.
 	"""
-	has_h = '-d' in self.env['BISONFLAGS']
+	has_h = '-d' in self.env.BISONFLAGS
 
 	outs = []
 	if node.name.endswith('.yc'):

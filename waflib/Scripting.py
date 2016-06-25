@@ -591,12 +591,12 @@ def autoconfigure(execute_method):
 				do_config = True
 			else:
 				h = 0
-				for f in env['files']:
+				for f in env.files:
 					h = Utils.h_list((h, Utils.readf(f, 'rb')))
 				do_config = h != env.hash
 
 		if do_config:
-			cmd = env['config_cmd'] or 'configure'
+			cmd = env.config_cmd or 'configure'
 			if Configure.autoconfig == 'clobber':
 				tmp = Options.options.__dict__
 				Options.options.__dict__ = env.options

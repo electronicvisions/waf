@@ -21,29 +21,31 @@ def fc_flags(conf):
 	"""
 	v = conf.env
 
-	v['FC_SRC_F']    = []
-	v['FC_TGT_F']    = ['-c', '-o']
-	v['FCINCPATH_ST']  = '-I%s'
-	v['FCDEFINES_ST']  = '-D%s'
+	v.FC_SRC_F    = []
+	v.FC_TGT_F    = ['-c', '-o']
+	v.FCINCPATH_ST  = '-I%s'
+	v.FCDEFINES_ST  = '-D%s'
 
-	if not v['LINK_FC']: v['LINK_FC'] = v['FC']
-	v['FCLNK_SRC_F'] = []
-	v['FCLNK_TGT_F'] = ['-o']
+	if not v.LINK_FC:
+		v.LINK_FC = v.FC
 
-	v['FCFLAGS_fcshlib']   = ['-fpic']
-	v['LINKFLAGS_fcshlib'] = ['-shared']
-	v['fcshlib_PATTERN']   = 'lib%s.so'
+	v.FCLNK_SRC_F = []
+	v.FCLNK_TGT_F = ['-o']
 
-	v['fcstlib_PATTERN']   = 'lib%s.a'
+	v.FCFLAGS_fcshlib   = ['-fpic']
+	v.LINKFLAGS_fcshlib = ['-shared']
+	v.fcshlib_PATTERN   = 'lib%s.so'
 
-	v['FCLIB_ST']       = '-l%s'
-	v['FCLIBPATH_ST']   = '-L%s'
-	v['FCSTLIB_ST']     = '-l%s'
-	v['FCSTLIBPATH_ST'] = '-L%s'
-	v['FCSTLIB_MARKER'] = '-Wl,-Bstatic'
-	v['FCSHLIB_MARKER'] = '-Wl,-Bdynamic'
+	v.fcstlib_PATTERN   = 'lib%s.a'
 
-	v['SONAME_ST']           = '-Wl,-h,%s'
+	v.FCLIB_ST       = '-l%s'
+	v.FCLIBPATH_ST   = '-L%s'
+	v.FCSTLIB_ST     = '-l%s'
+	v.FCSTLIBPATH_ST = '-L%s'
+	v.FCSTLIB_MARKER = '-Wl,-Bstatic'
+	v.FCSHLIB_MARKER = '-Wl,-Bdynamic'
+
+	v.SONAME_ST      = '-Wl,-h,%s'
 
 @conf
 def fc_add_flags(conf):
@@ -92,30 +94,30 @@ def fortran_modifier_darwin(conf):
 	Define fortran flags and extensions for the OSX systems
 	"""
 	v = conf.env
-	v['FCFLAGS_fcshlib']   = ['-fPIC']
-	v['LINKFLAGS_fcshlib'] = ['-dynamiclib']
-	v['fcshlib_PATTERN']   = 'lib%s.dylib'
-	v['FRAMEWORKPATH_ST']  = '-F%s'
-	v['FRAMEWORK_ST']      = '-framework %s'
+	v.FCFLAGS_fcshlib   = ['-fPIC']
+	v.LINKFLAGS_fcshlib = ['-dynamiclib']
+	v.fcshlib_PATTERN   = 'lib%s.dylib'
+	v.FRAMEWORKPATH_ST  = '-F%s'
+	v.FRAMEWORK_ST      = '-framework %s'
 
-	v['LINKFLAGS_fcstlib'] = []
+	v.LINKFLAGS_fcstlib = []
 
-	v['FCSHLIB_MARKER']    = ''
-	v['FCSTLIB_MARKER']    = ''
-	v['SONAME_ST']         = ''
+	v.FCSHLIB_MARKER    = ''
+	v.FCSTLIB_MARKER    = ''
+	v.SONAME_ST         = ''
 
 
 @conf
 def fortran_modifier_win32(conf):
 	"""Define fortran flags for the windows platforms"""
 	v = conf.env
-	v['fcprogram_PATTERN'] = v['fcprogram_test_PATTERN']  = '%s.exe'
+	v.fcprogram_PATTERN = v.fcprogram_test_PATTERN  = '%s.exe'
 
-	v['fcshlib_PATTERN']   = '%s.dll'
-	v['implib_PATTERN']    = 'lib%s.dll.a'
-	v['IMPLIB_ST']         = '-Wl,--out-implib,%s'
+	v.fcshlib_PATTERN   = '%s.dll'
+	v.implib_PATTERN    = 'lib%s.dll.a'
+	v.IMPLIB_ST         = '-Wl,--out-implib,%s'
 
-	v['FCFLAGS_fcshlib']   = []
+	v.FCFLAGS_fcshlib   = []
 
 	# Auto-import is enabled by default even without this option,
 	# but enabling it explicitly has the nice effect of suppressing the rather boring, debug-level messages
@@ -127,9 +129,9 @@ def fortran_modifier_cygwin(conf):
 	"""Define fortran flags for use on cygwin"""
 	fortran_modifier_win32(conf)
 	v = conf.env
-	v['fcshlib_PATTERN'] = 'cyg%s.dll'
+	v.fcshlib_PATTERN = 'cyg%s.dll'
 	v.append_value('LINKFLAGS_fcshlib', ['-Wl,--enable-auto-image-base'])
-	v['FCFLAGS_fcshlib'] = []
+	v.FCFLAGS_fcshlib = []
 # ------------------------------------------------------------------------
 
 @conf
@@ -445,7 +447,7 @@ def check_fortran_mangling(self, *k, **kw):
 @before_method('propagate_uselib_vars', 'apply_link')
 def set_lib_pat(self):
 	"""Set the fortran flags for linking with the python library"""
-	self.env['fcshlib_PATTERN'] = self.env['pyext_PATTERN']
+	self.env.fcshlib_PATTERN = self.env.pyext_PATTERN
 
 @conf
 def detect_openmp(self):
