@@ -231,25 +231,30 @@ for z in lst:
 	links = []
 
 	allmeths = set(TaskGen.feats[z])
-	for x in meths:
-		for y in TaskGen.task_gen.prec.get(x, []):
-			links.append((x, y))
-			allmeths.add(x)
-			allmeths.add(y)
+	for x, lst in TaskGen.task_gen.prec.items():
+		if x in meths:
+			for y in lst:
+				links.append((x, y))
+				allmeths.add(y)
+		else:
+			for y in lst:
+				if y in meths:
+					links.append((x, y))
+					allmeths.add(x)
 
 	color = ',fillcolor="#fffea6",style=filled'
 	ms = []
 	for x in allmeths:
 		try:
 			m = TaskGen.task_gen.__dict__[x]
-		except:
+		except KeyError:
 			raise ValueError("undefined method %r" % x)
 
 		k = "%s.html#%s.%s" % (m.__module__.split('.')[-1], m.__module__, m.__name__)
 		if str(m.__module__).find('.Tools') > 0:
 			k = 'tools/' + k
 
-		ms.append('\t\t%s [style="setlinewidth(0.5)",URL="%s",target="_top",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape="rectangle",fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
+		ms.append('\t\t"%s" [style="setlinewidth(0.5)",URL="%s",target="_top",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape="rectangle",fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
 
 	for x, y in links:
 		ms.append('\t\t"%s" -> "%s" [arrowsize=0.5,style="setlinewidth(0.5)"];' % (x, y))
