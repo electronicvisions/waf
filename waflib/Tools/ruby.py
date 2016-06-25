@@ -28,7 +28,7 @@ from waflib.TaskGen import before_method, feature, extension
 from waflib.Configure import conf
 
 @feature('rubyext')
-@before_method('apply_incpaths', 'apply_lib_vars', 'apply_bundle', 'apply_link')
+@before_method('apply_incpaths', 'process_source', 'apply_bundle', 'apply_link')
 def init_rubyext(self):
 	"""
 	Add required variables for ruby extensions
