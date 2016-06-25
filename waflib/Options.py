@@ -1,30 +1,21 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # Scott Newton, 2005 (scottn)
-# Thomas Nagy, 2006-2010 (ita)
+# Thomas Nagy, 2006-2016 (ita)
 
 """
 Support for waf command-line options
 
-Provides default command-line options,
-as well as custom ones, used by the ``options`` wscript function.
-
+Provides default and command-line options, as well the command
+that reads the ``options`` wscript function.
 """
 
 import os, tempfile, optparse, sys, re
 from waflib import Logs, Utils, Context, Errors
 
-cmds = 'distclean configure build install clean uninstall check dist distcheck'.split()
-"""
-Constant representing the default waf commands displayed in::
-
-	$ waf --help
-
-"""
-
 options = {}
 """
-A dictionary representing the command-line options::
+A global dictionary representing the command-line options::
 
 	$ waf --foo=bar
 
@@ -32,18 +23,21 @@ A dictionary representing the command-line options::
 
 commands = []
 """
-List of commands to execute extracted from the command-line. This list is consumed during the execution, see :py:func:`waflib.Scripting.run_commands`.
+List of commands to execute extracted from the command-line. This list
+is consumed during the execution by :py:func:`waflib.Scripting.run_commands`.
 """
 
 envvars = []
 """
 List of environment variable declarations placed after the Waf executable name.
-These are detected by searching for "=" in the rest arguments.
+These are detected by searching for "=" in the remaining arguments.
+You probably do not want to use this.
 """
 
 lockfile = os.environ.get('WAFLOCK', '.lock-waf_%s_build' % sys.platform)
-platform = Utils.unversioned_sys_platform()
-
+"""
+Name of the lock file that marks a project as configured
+"""
 
 class opt_parser(optparse.OptionParser):
 	"""
@@ -133,7 +127,7 @@ class OptionsContext(Context.Context):
 
 		default_prefix = getattr(Context.g_module, 'default_prefix', os.environ.get('PREFIX'))
 		if not default_prefix:
-			if platform == 'win32':
+			if Utils.unversioned_sys_platform() == 'win32':
 				d = tempfile.gettempdir()
 				default_prefix = d[0].upper() + d[1:]
 				# win32 preserves the case, but gettempdir does not

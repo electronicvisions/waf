@@ -39,16 +39,19 @@ NEW IN WAF 1.9
 * API changes:
   - The minimum Python version required is Python 2.5
   - Add Task.get_cwd()
-  - Remove the duplicate split() functions from Utils
   - Remove the command called "update"
-  - Remove Utils.nogc
-  - Remove Configure.err_handler
-  - Remove TaskBase.attr() which was never used
-  - Remove Build.POST_BOTH which was never used
-  - Remove Task.dep_vars as it is never used (define Task.vars on instances if necessary)
+  - Remove unused variables and functions:
+    - TaskBase.attr()
+    - Build.POST_BOTH
+    - Options.platform
+    - Options.cmds
+    - Task.dep_vars (define Task.vars on instances if necessary)
+    - Utils.nogc
+    - Configure.err_handler
+    - All duplicate split() functions from Utils
   - Remove the unused attribute 'mac_resources', use 'mac_files' instead (see demos/mac_app)
   - Remove qt4 and kde4 from the default modules
-  - Refactored msvc.py
+  - Refactor msvc.py
   - Task.sig_vars, Task.sig_explit_deps and Task.sig_implicit_deps return None
   - Use relative paths in apply_incpaths by default (and absolute ones when paths cross drives)
   - Modify Utils.run_once so that it accepts a list of *args
