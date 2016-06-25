@@ -35,13 +35,11 @@ def configure(conf):
 	if not conf.env.PY2CMD and not conf.env.PY3CMD:
 		conf.fatal("No Python interpreter found!")
 
-@Task.update_outputs
 class run_py_2_script(Task.Task):
 	"""Run a Python 2 script."""
 	run_str = '${PY2CMD} ${SRC[0].abspath()}'
 	shell=True
 
-@Task.update_outputs
 class run_py_3_script(Task.Task):
 	"""Run a Python 3 script."""
 	run_str = '${PY3CMD} ${SRC[0].abspath()}'

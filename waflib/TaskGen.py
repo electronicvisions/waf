@@ -586,9 +586,6 @@ def process_rule(self):
 				return [nodes, []]
 			cls.scan = scan
 
-		if getattr(self, 'update_outputs', None):
-			Task.update_outputs(cls)
-
 		if getattr(self, 'always', None):
 			cls.always_run = True
 

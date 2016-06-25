@@ -126,9 +126,3 @@ def c_hook(self, node):
 	# re-bind the extension to this new class
 	return self.create_compiled_task('c2', node)
 
-# modify the existing class to output the targets in the same directory as the original files
-Task.update_outputs(c2)
-Task.update_outputs(waflib.Tools.c.cprogram)
-Task.update_outputs(waflib.Tools.c.cshlib)
-Task.update_outputs(waflib.Tools.c.cstlib)
-

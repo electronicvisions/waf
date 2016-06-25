@@ -31,8 +31,7 @@ def build(bld):
 	tmp_dir = bld.bldnode.make_node('external_lib')
 
 	# build the external library through an external process
-	# the "update_outputs" is unnecessary unless an external folder is given, for example   tmp_dir = bld.root.make_node('/tmp/aaa')
-	bld(rule=some_fun, target=tmp_dir.make_node('flag.lock'), update_outputs=True)
+	bld(rule=some_fun, target=tmp_dir.make_node('flag.lock'))
 
 	# once it is done create a second build group
 	bld.add_group()

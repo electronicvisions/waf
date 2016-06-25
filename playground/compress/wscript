@@ -138,7 +138,7 @@ def build(bld):
 			bld(rule=try_compress, target=ini, always=True, kind=kind, frompath=node, files=rels)
 
 		# for the same reason, count_result will be executed each time
-		bld(rule=count_result, target=dist, source=ini, always=True, update_outputs=True)
+		bld(rule=count_result, target=dist, source=ini, always=True)
 		bld(rule=write_template, target=plot, triplet=[png, kind, dist], always=True)
 		bld(rule='${GNUPLOT} < ${SRC[1].abspath()}', target=png, source=[dist, plot])
 

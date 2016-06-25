@@ -18,7 +18,7 @@ def configure(conf):
 
 def build(bld):
 
-	bld(rule='echo "int ko = $$RANDOM;" > ${TGT}', target='faa.h', always=True, update_outputs=True, shell=True, name='z2')
+	bld(rule='echo "int ko = $$RANDOM;" > ${TGT}', target='faa.h', always=True, shell=True, name='z2')
 	bld.program(source='a.c main.c', target='foo', includes='.')
 
 # sort the tasks in reverse order to force the 'faa.h' creation in last position

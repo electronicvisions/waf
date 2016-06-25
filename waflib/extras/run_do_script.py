@@ -69,7 +69,6 @@ Else:\n
 	ctx.env.STATAFLAGS = STATAFLAGS
 	ctx.env.STATAENCODING = STATAENCODING
 
-@Task.update_outputs
 class run_do_script_base(Task.Task):
 	"""Run a Stata do-script from the bldnode directory."""
 	run_str = '"${STATACMD}" ${STATAFLAGS} "${SRC[0].abspath()}" "${DOFILETRUNK}"'

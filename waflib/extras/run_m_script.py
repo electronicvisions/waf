@@ -36,7 +36,6 @@ Else:\n
     Do not load the 'run_m_script' tool in the main wscript.\n\n"""  % MATLAB_COMMANDS)
 	ctx.env.MATLABFLAGS = '-wait -nojvm -nosplash -minimize'
 
-@Task.update_outputs
 class run_m_script_base(Task.Task):
 	"""Run a Matlab script."""
 	run_str = '"${MATLABCMD}" ${MATLABFLAGS} -logfile "${LOGFILEPATH}" -r "try, ${MSCRIPTTRUNK}, exit(0), catch err, disp(err.getReport()), exit(1), end"'

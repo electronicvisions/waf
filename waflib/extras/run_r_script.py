@@ -34,7 +34,6 @@ Else:\n
 	Do not load the 'run_r_script' tool in the main wscript.\n\n"""  % R_COMMANDS)
 	ctx.env.RFLAGS = 'CMD BATCH --slave'
 
-@Task.update_outputs
 class run_r_script_base(Task.Task):
 	"""Run a R script."""
 	run_str = '"${RCMD}" ${RFLAGS} "${SRC[0].abspath()}" "${LOGFILEPATH}"'

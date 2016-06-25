@@ -15,7 +15,7 @@ from waflib.Configure import conf
 
 class valac(Task.Task):
 	"""
-	Task to compile vala files.
+	Compiles vala files
 	"""
 	#run_str = "${VALAC} ${VALAFLAGS}" # ideally
 	#vars = ['VALAC_VERSION']
@@ -35,8 +35,6 @@ class valac(Task.Task):
 			self.generator.dump_deps_node.write('\n'.join(self.generator.packages))
 
 		return ret
-
-valac = Task.update_outputs(valac) # no decorators for python2 classes
 
 @taskgen_method
 def init_vala_task(self):

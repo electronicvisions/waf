@@ -8,7 +8,7 @@ want to use this to force partial rebuilds, see playground/track_output_files/ f
 
 Note that there is a variety of ways to implement this, one may want use timestamps on source files too for example,
 or one may want to hash the files in the source directory only under certain conditions (md5_tstamp tool)
-or to hash the file in the build directory with its timestamp (similar to 'update_outputs')
+or to hash the file in the build directory with its timestamp
 """
 
 import os
@@ -23,7 +23,6 @@ def get_bld_sig(self):
 		return self.sig + str(os.stat(self.abspath()).st_mtime)
 	except AttributeError:
 		return None
-
 
 Node.Node.get_bld_sig = get_bld_sig
 

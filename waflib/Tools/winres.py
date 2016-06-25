@@ -12,7 +12,7 @@ from waflib.Tools import c_preproc
 @extension('.rc')
 def rc_file(self, node):
 	"""
-	Bind the .rc extension to a winrc task
+	Binds the .rc extension to a winrc task
 	"""
 	obj_ext = '.rc.o'
 	if self.env.WINRC_TGT_F == '/fo':
@@ -29,7 +29,13 @@ re_lines = re.compile(
 	re.IGNORECASE | re.MULTILINE)
 
 class rc_parser(c_preproc.c_parser):
+	"""
+	Calculates dependencies in .rc files
+	"""
 	def filter_comments(self, node):
+		"""
+		Overrides :py:meth:`waflib.Tools.c_preproc.c_parser.filter_comments`
+		"""
 		code = node.read()
 		if c_preproc.use_trigraphs:
 			for (a, b) in c_preproc.trig_def: code = code.split(a).join(b)
@@ -45,11 +51,10 @@ class rc_parser(c_preproc.c_parser):
 
 class winrc(Task.Task):
 	"""
-	Task for compiling resource files
+	Compiles resource files
 	"""
 	run_str = '${WINRC} ${WINRCFLAGS} ${CPPPATH_ST:INCPATHS} ${DEFINES_ST:DEFINES} ${WINRC_TGT_F} ${TGT} ${WINRC_SRC_F} ${SRC}'
 	color   = 'BLUE'
-
 	def scan(self):
 		tmp = rc_parser(self.generator.includes_nodes)
 		tmp.start(self.inputs[0], self.env)
@@ -57,7 +62,7 @@ class winrc(Task.Task):
 
 def configure(conf):
 	"""
-	Detect the programs RC or windres, depending on the C/C++ compiler in use
+	Detects the programs RC or windres, depending on the C/C++ compiler in use
 	"""
 	v = conf.env
 	v.WINRC_TGT_F = '-o'

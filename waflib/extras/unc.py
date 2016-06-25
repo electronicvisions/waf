@@ -34,12 +34,8 @@ this tool will make the process much easier, for example::
 	def build(bld):
 		def myfun(tsk):
 			tsk.outputs[0].write("data")
-		bld(rule=myfun, update_outputs=True,
-			source='wscript',
-			target='\\\\COMPUTER\\share\\test.txt')
-		bld(rule=myfun, update_outputs=True,
-			source='\\\\COMPUTER\\share\\test.txt',
-			target='\\\\COMPUTER\\share\\test2.txt')
+		bld(rule=myfun, source='wscript', target='\\\\COMPUTER\\share\\test.txt')
+		bld(rule=myfun, source='\\\\COMPUTER\\share\\test.txt', target='\\\\COMPUTER\\share\\test2.txt')
 """
 
 import os
