@@ -19,6 +19,8 @@ import sys, os, re
 sys.path.insert(0, os.path.abspath(os.path.join('..', "..")))
 sys.path.append(os.path.abspath('.'))
 
+graphviz_output_format = 'svg'
+
 # monkey patch a few waf classes for documentation purposes!
 #-----------------------------------------------------------
 
@@ -247,10 +249,10 @@ for z in lst:
 		if str(m.__module__).find('.Tools') > 0:
 			k = 'tools/' + k
 
-		ms.append('\t"%s" [style="setlinewidth(0.5)",URL="%s",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape=box,fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
+		ms.append('\t\t"%s" [style="setlinewidth(0.5)",URL="%s",target="_blank",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape="rectangle",fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
 
 	for x, y in links:
-		ms.append('\t"%s" -> "%s" [arrowsize=0.5,style="setlinewidth(0.5)"];' % (x, y))
+		ms.append('\t\t"%s" -> "%s" [arrowsize=0.5,style="setlinewidth(0.5)"];' % (x, y))
 
 	rs = '\tdigraph feature_%s {\n\tsize="8.0, 12.0";\n\t%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
 	title = "Feature %s" % (z == '*' and '\\*' or z)

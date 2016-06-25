@@ -9,7 +9,7 @@ fortran support
 
 from waflib import Utils, Task, Logs
 from waflib.Tools import ccroot, fc_config, fc_scan
-from waflib.TaskGen import feature, extension
+from waflib.TaskGen import extension
 from waflib.Configure import conf
 
 ccroot.USELIB_VARS['fc'] = set(['FCFLAGS', 'DEFINES', 'INCLUDES', 'FCPPFLAGS'])
