@@ -23,8 +23,15 @@ import logging
 LOG_FORMAT = os.environ.get('WAF_LOG_FORMAT', '%(asctime)s %(c1)s%(zone)s%(c2)s %(message)s')
 HOUR_FORMAT = os.environ.get('WAF_HOUR_FORMAT', '%H:%M:%S')
 
-zones = ''
+zones = []
+"""
+See :py:class:`waflib.Logs.log_filter`
+"""
+
 verbose = 0
+"""
+Global verbosity level, see :py:func:`waflib.Logs.debug` and :py:func:`waflib.Logs.error`
+"""
 
 colors_lst = {
 'USE' : True,
@@ -49,6 +56,15 @@ except NameError:
 	unicode = None
 
 def enable_colors(use):
+	"""
+	If *1* is given, then the system will perform a few verifications
+	before enabling colors, such as checking whether the interpreter
+	is running in a terminal. A value of zero will disable colors,
+	and a value above *1* will force colors.
+
+	:param use: whether to enable colors or not
+	:type use: integer
+	"""
 	if use == 1:
 		if not (sys.stderr.isatty() or sys.stdout.isatty()):
 			use = 0
@@ -74,13 +90,20 @@ except AttributeError:
 		return 80
 
 get_term_cols.__doc__ = """
-	Get the console width in characters.
+	Returns the console width in characters.
 
 	:return: the number of characters per line
 	:rtype: int
 	"""
 
 def get_color(cl):
+	"""
+	Returns the ansi sequence corresponding to the given color name.
+	An empty string is returned when coloring is globally disabled.
+
+	:param cl: color name in capital letters
+	:type cl: string
+	"""
 	if colors_lst['USE']:
 		return colors_lst.get(cl, '')
 	return ''
@@ -97,7 +120,7 @@ colors = color_dict()
 re_log = re.compile(r'(\w+): (.*)', re.M)
 class log_filter(logging.Filter):
 	"""
-	The waf logs are of the form 'name: message', and can be filtered by 'waf --zones=name'.
+	Waf logs are of the form 'name: message', and can be filtered by 'waf --zones=name'.
 	For example, the following::
 
 		from waflib import Logs
@@ -112,13 +135,11 @@ class log_filter(logging.Filter):
 
 	def filter(self, rec):
 		"""
-		filter a record, adding the colors automatically
+		Filters log records by zone and by logging level
 
-		* error: red
-		* warning: yellow
-
-		:param rec: message to record
+		:param rec: log entry
 		"""
+		global verbose
 		rec.zone = rec.module
 		if rec.levelno >= logging.INFO:
 			return True
@@ -137,6 +158,9 @@ class log_filter(logging.Filter):
 class log_handler(logging.StreamHandler):
 	"""Dispatches messages to stderr/stdout depending on the severity level"""
 	def emit(self, record):
+		"""
+		Delegates the functionality to :py:meth:`waflib.Log.log_handler.emit_override`
+		"""
 		# default implementation
 		try:
 			try:
@@ -154,6 +178,9 @@ class log_handler(logging.StreamHandler):
 			self.handleError(record)
 
 	def emit_override(self, record, **kw):
+		"""
+		Writes the log record to the desired stream (stderr/stdout)
+		"""
 		self.terminator = getattr(record, 'terminator', '\n')
 		stream = self.stream
 		if unicode:
@@ -180,7 +207,10 @@ class formatter(logging.Formatter):
 		logging.Formatter.__init__(self, LOG_FORMAT, HOUR_FORMAT)
 
 	def format(self, rec):
-		"""Messages in warning, error or info mode are displayed in color by default"""
+		"""
+		Formats records and adds colors as needed. The records do not get
+		a leading hour format if the logging level is above *INFO*.
+		"""
 		try:
 			msg = rec.msg.decode('utf-8')
 		except Exception:
@@ -221,8 +251,9 @@ log = None
 
 def debug(*k, **kw):
 	"""
-	Wrap logging.debug, the output is filtered for performance reasons
+	Wraps logging.debug and discards messages if the verbosity level :py:attr:`waflib.Logs.verbose` ≤ 0
 	"""
+	global verbose
 	if verbose:
 		k = list(k)
 		k[0] = k[0].replace('\n', ' ')
@@ -231,9 +262,9 @@ def debug(*k, **kw):
 
 def error(*k, **kw):
 	"""
-	Wrap logging.errors, display the origin of the message when '-vv' is set
+	Wrap logging.errors, adds the stack trace when the verbosity level :py:attr:`waflib.Logs.verbose` ≥ 2
 	"""
-	global log
+	global log, verbose
 	log.error(*k, **kw)
 	if verbose > 2:
 		st = traceback.extract_stack()
@@ -241,28 +272,28 @@ def error(*k, **kw):
 			st = st[:-1]
 			buf = []
 			for filename, lineno, name, line in st:
-				buf.append('  File "%s", line %d, in %s' % (filename, lineno, name))
+				buf.append('  File %r, line %d, in %s' % (filename, lineno, name))
 				if line:
 					buf.append('	%s' % line.strip())
 			if buf: log.error('\n'.join(buf))
 
 def warn(*k, **kw):
 	"""
-	Wrap logging.warn
+	Wraps logging.warn
 	"""
 	global log
 	log.warn(*k, **kw)
 
 def info(*k, **kw):
 	"""
-	Wrap logging.info
+	Wraps logging.info
 	"""
 	global log
 	log.info(*k, **kw)
 
 def init_log():
 	"""
-	Initialize the loggers globally
+	Initializes the logger :py:attr:`waflib.Logs.log`
 	"""
 	global log
 	log = logging.getLogger('waflib')
@@ -276,7 +307,7 @@ def init_log():
 
 def make_logger(path, name):
 	"""
-	Create a simple logger, which is often used to redirect the context command output::
+	Creates a simple logger, which is often used to redirect the context command output::
 
 		from waflib import Logs
 		bld.logger = Logs.make_logger('test.log', 'build')
@@ -305,7 +336,7 @@ def make_logger(path, name):
 
 def make_mem_logger(name, to_log, size=8192):
 	"""
-	Create a memory logger to avoid writing concurrently to the main logger
+	Creates a memory logger to avoid writing concurrently to the main logger
 	"""
 	from logging.handlers import MemoryHandler
 	logger = logging.getLogger(name)
@@ -319,7 +350,7 @@ def make_mem_logger(name, to_log, size=8192):
 
 def free_logger(logger):
 	"""
-	Free the resources held by the loggers created through make_logger or make_mem_logger.
+	Frees the resources held by the loggers created through make_logger or make_mem_logger.
 	This is used for file cleanup and for handler removal (logger objects are re-used).
 	"""
 	try:
@@ -331,7 +362,7 @@ def free_logger(logger):
 
 def pprint(col, msg, label='', sep='\n'):
 	"""
-	Print messages in color immediately on stderr::
+	Prints messages in color immediately on stderr::
 
 		from waflib import Logs
 		Logs.pprint('RED', 'Something bad just happened')
@@ -345,5 +376,6 @@ def pprint(col, msg, label='', sep='\n'):
 	:param sep: a string to append at the end (line separator)
 	:type sep: string
 	"""
+	global info
 	info('%s%s%s %s', colors(col), msg, colors.NORMAL, label, extra={'terminator':sep})
 

@@ -231,7 +231,7 @@ def writef(fname, data, m='w', encoding='ISO8859-1'):
 
 def h_file(fname):
 	"""
-	Compute a hash value for a file by using md5. Use the md5_tstamp
+	Computes a hash value for a file by using md5. Use the md5_tstamp
 	extension to get faster build hashes if necessary.
 
 	:type fname: string
