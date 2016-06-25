@@ -12,7 +12,7 @@ from waflib.Configure import conf
 @conf
 def find_clangxx(conf):
 	"""
-	Find the program clang++, and execute it to ensure it really is clang++
+	Finds the program clang++, and executes it to ensure it really is clang++
 	"""
 	cxx = conf.find_program('clang++', var='CXX')
 	conf.get_cc_version(cxx, clang=True)

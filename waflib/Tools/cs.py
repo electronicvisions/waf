@@ -25,7 +25,6 @@ from waflib import Utils, Task, Options, Errors
 from waflib.TaskGen import before_method, after_method, feature
 from waflib.Tools import ccroot
 from waflib.Configure import conf
-import os, tempfile
 
 ccroot.USELIB_VARS['cs'] = set(['CSFLAGS', 'ASSEMBLIES', 'RESOURCES'])
 ccroot.lib_patterns['csshlib'] = ['%s']

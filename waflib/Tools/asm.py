@@ -35,7 +35,6 @@ Support for pure asm programs and libraries should also work::
 """
 
 from waflib import Task
-import waflib.Task
 from waflib.Tools.ccroot import link_task, stlink_task
 from waflib.TaskGen import extension
 

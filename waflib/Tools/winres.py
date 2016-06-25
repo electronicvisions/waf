@@ -5,7 +5,7 @@
 "Process *.rc* files for C/C++: X{.rc -> [.res|.rc.o]}"
 
 import re
-from waflib import Task, Logs, Utils
+from waflib import Task
 from waflib.TaskGen import extension
 from waflib.Tools import c_preproc
 

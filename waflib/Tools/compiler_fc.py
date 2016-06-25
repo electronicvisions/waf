@@ -27,10 +27,14 @@ def default_compilers():
 
 def configure(conf):
 	"""
-	Try to find a suitable Fortran compiler or raise a :py:class:`waflib.Errors.ConfigurationError`.
+	Detects a suitable Fortran compiler
+
+	:raises: :py:class:`waflib.Errors.ConfigurationError` when no suitable compiler is found
 	"""
-	try: test_for_compiler = conf.options.check_fortran_compiler or default_compilers()
-	except AttributeError: conf.fatal("Add options(opt): opt.load('compiler_fc')")
+	try:
+		test_for_compiler = conf.options.check_fortran_compiler or default_compilers()
+	except AttributeError:
+		conf.fatal("Add options(opt): opt.load('compiler_fc')")
 	for compiler in re.split('[ ,]+', test_for_compiler):
 		conf.env.stash()
 		conf.start_msg('Checking for %r (Fortran compiler)' % compiler)
@@ -41,7 +45,7 @@ def configure(conf):
 			conf.end_msg(False)
 			Logs.debug('compiler_fortran: %r', e)
 		else:
-			if conf.env['FC']:
+			if conf.env.FC:
 				conf.end_msg(conf.env.get_flat('FC'))
 				conf.env.COMPILER_FORTRAN = compiler
 				conf.env.commit()
@@ -53,7 +57,7 @@ def configure(conf):
 
 def options(opt):
 	"""
-	Restrict the compiler detection from the command-line::
+	This is how to provide compiler preferences on the command-line::
 
 		$ waf configure --check-fortran-compiler=ifort
 	"""

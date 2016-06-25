@@ -7,7 +7,7 @@ MacOSX related tools
 """
 
 import os, shutil, platform
-from waflib import Task, Utils, Errors
+from waflib import Task, Utils
 from waflib.TaskGen import taskgen_method, feature, after_method, before_method
 
 app_info = '''
@@ -46,7 +46,7 @@ def set_macosx_deployment_target(self):
 @taskgen_method
 def create_bundle_dirs(self, name, out):
 	"""
-	Create bundle folders, used by :py:func:`create_task_macplist` and :py:func:`create_task_macapp`
+	Creates bundle folders, used by :py:func:`create_task_macplist` and :py:func:`create_task_macapp`
 	"""
 	dir = out.parent.find_or_declare(name)
 	dir.mkdir()
@@ -112,7 +112,7 @@ def create_task_macapp(self):
 @after_method('apply_link')
 def create_task_macplist(self):
 	"""
-	Create a :py:class:`waflib.Tools.c_osx.macplist` instance.
+	Creates a :py:class:`waflib.Tools.c_osx.macplist` instance.
 	"""
 	if  self.env['MACAPP'] or getattr(self, 'mac_app', False):
 		out = self.link_task.outputs[0]
@@ -169,7 +169,7 @@ app_dirs = ['Contents', 'Contents/MacOS', 'Contents/Resources']
 
 class macapp(Task.Task):
 	"""
-	Create mac applications
+	Creates mac applications
 	"""
 	color = 'PINK'
 	def run(self):
@@ -178,7 +178,7 @@ class macapp(Task.Task):
 
 class macplist(Task.Task):
 	"""
-	Create plist files
+	Creates plist files
 	"""
 	color = 'PINK'
 	ext_in = ['.bin']
@@ -190,3 +190,4 @@ class macplist(Task.Task):
 		context = getattr(self, 'context', {})
 		txt = txt.format(**context)
 		self.outputs[0].write(txt)
+

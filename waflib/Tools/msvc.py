@@ -53,7 +53,7 @@ Setting PYTHONUNBUFFERED gives the unbuffered output.
 """
 
 import os, sys, re
-from waflib import Utils, Task, Logs, Options, Errors
+from waflib import Utils, Logs, Options, Errors
 from waflib.TaskGen import after_method, feature
 
 from waflib.Configure import conf

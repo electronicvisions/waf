@@ -3,10 +3,11 @@
 # DC 2008
 # Thomas Nagy 2016 (ita)
 
-import re
-from waflib import Utils
-from waflib.Tools import fc, fc_config, fc_scan, ar
+import os, re
+from waflib import Utils, Logs, Errors
+from waflib.Tools import fc, fc_config, fc_scan, ar, ccroot
 from waflib.Configure import conf
+from waflib.TaskGen import after_method, feature
 
 @conf
 def find_ifort(conf):
@@ -93,13 +94,6 @@ def configure(conf):
 		conf.fc_flags()
 		conf.fc_add_flags()
 		conf.ifort_modifier_platform()
-
-import os, re
-from waflib import Task, Logs, Errors
-from waflib.TaskGen import after_method, feature
-
-from waflib.Configure import conf
-from waflib.Tools import ccroot, ar
 
 
 all_ifort_platforms = [ ('intel64', 'amd64'), ('em64t', 'amd64'), ('ia32', 'x86'), ('Itanium', 'ia64')]

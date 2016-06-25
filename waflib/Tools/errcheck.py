@@ -24,7 +24,7 @@ meths_typos = ['__call__', 'program', 'shlib', 'stlib', 'objects']
 
 import sys
 from waflib import Logs, Build, Node, Task, TaskGen, ConfigSet, Errors, Utils
-import waflib.Tools.ccroot
+from waflib.Tools import ccroot
 
 def check_same_targets(self):
 	mp = Utils.defaultdict(list)

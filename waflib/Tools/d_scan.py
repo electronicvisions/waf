@@ -7,7 +7,7 @@ Provide a scanner for finding dependencies on d files
 """
 
 import re
-from waflib import Utils, Logs
+from waflib import Utils
 
 def filter_comments(filename):
 	"""
