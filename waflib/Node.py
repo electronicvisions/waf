@@ -76,7 +76,7 @@ class Node(object):
 	__slots__ = ('name', 'parent', 'children', 'cache_abspath', 'cache_isdir')
 	def __init__(self, name, parent):
 		"""
-		Use :py:func:`Node.make_node` or :py:func:`Node.find_node`.
+		.. note:: Use :py:func:`Node.make_node` or :py:func:`Node.find_node`.
 		"""
 		self.name = name
 		self.parent = parent
@@ -98,15 +98,27 @@ class Node(object):
 		return (self.name, self.parent, getattr(self, 'children', None))
 
 	def __str__(self):
-		"String representation (abspath), for debugging purposes"
+		"""
+		String representation (abspath), for debugging purposes
+
+		:rtype: string
+		"""
 		return self.abspath()
 
 	def __repr__(self):
-		"String representation (abspath), for debugging purposes"
+		"""
+		String representation (abspath), for debugging purposes
+
+		:rtype: string
+		"""
 		return self.abspath()
 
 	def __copy__(self):
-		"Implemented to prevent nodes from being copied (raises an exception)"
+		"""
+		Provided to prevent nodes from being copied
+
+		:raises: :py:class:`waflib.Errors.WafError`
+		"""
 		raise Errors.WafError('nodes are not supposed to be copied')
 
 	def read(self, flags='r', encoding='ISO8859-1'):
@@ -207,12 +219,16 @@ class Node(object):
 	def exists(self):
 		"""
 		Returns whether the Node is present on the filesystem
+
+		:rtype: bool
 		"""
 		return os.path.exists(self.abspath())
 
 	def isdir(self):
 		"""
 		Returns whether the Node represents a folder
+
+		:rtype: bool
 		"""
 		return os.path.isdir(self.abspath())
 
@@ -244,11 +260,17 @@ class Node(object):
 				self.evict()
 
 	def evict(self):
-		"""Removes this node from the Node tree"""
+		"""
+		Removes this node from the Node tree
+		"""
 		del self.parent.children[self.name]
 
 	def suffix(self):
-		"""Returns the file rightmost extension, for example `a.b.c.d → .d`"""
+		"""
+		Returns the file rightmost extension, for example `a.b.c.d → .d`
+
+		:rtype: string
+		"""
 		k = max(0, self.name.rfind('.'))
 		return self.name[k:]
 

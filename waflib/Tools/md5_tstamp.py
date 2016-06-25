@@ -35,5 +35,6 @@ def h_file(self):
 
 	cache[filename] = (st.st_mtime, ret)
 	return ret
+h_file.__doc__ = Node.Node.h_file.__doc__
 Node.Node.h_file = h_file
 
