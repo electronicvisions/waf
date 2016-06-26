@@ -455,7 +455,7 @@ def configure(self):
 	Besides the configuration options, the environment variable QT5_ROOT may be used
 	to give the location of the qt5 libraries (absolute path).
 
-	The detection uses the program *pkg-config* through :py:func:`waflib.Tools.config_c.check_cfg`
+	The detection uses the program ``pkg-config`` through :py:func:`waflib.Tools.config_c.check_cfg`
 	"""
 	self.find_qt5_binaries()
 	self.set_qt5_libs_to_check()
@@ -662,7 +662,7 @@ def find_qt5_libraries(self):
 
 				env.append_unique('LIBPATH_' + uselib, qtlibs)
 				env.append_unique('INCLUDES_' + uselib, qtincludes)
-				env.append_unique('INCLUDES_' + uselib, os.path.join(qtincludes, i))
+				env.append_unique('INCLUDES_' + uselib, os.path.join(qtincludes, i.replace('Qt5', 'Qt')))
 			else:
 				# Release library names are like QtCore5
 				for k in ('lib%s.a', 'lib%s5.a', '%s.lib', '%s5.lib'):
