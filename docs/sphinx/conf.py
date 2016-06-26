@@ -253,6 +253,7 @@ for z in lst:
 		k = "%s.html#%s.%s" % (m.__module__.split('.')[-1], m.__module__, m.__name__)
 		if str(m.__module__).find('.Tools') > 0:
 			k = 'tools/' + k
+		k = '../' + k
 
 		ms.append('\t\t"%s" [style="setlinewidth(0.5)",URL="%s",target="_top",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape="rectangle",fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
 
