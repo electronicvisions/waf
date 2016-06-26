@@ -3,9 +3,9 @@
 # Thomas Nagy, 2011 (ita)
 
 """
-errcheck: highlight common mistakes
+Common mistakes highlighting.
 
-There is a performance hit, so this tool is only loaded when running "waf -v"
+There is a performance impact, so this tool is only loaded when running ``waf -v``
 """
 
 typos = {
@@ -97,8 +97,8 @@ def check_invalid_constraints(self):
 
 def replace(m):
 	"""
-	We could add properties, but they would not work in some cases:
-	bld.program(...) requires 'source' in the attributes
+	Replaces existing BuildContext methods to verify parameter names,
+	for example ``bld(source=)`` has no ending *s*
 	"""
 	oldcall = getattr(Build.BuildContext, m)
 	def call(self, *k, **kw):
@@ -113,7 +113,7 @@ def replace(m):
 
 def enhance_lib():
 	"""
-	modify existing classes and methods
+	Modifies existing classes and methods to enable error verification
 	"""
 	for m in meths_typos:
 		replace(m)
@@ -121,7 +121,7 @@ def enhance_lib():
 	# catch '..' in ant_glob patterns
 	def ant_glob(self, *k, **kw):
 		if k:
-			lst=Utils.to_list(k[0])
+			lst = Utils.to_list(k[0])
 			for pat in lst:
 				if '..' in pat.split('/'):
 					Logs.error("In ant_glob pattern %r: '..' means 'two dots', not 'parent directory'", k[0])
@@ -200,7 +200,7 @@ def enhance_lib():
 	TaskGen.task_gen.use_rec = use_rec
 
 	# check for env.append
-	def getattri(self, name, default=None):
+	def _getattr(self, name, default=None):
 		if name == 'append' or name == 'add':
 			raise Errors.WafError('env.append and env.add do not exist: use env.append_value/env.append_unique')
 		elif name == 'prepend':
@@ -209,15 +209,12 @@ def enhance_lib():
 			return object.__getattr__(self, name, default)
 		else:
 			return self[name]
-	ConfigSet.ConfigSet.__getattr__ = getattri
+	ConfigSet.ConfigSet.__getattr__ = _getattr
 
 
 def options(opt):
 	"""
-	Add a few methods
+	Error verification can be enabled by default (not just on ``waf -v``) by adding to the user script options
 	"""
 	enhance_lib()
-
-def configure(conf):
-	pass
 

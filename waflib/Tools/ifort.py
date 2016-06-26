@@ -55,8 +55,9 @@ def ifort_modifier_platform(conf):
 
 @conf
 def get_ifort_version(conf, fc):
-	"""get the compiler version"""
-
+	"""
+	Detects the compiler version and sets ``conf.env.FC_VERSION``
+	"""
 	version_re = re.compile(r"\bIntel\b.*\bVersion\s*(?P<major>\d*)\.(?P<minor>\d*)",re.I).search
 	if Utils.is_win32:
 		cmd = fc
@@ -71,6 +72,9 @@ def get_ifort_version(conf, fc):
 	conf.env.FC_VERSION = (k['major'], k['minor'])
 
 def configure(conf):
+	"""
+	Detects the Intel Fortran compilers
+	"""
 	if Utils.is_win32:
 		compiler, version, path, includes, libdirs, arch = conf.detect_ifort(True)
 		v = conf.env
@@ -101,7 +105,9 @@ all_ifort_platforms = [ ('intel64', 'amd64'), ('em64t', 'amd64'), ('ia32', 'x86'
 
 @conf
 def gather_ifort_versions(conf, versions):
-	# some logic to try and list installed fortran compilers
+	"""
+	List compiler versions by looking up registry keys
+	"""
 	version_pattern = re.compile('^...?.?\....?.?')
 	try:
 		all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Intel\\Compilers\\Fortran')
@@ -241,7 +247,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 
 class target_compiler(object):
 	"""
-	Wrap a compiler configuration; call evaluate() to determine
+	Wraps a compiler configuration; call evaluate() to determine
 	whether the configuration is usable.
 	"""
 	def __init__(self, ctx, compiler, cpu, version, bat_target, bat, callback=None):
@@ -288,7 +294,6 @@ class target_compiler(object):
 
 @conf
 def detect_ifort(self):
-	# Save installed versions only if lazy detection is disabled.
 	return self.setup_ifort(self.get_ifort_versions(False))
 
 @conf
@@ -359,7 +364,7 @@ def find_ifort_win32(conf):
 @feature('fc')
 def apply_flags_ifort(self):
 	"""
-	Add additional flags implied by msvc, such as subsystems and pdb files::
+	Adds additional flags implied by msvc, such as subsystems and pdb files::
 
 		def build(bld):
 			bld.stlib(source='main.c', target='bar', subsystem='gruik')

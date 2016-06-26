@@ -4,7 +4,7 @@
 # Thomas Nagy 2016 (ita)
 
 """
-fortran support
+Fortran support
 """
 
 from waflib import Utils, Task
@@ -55,7 +55,7 @@ class fc(Task.Task):
 	vars = ["FORTRANMODPATHFLAG"]
 
 	def scan(self):
-		"""Scanner for fortran dependencies"""
+		"""Fortran dependency scanner"""
 		tmp = fc_scan.fortran_parser(self.generator.includes_nodes)
 		tmp.task = self
 		tmp.start(self.inputs[0])
@@ -141,17 +141,17 @@ class fc(Task.Task):
 		return super(fc, self).runnable_status()
 
 class fcprogram(ccroot.link_task):
-	"""Links fortran programs"""
+	"""Links Fortran programs"""
 	color = 'YELLOW'
 	run_str = '${FC} ${LINKFLAGS} ${FCLNK_SRC_F}${SRC} ${FCLNK_TGT_F}${TGT[0].abspath()} ${RPATH_ST:RPATH} ${FCSTLIB_MARKER} ${FCSTLIBPATH_ST:STLIBPATH} ${FCSTLIB_ST:STLIB} ${FCSHLIB_MARKER} ${FCLIBPATH_ST:LIBPATH} ${FCLIB_ST:LIB} ${LDFLAGS}'
 	inst_to = '${BINDIR}'
 
 class fcshlib(fcprogram):
-	"""Links fortran libraries"""
+	"""Links Fortran libraries"""
 	inst_to = '${LIBDIR}'
 
 class fcstlib(ccroot.stlink_task):
-	"""Links fortran static libraries (uses ar by default)"""
+	"""Links Fortran static libraries (uses ar by default)"""
 	pass # do not remove the pass statement
 
 class fcprogram_test(fcprogram):
@@ -182,7 +182,7 @@ class fcprogram_test(fcprogram):
 			return -1
 
 		if bld.out:
-			bld.to_log("out: %s\n" % bld.out)
+			bld.to_log('out: %s\n' % bld.out)
 		if bld.err:
-			bld.to_log("err: %s\n" % bld.err)
+			bld.to_log('err: %s\n' % bld.err)
 

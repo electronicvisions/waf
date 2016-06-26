@@ -55,7 +55,8 @@ version(D_Version2) {
 @conf
 def check_dlibrary(self, execute=True):
 	"""
-	Detect the kind of standard library that comes with the compiler, will set conf.env.DLIBRARY to tango, phobos1 or phobos2.
+	Detects the kind of standard library that comes with the compiler,
+	and sets conf.env.DLIBRARY to tango, phobos1 or phobos2
 	"""
 	ret = self.check_cc(features='d dprogram', fragment=DLIB, compile_filename='test.d', execute=execute, define_ret=True)
 	if execute:
