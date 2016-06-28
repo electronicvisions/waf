@@ -821,7 +821,10 @@ def run_prefork_process(cmd, kwargs, cargs):
 	"""
 	Delegates process execution to a pre-forked process instance.
 	"""
-	obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
+	try:
+		obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
+	except TypeError:
+		return run_regular_process(cmd, kwargs, cargs)
 
 	proc = get_process()
 	if not proc:
