@@ -697,7 +697,7 @@ def post_check(self, *k, **kw):
 		for k in _vars:
 			x = k.lower()
 			if x in kw:
-				self.env.append_unique(k + '_' + kw['uselib_store'], kw[x])
+				self.env.append_value(k + '_' + kw['uselib_store'], kw[x])
 	return is_success
 
 @conf
