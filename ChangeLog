@@ -1,5 +1,10 @@
-NEW IN WAF 1.9
---------------
+NEW IN WAF 1.9.1
+----------------
+
+* Execute proceses with run_regular_process when arguments are not serializable #1764
+
+NEW IN WAF 1.9.0
+----------------
 
 * General enhancements:
   - Detect Clang first on many platforms, in particular on FreeBSD #1528

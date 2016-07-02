@@ -15,23 +15,53 @@ Copies of this book may be redistributed, verbatim, and for non-commercial
 purposes. The license for this book is
  http://creativecommons.org/licenses/by-nc-nd/3.0/[by-nc-nd license].
 
-=== A word on build systems
+=== On build systems
 
-As software is becoming increasingly complex, the process of creating software is becoming more complex too. Today's software uses various languages, requires various compilers, and the input data is spread into many files.
+As software is getting increasingly complex and feature-rich, so is the process of creating it. The complexity has arisen naturally from the fundamental needs of software projects:
 
-Software is now used to express the process of building software, it can take the form of simple scripts (shell scripts, makefiles), or compilers (CMake, Qmake), or complete applications (SCons, Maven, Waf). The term `build system' is used to design the tools used to build applications.
+. Usable software (applications) is machine-readable but usually not human-readable
+. As a result, human-readable input data called source code is converted into redistributable software by compilers or archivers
+. The source code is usually decomposed into interdependent units such as files, modules, classes and functions managed independently
+. These units are versioned and their evolution is controlled over time through version control software
+. Additional processes generate additional data from source code such as tests and static analysis results
+. Source code processing is time-consuming and error-prone so it is automated with the help of additional software
+
+While compilers sometimes attempt to do provide full build automation, they are usually limited to very specific features. For example, the Java compiler (javac) can build a whole source code tree at once, but another compiler is necessary to produce archive files (jar). Text editors and Integrated Development Environments (IDE such as Xcode or Eclipse) can provide build automation features, but their user interfaces are best at editing software, not at running builds. Version control systems such as Git are best-suited for managing end-user files, but are typically unfit for calling compilers and running scripts. And though orchestration solutions (Jenkins, Teamcity) are sometimes understood as build systems, they are usually unable to build the software themselves: they require build scripts and build software that is executed on their build agents (Maven, Make, etc).
+
+We thus argue that building software is a unique activity in software development that requires a unique set of tools. The term "build system" is typically used to denote such software, and we believe two definitions should be separated:
+
+1. It is a piece of software that helps automating processes in a software project, and that it aimed in particular at processing source code
+2. It is the overall tool set required to process a work on a particular software project: compilers, build scripts, orchestration software, version control system, etc.
+
+Waf fits in the first definition which we use in the rest of this document.
 
 === The Waf framework
 
-Build systems make assumptions on software it is trying to build, and are typically limited where it comes to processing other languages or different projects. For example, Ant is better suited than Make for managing Java projects, but is more limited than Make for managing simple c projects. The programming tools are evolving constantly, making the creation of a complete build system for end-users impossible.
+Build systems are usually bound to the specific frameworks that they belong to. For example, Visual Studio users will often use MSBuild and Angular.js users will probably use Npm. Such solutions are usually focusing on very specific features and are typically limited where it comes to processing other languages or different projects. For example, Ant is better suited than Make for managing Java projects, but is more limited than Make for managing simple c projects. Since programming languages and solutions evolve constantly, creating the ideal build system for everything is not really possible, so there are trade-offs between framework specialization and genericity.
 
-The Waf framework is somewhat different from traditional build systems in the sense that it does not provide support for a specific language. Rather, the focus is to support the major usecases encountered when working on a software project. As such, it is essentially a library of components that are suitable for use in a build system, with an emphasis on extensibility. Although the default distribution contains various plugins for several programming languages and different tools (c, d, ocaml, java, etc), it is by no means a frozen product. Creating new extensions is both a standard and a recommended practice.
+There is yet a common subset of problems that build systems aim to address:
+
+. Run compilers and scripts as distinct processes
+. Run processes only when necessary by recording "what has changed"
+. Run processes in parallel for efficiency reasons
+. Facilitate the execution of software tests such as configuration tests
+. Provide support for typical compilers and tools configurations
+
+Waf fulfills the features above out-of-the-box, and provides a framework to extend its functionality when necessary.
+The main differences compared to other frameworks lie it its design:
+
+. Waf only requires Python, there is no dependency on additional software or libraries
+. Waf does not define a new language, it is written entirely in re-usable Python modules
+. Waf does not rely on a code generator (Makefiles) to enable efficient and extensible builds
+. Waf targets are defined as objects which separate the concerns of defining targets from running commands
 
 === Objectives of this book
 
-The objective of this book is to expose the use of the Waf build system though the use of Waf in practice, the description of the Waf extension system, and an overview of the Waf internals. We hope that this book will serve as a reference for both new and advanced users. Although this book does not deal with build systems in general, a secondary objective is to illustrate quite a few new techniques and patterns through numerous examples.
+This book is aimed mostly at new and advanced users of the Waf build system; its objective is to show the use of the Waf build system though practical examples, to describe the Waf extension system, and to provide an overview of the Waf internals.
 
-The chapters are ordered by difficulty, starting from the basic use of Waf and Python, and diving gradually into the most difficult topics. It is therefore recommended to read the chapters in order. It is also possible to start by looking at the https://github.com/waf-project/waf/tree/master/demos[examples] from the Waf distribution before starting the reading.
+We also know that build systems get re-invented by the day, so we hope that build system writers will be inspired by this documentation to re-use existing patterns and techniques.
+
+The chapters are ordered by difficulty, starting from the basic use of Waf and Python, and diving gradually into the most complex topics. It is therefore recommended to read the chapters in order. It is also possible to start by looking at the https://github.com/waf-project/waf/tree/master/demos[examples] from the Waf distribution before starting the reading.
 
 :numbered:
 
