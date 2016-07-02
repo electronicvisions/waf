@@ -1,7 +1,5 @@
 == Using the development version
 
-A few notes on the waf development follow.
-
 === Execution traces
 
 ==== Logging

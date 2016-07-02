@@ -31,9 +31,9 @@ def ascii_doc_scan(self):
 			name = m.group(2)
 			if m.group(3) == '{PIC}':
 
-				ext = '.eps'
+				ext = '.svg'
 				if self.generator.rule.rfind('A2X') > 0:
-					ext = '.png'
+					ext = '.pdf'
 
 				k = p.find_resource(name.replace('{PIC}', ext))
 				if k:
@@ -89,6 +89,8 @@ def configure(conf):
 	conf.find_program('source-highlight', var='SOURCE_HIGHLIGHT')
 	conf.find_program('dot')
 	conf.find_program('dblatex')
+	conf.find_program('epstopdf')
+	conf.find_program('pdf2svg')
 	try:
 		conf.find_program('semantik-d')
 	except conf.errors.ConfigurationError:
@@ -99,18 +101,22 @@ def build(bld):
 	#bld(features='subst', is_copy=True, source='asciidoc-dblatex.sty asciidoc-dblatex.xsl', target='asciidoc-dblatex.sty asciidoc-dblatex.xsl')
 
 	for x in bld.path.ant_glob('*.eps'):
-		bld(features='subst', source=x.name, target=x.name, is_copy=True)
-		bld(rule='${CONVERT} ${bld.raw_deps[tsk.uid()]} -density 600 ${SRC} ${TGT}', source=x, target=x.change_ext('.png'), scan=scansize)
+		#bld(features='subst', source=x.name, target=x.name, is_copy=True)
+		#bld(rule='${CONVERT} ${bld.raw_deps[tsk.uid()]} -density 600 ${SRC} ${TGT}', source=x, target=x.change_ext('.png'), scan=scansize)
+
+		bld(rule='${EPSTOPDF} ${SRC} --outfile=${TGT}', source=x, target=x.change_ext('.pdf'), scan=scansize)
+		bld(rule='${PDF2SVG} ${SRC} ${TGT}', source=x.change_ext('.pdf'), target=x.change_ext('.svg'), scan=scansize)
 
 	for x in bld.path.ant_glob('*.dot'):
-		tg = bld(rule='${DOT} -Teps -o${TGT} ${SRC}', source=x, target=x.change_ext('.eps'))
-		tg = bld(rule='${DOT} -Tpng -o${TGT} ${SRC}', source=x, target=x.change_ext('.png'), scan=scansize)
+		#tg = bld(rule='${DOT} -Teps -o${TGT} ${SRC}', source=x, target=x.change_ext('.eps'))
+		tg = bld(rule='${DOT} -Tsvg -o${TGT} ${SRC}', source=x, target=x.change_ext('.svg'))
+		tg = bld(rule='${DOT} -Tpdf -o${TGT} ${SRC}', source=x, target=x.change_ext('.pdf'))
+		#tg = bld(rule='${DOT} -Tpng -o${TGT} ${SRC}', source=x, target=x.change_ext('.png'), scan=scansize)
 		#tg = bld(rule='${CONVERT} ${bld.raw_deps[tsk.uid()]} ${SRC} ${TGT}', source=x.change_ext('.eps'), target=x.change_ext('.png'), scan=scansize)
 
 	for x in bld.path.ant_glob('*.semd'):
 		bld(rule='${SEMANTIK_D} ${SRC[0].abspath()} -o ${TGT[0].abspath()}', source=x, target=x.change_ext('.svg'))
 		bld(rule='${SEMANTIK_D} ${SRC[0].abspath()} -o ${TGT[0].abspath()}', source=x, target=x.change_ext('.pdf'))
-		bld(rule='${SEMANTIK_D} ${SIZEPARAMS} ${SRC[0].abspath()} -o ${TGT[0].abspath()}', source=x, target=x.change_ext('.png'), features="sizer")
 
 	for x in bld.path.ant_glob('pics/*.png'):
 		bld(features='subst', source=x, target=x.name, is_copy=True)
@@ -123,7 +129,6 @@ def build(bld):
 
 	for x in 'shishell.lang symbols.lang default.style lang.map waf.css'.split():
 		bld(features='subst', source=x, target=x, is_copy=True)
-
 
 
 	with open('../../waflib/Context.py', 'r') as f:
