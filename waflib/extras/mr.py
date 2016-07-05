@@ -194,8 +194,6 @@ class Project(object):
     # TO IMPLEMENT
     def mr_checkout_cmd(self, *k, **kw):
         raise AttributeError
-    def mr_init_cmd(self, *k, **kw):
-        raise AttributeError
 
 class GitProject(Project):
     vcs = 'git'
@@ -215,13 +213,12 @@ class GitProject(Project):
 
     def mr_checkout_cmd(self, base_node, url):
         path = self.path_from(base_node)
-        cmd = ["git clone '{url}' '{target}'".format(url=url, target=os.path.basename(path))]
+        depth = Options.options.clone_depth
+        depth = '--depth {}'.format(depth) if depth >= 0 else ''
+        cmd = ["git clone --branch '{branch}' {depth} '{url}' '{target}'".format(
+            branch=self.required_branch, depth=depth,
+            url=url, target=os.path.basename(path))]
         return 'checkout=%s' % "; ".join(cmd)
-
-    def mr_init_cmd(self, init):
-        init_cmd = " ".join(self.set_branch_cmd()) + "; " + init
-        return "post_checkout = cd {name} && {init}".format(
-            name=os.path.basename(self.name), init=init_cmd)
 
 
 class MR(object):
@@ -515,9 +512,6 @@ class MR(object):
         args = ['config', p.name,
                 p.mr_checkout_cmd(self.base, self.db.get_url(p.name))
                ]
-        init_cmd = p.mr_init_cmd(self.db.get_init(p.name))
-        if init_cmd:
-            args += [init_cmd]
         self.call_mr(ctx, *args)
 
         if do_checkout:
@@ -772,6 +766,11 @@ def options(opt):
         "--full-description", dest="show_repos_fdesc", action="store_true",
         help="List the full description of the repositories, no matter what.",
         default=False
+    )
+    gr.add_option(
+        "--clone-depth", dest="clone_depth", action="store",
+        type=int, help="To clone the full history use -1 [default is full history]",
+        default=-1
     )
 
 class show_repos_context(Context.Context):
