@@ -615,7 +615,7 @@ def process_shpip(self, node): <1>
 class src2c(Task.Task):
     color = 'PINK'
     quiet = True <2>
-    ext_out = ['.h'] <3>
+    before = ['cstaticlib'] <3>
 
     def run(self):
         cmd = '%s %s' % (self.env.COMP, self.inputs[0].abspath())
@@ -668,7 +668,7 @@ class src2c(Task.Task):
 
 <1> The processing will be delegated to the task
 <2> Disable the warnings raised when a task has no outputs
-<3> Make certain the processing will be executed before any task using _.h_ files
+<3> Make certain the task will be processed before the link task is considered
 <4> When the task is executed, collect the process stdout which contains the generated file names
 <5> Store the output file nodes in a persistent cache
 <6> Create the tasks to compile the outputs
