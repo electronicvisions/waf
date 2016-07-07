@@ -626,7 +626,6 @@ class vnum(Task.Task):
 	Create the symbolic links for a versioned shared library. Instances are created by :py:func:`waflib.Tools.ccroot.apply_vnum`
 	"""
 	color = 'CYAN'
-	quient = True
 	ext_in = ['.bin']
 	def keyword(self):
 		return 'Symlinking'
