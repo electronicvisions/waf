@@ -615,7 +615,7 @@ def process_shpip(self, node): <1>
 class src2c(Task.Task):
     color = 'PINK'
     quiet = True <2>
-    before = ['cstaticlib'] <3>
+    before = ['cstlib'] <3>
 
     def run(self):
         cmd = '%s %s' % (self.env.COMP, self.inputs[0].abspath())
