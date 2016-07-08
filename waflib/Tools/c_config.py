@@ -653,7 +653,7 @@ def post_check(self, *k, **kw):
 	else:
 		is_success = (kw['success'] == 0)
 
-	if 'define_name' in kw:
+	if kw.get('define_name'):
 		# TODO this is still way too complicated
 		comment = kw.get('comment', '')
 		define_name = kw['define_name']
@@ -829,8 +829,9 @@ def define(self, key, val, quote=True, comment=''):
 	:param quote: enclose strings in quotes (yes by default)
 	:type quote: bool
 	"""
-	assert key and isinstance(key, str)
-
+	assert isinstance(key, str)
+	if not key:
+		return
 	if val is True:
 		val = 1
 	elif val in (False, None):
@@ -862,8 +863,9 @@ def undefine(self, key, comment=''):
 	:param key: define name
 	:type key: string
 	"""
-	assert key and isinstance(key, str)
-
+	assert isinstance(key, str)
+	if not key:
+		return
 	ban = key + '='
 	lst = [x for x in self.env.DEFINES if not x.startswith(ban)]
 	self.env.DEFINES = lst
@@ -886,8 +888,9 @@ def define_cond(self, key, val, comment=''):
 	:param val: value
 	:type val: int or string
 	"""
-	assert key and isinstance(key, str)
-
+	assert isinstance(key, str)
+	if not key:
+		return
 	if val:
 		self.define(key, 1, comment=comment)
 	else:
