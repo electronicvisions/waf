@@ -36,41 +36,31 @@ Building Waf requires a Python interpreter having a version number in the range 
 $ wget https://waf.io/waf-{version}.tar.bz2
 $ tar xjvf waf-{version}.tar.bz2
 $ cd waf-{version}
-$ python waf-light
 Configuring the project
-'build' finished successfully (0.001s)
-Checking for program python              : /usr/bin/python
-Checking for python version              : (2, 6, 5, 'final', 0)
-'configure' finished successfully (0.176s)
+Setting top to                           : /home/user/waf
+Setting out to                           : /home/user/waf/build
+Checking for program 'python'            : /usr/bin/python
 Waf: Entering directory `/waf-{version}/build'
-[1/1] create_waf:  -> waf
+[1/1] Creating waf
 Waf: Leaving directory `/waf-{version}/build'
-'build' finished successfully (2.050s)
+'build' finished successfully (0.726s)
 ---------------
 
-For older interpreters, it is possible to build the +waf+ file with gzip compression instead of bzip2:
+For older interpreters, the +waf+ file may be created with gzip compression instead of bzip2:
 
 [source,shishell]
 ---------------
 $ python waf-light --zip-type=gz
 ---------------
 
-The files present in the folder _waflib/extras_ represent extensions (Waf tools) that are in a testing phase. They may be added to the Waf binary by using the _--tools_ switch:
+The files present in the folder _waflib/extras_ represent extensions (Waf tools) in testing phase which may be included in the waf file through by means of the _--tools_ switch. Files provided by absolute path will be assumed to be part of the 'waflib/extras' module and added to that subfolder (non-python files are also allowed). The following example illustrates the _--tools_ usage:
 
 [source,shishell]
 ---------------
 $ python waf-light --tools=compat15,swig,doxygen
 ---------------
 
-The tool _compat15_ is required to provide some compatibility with previous Waf versions.
-To remove it, it is necessary to modify the initialization by changing the _--prelude_ switch:
-
-[source,shishell]
----------------
-$ python waf-light --make-waf --prelude='' --tools=swig
----------------
-
-Finally, here is how to import an external tool and load it in the initialization. Assuming the file `aba.py` is present in the current directory:
+Here is how to import an external tool and load it in the initialization. Assuming that a file named `aba.py` is present in the current directory:
 
 [source,python]
 ---------------
@@ -79,7 +69,7 @@ def foo():
 	print("This is Waf %s" % WAFVERSION)
 ---------------
 
-The following will create a custom waf file which will import and execute 'foo' whenever it is executed:
+The following will create a custom waf file that will import and execute the function 'foo' before calling the waf library.
 
 [source,shishell]
 ---------------
@@ -90,16 +80,15 @@ This is Waf {version}
 [...]
 ---------------
 
-Foreign files to add into the folder 'extras' must be given by absolute paths in the _--tools_ switch.
-Such files do not have to be Python files, yet, a typical scenario is to add an initializer to modify existing
-functions and classes from the Waf modules. Various from the https://github.com/waf-project/waf/tree/master/build_system_kit/[build system kit] illustrate how to create custom
+A return statement may also be added, please consult the contents of waf-light to learn more about it.
+Various from the https://github.com/waf-project/waf/tree/master/build_system_kit/[build system kit] thus illustrate how to create custom
 build systems derived from Waf.
 
 === Using the Waf file
 
 ==== Permissions and aliases
 
-Because the waf script is a python script, it is usually executed by calling +python+ on it:
+Since the waf script is a python script, it is usually executed by calling +python+ on it:
 
 [source,shishell]
 ---------------
@@ -115,7 +104,7 @@ $ ./waf --version
 waf {version} (54dc13ba5f51bfe2ae277451ec5ac1d0a91c7aaf)
 ---------------
 
-If the command-line interpreter supports aliases, it is recommended to set the alias once:
+If the command-line interpreter supports aliases, it is recommended to set one instead of retyping commands:
 
 [source,shishell]
 ---------------
@@ -124,7 +113,7 @@ $ waf --version
 waf {version} (54dc13ba5f51bfe2ae277451ec5ac1d0a91c7aaf)
 ---------------
 
-Or, the execution path may be modified to point at the location of the waf binary:
+Else, the execution path may be modified to point at the location of the waf binary:
 
 [source,shishell]
 ---------------
@@ -133,13 +122,15 @@ $ waf --version
 waf {version} (54dc13ba5f51bfe2ae277451ec5ac1d0a91c7aaf)
 ---------------
 
-For convenience purposes on windows systems, a https://github.com/waf-project/waf/tree/master/utils/waf.bat[waf.bat file] is provided to detect the presence of the Python application. It assumes that it is residing in the same folder as the waf file.
+For convenience purposes on Windows systems, a https://github.com/waf-project/waf/tree/master/utils/waf.bat[waf.bat file] is provided to detect the presence of the Python application. It assumes that it is residing in the same folder as the waf file.
 
-In the next sections of the book, we assume that either an alias or the execution path have been set in a way that +waf+ may be called directly.
+In the next sections of the book, we assume that either an alias or the execution path have been set in a way that +waf+ is directly callable.
 
 ==== Local waflib folders
 
-Although the waf library is unpacked automatically from the waf binary file, it is sometimes necessary to keep the files in a visible folder, which may even be kept in a source control tool (subversion, git, etc). For example, the +waf-light+ script does not contain the waf library, yet it is used to create the +waf+ script by using the directory +waflib+.
+Although the waf library is unpacked automatically from the waf binary file, it is sometimes necessary to keep its files in a visible folder, which may even be kept in a source control tool (subversion, git, etc). For example, the +waf-light+ script does not contain the waf library, yet it is used to create the +waf+ script by using the directory +waflib+.
+
+Another alternative for Waf developers is to point the environement variable _WAFDIR_ to the folder containing the directory named `waflib`.
 
 The following diagram represents the process used to find the +waflib+ directory:
 
@@ -148,7 +139,7 @@ image::waflib{PIC}["Waflib discovery"{backend@docbook:,width=450:},align="center
 
 ==== Portability concerns
 
-By default, the recommended Python interpreter is cPython, for which the supported versions are 2.5 to 3.4. For maximum convenience for the user, a copy of the http://www.jython.org[Jython] interpreter (version >= 2.5) could be redistributed along with a copy of the Waf executable.
+By default, the recommended Python interpreter is cPython, for which the supported versions are 2.5 to 3.5. For maximum convenience for end-users, a copy of the http://www.jython.org[Jython] interpreter (version >= 2.5) might even be redistributed along with a copy of the Waf executable.
 
-WARNING: The 'waf' script must reside in a writable folder to unpack its cache files.
+WARNING: Unless a _WAFDIR_ is set, the 'waf' script must reside in a writable folder to unpack its cache files.
 

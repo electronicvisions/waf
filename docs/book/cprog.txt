@@ -495,11 +495,13 @@ The method 'check' is used to detect parameters using a small build project. The
 . errmsg: message to display when the test fails
 . env: environment to use for the build (conf.env is used by default)
 . compile_mode: 'cc' or 'cxx'
-. define_name: add a define for the configuration header when the test succeeds (in most cases it is calculated automatically)
+. define_name: sets a define of the form *define_name=x* when the test succeeds (a default value for define_name is usually calculated automatically)
+. global_define: sets *define_name=X* to *env.DEFINES* when True and to *env.DEFINES_X* when False (X represents value of the uselib_store variable)
+. uselib_store: stores arguments of the form lib,cflag,cxxflags to LIB_X,CFLAG_X,CXXFLAGS_X respectively (X represents the value of the uselib_store variable)
 
 The errors raised are instances of 'waflib.Errors.ConfigurationError'. There are no return codes.
 
-Besides the main parameters, the attributes from c/c++ task generators may be used. Here is a concrete example:
+Besides the main parameters, the attributes from c/c++ task generators may be used. Here are a few examples:
 
 // cprog_conf
 [source,python]
