@@ -321,7 +321,7 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 	:type before: list of string
 	:param after: execute instances of this task after classes of the given names
 	:type after: list of string
-	:param decider: if present, use it to create the output nodes for the task
+	:param decider: if present, function that retuns a list of output file extensions (overrides ext_out for output files, but not for the build order)
 	:type decider: function
 	:param scan: scanner function for the task
 	:type scan: function
@@ -335,13 +335,13 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 	cls = Task.task_factory(name, rule, color=color, ext_in=ext_in, ext_out=ext_out, before=before, after=after, scan=scan, shell=shell)
 
 	def x_file(self, node):
-		ext = decider and decider(self, node) or cls.ext_out
 		if ext_in:
 			_ext_in = ext_in[0]
 
 		tsk = self.create_task(name, node)
 		cnt = 0
 
+		ext = decider(self, node) if decider else cls.ext_out
 		for x in ext:
 			k = node.change_ext(x, ext_in=_ext_in)
 			tsk.outputs.append(k)
