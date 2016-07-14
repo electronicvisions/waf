@@ -389,7 +389,7 @@ class Dist(Context.Context):
 		except ImportError:
 			digest = ''
 		else:
-			digest = ' (sha=%r)' % sha1(node.read()).hexdigest()
+			digest = ' (sha=%r)' % sha1(node.read(flags='rb')).hexdigest()
 
 		Logs.info('New archive created: %s%s', self.arch_name, digest)
 
