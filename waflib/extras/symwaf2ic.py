@@ -196,7 +196,7 @@ class MainContext(Symwaf2icContext):
     cmd = "_symwaf2ic"
 
     def __init__(self, *k, **kw):
-        super(Symwaf2icContext, self).__init__(*k, **kw)
+        super(MainContext, self).__init__(*k, **kw)
 
     def execute(self):
         Logs.debug("symwaf2ic: Starting up symwaf2ic")
@@ -473,15 +473,19 @@ class DependencyContext(Symwaf2icContext):
         self.to_recurse = deque()
 
     def __call__(self, project, subfolder="", branch=None):
+        self.call_impl(project, subfolder, branch,
+                       self.cur_script.parent.path_from(self.toplevel))
+
+    def call_impl(self, project, subfolder="", branch=None, predecessor=None):
+        required_from = "project option" if predecessor is None else predecessor
         Logs.debug("dependency: Required by {script}: {project}{branch}{subfolder}".format(
                     project=project,
                     subfolder="" if len(subfolder) == 0 else " ({0})".format(subfolder),
                     branch="" if branch is None else "@{0}".format(branch),
-                    script=self.cur_script.path_from(self.toplevel)
+                    script=required_from,
                 ))
-
-        required_from = self.cur_script.parent.path_from(self.toplevel)
-        path = storage.repo_tool.checkout_project(project, required_from, branch, self.update_branches)
+        path = storage.repo_tool.checkout_project(
+            self, project, required_from, branch, self.update_branches)
 
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
@@ -490,7 +494,7 @@ class DependencyContext(Symwaf2icContext):
             raise Symwaf2icError("Folder '{0}' not found in project {1}".format(subfolder, project))
 
         # For topology order of deps
-        self._add_required_path(path, required_from)
+        self._add_required_path(path, predecessor)
 
     def execute(self):
         # dont recurse into all already dependency directories again
@@ -629,13 +633,9 @@ class DependencyContext(Symwaf2icContext):
                 self._add_required_path(project.directory)
             else:
                 try:
-                    path = storage.repo_tool.checkout_project(
-                            project=project.project,
-                            parent_path="project option",
-                            branch=project.branch,
-                            update_branch = self.update_branches)
-                    self._add_required_path(path)
-                except KeyError:
+                    self.call_impl(
+                        project.project, branch=project.branch, predecessor=None)
+                except KeyError as exc:
                     Logs.warn("Project '{!s}' not found and will be ignored".format(project))
 
     def _shall_store_config(self):

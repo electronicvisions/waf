@@ -14,6 +14,7 @@ from pprint import pprint
 import json
 import tempfile
 import re
+import shutil
 
 import subprocess
 from ConfigParser import RawConfigParser
@@ -95,11 +96,11 @@ class BranchError(Exception):
     pass
 
 class Project(object):
-    def __init__(self, name, node, branch = None):
+    def __init__(self, name, path, branch = None):
         assert isinstance(name, basestring)
-        assert node
+        assert os.path.isabs(path)
         self._name = name
-        self._node = node
+        self._path = path
         self._branch = branch
         self._real_branch = None
         self._mr_registered = False
@@ -147,8 +148,9 @@ class Project(object):
             pass
 
     @property
-    def node(self):
-        return self._node
+    def path(self):
+        """Absolute path of the repository"""
+        return self._path
 
     @property
     def real_branch(self):
@@ -161,14 +163,16 @@ class Project(object):
             self._real_branch =  stdout.strip()
         return self._real_branch
 
-    def update_branch(self, force = False):
-        ret, stdout, stderr = self.exec_cmd(self.reset_branch_cmd() if force else self.set_branch_cmd())
+    def update_branch(self, force=False):
+        cmd = self.reset_branch_cmd() if force else self.set_branch_cmd()
+        ret, stdout, stderr = self.exec_cmd(cmd)
         if ret != 0:
-            raise BranchError(stdout + stderr)
+            raise BranchError(cmd + ":\n" + stdout + stderr)
         self._real_branch = None
 
-    def path_from(self, modules_dir):
-        return self.node.path_from(modules_dir)
+    def path_from(self, start):
+        assert os.path.isabs(start)
+        return os.path.relpath(self.path, start)
 
 #    def set_real_branch(self):
 #        self.exec_cmd(get_branch_cmd())
@@ -176,11 +180,13 @@ class Project(object):
 
     def exec_cmd(self, cmd, **kw):
         defaults = {
-                'cwd'    : self.node.abspath(),
+                'cwd'    : self.path,
                 'stdout' : subprocess.PIPE,
                 'stderr' : subprocess.PIPE,
             }
         defaults.update(kw)
+        Logs.debug('mr: Running "{cmd}" with env {env}'.format(
+            cmd=cmd, env=defaults))
         p = subprocess.Popen(cmd, **defaults)
         stdout, stderr = p.communicate()
         return p.returncode, stdout, stderr
@@ -208,7 +214,7 @@ class GitProject(Project):
         super(self.__class__, self).__init__(*args, **kw)
 
     def mr_checkout_cmd(self, base_node, url):
-        path = self.node.path_from(base_node)
+        path = self.path_from(base_node)
         cmd = ["git clone '{url}' '{target}'".format(url=url, target=os.path.basename(path))]
         return 'checkout=%s' % "; ".join(cmd)
 
@@ -216,7 +222,6 @@ class GitProject(Project):
         init_cmd = " ".join(self.set_branch_cmd()) + "; " + init
         return "post_checkout = cd {name} && {init}".format(
             name=os.path.basename(self.name), init=init_cmd)
-
 
 
 class MR(object):
@@ -238,41 +243,34 @@ class MR(object):
     }
 
     def __init__(self, ctx, db_url="git@example.com:db.git", db_type="git", top=None, cfg=None, clear_log=False):
-        self.ctx = ctx
-        self.init_dirs(top, cfg)
-        self.find_mr()
+        # Note: Don't store the ctx. It gets finalized before MR
+        if not top:
+            top = getattr(ctx, 'srcnode', None)
+        if not top:
+            top = ctx.path
+        if not top:
+            ctx.fatal("Could not find top dir")
+
+        # INIT dirs: DO NOT store nodes, as each context brings its one node hierarchy
+        self.base = top.abspath()
+        self.config = top.make_node(self.MR_CONFIG).abspath()
+        self.log = cfg.make_node(self.MR_LOG).abspath()
+        script_dir = cfg.make_node(self.SCRIPTS)
+        script_dir.mkdir()
+        self.scripts = script_dir.abspath()
+
+        self.find_mr(ctx)
         self.projects = {}
         if clear_log:
-            self.log.write("")
+            with open(self.log, 'w') as log:
+                log.write("")
 
-        Logs.debug('mr: Using "%s" to manage repositories' % self.mr_tool.abspath())
-        Logs.debug('mr: commands are logged to "%s"' % self.log.path_from(self.base))
+        Logs.debug('mr: commands are logged to "%s"' % self.log)
 
-        self.setup_repo_db(db_url, db_type)
+        self.setup_repo_db(ctx, cfg, top, db_url, db_type)
 
         self.init_mr()
         Logs.debug("mr: Found managed repositories: " + str(self.pretty_projects() ))
-
-    def init_dirs(self, top, cfg):
-        # Find top node
-        if not top:
-            top = getattr(self.ctx, 'srcnode', None)
-        if not top:
-            top = self.ctx.path
-        if not top:
-            self.ctx.fatal("Could not find top dir")
-
-        self.base = top
-        if cfg is None:
-            self.cfg_node = top.make_node(self.CONFIG_DIR)
-            self.cfg_node.mkdir()
-        else:
-            self.cfg_node = cfg
-
-        self.config = self.base.make_node(self.MR_CONFIG)
-        self.log = self.cfg_node.make_node(self.MR_LOG)
-        self.scripts = self.cfg_node.make_node(self.SCRIPTS)
-        self.scripts.mkdir()
 
     def load_projects(self):
         parser = self.load_config()
@@ -281,13 +279,15 @@ class MR(object):
             projects[name] = self._get_or_create_project(name)
             projects[name].mr_registered = True
 
-    def find_mr(self):
-        waflib_node = self.ctx.root.find_node(os.path.join(Context.waf_dir, 'waflib'))
-        self.mr_tool = waflib_node.find_node(os.path.join('bin', 'mr'))
-        if not self.mr_tool:
-            self.ctx.fatal("Your symwaf2ic-waflib seems to be corrupted, could not find mr tool!")
+    def find_mr(self, ctx):
+        waflib_node = ctx.root.find_node(os.path.join(Context.waf_dir, 'waflib'))
+        mr_tool = waflib_node.find_node(os.path.join('bin', 'mr'))
+        if not mr_tool:
+            ctx.fatal("Your symwaf2ic-waflib seems to be corrupted, could not find mr tool!")
+        Logs.debug('mr: Using "%s" to manage repositories' % mr_tool.abspath())
+        self.mr_path = mr_tool.parent.abspath()
 
-    def setup_repo_db(self, db_url, db_type):
+    def setup_repo_db(self, ctx, cfg, top, db_url, db_type):
         # first install some mock object that servers to create the repo db repository
         class MockDB(object):
             def get_url(self, *k, **kw):
@@ -298,8 +298,8 @@ class MR(object):
                 return db_type
         self.db = MockDB()
 
-        db_node = self.cfg_node.make_node(self.DB_FOLDER)
-        db_path = db_node.path_from(self.base)
+        db_node = cfg.make_node(self.DB_FOLDER)
+        db_path = db_node.path_from(top)
         if db_type == "wget":
             # TODO: implement download via wget # KHS: should I do this?
             raise Errors.WafError("wget support not implemented yet. Poke obreitwi!")
@@ -307,13 +307,14 @@ class MR(object):
             # see if db repository is already checked out, if not, add it
             # since we have not read all managed repositories, manually read the mr config
             parser = self.load_config()
-            self.projects[db_path] = db_repo = self.project_types[db_type](name=db_path, node=db_node)
+            self.projects[db_path] = db_repo = self.project_types[db_type](
+                name=db_path, path=db_node.abspath())
             db_repo.required_branch = None
             db_repo.required = True
-            if db_path not in parser.sections() or not os.path.isdir(db_repo.node.abspath()):
+            if db_path not in parser.sections() or not os.path.isdir(db_repo.path):
                 # we need to add it manually because if project isn't found we would look in the
                 # not yet existing db
-                self.mr_checkout_project(db_repo)
+                self.mr_checkout_project(ctx, db_repo)
 
         self.db = Repo_DB(os.path.join(db_node.abspath(), self.DB_FILE))
 
@@ -322,7 +323,7 @@ class MR(object):
         self.load_projects()
         not_on_filesystem = []
         for name, p in self.projects.iteritems():
-            if not os.path.isdir(p.node.abspath()):
+            if not os.path.isdir(p.path):
                 not_on_filesystem.append(name)
         if not_on_filesystem:
             Logs.debug("mr: Projects not on file system: " + str(not_on_filesystem))
@@ -335,7 +336,9 @@ class MR(object):
 
     def mr_log(self, msg, sep = "\n"):
         for m in msg.split('\n'): Logs.debug('mr: ' + m)
-        self.log.write(msg + sep, 'a')
+        with open(self.log, 'a') as log:
+            log.write(msg)
+            log.write(sep)
 
     def mr_print(self, msg, color = None, sep = '\n'):
         self.mr_log(msg, '\n')
@@ -344,36 +347,25 @@ class MR(object):
     def load_config(self):
         """Load mr config file, returns an empty config if the file does not exits"""
         parser = RawConfigParser()
-        parser.read([self.config.abspath()])
+        parser.read([self.config])
         return parser
 
     def save_config(self, parser):
-        tmp = StringIO()
-        parser.write(tmp)
-        self.config.write(tmp.getvalue())
+        with open(self.config, 'w') as cfg_file:
+            parser.write(cfg_file)
 
     def format_cmd(self, *args, **kw):
         """ use _conf_file to override config file destination """
-        #env = kw.get('env', os.environ.copy()) # KHS it's never used
-        # if args and args[0] == 'register':
-            # env["PATH"] = self.mr_tool.parent.abspath() + os.pathsep + env["PATH"]
-
-        custom_conf_file = "_conf_file" in kw
-
-        conf_file = self.config.path_from(self.base)\
-            if not custom_conf_file else kw["_conf_file"]
-
-        if custom_conf_file:
-            del kw["_conf_file"]
+        conf_file = kw.pop("_conf_file", os.path.relpath(self.config, self.base))
 
         # like this (env mr instead of absolute path) we can assert that the environment has been
         # passed correctly (i.e. PATH with our-mr inserted - mr sometimes calles itself).
-        cmd = ['env', 'mr', '-t', '-c', conf_file] # self.mr_tool.abspath()
+        cmd = ['env', 'mr', '-t', '-c', conf_file]
         cmd.extend(args)
 
         self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
 
-        kw['cwd']    = self.base.abspath()
+        kw['cwd']    = self.base
         kw['env']    = self.get_mr_env()
         return cmd, kw
 
@@ -381,25 +373,24 @@ class MR(object):
         """returns abspath to a bash script, each arg representing one line of code"""
 
         fn = Utils.to_hex(Utils.h_list(args)) + "0.sh" # hash-of-args + version of getMrScript
-        node = self.scripts.find_node(fn)
+        fullpath = os.path.join(self.scripts, fn)
 
-        if not node:
-            node = self.scripts.make_node(fn)
-            script = [
-                    '#!/bin/bash',
-                    '# This file was generated by mr.py - getMrScript',
-                    '',
-            ] + list(args)
-            node.write('\n'.join( script ) + '\n')
-            os.chmod(node.abspath(), 0754)
-            Logs.debug("mr: script created " + node.abspath())
+        if not os.path.exists(fullpath):
+            with open(fullpath, 'w') as out:
+                out.write('''#!/bin/bash
+# This file was generated by mr.py - getMrScript
+''')
+                for arg in args:
+                    out.write(arg)
+                    out.write('\n')
+            os.chmod(fullpath, 0754)
+            Logs.debug("mr: script created " + fullpath)
         else:
-            Logs.debug("mr: script reused " + node.abspath())
+            Logs.debug("mr: script reused " + fullpath)
 
-        assert node
-        return node.abspath()
+        return fullpath
 
-    def call_mr(self, *args, **kw):
+    def call_mr(self, ctx, *args, **kw):
         self.mr_log("dispatching mr command: " + str(args) + " -- " + str(kw))
 
         tmpfile = None
@@ -418,7 +409,7 @@ class MR(object):
         kw['output'] = Context.BOTH
         try:
             Logs.debug("mr: executing in: " + kw['cwd'] + " -- with first PATH segment set to: " + kw['env']['PATH'].split(':')[0])
-            stdout, stderr = self.ctx.cmd_and_log(cmd, **kw)
+            stdout, stderr = ctx.cmd_and_log(cmd, **kw)
         except Errors.WafError as e:
             stdout = getattr(e, 'stdout', "")
             stderr = getattr(e, 'stderr', "")
@@ -447,32 +438,36 @@ class MR(object):
             header_idx = 1
             path = tmpfile_lines[header_idx].strip()[1:-1]
             Logs.debug("mr: originally registered path: " + str(path))
-            node = self.ctx.root.find_node(path)
+            node = ctx.root.find_node(path)
 
             # KHS: Fixing weird behaviour of mr register. If executed in a subdir of /tmp or outside
             # of $HOME -- not sure what exactly the cause is, it registers repos as
             # [toplevel/repodir] instead of [/root/path/to/repodir].
             if not node:
-                assert path.startswith(str(self.ctx.path))
-                node=self.ctx.path.parent.find_node(path)
+                assert path.startswith(str(ctx.path))
+                node=ctx.path.parent.find_node(path)
                 Logs.debug('mr: wierd mr-register-behaviour-fix applied.')
                 assert node # or fix failed
 
-            tmpfile_lines[header_idx] = "[{0}]\n".format(node.path_from(self.base))
+            tmpfile_lines[header_idx] = "[{0}]\n".format(
+                os.path.relpath(node.abspath(), self.base))
             Logs.debug("mr: registered {}".format(tmpfile_lines[header_idx]))
-            self.config.write("".join(tmpfile_lines), 'a')
+            with open(self.config, 'a') as cfg_file:
+                for line in tmpfile_lines:
+                    cfg_file.write(line)
 
         return cmd, stdout, stderr
 
     def get_mr_env(self):
         env = os.environ
         path = env["PATH"].split(os.pathsep)
-        path.insert(0, self.mr_tool.parent.abspath())
+        path.insert(0, self.mr_path)
         env["PATH"] = os.pathsep.join(path)
         return env # KHS: jihaa function was a noop (return statement was missing)
 
 
-    def checkout_project(self, project, parent_path, branch = None, update_branch = False):
+    def checkout_project(self, ctx, project, parent_path, branch = None,
+                         update_branch = False):
         p = self._get_or_create_project(project)
         p.required = True
         try:
@@ -481,23 +476,24 @@ class MR(object):
             self.mr_print('Project "%s" is already required on branch "%s", but "%s" requires branch "%s"'\
                     % ( project, p.required_branch, parent_path, branch), 'YELLOW')
 
-        if p.mr_registered and os.path.isdir(p.node.abspath()) and os.listdir(p.node.abspath()):
+
+        if p.mr_registered and os.path.isdir(p.path) and os.listdir(p.path):
             if update_branch and p.required_branch != p.real_branch:
                 self.mr_print('Switching branch of repository %s from %s to %s..' % \
                         ( project, p.real_branch, p.required_branch), sep = '')
                 try:
-                    p.update_branch(force = bool(update_branch=='force'))
+                    p.update_branch(force=bool(update_branch=='force'))
                 except BranchError as e:
                     self.mr_print('')
-                    self.ctx.fatal(str(e))
+                    ctx.fatal("In project {p}: {err}".format(p=p.name, err=e))
                 self.mr_print('done', 'GREEN')
-            return p.node.path_from(self.base)
+            return p.path_from(self.base)
         else:
-            return self.mr_checkout_project(p)
+            return self.mr_checkout_project(ctx, p)
 
-    def mr_checkout_project(self, p):
+    def mr_checkout_project(self, ctx, p):
         "Perform the actual mr checkout"
-        path = p.node.path_from(self.base)
+        path = p.path_from(self.base)
         do_checkout = False
         if '-h' in sys.argv or '--help' in sys.argv:
             Logs.warn('Not all projects were found: the help message may be incomplete')
@@ -507,22 +503,31 @@ class MR(object):
 
         # Check if the project folder exists, in this case the repo
         # needs only to be registered
-        if os.path.isdir(p.node.abspath()):
+        if os.path.isdir(p.path):
             self.mr_print("Registering pre-existing repository '%s'..." % p, sep = '')
             Logs.debug('mr: ') # better output if mr zone is active
-            self.call_mr('register', path)
+            self.call_mr(ctx, 'register', path)
         else:
             do_checkout = True
             self.mr_print("Checking out repository %s {%s} to '%s'..."
                 % (self.db.get_url(p.name), p.required_branch, p.name), sep = '')
 
         args = ['config', p.name,
-                p.mr_checkout_cmd(self.base, self.db.get_url(p.name)),
-                p.mr_init_cmd(self.db.get_init(p.name))]
-        self.call_mr(*args)
+                p.mr_checkout_cmd(self.base, self.db.get_url(p.name))
+               ]
+        init_cmd = p.mr_init_cmd(self.db.get_init(p.name))
+        if init_cmd:
+            args += [init_cmd]
+        self.call_mr(ctx, *args)
 
         if do_checkout:
-            self.call_mr('checkout')
+            try:
+                self.call_mr(ctx, 'checkout')
+            except Errors.WafError:
+                self.mr_print('failed', 'RED')
+                self.mr_print('Removing incomplete checkout: {0}'.format(p.path))
+                shutil.rmtree(p.path, ignore_errors=False)
+                raise
 
         p.mr_registered = True
         self.mr_print('done', 'GREEN')
@@ -583,8 +588,7 @@ class MR(object):
             Logs.error("Missing information in repository database: %s" % name)
             raise KeyError("Missing information in repository database. Missing key: '%s'" % e.message)
 
-        node = self.base.make_node(name)
-        p = self.project_types[vcs](name = name, node = node)
+        p = self.project_types[vcs](name=name, path=os.path.join(self.base, name))
         self.projects[name] = p
         return p
 
