@@ -2,11 +2,7 @@
 
 === Waf commands
 
-==== Waf and wscript files
-
-As the Waf file is meant to be a generic utility for building projects, project-specific details are best kept and versioned in files residing along with the project source code.
-
-The Waf project files are modules written in the Python programming language and are named *wscript*. Though they can contain any Python code, Waf can use specific functions and classes defined in them. The next sections will explore a particularly useful concept called *function commands*.
+As the Waf file is meant to be a generic utility for building projects, project-specific details are best kept and versioned in files residing along with the project source code. These files are modules written in the Python programming language and are named *wscript*. Although they can contain any Python code, Waf can use specific functions and classes defined in them. The next sections will explore a particularly useful concept called *function commands*.
 
 ==== Command-line overview
 
@@ -14,10 +10,10 @@ Waf is typically run in a command-line interpreter called terminall or shell; th
 
 [source,shishell]
 ---------------
-$ CFLAGS=-O3<1> waf distclean configure<2> -j1 --help<3>
+$ CFLAGS=-O3 <1> waf distclean configure <2> -j1 --help <3>
 ---------------
 
-<1> The CFLAGS value provides a way to provide arbitrary data in an unverified way, it is also called an environment variable.
+<1> The *CFLAGS* argument is an environment variable; it is used to provide processes with arbitrary data in an unchecked way way
 <2> Waf is instructed to run the two commands called *distclean* and *configure* in this specific order. Commands are passed after the 'waf' file and contain no *-* or *=* characters
 <3> The *-j1* and *--help* elements are command-line options; they are optional and their position or order in the list of arguments is not meant to be significant.
 

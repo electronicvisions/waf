@@ -22,7 +22,7 @@ $ ls -ld .waf*
 .waf-{version}-2c924e3f453eb715218b9cc852291170
 ---------------
 
-No installation is necessary, but the folder containing the Waf file must be writable. If this is not possible, use the instructions in the next section to point a *WAFDIR* environment variable.
+No installation is necessary, but the folder containing the Waf file must be writable. If this is not possible, use the instructions in the next section to set the *WAFDIR* environment variable.
 
 If http://docs.python.org/library/bz2.html[bzip2] compression support is missing in the python interpreter, please use the instructions in the next sections to build Waf from source.
 
