@@ -6,22 +6,24 @@
 
 As the Waf file is meant to be a generic utility for building projects, project-specific details are best kept and versioned in files residing along with the project source code.
 
-The Waf project files are modules written in the Python programming language and are named *wscript*. Though they can contain any Python code, Waf can use specific functions and classes defined in them.
+The Waf project files are modules written in the Python programming language and are named *wscript*. Though they can contain any Python code, Waf can use specific functions and classes defined in them. The next sections will explore a particularly useful concept called *function commands*.
 
-==== Overview of the command-line
+==== Command-line overview
 
-When running the following in a terminal or shell, Waf is instructed to run the two commands called *distclean* and *configure* in this specific order. The *-j1* and *--help* elements are command-line options; they are optional and their position or order in the list of arguments is not meant to be significant. The CFLAGS value provides a way to provide arbitrary data in an unverified way, it is also called an environment variable.
+Waf is typically run in a command-line interpreter called terminall or shell; there are three main ways of passing data to the Waf process to tell it to do something:
 
 [source,shishell]
 ---------------
-$ CFLAGS=-O3 waf distclean configure -j1 --help
+$ CFLAGS=-O3<1> waf distclean configure<2> -j1 --help<3>
 ---------------
 
-NOTE: waf commands are passed after the 'waf' file and contain no '-' or '=' character
+<1> The CFLAGS value provides a way to provide arbitrary data in an unverified way, it is also called an environment variable.
+<2> Waf is instructed to run the two commands called *distclean* and *configure* in this specific order. Commands are passed after the 'waf' file and contain no *-* or *=* characters
+<3> The *-j1* and *--help* elements are command-line options; they are optional and their position or order in the list of arguments is not meant to be significant.
 
 ==== Waf commands map Python functions
 
-Waf commands assume that a corresponding command function is defined in a the wscript file in the current folder.
+Waf commands assume that a corresponding command function is defined in the project wscript file which usually resides in current folder.
 They take a single context parameter as input and do not have to return any particular value as in the following example:
 
 // execution_hello
