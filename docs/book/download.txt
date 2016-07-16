@@ -57,7 +57,7 @@ Additional extensions can be added to the waf file and redistributed as part of 
 
 [source,shishell]
 ---------------
-$ python waf-light --tools=compat15,swig,doxygen
+$ python waf-light --tools=swig,msvs
 ---------------
 
 ==== Custom initializers
@@ -75,7 +75,7 @@ The following will create a custom waf file that will import and execute the fun
 
 [source,shishell]
 ---------------
-$ python waf-light --make-waf --tools=compat15,$PWD/aba.py
+$ python waf-light --make-waf --tools=msvs,$PWD/aba.py
    --prelude=$'\tfrom waflib.extras import aba\n\taba.foo()'
 $ ./waf --help
 This is Waf {version}

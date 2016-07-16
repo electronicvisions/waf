@@ -1,15 +1,28 @@
 == Projects and commands
 
-The _waf_ script is meant to build software projects, and is of little use when taken alone. This chapter describes what is necessary to set up a waf project and how to use the _waf_ script.
-
 === Waf commands
 
-Waf projects use description files of the name _wscript_ which are python scripts containing functions and variables that may be used by Waf. Particular functions named _waf commands_ may be used by Waf on the command-line.
+==== Waf and wscript files
 
-==== Declaring Waf commands
+As the Waf file is meant to be a generic utility for building projects, project-specific details are best kept and versioned in files residing along with the project source code.
 
-Waf commands are really simple functions and may execute arbitrary python code such as calling other functions.
-They take a single parameter as input and do not have to return any particular value as in the following example:
+The Waf project files are modules written in the Python programming language and are named *wscript*. Though they can contain any Python code, Waf can use specific functions and classes defined in them.
+
+==== Overview of the command-line
+
+When running the following in a terminal or shell, Waf is instructed to run the two commands called *distclean* and *configure* in this specific order. The *-j1* and *--help* elements are command-line options; they are optional and their position or order in the list of arguments is not meant to be significant. The CFLAGS value provides a way to provide arbitrary data in an unverified way, it is also called an environment variable.
+
+[source,shishell]
+---------------
+$ CFLAGS=-O3 waf distclean configure -j1 --help
+---------------
+
+NOTE: waf commands are passed after the 'waf' file and contain no '-' or '=' character
+
+==== Waf commands map Python functions
+
+Waf commands assume that a corresponding command function is defined in a the wscript file in the current folder.
+They take a single context parameter as input and do not have to return any particular value as in the following example:
 
 // execution_hello
 [source,python]
@@ -22,9 +35,9 @@ def <1> hello(ctx <2>):
 ---------------
 
 <1> The _waf command_ *hello*
-<2> A waf context, used to share data between scripts
+<2> A waf context, used to share data among scripts
 
-And here is how to have +waf+ call the function hello from the command-line:
+Calling the command instructs +waf+ to call function:
 
 [source,shishell]
 ---------------
@@ -33,9 +46,9 @@ hello world
 'hello' finished successfully (0.001s)
 ---------------
 
-==== Chaining Waf commands
+==== Waf command chaining
 
-Several commands may be declared in the same _wscript_ file:
+As previously mentioned, commands are executed in the order defined on the command-line. A wscript file may thus provide an arbitrary amound of commands in the same _wscript_ file:
 
 // execution_ping
 [source,python]
@@ -47,7 +60,7 @@ def pong(ctx):
     print(' pong! %d' % id(ctx))
 ---------------
 
-And may be chained for execution by Waf:
+And such commands may be called more than once by being repeated on the command-line:
 
 [source,shishell]
 ---------------
@@ -62,7 +75,7 @@ $ waf ping pong ping ping
 'ping' finished successfully (0.001s)
 ---------------
 
-NOTE: The context parameter is a new object for each command executed. The classes are also different: ConfigureContext for configure, BuildContext for build, OptionContext for option, and Context for any other command.
+NOTE: Command functions are passed a new context object when they are called; the class for that object is command-specific: ConfigureContext for configure, BuildContext for build, OptionContext for option, and Context for any other command.
 
 ==== Using several scripts and folders
 
@@ -118,8 +131,8 @@ NOTE: The method _recurse_, and the attribute _path_ are available on all waf co
 
 ==== Configuring a project (the _configure_ command)
 
-Although Waf may be called from any folder containing a 'wscript' file, it is usually a good idea to have a single entry point in the scripts.
-Besides ensuring a consistent behaviour, it also saves the redefinition of the same imports and function redefinitions in all wscript files.
+Though Waf may be called from any folder containing a 'wscript' file, an entry point must be defined in a particular project file.
+This lifts ambiguities and saves the redefinition of the same imports and function definitions in all sub-wscript files of a project.
 The following concepts help to structure a Waf project:
 
 . Project directory: directory containing the source files that will be packaged and redistributed to other developers or to end users
