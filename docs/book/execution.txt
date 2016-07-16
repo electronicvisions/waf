@@ -523,7 +523,7 @@ Waf: Entering directory `/tmp/execution_build/build_directory'
 Waf: Leaving directory `/tmp/execution_build/build_directory'
 ---------------
 
-==== Cleaning the targets (the _clean_ command)
+==== Cleaning targets (the _clean_ command)
 
 The _clean_ command is used to remove the information about the files and targets created during the build. It uses the same function _build_ from the wscript files so there is no need to add a function named _clean_ in the wscript file.
 

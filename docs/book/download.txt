@@ -2,12 +2,13 @@
 
 === Obtaining the Waf file
 
-The Waf project is located on https://waf.io[waf.io].
+==== Requirements
+
 The current Waf version requires an interpreter for the Python programming language such as http://www.python.org[cPython] 2.5 to 3.5, http://pypy.org[Pypy] or http://www.jython.org[Jython] >= 2.5.
 
-==== Downloading and using the Waf binary
+==== Running the Waf binary script
 
-The Waf binary is a python script which may be executed directly from a writable folder; no installation is required. Just rename it as +waf+ if necessary:
+The Waf file is a python script which may be executed directly from a writable folder; no installation is required. Just rename it as +waf+ if necessary:
 
 [source,shishell]
 ---------------
@@ -60,7 +61,7 @@ Additional extensions can be added to the waf file and redistributed as part of 
 $ python waf-light --tools=swig,msvs
 ---------------
 
-==== Custom initializers
+==== Custom initialization
 
 Extension that provide an initialization may also be used to execute custom functions before the regular execution. Assuming that a file named `aba.py` is present in the current directory:
 
@@ -82,9 +83,7 @@ This is Waf {version}
 [...]
 ---------------
 
-A return statement may also be added, please consult the contents of waf-light to learn more about it.
-Various from the https://github.com/waf-project/waf/tree/master/build_system_kit/[build system kit] thus illustrate how to create custom
-build systems derived from Waf.
+A return statement may also be added, please consult the contents of waf-light to learn more about it, or consider the examples from the https://github.com/waf-project/waf/tree/master/build_system_kit/[build system kit] that illustrate how to create build systems derived from Waf.
 
 === Using the Waf file
 
