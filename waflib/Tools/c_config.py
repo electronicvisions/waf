@@ -307,6 +307,11 @@ def exec_cfg(self, kw):
 
 	path = Utils.to_list(kw['path'])
 	env = self.env.env or None
+	if kw.get('pkg_config_path'):
+		if not env:
+			env = dict(self.environ)
+		env['PKG_CONFIG_PATH'] = kw['pkg_config_path']
+
 	def define_it():
 		define_name = kw['define_name']
 		# by default, add HAVE_X to the config.h, else provide DEFINES_X for use=X

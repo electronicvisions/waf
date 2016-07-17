@@ -57,6 +57,8 @@ A few options (--qt{dir,bin,...}) and environment variables
 (QT5_{ROOT,DIR,MOC,UIC,XCOMPILE}) allow finer tuning of the tool,
 tool path selection, etc; please read the source for more info.
 
+The detection uses pkg-config on Linux by default. To force static library detection use:
+QT5_XCOMPILE=1 QT5_FORCE_STATIC=1 waf configure
 """
 
 try:
@@ -511,15 +513,15 @@ def find_qt5_binaries(self):
 
 	# the qt directory has been given from QT5_ROOT - deduce the qt binary path
 	if not qtdir:
-		qtdir = os.environ.get('QT5_ROOT', '')
-		qtbin = os.environ.get('QT5_BIN') or os.path.join(qtdir, 'bin')
+		qtdir = self.environ.get('QT5_ROOT', '')
+		qtbin = self.environ.get('QT5_BIN') or os.path.join(qtdir, 'bin')
 
 	if qtbin:
 		paths = [qtbin]
 
 	# no qtdir, look in the path and in /usr/local/Trolltech
 	if not qtdir:
-		paths = os.environ.get('PATH', '').split(os.pathsep)
+		paths = self.environ.get('PATH', '').split(os.pathsep)
 		paths.extend(['/usr/share/qt5/bin', '/usr/local/lib/qt5/bin'])
 		try:
 			lst = Utils.listdir('/usr/local/Trolltech/')
@@ -616,24 +618,54 @@ def find_qt5_binaries(self):
 	env.MOCDEFINES_ST = '-D%s'
 
 @conf
+def find_single_qt5_lib(self, name, uselib, qtlibs, qtincludes, force_static):
+	env = self.env
+	if force_static:
+		exts = ('.a', '.lib')
+		prefix = 'STLIB'
+	else:
+		exts = ('.so', '.lib')
+		prefix = 'LIB'
+
+	def lib_names():
+		for x in exts:
+			for k in ('', '5') if Utils.is_win32 else ['']:
+				for p in ('lib', ''):
+					yield (p, name, k, x)
+		raise StopIteration
+
+	for tup in lib_names():
+		k = ''.join(tup)
+		path = os.path.join(qtlibs, k)
+		if os.path.exists(path):
+			if env.DEST_OS == 'win32':
+				libval = ''.join(tup[:-1])
+			else:
+				libval = name
+			env.append_unique(prefix + '_' + uselib, libval)
+			env.append_unique('%sPATH_%s' % (prefix, uselib), qtlibs)
+			env.append_unique('INCLUDES_' + uselib, qtincludes)
+			env.append_unique('INCLUDES_' + uselib, os.path.join(qtincludes, name.replace('Qt5', 'Qt')))
+			return k
+	return False
+
+@conf
 def find_qt5_libraries(self):
-	qtlibs = getattr(Options.options, 'qtlibs', None) or os.environ.get('QT5_LIBDIR')
+	env = self.env
+	qtlibs = getattr(Options.options, 'qtlibs', None) or self.environ.get('QT5_LIBDIR')
 	if not qtlibs:
 		try:
-			qtlibs = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_LIBS']).strip()
+			qtlibs = self.cmd_and_log(env.QMAKE + ['-query', 'QT_INSTALL_LIBS']).strip()
 		except Errors.WafError:
-			qtdir = self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_PREFIX']).strip() + os.sep
+			qtdir = self.cmd_and_log(env.QMAKE + ['-query', 'QT_INSTALL_PREFIX']).strip()
 			qtlibs = os.path.join(qtdir, 'lib')
 	self.msg('Found the Qt5 libraries in', qtlibs)
 
-	qtincludes =  os.environ.get('QT5_INCLUDES') or self.cmd_and_log(self.env.QMAKE + ['-query', 'QT_INSTALL_HEADERS']).strip()
-	env = self.env
-	if not 'PKG_CONFIG_PATH' in os.environ:
-		os.environ['PKG_CONFIG_PATH'] = '%s:%s/pkgconfig:/usr/lib/qt5/lib/pkgconfig:/opt/qt5/lib/pkgconfig:/usr/lib/qt5/lib:/opt/qt5/lib' % (qtlibs, qtlibs)
-
+	qtincludes =  self.environ.get('QT5_INCLUDES') or self.cmd_and_log(env.QMAKE + ['-query', 'QT_INSTALL_HEADERS']).strip()
+	force_static = self.environ.get('QT5_FORCE_STATIC')
 	try:
-		if os.environ.get('QT5_XCOMPILE'):
-			raise self.errors.ConfigurationError()
+		if self.environ.get('QT5_XCOMPILE'):
+			self.fatal('QT5_XCOMPILE Disables pkg-config detection')
 		self.check_cfg(atleast_pkgconfig_version='0.1')
 	except self.errors.ConfigurationError:
 		for i in self.qt5_vars:
@@ -648,53 +680,18 @@ def find_qt5_libraries(self):
 				else:
 					self.msg('Checking for %s' % i, False, 'YELLOW')
 				env.append_unique('INCLUDES_' + uselib, os.path.join(qtlibs, frameworkName, 'Headers'))
-			elif env.DEST_OS != 'win32':
-				qtDynamicLib = os.path.join(qtlibs, 'lib' + i + '.so')
-				qtStaticLib = os.path.join(qtlibs, 'lib' + i + '.a')
-				if os.path.exists(qtDynamicLib):
-					env.append_unique('LIB_' + uselib, i)
-					self.msg('Checking for %s' % i, qtDynamicLib, 'GREEN')
-				elif os.path.exists(qtStaticLib):
-					env.append_unique('LIB_' + uselib, i)
-					self.msg('Checking for %s' % i, qtStaticLib, 'GREEN')
-				else:
-					self.msg('Checking for %s' % i, False, 'YELLOW')
-
-				env.append_unique('LIBPATH_' + uselib, qtlibs)
-				env.append_unique('INCLUDES_' + uselib, qtincludes)
-				env.append_unique('INCLUDES_' + uselib, os.path.join(qtincludes, i.replace('Qt5', 'Qt')))
 			else:
-				# Release library names are like QtCore5
-				for k in ('lib%s.a', 'lib%s5.a', '%s.lib', '%s5.lib'):
-					lib = os.path.join(qtlibs, k % i)
-					if os.path.exists(lib):
-						env.append_unique('LIB_' + uselib, i + k[k.find('%s') + 2 : k.find('.')])
-						self.msg('Checking for %s' % i, lib, 'GREEN')
-						break
-				else:
-					self.msg('Checking for %s' % i, False, 'YELLOW')
-
-				env.append_unique('LIBPATH_' + uselib, qtlibs)
-				env.append_unique('INCLUDES_' + uselib, qtincludes)
-				env.append_unique('INCLUDES_' + uselib, os.path.join(qtincludes, i.replace('Qt5', 'Qt')))
-
-				# Debug library names are like QtCore5d
-				uselib = i.upper() + '_debug'
-				for k in ('lib%sd.a', 'lib%sd5.a', '%sd.lib', '%sd5.lib'):
-					lib = os.path.join(qtlibs, k % i)
-					if os.path.exists(lib):
-						env.append_unique('LIB_' + uselib, i + k[k.find('%s') + 2 : k.find('.')])
-						self.msg('Checking for %s' % i, lib, 'GREEN')
-						break
-				else:
-					self.msg('Checking for %s' % i, False, 'YELLOW')
-
-				env.append_unique('LIBPATH_' + uselib, qtlibs)
-				env.append_unique('INCLUDES_' + uselib, qtincludes)
-				env.append_unique('INCLUDES_' + uselib, os.path.join(qtincludes, i.replace('Qt5', 'Qt')))
+				for j in ('', 'd'):
+					k = '_DEBUG' if j == 'd' else ''
+					ret = self.find_single_qt5_lib(i + j, uselib + k, qtlibs, qtincludes, force_static)
+					if not force_static and not ret:
+						ret = self.find_single_qt5_lib(i + j, uselib + k, qtlibs, qtincludes, True)
+					self.msg('Checking for %s' % (i + j), ret, 'GREEN' if ret else 'YELLOW')
 	else:
+		path = '%s:%s:%s/pkgconfig:/usr/lib/qt5/lib/pkgconfig:/opt/qt5/lib/pkgconfig:/usr/lib/qt5/lib:/opt/qt5/lib' % (
+			self.environ.get('PKG_CONFIG_PATH', ''), qtlibs, qtlibs)
 		for i in self.qt5_vars_debug + self.qt5_vars:
-			self.check_cfg(package=i, args='--cflags --libs', mandatory=False)
+			self.check_cfg(package=i, args='--cflags --libs', mandatory=False, force_static=force_static, pkg_config_path=path)
 
 @conf
 def simplify_qt5_libs(self):
@@ -750,7 +747,7 @@ def set_qt5_libs_to_check(self):
 		self.qt5_vars = QT5_LIBS
 	self.qt5_vars = Utils.to_list(self.qt5_vars)
 	if not hasattr(self, 'qt5_vars_debug'):
-		self.qt5_vars_debug = [a + '_debug' for a in self.qt5_vars]
+		self.qt5_vars_debug = [a + '_DEBUG' for a in self.qt5_vars]
 	self.qt5_vars_debug = Utils.to_list(self.qt5_vars_debug)
 
 @conf

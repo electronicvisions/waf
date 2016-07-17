@@ -864,8 +864,8 @@ def msvc_common_flags(conf):
 	v.CFLAGS_CRT_MULTITHREADED_DBG     = v.CXXFLAGS_CRT_MULTITHREADED_DBG     = ['/MTd']
 	v.CFLAGS_CRT_MULTITHREADED_DLL_DBG = v.CXXFLAGS_CRT_MULTITHREADED_DLL_DBG = ['/MDd']
 
-	v.LIB_ST            = '%s.lib' # template for adding shared libs
-	v.LIBPATH_ST        = '/LIBPATH:%s' # template for adding libpaths
+	v.LIB_ST            = '%s.lib'
+	v.LIBPATH_ST        = '/LIBPATH:%s'
 	v.STLIB_ST          = '%s.lib'
 	v.STLIBPATH_ST      = '/LIBPATH:%s'
 
