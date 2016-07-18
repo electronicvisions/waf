@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# XCode 3/XCode 4 generator for Waf
+# XCode 3/XCode 4/XCode 6/Xcode 7 generator for Waf
 # Based on work by Nicolas Mercier 2011
 # Extended by Simon Warg 2015, https://github.com/mimon
 # XCode project file format based on http://www.monobjc.net/xcode-project-file-format.html
@@ -48,7 +48,9 @@ def build(bld):
 
 	# You can also make bld.dylib, bld.app, bld.stlib ...
 
-$ waf configure xcode6
+# To generate your XCode project, open the folder with the wscript
+# in your terminal and run the following:
+# $ waf configure xcode6
 """
 
 # TODO: support iOS projects
