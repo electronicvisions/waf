@@ -38,9 +38,9 @@ class CompilerTraits(object):
 class GccTraits(CompilerTraits):
 	ccflags = {
 		'gerrit':             '-O0           -Wall -Wextra -pedantic'.split(),
-		'debug':              '-Og -ggdb -g3 -Wall -Wextra -pedantic'.split(),
+		'debug':              '-Og -ggdb -g3 -Wall -Wextra -pedantic -fno-omit-frame-pointer'.split(),
 		'release':            '-O2           -Wall -Wextra -pedantic'.split(),
-		'release_with_debug': '-O2 -g        -Wall -Wextra -pedantic'.split(),
+		'release_with_debug': '-O2 -g        -Wall -Wextra -pedantic -fno-omit-frame-pointer'.split(),
 	}
 
 	def __init__(self, version, linker=None):
