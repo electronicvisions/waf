@@ -15,6 +15,7 @@ import json
 import tempfile
 import re
 import shutil
+from distutils.version import LooseVersion
 
 import subprocess
 from ConfigParser import RawConfigParser
@@ -92,8 +93,10 @@ class Repo_DB(object):
         names = self.db.keys()
         return filter(lambda x: not x.startswith("_"), names)
 
+
 class BranchError(Exception):
     pass
+
 
 class Project(object):
     def __init__(self, name, path, branch = None):
@@ -104,6 +107,7 @@ class Project(object):
         self._branch = branch
         self._real_branch = None
         self._mr_registered = False
+        self._gerrit_changes = []
         self.required = False
 
     def __str__(self):
@@ -148,6 +152,15 @@ class Project(object):
             pass
 
     @property
+    def required_gerrit_changes(self):
+        return self._gerrit_changes
+
+    @required_gerrit_changes.setter
+    def required_gerrit_changes(self, changes):
+        # the option parser verifies the format
+        self._gerrit_changes = tuple(changes)
+
+    @property
     def path(self):
         """Absolute path of the repository"""
         return self._path
@@ -169,6 +182,12 @@ class Project(object):
         if ret != 0:
             raise BranchError(cmd + ":\n" + stdout + stderr)
         self._real_branch = None
+
+    def update_gerrit_changes(self, gerrit_url):
+        for cmd in self.gerrit_changes_cmds(gerrit_url):
+            ret, stdout, stderr = self.exec_cmd(cmd, shell=True)
+            if ret != 0:
+                raise BranchError(cmd + ":\n" + stdout + stderr)
 
     def path_from(self, start):
         assert os.path.isabs(start)
@@ -194,6 +213,9 @@ class Project(object):
     # TO IMPLEMENT
     def mr_checkout_cmd(self, *k, **kw):
         raise AttributeError
+    def mr_init_cmd(self, *k, **kw):
+        raise AttributeError
+
 
 class GitProject(Project):
     vcs = 'git'
@@ -208,6 +230,23 @@ class GitProject(Project):
     def reset_branch_cmd(self, branch = None):
         return ['git', 'checkout', '--force', branch if branch else self.required_branch]
 
+    def gerrit_changes_cmds(self, gerrit_url):
+        cmds = []
+        fetch_cmd = 'git fetch {BASE_URL}/{PROJECT} {REF}'
+        apply_cmd = 'git {} FETCH_HEAD'
+
+        # checkout to first changeset
+        git_cmd = 'checkout'
+        for changeset in self.required_gerrit_changes:
+            cref = changeset['currentPatchSet']['ref']
+            cmds.append(fetch_cmd.format(BASE_URL=gerrit_url.geturl(),
+                                         PROJECT=self.name, REF=cref))
+            cmds.append(apply_cmd.format(git_cmd))
+            # cherry-pick all following changesets
+            git_cmd = 'cherry-pick --allow-empty  --keep-redundant-commits'
+
+        return cmds
+
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
 
@@ -219,6 +258,20 @@ class GitProject(Project):
             branch=self.required_branch, depth=depth,
             url=url, target=os.path.basename(path))]
         return 'checkout=%s' % "; ".join(cmd)
+
+    def mr_init_cmd(self, init, gerrit_url=None):
+        cmds = list()
+        if init:
+            cmds.append(init)
+        if gerrit_url:
+            cmds += self.gerrit_changes_cmds(gerrit_url)
+        if not cmds:
+            # no post_checkout needed...
+            return ''
+        ret = ["post_checkout = cd {name}".format(
+            name=os.path.basename(self.name))]
+        ret += cmds
+        return " && ".join(ret)
 
 
 class MR(object):
@@ -234,12 +287,14 @@ class MR(object):
     SCRIPTS    = "scripts.d"
     LOG_COLOR  = "BLUE"
     LOG_WARN_COLOR  = "ORANGE"
+    GIT_MIN_VERSION = "1.7.11"
 
     project_types = {
             'git' : GitProject
     }
 
-    def __init__(self, ctx, db_url="git@example.com:db.git", db_type="git", top=None, cfg=None, clear_log=False):
+    def __init__(self, ctx, db_url="git@example.com:db.git", db_type="git",
+                 top=None, cfg=None, clear_log=False, gerrit_url=None):
         # Note: Don't store the ctx. It gets finalized before MR
         if not top:
             top = getattr(ctx, 'srcnode', None)
@@ -256,6 +311,8 @@ class MR(object):
         script_dir.mkdir()
         self.scripts = script_dir.abspath()
 
+        self.check_git_version(ctx)
+
         self.find_mr(ctx)
         self.projects = {}
         if clear_log:
@@ -264,6 +321,7 @@ class MR(object):
 
         Logs.debug('mr: commands are logged to "%s"' % self.log)
 
+        self.gerrit_url = gerrit_url
         self.setup_repo_db(ctx, cfg, top, db_url, db_type)
 
         self.init_mr()
@@ -283,6 +341,27 @@ class MR(object):
             ctx.fatal("Your symwaf2ic-waflib seems to be corrupted, could not find mr tool!")
         Logs.debug('mr: Using "%s" to manage repositories' % mr_tool.abspath())
         self.mr_path = mr_tool.parent.abspath()
+
+    def check_git_version(self, ctx):
+        """
+        Verify that the git version required for this class is available
+
+        note: We use LooseVersion for comparision, because some git versions
+              have 4 numbers
+        """
+        cmd_git_version = "git --version"
+        output = ctx.cmd_and_log(cmd_git_version.split(),
+            output=Context.STDOUT, quiet=Context.STDOUT)
+
+        match = re.search(r'\b[\d.]+\b', output)
+        if not match:
+            ctx.fatal("Could not parse git version in output of \"{}\":\n{}".format(
+                cmd_git_version, output))
+
+        version_string = match.group()
+        if not LooseVersion(version_string) >= LooseVersion(self.GIT_MIN_VERSION):
+            ctx.fatal("Minimum git version required is git {MIN} (> {CUR})".format(
+                MIN=self.GIT_MIN_VERSION, CUR=version_string))
 
     def setup_repo_db(self, ctx, cfg, top, db_url, db_type):
         # first install some mock object that servers to create the repo db repository
@@ -462,9 +541,62 @@ class MR(object):
         env["PATH"] = os.pathsep.join(path)
         return env # KHS: jihaa function was a noop (return statement was missing)
 
+    def resolve_gerrit_changes(self, ctx, gerrit_queries):
+        """
+        Perform queries on gerrit to find the all changesets.
+        Returns a dictionary containing the changesets sorted indexed by
+        project names and containing the ordered set of changesets (same order
+        as the queries).
+        """
+        assert self.gerrit_url.scheme == 'ssh'
+        ssh = "ssh {H}".format(H=self.gerrit_url.hostname)
+        if self.gerrit_url.port:
+            ssh += ' -p {P}'.format(P=self.gerrit_url.port)
+        query_options = '--current-patch-set --dependencies --format=json'
 
-    def checkout_project(self, ctx, project, parent_path, branch = None,
-                         update_branch = False):
+        seen = set()
+        # changesets are storted as per-project-list inside a dict
+        # => per-project order is preserved!
+        changesets = dict()
+        for gerrit_query in gerrit_queries:
+            cmd = "{S} gerrit query {Q} {OPT}".format(
+                S=ssh, Q=gerrit_query, OPT=query_options)
+            ret = ctx.cmd_and_log(cmd, shell=True, output=Context.STDOUT, quiet=Context.STDOUT)
+            Logs.debug('mr: {C}'.format(C=cmd))
+            Logs.debug('mr: {R}'.format(R=ret))
+            data = [json.loads(line) for line in ret.split('\n') if line]
+
+            # we get at least one answer row
+            if len(data) == 0:
+                ctx.fatal("Failure for query '{Q}': no response from server".format(
+                    Q=gerrit_query))
+
+            # the last line is the stats or error field
+            stats = data.pop()
+            if stats.get('type') == 'error' or 'rowCount' not in stats:
+                ctx.fatal("Failure for query '{Q}'. Query failed: {E}".format(
+                    Q=gerrit_query, E=stats))
+            if stats['rowCount'] == 0:
+                ctx.fatal("No results for query '{Q}'".format(Q=gerrit_query))
+
+            # additional consistency check (cannot happen in normal cases)
+            assert stats['rowCount'] == len(data)
+
+            self.mr_print("Resolved query \"{Q}\":".format(Q=gerrit_query))
+            for result in data:
+                if result['id'] in seen:
+                    continue
+                seen.add(result['id'])
+                changesets.setdefault(result['project'], []).append(result)
+                rev = result['currentPatchSet']['number']
+                msg = result['commitMessage'].splitlines()[0][:70]
+                self.mr_print("\tChangeset {project}:{number}/{rev} \"{msg}\"".format(
+                    rev=rev, msg=msg, **result))
+                self.mr_print("\t    {url}".format(**result))
+        return changesets
+
+    def checkout_project(self, ctx, project, parent_path, branch=None,
+                         update_branch=False, gerrit_changes=None):
         p = self._get_or_create_project(project)
         p.required = True
         try:
@@ -473,6 +605,7 @@ class MR(object):
             self.mr_print('Project "%s" is already required on branch "%s", but "%s" requires branch "%s"'\
                     % ( project, p.required_branch, parent_path, branch), 'YELLOW')
 
+        required_gerrit_changes = gerrit_changes.get(p.name, []) if gerrit_changes else []
 
         if p.mr_registered and os.path.isdir(p.path) and os.listdir(p.path):
             if update_branch and p.required_branch != p.real_branch:
@@ -484,8 +617,18 @@ class MR(object):
                     self.mr_print('')
                     ctx.fatal("In project {p}: {err}".format(p=p.name, err=e))
                 self.mr_print('done', 'GREEN')
+
+            if p.required_gerrit_changes != required_gerrit_changes:
+                p.required_gerrit_changes = required_gerrit_changes
+                try:
+                    p.update_gerrit_changes(self.gerrit_url)
+                except BranchError as e:
+                    self.mr_print('')
+                    ctx.fatal("In project {p}: {err}".format(p=p.name, err=e))
+
             return p.path_from(self.base)
         else:
+            p.required_gerrit_changes = required_gerrit_changes
             return self.mr_checkout_project(ctx, p)
 
     def mr_checkout_project(self, ctx, p):
@@ -512,6 +655,9 @@ class MR(object):
         args = ['config', p.name,
                 p.mr_checkout_cmd(self.base, self.db.get_url(p.name))
                ]
+        init_cmd = p.mr_init_cmd(self.db.get_init(p.name), self.gerrit_url)
+        if init_cmd:
+            args += [init_cmd]
         self.call_mr(ctx, *args)
 
         if do_checkout:
@@ -619,6 +765,7 @@ class MRContext(Configure.ConfigurationContext):
         ret += Utils.to_list(getattr(self, 'mr_cmd', self.cmd.replace('repos-','')))
         return ret
 
+
 class mr_run(MRContext):
     '''runs rargs in all repositories (./waf mr-run -- your command)'''
     cmd = 'mr-run'
@@ -631,6 +778,7 @@ class mr_run(MRContext):
         Options.rargs=[]
         self.mr_cmd = ' '.join(ret)
         return ret
+
 
 class mr_xrun(MRContext):
     '''create shell script from rargs and run this in every repository (./waf mr-xrun -- "line1" "line2" ...)'''
@@ -661,6 +809,7 @@ class mr_xrun(MRContext):
 
     def get_args(self):
         return ['run', self.getMrCmdFile()]
+
 
 class mr_origin_log(mr_xrun):
     """Get log messages from correspondant origin branch (does not fetch, ./waf repos-origin-log [-- <log-format-options>])"""
@@ -718,37 +867,45 @@ class mr_status(MRContext):
     # reduce verbosity (no empty lines)
     cmd_prefix_args = '--minimal'
 
+
 class mr_fetch(MRContext):
     '''updates origin in all repositories (git fetch --no-progress)'''
     cmd = 'repos-fetch'
     # KHS: --tags removed as this somehow disables fetch
     mr_cmd = 'run git fetch --no-progress'
 
+
 class mr_up(MRContext):
     '''update the repositories (using MR tool)'''
     cmd = 'repos-update'
+
 
 class mr_diff(MRContext):
     '''diff all repositories (using MR tool)'''
     cmd = 'repos-diff'
     cmd_prefix_args = '--minimal'
 
+
 class mr_commit(MRContext):
     '''commit all changes (using MR tool)'''
     cmd = 'repos-commit'
+
 
 class mr_push(MRContext):
     '''push all changes (using MR tool)'''
     cmd = 'repos-push'
 
+
 class mr_log(MRContext):
     '''call log for all repositories (using MR tool)'''
     cmd = 'repos-log'
+
 
 class mr_lstag(MRContext):
     '''lists all tags of all repos'''
     cmd = 'repos-lstag'
     mr_cmd = 'run git tag --list'
+
 
 def options(opt):
     gr = opt.add_option_group("show_repos")
@@ -772,6 +929,7 @@ def options(opt):
         type=int, help="To clone the full history use -1 [default is full history]",
         default=-1
     )
+
 
 class show_repos_context(Context.Context):
     __doc__ = '''lists all available repositories'''
@@ -875,7 +1033,6 @@ class show_repos_context(Context.Context):
         print header
         for d in data:
             print line.format(**d)
-
 
 
 def which(program):

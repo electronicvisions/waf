@@ -10,7 +10,9 @@ import argparse
 import shutil
 
 import json
+import re
 from collections import defaultdict, deque
+from urlparse import urlparse
 
 from waflib import Build, Context, Errors, Logs, Utils, Options
 from waflib.extras import mr
@@ -127,6 +129,30 @@ class Project(object):
 def options(opt):
     is_symwaf2ic = isinstance(opt, OptionParserContext)
 
+    def parse_gerrit_changes(arg):
+        ret = []
+        # we convert integers and things that look like a changeset id to
+        # explicit "change" queries
+        for item in arg.split(','):
+            check = re.compile(r'|'.join([
+                r'^\d+$',       # numerical changeset number
+                r'^I[0-9a-f]+$' # changeset id
+            ]))
+            if check.match(item):
+                ret.append('change:{}'.format(item))
+            else:
+                ret.append(item)
+        return ret
+
+    def parse_gerrit_url(arg):
+        from urlparse import urlparse
+        url = urlparse(arg)
+        if url.scheme != 'ssh' or url.netloc == '':
+            raise argparse.ArgumentTypeError(
+                "Please enter a valid ssh URL")
+        return url
+
+
     gr = opt.add_option_group("Symwaf2ic options")
     gr.add_option(
             "--project", dest="projects", action="append", default=[],
@@ -152,7 +178,23 @@ def options(opt):
             default=False, type='choice', choices="soft force".split(), # false is not a choice, its the default and bool('false') is true
             help="Activate branch tracking (e.g., when updating repositories). If specified set to soft or force (the latter deletes local changes)."
     )
-
+    gr.add_option(
+            "--gerrit-changes", default=[], action="store",
+            type=parse_gerrit_changes if is_symwaf2ic else str,
+            help="Comma-seperated list of gerrit query ids. Possible values "
+                 "are changeset numbers, changeset ids or complex queries like "
+                 "--gerrit-changes='topic:hicann_version status:open,change:925,926'. "
+                 "Plain numbers are interpreted are automatically prefixed with 'change:'. "
+                 "The resuling changesets are applied to the sources. If "
+                 "multiple changeset are found for one repo, the repo is "
+                 "resetted to the first and all others will be cherrypicked.\n"
+                 "To remove gerrit changsets --update-branches can be used.")
+    gr.add_option(
+            "--gerrit-url", action="store",
+            type=parse_gerrit_url if is_symwaf2ic else str,
+            default=parse_gerrit_url(
+                "ssh://brainscales-r.kip.uni-heidelberg.de:29418"),
+            help="URL for gerrit")
     gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
             help="URL for the repository containing the database with information about all other repositories.",
@@ -245,6 +287,7 @@ class MainContext(Symwaf2icContext):
 
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
+        self.gerrit_url = cmdopts.gerrit_url
 
     def init_toplevel(self):
         Logs.debug("symwaf2ic: Setting up symwaf2ic toplevel.")
@@ -284,7 +327,9 @@ class MainContext(Symwaf2icContext):
         Logs.debug("symwaf2ic: Setup repo tool (mr)")
         repoconf = storage.config_node.make_node( "mr_conf" )
         repoconf.mkdir()
-        storage.repo_tool = mr.MR(self, self.repo_db_url, self.repo_db_type, top=self.toplevel, cfg=repoconf, clear_log=True)
+        storage.repo_tool = mr.MR(
+            self, self.repo_db_url, self.repo_db_type, top=self.toplevel,
+            cfg=repoconf, clear_log=True, gerrit_url=self.gerrit_url)
 
 
 class OptionParserContext(Symwaf2icContext):
@@ -466,7 +511,11 @@ class DependencyContext(Symwaf2icContext):
         super(DependencyContext, self).__init__(*k, **kw)
         self.options_parser = OptionParserContext(parsername="DependencyParser")
         self.update_branches = SETUP_CMD in sys.argv and storage.setup_options["update_branches"]
-        self.write_dot_file  = storage.current_options["write_dot_file"]
+        self.gerrit_changes = {}
+        if SETUP_CMD in sys.argv:
+            self.gerrit_changes = storage.repo_tool.resolve_gerrit_changes(
+                self, storage.setup_options["gerrit_changes"])
+        self.write_dot_file = storage.current_options["write_dot_file"]
         # Dependency graph
         self.dependencies = defaultdict(list)
         # Queue for breadth-first search
@@ -485,7 +534,8 @@ class DependencyContext(Symwaf2icContext):
                     script=required_from,
                 ))
         path = storage.repo_tool.checkout_project(
-            self, project, required_from, branch, self.update_branches)
+            self, project, required_from, branch, self.update_branches,
+            gerrit_changes=self.gerrit_changes)
 
         if len(subfolder) > 0:
             path = os.path.join(path, subfolder)
@@ -502,6 +552,7 @@ class DependencyContext(Symwaf2icContext):
 
         info = [str(p) for p in get_projects()]
         Logs.debug("dependency: Required from toplevel: {0}".format( ", ".join(info)))
+        Logs.debug("dependency: Required gerrit changes: {0}".format(self.gerrit_changes))
 
         # Color map for topological sort
         self.visited = defaultdict(lambda: self.NOT_VISITED)
