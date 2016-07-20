@@ -120,7 +120,8 @@ def process_py(self, node):
 		tsk.pyd = pyd
 
 		if self.install_path:
-			self.bld.install_files(os.path.dirname(pyd), pyobj, cwd=node.parent.get_bld(), relative_trick=True)
+			# `cwd=node.parent.get_bld()` changed to `cwd=pyobj.parent` (see issue #2067)
+			self.bld.install_files(os.path.dirname(pyd), pyobj, cwd=pyobj.parent, relative_trick=True)
 
 class pyc(Task.Task):
 	"""
