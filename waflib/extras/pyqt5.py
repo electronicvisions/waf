@@ -29,9 +29,9 @@ Usage
 Load the "pyqt5" tool.
 
 Add into the sources list also the qrc resources files or ui5 
-definition files as your sources and they will be translated 
-into python code with the system tools (PyQt5 or pyside2 are 
-searched in this order) and then compiled
+definition files and they will be translated into python code 
+with the system tools (PyQt5 or pyside2 are searched in this 
+order) and then compiled
 """
 
 try:
