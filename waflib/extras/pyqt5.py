@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2016 (ita) original C++ QT5 implementation
 # Federico Pellegrin, 2016 (fedepell) adapted for Python
 
 """
@@ -29,10 +28,10 @@ Usage
 
 Load the "pyqt5" tool.
 
-Reference the qrc resources files or ui5 definition files as
-your sources and they will be translated into python code with
-the system tools (PyQt5 or pyside2 are searched in this order)
-and then compiled
+Add into the sources list also the qrc resources files or ui5 
+definition files as your sources and they will be translated 
+into python code with the system tools (PyQt5 or pyside2 are 
+searched in this order) and then compiled
 """
 
 try:
@@ -47,7 +46,7 @@ else:
 import os, sys
 from waflib.Tools import python
 from waflib import Task, Utils, Options, Errors, Context
-from waflib.TaskGen import feature, after_method, extension, before_method
+from waflib.TaskGen import feature, extension
 from waflib.Configure import conf
 from waflib import Logs
 
@@ -81,16 +80,16 @@ class XMLHandler(ContentHandler):
 @extension(*EXT_RCC)
 def create_pyrcc_task(self, node):
 	"Creates rcc and py task for ``.qrc`` files"
-        rcnode = node.change_ext('.py')
-        self.create_task('pyrcc', node, rcnode)
-        self.process_py(rcnode)
+	rcnode = node.change_ext('.py')
+	self.create_task('pyrcc', node, rcnode)
+	self.process_py(rcnode)
 
 @extension(*EXT_UI)
 def create_pyuic_task(self, node):
 	"Create uic tasks and py for user interface ``.ui`` definition files"
-        uinode = node.change_ext('.py')
-        self.create_task('ui5py', node, uinode)
-        self.process_py(uinode)
+	uinode = node.change_ext('.py')
+	self.create_task('ui5py', node, uinode)
+	self.process_py(uinode)
 
 @extension('.ts')
 def add_pylang(self, node):
@@ -98,7 +97,6 @@ def add_pylang(self, node):
 	self.lang = self.to_list(getattr(self, 'lang', [])) + [node]
 
 @feature('pyqt5')
-@after_method('apply_link')
 def apply_pyqt5(self):
 	"""
 	The additional parameters are:
@@ -133,7 +131,6 @@ class pyrcc(Task.Task):
 	run_str = '${QT_PYRCC} ${SRC} -o ${TGT}'
 	ext_out = ['.py']
 
-        
 	def rcname(self):
 		return os.path.splitext(self.inputs[0].name)[0]
 
@@ -197,8 +194,8 @@ def configure(self):
 	The detection uses the program ``pkg-config`` through :py:func:`waflib.Tools.config_c.check_cfg`
 	"""
 
-        self.find_pyqt5_binaries()
-        
+	self.find_pyqt5_binaries()
+
 	# warn about this during the configuration too
 	if not has_xml:
 		Logs.error('No xml.sax support was found, rcc dependencies will be incomplete!')
@@ -211,70 +208,15 @@ def find_pyqt5_binaries(self):
 	Detects Qt programs such as qmake, moc, uic, lrelease
 	"""
 	env = self.env
-	opt = Options.options
 
-	qtdir = getattr(opt, 'qtdir', '')
-	qtbin = getattr(opt, 'qtbin', '')
-
-	paths = []
-
-	if qtdir:
-		qtbin = os.path.join(qtdir, 'bin')
-
-	# the qt directory has been given from QT5_ROOT - deduce the qt binary path
-	if not qtdir:
-		qtdir = self.environ.get('QT5_ROOT', '')
-		qtbin = self.environ.get('QT5_BIN') or os.path.join(qtdir, 'bin')
-
-	if qtbin:
-		paths = [qtbin]
-
-	# no qtdir, look in the path and in /usr/local/Trolltech
-	if not qtdir:
-		paths = self.environ.get('PATH', '').split(os.pathsep)
-		paths.extend(['/usr/share/qt5/bin', '/usr/local/lib/qt5/bin'])
-		try:
-			lst = Utils.listdir('/usr/local/Trolltech/')
-		except OSError:
-			pass
-		else:
-			if lst:
-				lst.sort()
-				lst.reverse()
-
-				# keep the highest version
-				qtdir = '/usr/local/Trolltech/%s/' % lst[0]
-				qtbin = os.path.join(qtdir, 'bin')
-				paths.append(qtbin)
-
-
-	def find_bin(lst, var):
-		if var in env:
-			return
-		for f in lst:
-			try:
-				ret = self.find_program(f, path_list=paths)
-			except self.errors.ConfigurationError:
-				pass
-			else:
-				env[var]=ret
-				break
-
-	find_bin(['pyuic5','pyside2-uic'], 'QT_PYUIC')
+	self.find_program(['pyuic5','pyside2-uic'], var='QT_PYUIC')
 	if not env.QT_PYUIC:
 		self.fatal('cannot find the uic compiler for python for qt5')
 
-	find_bin(['pyrcc5','pyside2-rcc'], 'QT_PYRCC')
+	self.find_program(['pyrcc5','pyside2-rcc'], var='QT_PYRCC')
 	if not env.QT_PYUIC:
 		self.fatal('cannot find the rcc compiler for python for qt5')
 
-        find_bin(['pylupdate5', 'pyside2-lupdate'], 'QT_PYLUPDATE')
-        find_bin(['lrelease-qt5', 'lrelease'], 'QT_LRELEASE')
-        
-                
-def options(opt):
-	"""
-	Command-line options
-	"""
-        pass
+	self.find_program(['pylupdate5', 'pyside2-lupdate'], var='QT_PYLUPDATE')
+	self.find_program(['lrelease-qt5', 'lrelease'], var='QT_LRELEASE')
 
