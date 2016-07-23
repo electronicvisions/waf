@@ -162,7 +162,6 @@ A return statement may also be added; please consult the contents of https://git
 
 The files included in the waf file (https://github.com/waf-project/waf/blob/master/waf-light#L167[waf-light] and all the files under https://github.com/waf-project/waf/tree/master/waflib[waflib]) are published under a BSD license which is reproduced below:
 
-[source,txt]
 ---------------
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
