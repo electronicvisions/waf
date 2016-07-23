@@ -187,13 +187,6 @@ class qm2rcc(Task.Task):
 		self.outputs[0].write(code)
 
 def configure(self):
-	"""
-	Besides the configuration options, the environment variable QT5_ROOT may be used
-	to give the location of the qt5 libraries (absolute path).
-
-	The detection uses the program ``pkg-config`` through :py:func:`waflib.Tools.config_c.check_cfg`
-	"""
-
 	self.find_pyqt5_binaries()
 
 	# warn about this during the configuration too
@@ -205,7 +198,7 @@ def configure(self):
 @conf
 def find_pyqt5_binaries(self):
 	"""
-	Detects Qt programs such as qmake, moc, uic, lrelease
+	Detects PyQt5 or pyside2 programs such as pyuic5/pyside2-uic, pyrcc5/pyside2-rcc
 	"""
 	env = self.env
 
