@@ -450,7 +450,7 @@ $ waf configure --foo=test
 The command context for options is a shortcut to access the optparse functionality. For more information on the optparse module, consult the http://docs.python.org/library/optparse.html[Python documentation]
 
 
-=== The _build_ commands
+=== Build-related commands
 
 ==== Building targets (the _build_ command)
 
