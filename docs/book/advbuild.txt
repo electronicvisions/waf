@@ -207,7 +207,7 @@ just a test
 
 === Custom build outputs
 
-==== Multiple configurations
+==== Multiple configuration folders
 
 The _WAFLOCK_ environment variable is used to control the configuration lock and to point at the default build directory. Observe the results on the following project:
 
@@ -271,7 +271,7 @@ $ tree -a
 <3> The configuration _release_ is used with a different lock file and a different build directory.
 <4> The contents of the project directory contain the two lock files and the two build folders.
 
-The lock file may also be changed from the code by changing the appropriate variable in the waf scripts:
+The lock file name may also be changed from the code by changing the appropriate variable in the waf file:
 
 [source,python]
 ---------------
@@ -279,7 +279,7 @@ from waflib import Options
 Options.lockfile = '.lock-wafname'
 ---------------
 
-NOTE: The output directory pointed at by the waf lock file only has effect when not given in the waf script
+NOTE: The output directory pointed at by the waf lock file only has effect when not given in the waf file
 
 ==== Changing the output directory
 

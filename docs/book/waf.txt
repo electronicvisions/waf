@@ -28,24 +28,24 @@ As software is getting increasingly complex and feature-rich, so is the process 
 
 While compilers sometimes attempt to do provide full build automation, they are usually limited to very specific features. For example, the Java compiler (javac) can build a whole source code tree at once, but another compiler is necessary to produce archive files (jar). Text editors and Integrated Development Environments (IDE such as Xcode or Eclipse) can provide build automation features, but their user interfaces are best at editing software, not at running builds. Version control systems such as Git are best-suited for managing end-user files, but are typically unfit for calling compilers and running scripts. And though orchestration solutions (Jenkins, Teamcity) are sometimes understood as build systems, they are usually unable to build the software themselves: they require build scripts and build software that is executed on their build agents (Maven, Make, etc).
 
-We thus argue that building software is a unique activity in software development that requires a unique set of tools. The term "build system" is typically used to denote such software, and we believe two definitions should be separated:
+We thus argue that building software is a unique activity in software development that requires a unique set of tools. The term "build system" is typically used to denote such software, and we believe two definitions should be distinguished:
 
-1. It is a piece of software that helps automating processes in a software project, and that it aimed in particular at processing source code
-2. It is the overall tool set required to process a work on a particular software project: compilers, build scripts, orchestration software, version control system, etc.
+A. It is a piece of software that helps automating processes in a software project, and that it aimed in particular at processing source code
+B. It is the overall tool set required to process a work on a particular software project: compilers, build scripts, orchestration software, version control system, etc.
 
-Waf fits in the first definition which we use in the rest of this document.
+Waf matches the first definition which is used in the rest of this document.
 
 === The Waf framework
 
-Build systems are usually bound to the specific frameworks that they belong to. For example, Visual Studio users will often use MSBuild and Angular.js users will probably use Npm. Such solutions are usually focusing on very specific features and are typically limited where it comes to processing other languages or different projects. For example, Ant is better suited than Make for managing Java projects, but is more limited than Make for managing simple c projects. Since programming languages and solutions evolve constantly, creating the ideal build system for everything is not really possible, so there are trade-offs between framework specialization and genericity.
+Build systems are usually bound to the specific frameworks that they belong to. For example, Visual Studio projects will often require MSBuild and Angular.js projects typically require Npm. Such solutions are usually focused on very specific features and are usually limited where it comes to processing other languages or different projects. For example, Ant is better suited than Make for managing Java projects, but is less convenient than Make for building simple c projects. Since programming languages and solutions evolve constantly, creating the ideal build system for everything is not really possible, so there are trade-offs between framework specialization and genericity.
 
 There is yet a common subset of problems that build systems aim to address:
 
-. Run compilers and scripts as distinct processes
-. Run processes only when necessary by recording "what has changed"
-. Run processes in parallel for efficiency reasons
-. Facilitate the execution of software tests such as configuration tests
-. Provide support for typical compilers and tools configurations
+- Run compilers and scripts as distinct processes
+- Run processes only when necessary by recording "what has changed"
+- Run processes in parallel for efficiency reasons
+- Facilitate the execution of software tests such as configuration tests
+- Provide support for typical compilers and tools configurations
 
 Waf fulfills the features above out-of-the-box, and provides a framework to extend its functionality when necessary.
 The main differences compared to other frameworks lie it its design:

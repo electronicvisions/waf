@@ -1,6 +1,6 @@
 == Projects and commands
 
-=== Waf commands
+=== Waf commands and usage
 
 As the Waf file is meant to be a generic utility for building projects, project-specific details are best kept and versioned in files residing along with the project source code. These files are modules written in the Python programming language and are named *wscript*. Although they can contain any Python code, Waf can use specific functions and classes defined in them. The next sections will explore a particularly useful concept called *function commands*.
 
@@ -28,14 +28,11 @@ They take a single context parameter as input and do not have to return any part
 #! /usr/bin/env python
 # encoding: utf-8
 
-def <1> hello(ctx <2>):
+def hello(ctx):
     print('hello world')
 ---------------
 
-<1> The _waf command_ *hello*
-<2> A waf context, used to share data among scripts
-
-Calling the command instructs +waf+ to call function:
+Calling the command instructs +waf+ to call function the function *hello*:
 
 [source,shishell]
 ---------------
@@ -44,7 +41,9 @@ hello world
 'hello' finished successfully (0.001s)
 ---------------
 
-==== Waf command chaining
+The context object object enables data sharing across scripts, its usage will be described in sections further down.
+
+==== Waf commands may be chained
 
 As previously mentioned, commands are executed in the order defined on the command-line. A wscript file may thus provide an arbitrary amound of commands in the same _wscript_ file:
 
@@ -73,9 +72,11 @@ $ waf ping pong ping ping
 'ping' finished successfully (0.001s)
 ---------------
 
+When an error occurs, the execution is interrupted and no further commands are called.
+
 NOTE: Command functions are passed a new context object when they are called; the class for that object is command-specific: ConfigureContext for configure, BuildContext for build, OptionContext for option, and Context for any other command.
 
-==== Using several scripts and folders
+==== Basic project structure
 
 Although a Waf project must contain a top-level _wscript_ file, the contents may be split into several sub-project files. We will now illustrate this concept on a small project:
 
@@ -123,9 +124,11 @@ $ waf ping
 'ping' finished successfully (0.001s)
 ---------------
 
-NOTE: The method _recurse_, and the attribute _path_ are available on all waf context classes
+NOTE: The method _recurse_, and the attribute _path_ are available on all waf context classes so that all waf commands may use them.
 
-=== Waf project definition
+=== Fundamental Waf commands
+
+The following sections provide details on major Waf commands which are often used or re-implemented in project files.
 
 ==== Configuring a project (the _configure_ command)
 
