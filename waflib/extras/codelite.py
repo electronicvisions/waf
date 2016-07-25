@@ -303,7 +303,7 @@ def rm_blank_lines(txt):
 BOM = '\xef\xbb\xbf'
 try:
         BOM = bytes(BOM, 'iso8859-1') # python 3
-except NameError:
+except (TypeError, NameError):
         pass
 
 def stealth_write(self, data, flags='wb'):
