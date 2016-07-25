@@ -16,6 +16,7 @@ import tempfile
 import re
 import shutil
 from distutils.version import LooseVersion
+import urlparse
 
 import subprocess
 from ConfigParser import RawConfigParser
@@ -321,7 +322,13 @@ class MR(object):
 
         Logs.debug('mr: commands are logged to "%s"' % self.log)
 
-        self.gerrit_url = gerrit_url
+        if isinstance(gerrit_url, basestring):
+            self.gerrit_url = urlparse.urlparse(gerrit_url)
+        elif isinstance(gerrit_url, urlparse.ParseResult):
+            self.gerrit_url = gerrit_url
+        else:
+            ctx.fatal("Unsupported type for gerrit_url: \"{}\"".format(type(gerrit_url)))
+
         self.setup_repo_db(ctx, cfg, top, db_url, db_type)
 
         self.init_mr()

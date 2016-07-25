@@ -144,13 +144,12 @@ def options(opt):
                 ret.append(item)
         return ret
 
-    def parse_gerrit_url(arg):
-        from urlparse import urlparse
+    def validate_gerrit_url(arg):
         url = urlparse(arg)
         if url.scheme != 'ssh' or url.netloc == '':
             raise argparse.ArgumentTypeError(
                 "Please enter a valid ssh URL")
-        return url
+        return arg
 
 
     gr = opt.add_option_group("Symwaf2ic options")
@@ -191,8 +190,8 @@ def options(opt):
                  "To remove gerrit changsets --update-branches can be used.")
     gr.add_option(
             "--gerrit-url", action="store",
-            type=parse_gerrit_url if is_symwaf2ic else str,
-            default=parse_gerrit_url(
+            type=validate_gerrit_url if is_symwaf2ic else str,
+            default=validate_gerrit_url(
                 "ssh://brainscales-r.kip.uni-heidelberg.de:29418"),
             help="URL for gerrit")
     gr.add_option(
@@ -512,9 +511,9 @@ class DependencyContext(Symwaf2icContext):
         self.options_parser = OptionParserContext(parsername="DependencyParser")
         self.update_branches = SETUP_CMD in sys.argv and storage.setup_options["update_branches"]
         self.gerrit_changes = {}
-        if SETUP_CMD in sys.argv:
-            self.gerrit_changes = storage.repo_tool.resolve_gerrit_changes(
-                self, storage.setup_options["gerrit_changes"])
+        if (SETUP_CMD in sys.argv) and storage.setup_options["gerrit_changes"]:
+                self.gerrit_changes = storage.repo_tool.resolve_gerrit_changes(
+                    self, storage.setup_options["gerrit_changes"])
         self.write_dot_file = storage.current_options["write_dot_file"]
         # Dependency graph
         self.dependencies = defaultdict(list)
