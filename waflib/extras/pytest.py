@@ -10,8 +10,7 @@ The "use" dependencies are used for both update calculation and to populate
 ``sys.path`` via the ``PYTHONPATH`` environment variable.
 
 1. Load **pytest** and the dependency ``waf_unit_test`` in configure.
-2. Create a task generator with feature **pytest** and customize behaviour
-with the following attributes:
+2. Create a task generator with feature **pytest** and customize behaviour with the following attributes:
 
    * ``pytest_source``: Test input files.
    * ``ut_str``: Test runner command, e.g. ``${PYTHON} -B -m unittest discover`` or
