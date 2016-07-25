@@ -2,6 +2,8 @@ NEW IN WAF 1.9.2
 ----------------
 * Python 3 fix for waf dist encoding message #1769
 * Force qt5 static library detection with 'QT5_XCOMPILE=1 QT5_FORCE_STATIC=1 waf configure' #1588
+* Remove the non-BSD code from the Waf archive file
+* Update a few extensions: xcode, pytest, msvcdeps, cppcheck, win32_opts, codelite
 
 NEW IN WAF 1.9.1
 ----------------
