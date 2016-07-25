@@ -18,7 +18,7 @@ except AttributeError:
 	TP = '%s\\*'
 
 if Utils.is_win32:
-	from waflib.extras import md5_tstamp
+	from waflib.Tools import md5_tstamp
 	import ctypes, ctypes.wintypes
 
 	FindFirstFile        = ctypes.windll.kernel32.FindFirstFileW
