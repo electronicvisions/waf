@@ -14,6 +14,8 @@ this tool as compared to c_preproc.
 
 The technique of gutting scan() and pushing the dependency calculation
 down to post_run() is cribbed from gccdeps.py.
+
+This affects the cxx class, so make sure to load Qt5 after this tool.
 '''
 
 import os
@@ -68,181 +70,179 @@ def path_to_node(base_node, path, cached_nodes):
 		lock.release()
 	return node
 
-'''
-Register a task subclass that has hooks for running our custom
-dependency calculations rather than the C/C++ stock c_preproc
-method.
-'''
-def wrap_compiled_task(classname):
-	derived_class = type(classname, (Task.classes[classname],), {})
+def post_run(self):
+	print(id(self), "msvcdeps post run")
+	if self.env.CC_NAME not in supported_compilers:
+		return super(self.derived_msvcdeps, self).post_run()
 
-	def post_run(self):
-		if self.env.CC_NAME not in supported_compilers:
-			return super(derived_class, self).post_run()
+	if getattr(self, 'cached', None):
+		return Task.Task.post_run(self)
 
-		if getattr(self, 'cached', None):
-			return Task.Task.post_run(self)
+	bld = self.generator.bld
+	unresolved_names = []
+	resolved_nodes = []
 
-		bld = self.generator.bld
-		unresolved_names = []
-		resolved_nodes = []
+	lowercase = self.generator.msvcdeps_drive_lowercase
+	correct_case_path = bld.path.abspath()
+	correct_case_path_len = len(correct_case_path)
+	correct_case_path_norm = os.path.normcase(correct_case_path)
 
-		lowercase = self.generator.msvcdeps_drive_lowercase
-		correct_case_path = bld.path.abspath()
-		correct_case_path_len = len(correct_case_path)
-		correct_case_path_norm = os.path.normcase(correct_case_path)
+	# Dynamically bind to the cache
+	try:
+		cached_nodes = bld.cached_nodes
+	except AttributeError:
+		cached_nodes = bld.cached_nodes = {}
 
-		# Dynamically bind to the cache
-		try:
-			cached_nodes = bld.cached_nodes
-		except AttributeError:
-			cached_nodes = bld.cached_nodes = {}
+	for path in self.msvcdeps_paths:
+		node = None
+		if os.path.isabs(path):
+			# Force drive letter to match conventions of main source tree
+			drive, tail = os.path.splitdrive(path)
 
-		for path in self.msvcdeps_paths:
-			node = None
-			if os.path.isabs(path):
-				# Force drive letter to match conventions of main source tree
-				drive, tail = os.path.splitdrive(path)
-
-				if os.path.normcase(path[:correct_case_path_len]) == correct_case_path_norm:
-					# Path is in the sandbox, force it to be correct.  MSVC sometimes returns a lowercase path.
-					path = correct_case_path + path[correct_case_path_len:]
-				else:
-					# Check the drive letter
-					if lowercase and (drive != drive.lower()):
-						path = drive.lower() + tail
-					elif (not lowercase) and (drive != drive.upper()):
-						path = drive.upper() + tail
-				node = path_to_node(bld.root, path, cached_nodes)
+			if os.path.normcase(path[:correct_case_path_len]) == correct_case_path_norm:
+				# Path is in the sandbox, force it to be correct.  MSVC sometimes returns a lowercase path.
+				path = correct_case_path + path[correct_case_path_len:]
 			else:
-				base_node = bld.bldnode
-				# when calling find_resource, make sure the path does not begin by '..'
-				path = [k for k in Utils.split_path(path) if k and k != '.']
-				while path[0] == '..':
-					path = path[1:]
-					base_node = base_node.parent
+				# Check the drive letter
+				if lowercase and (drive != drive.lower()):
+					path = drive.lower() + tail
+				elif (not lowercase) and (drive != drive.upper()):
+					path = drive.upper() + tail
+			node = path_to_node(bld.root, path, cached_nodes)
+		else:
+			base_node = bld.bldnode
+			# when calling find_resource, make sure the path does not begin by '..'
+			path = [k for k in Utils.split_path(path) if k and k != '.']
+			while path[0] == '..':
+				path = path[1:]
+				base_node = base_node.parent
 
-				node = path_to_node(base_node, path, cached_nodes)
+			node = path_to_node(base_node, path, cached_nodes)
 
-			if not node:
-				raise ValueError('could not find %r for %r' % (path, self))
-			else:
-				if not c_preproc.go_absolute:
-					if not (node.is_child_of(bld.srcnode) or node.is_child_of(bld.bldnode)):
-						# System library
-						Logs.debug('msvcdeps: Ignoring system include %r', node)
-						continue
-
-				if id(node) == id(self.inputs[0]):
-					# Self-dependency
+		if not node:
+			raise ValueError('could not find %r for %r' % (path, self))
+		else:
+			if not c_preproc.go_absolute:
+				if not (node.is_child_of(bld.srcnode) or node.is_child_of(bld.bldnode)):
+					# System library
+					Logs.debug('msvcdeps: Ignoring system include %r', node)
 					continue
 
-				resolved_nodes.append(node)
+			if id(node) == id(self.inputs[0]):
+				# Self-dependency
+				continue
 
-		bld.node_deps[self.uid()] = resolved_nodes
-		bld.raw_deps[self.uid()] = unresolved_names
+			resolved_nodes.append(node)
+
+	bld.node_deps[self.uid()] = resolved_nodes
+	bld.raw_deps[self.uid()] = unresolved_names
+
+	try:
+		del self.cache_sig
+	except AttributeError:
+		pass
+
+	Task.Task.post_run(self)
+
+def scan(self):
+	if self.env.CC_NAME not in supported_compilers:
+		return super(self.derived_msvcdeps, self).scan()
+
+	resolved_nodes = self.generator.bld.node_deps.get(self.uid(), [])
+	unresolved_names = []
+	return (resolved_nodes, unresolved_names)
+
+def sig_implicit_deps(self):
+	if self.env.CC_NAME not in supported_compilers:
+		return super(self.derived_msvcdeps, self).sig_implicit_deps()
+
+	try:
+		return Task.Task.sig_implicit_deps(self)
+	except Errors.WafError:
+		return Utils.SIG_NIL
+
+def exec_command(self, cmd, **kw):
+	if self.env.CC_NAME not in supported_compilers:
+		return super(self.derived_msvcdeps, self).exec_command(cmd, **kw)
+
+	if not 'cwd' in kw:
+		kw['cwd'] = self.get_cwd()
+
+	if self.env.PATH:
+		env = kw['env'] = dict(kw.get('env') or self.env.env or os.environ)
+		env['PATH'] = self.env.PATH if isinstance(self.env.PATH, str) else os.pathsep.join(self.env.PATH)
+
+	# The Visual Studio IDE adds an environment variable that causes
+	# the MS compiler to send its textual output directly to the
+	# debugging window rather than normal stdout/stderr.
+	#
+	# This is unrecoverably bad for this tool because it will cause
+	# all the dependency scanning to see an empty stdout stream and
+	# assume that the file being compiled uses no headers.
+	#
+	# See http://blogs.msdn.com/b/freik/archive/2006/04/05/569025.aspx
+	#
+	# Attempting to repair the situation by deleting the offending
+	# envvar at this point in tool execution will not be good enough--
+	# its presence poisons the 'waf configure' step earlier. We just
+	# want to put a sanity check here in order to help developers
+	# quickly diagnose the issue if an otherwise-good Waf tree
+	# is then executed inside the MSVS IDE.
+	assert 'VS_UNICODE_OUTPUT' not in kw['env']
+
+	cmd, args = self.split_argfile(cmd)
+	try:
+		(fd, tmp) = tempfile.mkstemp()
+		os.write(fd, '\r\n'.join(args).encode())
+		os.close(fd)
+
+		self.msvcdeps_paths = []
+		kw['env'] = kw.get('env', os.environ.copy())
+		kw['cwd'] = kw.get('cwd', os.getcwd())
+		kw['quiet'] = Context.STDOUT
+		kw['output'] = Context.STDOUT
+
+		out = []
 
 		try:
-			del self.cache_sig
-		except AttributeError:
+			raw_out = self.generator.bld.cmd_and_log(cmd + ['@' + tmp], **kw)
+			ret = 0
+		except Errors.WafError as e:
+			raw_out = e.stdout
+			ret = e.returncode
+
+		for line in raw_out.splitlines():
+			if line.startswith(INCLUDE_PATTERN):
+				inc_path = line[len(INCLUDE_PATTERN):].strip()
+				Logs.debug('msvcdeps: Regex matched %s', inc_path)
+				self.msvcdeps_paths.append(inc_path)
+			else:
+				out.append(line)
+
+		# Pipe through the remaining stdout content (not related to /showIncludes)
+		if self.generator.bld.logger:
+			self.generator.bld.logger.debug('out: %s' % os.linesep.join(out))
+		else:
+			sys.stdout.write(os.linesep.join(out) + os.linesep)
+
+		return ret
+	finally:
+		try:
+			os.remove(tmp)
+		except OSError:
+			# anti-virus and indexers can keep files open -_-
 			pass
 
-		Task.Task.post_run(self)
 
-	def scan(self):
-		if self.env.CC_NAME not in supported_compilers:
-			return super(derived_class, self).scan()
-
-		resolved_nodes = self.generator.bld.node_deps.get(self.uid(), [])
-		unresolved_names = []
-		return (resolved_nodes, unresolved_names)
-
-	def sig_implicit_deps(self):
-		if self.env.CC_NAME not in supported_compilers:
-			return super(derived_class, self).sig_implicit_deps()
-
-		try:
-			return Task.Task.sig_implicit_deps(self)
-		except Errors.WafError:
-			return Utils.SIG_NIL
-
-	def exec_command(self, cmd, **kw):
-		if self.env.CC_NAME not in supported_compilers:
-			return super(derived_class, self).exec_command(cmd, **kw)
-
-		if not 'cwd' in kw:
-			kw['cwd'] = self.get_cwd()
-
-		if self.env.PATH:
-			env = kw['env'] = dict(kw.get('env') or self.env.env or os.environ)
-			env['PATH'] = self.env.PATH if isinstance(self.env.PATH, str) else os.pathsep.join(self.env.PATH)
-
-		# The Visual Studio IDE adds an environment variable that causes
-		# the MS compiler to send its textual output directly to the
-		# debugging window rather than normal stdout/stderr.
-		#
-		# This is unrecoverably bad for this tool because it will cause
-		# all the dependency scanning to see an empty stdout stream and
-		# assume that the file being compiled uses no headers.
-		#
-		# See http://blogs.msdn.com/b/freik/archive/2006/04/05/569025.aspx
-		#
-		# Attempting to repair the situation by deleting the offending
-		# envvar at this point in tool execution will not be good enough--
-		# its presence poisons the 'waf configure' step earlier. We just
-		# want to put a sanity check here in order to help developers
-		# quickly diagnose the issue if an otherwise-good Waf tree
-		# is then executed inside the MSVS IDE.
-		assert 'VS_UNICODE_OUTPUT' not in kw['env']
-
-		cmd, args = self.split_argfile(cmd)
-		try:
-			(fd, tmp) = tempfile.mkstemp()
-			os.write(fd, '\r\n'.join(args).encode())
-			os.close(fd)
-
-			self.msvcdeps_paths = []
-			kw['env'] = kw.get('env', os.environ.copy())
-			kw['cwd'] = kw.get('cwd', os.getcwd())
-			kw['quiet'] = Context.STDOUT
-			kw['output'] = Context.STDOUT
-
-			out = []
-
-			try:
-				raw_out = self.generator.bld.cmd_and_log(cmd + ['@' + tmp], **kw)
-				ret = 0
-			except Errors.WafError as e:
-				raw_out = e.stdout
-				ret = e.returncode
-
-			for line in raw_out.splitlines():
-				if line.startswith(INCLUDE_PATTERN):
-					inc_path = line[len(INCLUDE_PATTERN):].strip()
-					Logs.debug('msvcdeps: Regex matched %s', inc_path)
-					self.msvcdeps_paths.append(inc_path)
-				else:
-					out.append(line)
-
-			# Pipe through the remaining stdout content (not related to /showIncludes)
-			if self.generator.bld.logger:
-				self.generator.bld.logger.debug('out: %s' % os.linesep.join(out))
-			else:
-				sys.stdout.write(os.linesep.join(out) + os.linesep)
-
-			return ret
-		finally:
-			try:
-				os.remove(tmp)
-			except OSError:
-				# anti-virus and indexers can keep files open -_-
-				pass
-
+def wrap_compiled_task(classname):
+	derived_class = type(classname, (Task.classes[classname],), {})
+	derived_class.derived_msvcdeps = derived_class
 	derived_class.post_run = post_run
 	derived_class.scan = scan
 	derived_class.sig_implicit_deps = sig_implicit_deps
 	derived_class.exec_command = exec_command
 
 for k in ('c', 'cxx'):
-	wrap_compiled_task(k)
+	if k in Task.classes:
+		wrap_compiled_task(k)
 

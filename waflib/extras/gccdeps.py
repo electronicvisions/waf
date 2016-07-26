@@ -5,6 +5,7 @@
 """
 Execute the tasks with gcc -MD, read the dependencies from the .d file
 and prepare the dependency calculation for the next run.
+This affects the cxx class, so make sure to load Qt5 after this tool.
 
 Usage:
 	def configure(conf):
@@ -29,7 +30,7 @@ def scan(self):
 	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
 		if not self.env.GCCDEPS:
 			self.generator.bld.fatal('Load gccdeps in configure!')
-		return self.no_gccdeps_scan()
+		return super(self.derived_gccdeps, self).scan()
 	nodes = self.generator.bld.node_deps.get(self.uid(), [])
 	names = []
 	return (nodes, names)
@@ -70,10 +71,11 @@ def path_to_node(base_node, path, cached_nodes):
 	return node
 
 def post_run(self):
+	print(id(self), "gccdeps post run")
 	# The following code is executed by threads, it is not safe, so a lock is needed...
 
 	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
-		return self.no_gccdeps_post_run()
+		return super(self.derived_gccdeps, self).post_run()
 
 	name = self.outputs[0].abspath()
 	name = re_o.sub('.d', name)
@@ -158,25 +160,22 @@ def post_run(self):
 
 def sig_implicit_deps(self):
 	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
-		return self.no_gccdeps_sig_implicit_deps()
+		return super(self.derived_gccdeps, self).sig_implicit_deps()
 	try:
 		return Task.Task.sig_implicit_deps(self)
 	except Errors.WafError:
 		return Utils.SIG_NIL
 
-for name in 'c cxx'.split():
-	try:
-		cls = Task.classes[name]
-	except KeyError:
-		pass
-	else:
-		cls.no_gccdeps_scan = cls.scan
-		cls.no_gccdeps_post_run = cls.post_run
-		cls.no_gccdeps_sig_implicit_deps = cls.sig_implicit_deps
+def wrap_compiled_task(classname):
+	derived_class = type(classname, (Task.classes[classname],), {})
+	derived_class.derived_gccdeps = derived_class
+	derived_class.post_run = post_run
+	derived_class.scan = scan
+	derived_class.sig_implicit_deps = sig_implicit_deps
 
-		cls.scan = scan
-		cls.post_run = post_run
-		cls.sig_implicit_deps = sig_implicit_deps
+for k in ('c', 'cxx'):
+	if k in Task.classes:
+		wrap_compiled_task(k)
 
 @before_method('process_source')
 @feature('force_gccdeps')
