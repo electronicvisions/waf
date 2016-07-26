@@ -557,6 +557,8 @@ class MR(object):
         """
         assert self.gerrit_url.scheme == 'ssh'
         ssh = "ssh {H}".format(H=self.gerrit_url.hostname)
+        if self.gerrit_url.username:
+            ssh += ' -l {U}'.format(U=self.gerrit_url.username)
         if self.gerrit_url.port:
             ssh += ' -p {P}'.format(P=self.gerrit_url.port)
         query_options = '--current-patch-set --dependencies --format=json'
