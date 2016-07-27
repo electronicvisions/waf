@@ -71,10 +71,10 @@ def path_to_node(base_node, path, cached_nodes):
 	return node
 
 def post_run(self):
-	print(id(self), "msvcdeps post run")
 	if self.env.CC_NAME not in supported_compilers:
 		return super(self.derived_msvcdeps, self).post_run()
 
+	# TODO this is unlikely to work with netcache
 	if getattr(self, 'cached', None):
 		return Task.Task.post_run(self)
 

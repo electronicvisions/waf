@@ -71,9 +71,6 @@ def path_to_node(base_node, path, cached_nodes):
 	return node
 
 def post_run(self):
-	print(id(self), "gccdeps post run")
-	# The following code is executed by threads, it is not safe, so a lock is needed...
-
 	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
 		return super(self.derived_gccdeps, self).post_run()
 
