@@ -8,7 +8,9 @@ The **flex** program is a code generator which creates C or C++ files.
 The generated files are compiled into object files.
 """
 
-import waflib.TaskGen, os, re
+import os, re
+from waflib import Task, TaskGen
+from waflib.Tools import ccroot
 
 def decide_ext(self, node):
 	if 'cxx' in self.features:
@@ -33,12 +35,18 @@ def flexfun(tsk):
 	txt = bld.cmd_and_log(lst, cwd=wd, env=env.env or None, quiet=0)
 	tsk.outputs[0].write(txt.replace('\r\n', '\n').replace('\r', '\n')) # issue #1207
 
-waflib.TaskGen.declare_chain(
+TaskGen.declare_chain(
 	name = 'flex',
 	rule = flexfun, # issue #854
 	ext_in = '.l',
 	decider = decide_ext,
 )
+
+# To support the following:
+# bld(features='c', flexflags='-P/foo')
+Task.classes['flex'].vars = ['FLEXFLAGS', 'FLEX']
+ccroot.USELIB_VARS['c'].add('FLEXFLAGS')
+ccroot.USELIB_VARS['cxx'].add('FLEXFLAGS')
 
 def configure(conf):
 	"""
