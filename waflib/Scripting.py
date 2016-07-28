@@ -592,8 +592,13 @@ def autoconfigure(execute_method):
 			else:
 				h = 0
 				for f in env.files:
-					h = Utils.h_list((h, Utils.readf(f, 'rb')))
-				do_config = h != env.hash
+					try:
+						h = Utils.h_list((h, Utils.readf(f, 'rb')))
+					except FileNotFoundError:
+						do_config = True
+						break
+				else:
+					do_config = h != env.hash
 
 		if do_config:
 			cmd = env.config_cmd or 'configure'
