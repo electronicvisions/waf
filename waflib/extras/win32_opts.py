@@ -146,7 +146,7 @@ if Utils.is_win32:
 		if isinstance(lst, str):
 			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
-		node = self.get_bld().search(lst)
+		node = self.get_bld().search_node(lst)
 		if node:
 			if not node.isfile_cached():
 				try:
