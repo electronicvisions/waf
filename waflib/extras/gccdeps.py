@@ -28,8 +28,6 @@ supported_compilers = ['gcc', 'icc', 'clang']
 
 def scan(self):
 	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
-		if not self.env.GCCDEPS:
-			self.generator.bld.fatal('Load gccdeps in configure!')
 		return super(self.derived_gccdeps, self).scan()
 	nodes = self.generator.bld.node_deps.get(self.uid(), [])
 	names = []
@@ -180,9 +178,6 @@ def force_gccdeps(self):
 	self.env.ENABLE_GCCDEPS = ['c', 'cxx']
 
 def configure(conf):
-	# record that the configuration was executed properly
-	conf.env.GCCDEPS = True
-
 	# in case someone provides a --enable-gccdeps command-line option
 	if not getattr(conf.options, 'enable_gccdeps', True):
 		return
