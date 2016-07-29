@@ -28,9 +28,9 @@ Usage
 
 Load the "pyqt5" tool.
 
-Add into the sources list also the qrc resources files or ui5 
-definition files and they will be translated into python code 
-with the system tools (PyQt5 or pyside2 are searched in this 
+Add into the sources list also the qrc resources files or ui5
+definition files and they will be translated into python code
+with the system tools (PyQt5 or pyside2 are searched in this
 order) and then compiled
 """
 
@@ -43,9 +43,9 @@ except ImportError:
 else:
 	has_xml = True
 
-import os, sys
+import os
 from waflib.Tools import python
-from waflib import Task, Utils, Options, Errors, Context
+from waflib import Task
 from waflib.TaskGen import feature, extension
 from waflib.Configure import conf
 from waflib import Logs
@@ -125,13 +125,12 @@ def apply_pyqt5(self):
 
 
 		if getattr(self, 'langname', None):
-			qmnodes = [x.outputs[0] for x in qmtasks]
+			qmnodes = [k.outputs[0] for k in qmtasks]
 			rcnode = self.langname
 			if isinstance(rcnode, str):
 				rcnode = self.path.find_or_declare(rcnode + '.qrc')
 			t = self.create_task('qm2rcc', qmnodes, rcnode)
-			k = create_pyrcc_task(self, t.outputs[0])
-
+			create_pyrcc_task(self, t.outputs[0])
 
 class pyrcc(Task.Task):
 	"""
@@ -202,8 +201,6 @@ def configure(self):
 	# warn about this during the configuration too
 	if not has_xml:
 		Logs.error('No xml.sax support was found, rcc dependencies will be incomplete!')
-
-
 
 @conf
 def find_pyqt5_binaries(self):
