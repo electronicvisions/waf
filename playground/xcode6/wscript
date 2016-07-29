@@ -1,3 +1,6 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
 from waflib import Task, TaskGen
 top = '.'
 out = 'build'
@@ -14,7 +17,6 @@ Tested in XCode 6 & 7.
 """
 
 def configure(conf):
-	
 	conf.env.FRAMEWORK_VERSION = '1.0'
 	conf.env.ARCHS = 'x86_64'
 	conf.env.INSTALL_PATH = '/my/install/path'
@@ -29,7 +31,7 @@ def build(bld):
 
 		# Specify source files.
 		# This will become the groups (folders) inside XCode.
-		# Give a dictionary to group by name. Use a list to add everything in one 
+		# Give a dictionary to group by name. Use a list to add everything in one
 		source_files={
 			'MyLibSource': bld.path.ant_glob('src/MyLib/*.cpp|*.m|*.mm'),
 			'Include': bld.path.ant_glob(incl=['include/MyLib/*.h', 'include'], dir=True)
@@ -72,4 +74,4 @@ def build(bld):
 		includes=tg.includes,
 		target='MyStaticLib',
 	)
-	
+
