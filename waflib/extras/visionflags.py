@@ -35,28 +35,19 @@ class CompilerTraits(object):
 		raise NotImplementedError(type(self))
 
 
-class GccTraits(CompilerTraits):
+class CommonTraits(CompilerTraits):
+	warning_flags = '-Wall -Wextra -pedantic'.split()
 	ccflags = {
-		'gerrit':             '-O0           -Wall -Wextra -pedantic'.split(),
-		'debug':              '-Og -ggdb -g3 -Wall -Wextra -pedantic -fno-omit-frame-pointer'.split(),
-		'release':            '-O2           -Wall -Wextra -pedantic'.split(),
-		'release_with_debug': '-O2 -g        -Wall -Wextra -pedantic -fno-omit-frame-pointer'.split(),
+		'gerrit':             '-O0'.split(),
+		'debug':              '-Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
+		'release_with_debug': '-O2 -g -fno-omit-frame-pointer'.split(),
+		'release':            '-O2'.split(),
 	}
 
 	def __init__(self, version, linker=None):
-		super(GccTraits, self).__init__()
+		super(CommonTraits, self).__init__()
 		self.version = tuple([int(elem) for elem in version])
-		# copy defaults into instance
-		self.ccflags = GccTraits.ccflags
 		self.linker = linker
-		assert self.linker in ('gold', None)
-		if self.linker == 'gold' and self.version < (4, 8):
-			raise Errors.WafError('GCC >= 4.8 is required for gold linker')
-
-	def get_cpp_language_standard(self):
-		if self.version[0] <= 4:
-			return  ['-std=gnu++11']
-		return []
 
 	def get_ccdefines(self, build_profile):
 		if 'debug' not in build_profile:
@@ -64,17 +55,16 @@ class GccTraits(CompilerTraits):
 		return []
 
 	def get_ccflags(self, build_profile):
-		if self.version[0] < 4 or (self.version[0] == 4 and self.version[1] <= 9):
-			self.ccflags['debug'] = '-O0 -ggdb -g3 -Wall -Wextra -pedantic'.split()
-		if self.linker is not None:
-			return self.ccflags[build_profile] + ['-fuse-ld={}'.format(self.linker)]
-		return self.ccflags[build_profile]
+		return self.ccflags[build_profile] + self.warning_flags
 
 	def get_cxxdefines(self, build_profile):
 		return self.get_ccdefines(build_profile)
 
+	def get_cpp_language_standard_flags(self):
+		return []
+
 	def get_cxxflags(self, build_profile):
-		return self.get_cpp_language_standard() + self.get_ccflags(build_profile)
+		return self.get_cpp_language_standard_flags() + self.get_ccflags(build_profile)
 
 	def get_linkflags(self, build_profile):
 		if self.linker is not None:
@@ -82,11 +72,52 @@ class GccTraits(CompilerTraits):
 		return []
 
 
+class GccTraits(CommonTraits):
+	def __init__(self, version, linker=None):
+		super(GccTraits, self).__init__(version, linker)
+
+		if self.linker == 'gold' and self.version < (4, 8):
+			raise Errors.WafError('GCC >= 4.8 is required for gold linker')
+
+		# copy defaults into instance
+		self.ccflags = GccTraits.ccflags
+
+		if self.version[0] < 4 or (self.version[0] == 4 and self.version[1] <= 9):
+			for profile, flags in self.ccflags.items():
+				self.ccflags[profile] = [
+					('-O0' if flag == '-Og' else flag) for flag in flags
+				]
+
+	def get_cpp_language_standard_flags(self):
+        # default for gcc 5.0 is `-std=gnu++14`
+		if self.version[0] <= 4:
+			return  ['-std=gnu++11']
+		return []
+
+
+class ClangTraits(CommonTraits):
+	def __init__(self, version, linker=None):
+		super(ClangTraits, self).__init__(version, linker)
+
+		# copy defaults into instance
+		self.ccflags = ClangTraits.ccflags
+
+		for profile, flags in self.ccflags.items():
+			self.ccflags[profile] = [
+				('-O0' if flag == '-Og' else flag) for flag in flags
+			]
+
+	def get_cpp_language_standard_flags(self):
+		if self.version < (3, 5):
+			return  ['-std=c++11']
+		return  ['-std=c++14']
+
+
 COMPILER_MAPPING = {
-	'gcc': GccTraits,
+	'clang': ClangTraits,
+	'clang++': ClangTraits,
 	'g++': GccTraits,
-	'clang': GccTraits,
-	'clang++': GccTraits,
+	'gcc': GccTraits,
 }
 
 def options(opt):
@@ -106,8 +137,8 @@ def options(opt):
 	opt.add_option('--check-profile',
 		help=('print out current build profile'),
 		default=False, dest='check_profile', action="store_true")
-	opt.add_option('--gold-linker', help='Use gold linker.',
-	               action='store_true')
+	opt.add_option('--linker', type=str, default=None,
+	               help='Specify the linker to use, e.g. --linker=gold.')
 
 
 def configure(conf):
@@ -117,9 +148,7 @@ def configure(conf):
 		raise Errors.WafError("neither COMPILER_CC nor COMPILER_CXX are defined; "
 			"maybe the compiler_cc or compiler_cxx tool has not been configured yet?")
 
-	linker = None
-	if Options.options.gold_linker:
-		linker = 'gold'
+	linker = Options.options.linker
 	try:
 		compiler = COMPILER_MAPPING[cc](conf.env['CC_VERSION'], linker)
 	except KeyError:
