@@ -69,6 +69,11 @@ def f(tsk):
 	return tsk.exec_command(lst, cwd=cwdx, env=env.env or None)
 '''
 
+KEEP_LAST_CMD = False
+"""
+Whether the last executed command on task objects should be removed
+"""
+
 classes = {}
 """
 The metaclass :py:class:`waflib.Task.store_task_type` stores all class tasks
@@ -685,10 +690,12 @@ class Task(TaskBase):
 				raise Errors.WafError(self.err_msg)
 			bld.node_sigs[node] = self.uid() # make sure this task produced the files in question
 		bld.task_sigs[self.uid()] = self.signature()
-		try:
-			del self.last_cmd
-		except AttributeError:
-			pass
+		global KEEP_LAST_CMD
+		if not KEEP_LAST_CMD:
+			try:
+				del self.last_cmd
+			except AttributeError:
+				pass
 
 	def sig_explicit_deps(self):
 		"""
