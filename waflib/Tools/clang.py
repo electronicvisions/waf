@@ -24,6 +24,8 @@ def configure(conf):
 	conf.find_ar()
 	conf.gcc_common_flags()
 	conf.gcc_modifier_platform()
+	# ECM: cf. gcc.py
+	conf.load("visionflags")
 	conf.cc_load_tools()
 	conf.cc_add_flags()
 	conf.link_add_flags()

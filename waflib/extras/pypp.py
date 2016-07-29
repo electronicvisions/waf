@@ -335,7 +335,7 @@ Use 'python -v waf configure' to find see where the loaded packages are located
 
 
 def configure(conf):
-    conf.load('gxx')
+    conf.load('compiler_cxx')
     conf.load('python')
     conf.load('boost')
     conf.find_program('gccxml')
