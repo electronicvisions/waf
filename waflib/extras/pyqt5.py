@@ -82,12 +82,11 @@ def create_pyrcc_task(self, node):
 	"Creates rcc and py task for ``.qrc`` files"
 	rcnode = node.change_ext('.py')
 	self.create_task('pyrcc', node, rcnode)
-	if self.install_from:
-		pyd = Context.out_dir[len(Context.top_dir)+1:] + str(self.install_from)[len(Context.top_dir):]
+	if getattr(self, 'install_from', None):
+		self.install_from = self.install_from.get_bld()
 	else:
-		pyd = Context.out_dir[len(Context.top_dir)+1:]
-
-	self.install_from = self.path.find_dir(pyd)
+		self.install_from = self.path.get_bld()
+	self.install_path = getattr(self, 'install_path', '${PYTHONDIR}')
 	self.process_py(rcnode)
 
 @extension(*EXT_UI)
@@ -95,12 +94,11 @@ def create_pyuic_task(self, node):
 	"Create uic tasks and py for user interface ``.ui`` definition files"
 	uinode = node.change_ext('.py')
 	self.create_task('ui5py', node, uinode)
-	if self.install_from:
-		pyd = Context.out_dir[len(Context.top_dir) + 1:] + str(self.install_from)[len(Context.top_dir):]
+	if getattr(self, 'install_from', None):
+		self.install_from = self.install_from.get_bld()
 	else:
-		pyd = Context.out_dir[len(Context.top_dir) + 1:]
-
-	self.install_from = self.path.find_dir(pyd)
+		self.install_from = self.path.get_bld()
+	self.install_path = getattr(self, 'install_path', '${PYTHONDIR}')
 	self.process_py(uinode)
 
 @extension('.ts')
