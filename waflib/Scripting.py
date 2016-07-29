@@ -594,7 +594,7 @@ def autoconfigure(execute_method):
 				for f in env.files:
 					try:
 						h = Utils.h_list((h, Utils.readf(f, 'rb')))
-					except FileNotFoundError:
+					except EnvironmentError:
 						do_config = True
 						break
 				else:
