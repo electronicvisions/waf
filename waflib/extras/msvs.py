@@ -41,33 +41,41 @@ It can be a good idea to add the sync_exec tool too.
 To generate solution files:
 $ waf configure msvs
 
-To customize the outputs, provide subclasses in your wscript files:
+To customize the outputs, provide subclasses in your wscript files::
 
-from waflib.extras import msvs
-class vsnode_target(msvs.vsnode_target):
-	def get_build_command(self, props):
-		# likely to be required
-		return "waf.bat build"
-	def collect_source(self):
-		# likely to be required
-		...
-class msvs_bar(msvs.msvs_generator):
-	def init(self):
-		msvs.msvs_generator.init(self)
-		self.vsnode_target = vsnode_target
+	from waflib.extras import msvs
+	class vsnode_target(msvs.vsnode_target):
+		def get_build_command(self, props):
+			# likely to be required
+			return "waf.bat build"
+		def collect_source(self):
+			# likely to be required
+			...
+	class msvs_bar(msvs.msvs_generator):
+		def init(self):
+			msvs.msvs_generator.init(self)
+			self.vsnode_target = vsnode_target
 
 The msvs class re-uses the same build() function for reading the targets (task generators),
-you may therefore specify msvs settings on the context object:
+you may therefore specify msvs settings on the context object::
 
-def build(bld):
-	bld.solution_name = 'foo.sln'
-	bld.waf_command = 'waf.bat'
-	bld.projects_dir = bld.srcnode.make_node('.depproj')
-	bld.projects_dir.mkdir()
+	def build(bld):
+		bld.solution_name = 'foo.sln'
+		bld.waf_command = 'waf.bat'
+		bld.projects_dir = bld.srcnode.make_node('.depproj')
+		bld.projects_dir.mkdir()
 
 For visual studio 2008, the command is called 'msvs2008', and the classes
 such as vsnode_target are wrapped by a decorator class 'wrap_2008' to
 provide special functionality.
+
+To customize platform toolsets, pass additional parameters, for example::
+
+	class msvs_2013(msvs.msvs_generator):
+		cmd = 'msvs2013'
+		numver = '13.00'
+		vsver = '2013'
+		platform_toolset_ver = 'v120'
 
 ASSUMPTIONS:
 * a project can be either a directory or a target, vcxproj files are written only for targets that have source files
