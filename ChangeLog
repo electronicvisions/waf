@@ -4,6 +4,7 @@ NEW IN WAF 1.9.2
 * Force qt5 static library detection with 'QT5_XCOMPILE=1 QT5_FORCE_STATIC=1 waf configure' #1588
 * Remove the non-BSD code from the Waf archive file
 * Update a few extensions: xcode, pytest, msvcdeps, cppcheck, win32_opts, codelite
+* Store Task.last_cmd selectively, so that extensions can use them (clang_compilation_database)
 
 NEW IN WAF 1.9.1
 ----------------

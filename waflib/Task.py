@@ -69,11 +69,6 @@ def f(tsk):
 	return tsk.exec_command(lst, cwd=cwdx, env=env.env or None)
 '''
 
-KEEP_LAST_CMD = False
-"""
-Whether the last executed command on task objects should be removed
-"""
-
 classes = {}
 """
 The metaclass :py:class:`waflib.Task.store_task_type` stores all class tasks
@@ -145,6 +140,11 @@ class TaskBase(evil):
 
 	hcode = ''
 	"""String representing an additional hash for the class representation"""
+
+	keep_last_cmd = False
+	"""Whether to keep the last command executed on the instance after execution.
+	This may be useful for certain extensions but it can a lot of memory.
+	"""
 
 	__slots__ = ('hasrun', 'generator')
 
@@ -690,8 +690,7 @@ class Task(TaskBase):
 				raise Errors.WafError(self.err_msg)
 			bld.node_sigs[node] = self.uid() # make sure this task produced the files in question
 		bld.task_sigs[self.uid()] = self.signature()
-		global KEEP_LAST_CMD
-		if not KEEP_LAST_CMD:
+		if not self.keep_last_cmd:
 			try:
 				del self.last_cmd
 			except AttributeError:

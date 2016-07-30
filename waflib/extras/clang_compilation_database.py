@@ -17,7 +17,7 @@ Usage:
 import sys, os, json, shlex, pipes
 from waflib import Logs, TaskGen, Task
 
-Task.KEEP_LAST_CMD = True
+Task.TaskBase.keep_last_cmd = True
 
 if sys.hexversion >= 0x3030000:
 	quote = shlex.quote
