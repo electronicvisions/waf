@@ -295,7 +295,7 @@ class xcode(Build.BuildContext):
 				group.add(tg.path, self.collect_source(tg))
 				p.mainGroup.children.append(group)
 
-				if 'cprogram' or 'cxxprogram' in features:
+				if ('cprogram' in features) or ('cxxprogram' in features):
 					p.add_task_gen(tg)
 
 
