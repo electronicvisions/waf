@@ -822,7 +822,7 @@ def run_prefork_process(cmd, kwargs, cargs):
 	Delegates process execution to a pre-forked process instance.
 	"""
 	if not 'env' in kwargs:
-		kwargs['env'] = os.environ
+		kwargs['env'] = dict(os.environ)
 	try:
 		obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
 	except TypeError:
