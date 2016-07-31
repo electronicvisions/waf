@@ -1,10 +1,14 @@
 NEW IN WAF 1.9.2
 ----------------
-* Python 3 fix for waf dist encoding message #1769
+* Fix a Python 3 encoding error when displaying the file hash in 'waf dist' #1769
 * Force qt5 static library detection with 'QT5_XCOMPILE=1 QT5_FORCE_STATIC=1 waf configure' #1588
-* Remove the non-BSD code from the Waf archive file
+* Force the parent os.environ value as default in pre-forked processes #1791
+* Support flexflags as arguments #1782
 * Update a few extensions: xcode, pytest, msvcdeps, cppcheck, win32_opts, codelite
 * Store Task.last_cmd selectively, so that extensions can use them (clang_compilation_database)
+* Set TaskBase.keep_last_cmd to keep the last command executed
+* New pyqt5 extension #1790
+* Remove all non-BSD code from the Waf archive file
 
 NEW IN WAF 1.9.1
 ----------------

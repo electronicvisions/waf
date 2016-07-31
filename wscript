@@ -9,7 +9,7 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 ./waf-light  --tools=compat15,/comp/waf/aba.py --prelude=$'\tfrom waflib.extras import aba\n\taba.foo()'
 """
 
-VERSION="1.9.1"
+VERSION="1.9.2"
 APPNAME='waf'
 REVISION=''
 
