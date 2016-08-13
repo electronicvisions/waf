@@ -5,7 +5,7 @@ Strip a program/library after it is created. Use this tool as an example.
 
 Usage::
 
-	bld.program(features='strip', source='main.c', target='foo')
+	bld.program(source='main.c', target='foo')
 
 If stripping at installation time is preferred, override/modify the method
 copy_fun on the installation context::
