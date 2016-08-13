@@ -33,6 +33,8 @@ def check_same_targets(self):
 	def check_task(tsk):
 		if not isinstance(tsk, Task.Task):
 			return
+		if hasattr(tsk, 'no_errcheck_out'):
+			return
 
 		for node in tsk.outputs:
 			mp[node].append(tsk)
@@ -61,6 +63,7 @@ def check_same_targets(self):
 					Logs.error('  %d. %r', 1 + v.index(x), x.generator)
 				else:
 					Logs.error('  %d. %r in %r', 1 + v.index(x), x.generator.name, getattr(x.generator, 'path', None))
+			Logs.error('If you think that this is an error, set no_errcheck_out on the task instance')
 
 	if not dupe:
 		for (k, v) in uids.items():

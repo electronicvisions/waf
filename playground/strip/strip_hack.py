@@ -25,6 +25,7 @@ from waflib import Task, TaskGen
 class strip(Task.Task):
 	run_str = '${STRIP} ${SRC}'
 	color   = 'BLUE'
+	no_errcheck_out = True
 
 	def keyword(self):
 		return 'Stripping'
