@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
 """
-Strip a program/library after it is created. Use this tool as an example.
+Strip a program/library after it is created.
 
-Usage::
+Since creating the file and modifying it occurs in the same
+task, there will be no race condition with other tasks dependent
+on the output.
 
-	bld.program(source='main.c', target='foo')
-
-For other implementations, see strip_hack.py and strip_on_install.py
+For other implementation possibilities, see strip_hack.py and strip_on_install.py
 """
 
 from waflib import Task
