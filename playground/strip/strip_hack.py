@@ -3,14 +3,15 @@
 """
 This is a hack; In general two tasks should not provide
 the same output nodes (bad abstraction), and this cannot
-scale to do more operations than just stripping
+scale to more than one operation
 
 In this case, the strip task has the same inputs as outputs
 so the constraints added by Task.set_file_constraints
-will cause a deadlock:
+to prevent race conditions:
+
 - By setting the input node to be the link task output node
-  the strip tasks will run after the link task
-- By setting the output node to be the link task output node
+  the strip tasks will run after their link tasks
+- By setting the output node to be the link task output node,
   any other task that also uses this output node will wait
   for the strip task to finish too
 - By overriding the runnable_status method, the strip task
@@ -38,18 +39,16 @@ class strip(Task.Task):
 			return ret
 
 		if self.generator.link_task.hasrun == Task.SUCCESS:
+			# ensure that stripping always runs
+			# when a binary is written
 			return Task.RUN_ME
 		return Task.SKIP_ME
 
 @TaskGen.feature('cshlib', 'cxxshlib', 'cprogram', 'cxxprogram', 'fcprogram', 'fcshlib')
 @TaskGen.after('apply_link')
 def add_strip_task(self):
-	try:
-		link_task = self.link_task
-	except AttributeError:
-		return
-
-	# special case, a task with same inputs and outputs
-	exe_node = link_task.outputs[0]
-	self.create_task('strip', exe_node, exe_node)
+	if getattr(self, 'link_task', None):
+		exe_node = self.link_task.outputs[0]
+		# special case: same inputs and outputs for a task
+		self.create_task('strip', exe_node, exe_node)
 
