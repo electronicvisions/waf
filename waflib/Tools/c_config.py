@@ -1289,7 +1289,7 @@ def multicheck(self, *k, **kw):
 	bld = par()
 	tasks = []
 	for dct in k:
-		x = cfgtask(bld=bld)
+		x = Task.classes['cfgtask'](bld=bld)
 		tasks.append(x)
 		x.args = dct
 		x.bld = bld
