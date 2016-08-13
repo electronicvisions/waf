@@ -6,6 +6,8 @@ def options(opt):
 def configure(conf):
 	conf.load('compiler_c')
 	conf.load('strip', tooldir='.')
+	#conf.load('strip_hack', tooldir='.')
+	#conf.load('strip_on_install', tooldir='.')
 
 def build(bld):
 	bld.shlib(source='a.c', target='lib1')
