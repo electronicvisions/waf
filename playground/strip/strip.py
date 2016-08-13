@@ -7,12 +7,8 @@ Usage::
 
 	bld.program(features='strip', source='main.c', target='foo')
 
-By using::
-
-	@TaskGen.feature('cprogram', 'cxxprogram', 'fcprogram')
-
-
-If stripping at installation time is preferred, use the following::
+If stripping at installation time is preferred, override/modify the method
+copy_fun on the installation context::
 
 	import shutil, os
 	from waflib import Build
@@ -37,7 +33,6 @@ from waflib import Task, TaskGen
 class strip(Task.Task):
 	run_str = '${STRIP} ${SRC}'
 	color   = 'BLUE'
-	after   = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
 	before  = ['inst']
 
 @TaskGen.feature('strip')
@@ -48,3 +43,14 @@ def add_strip_task(self):
 	except AttributeError:
 		return
 	self.create_task('strip', link_task.outputs[0])
+
+@TaskGen.feature('cshlib', 'cxxshlib', 'cprogram', 'cxxprogram', 'fcprogram', 'fcshlib')
+@TaskGen.after('process_use', 'apply_link')
+def set_strip_order(self):
+	# as an example
+	if getattr(self, 'link_task', None):
+		for x in self.tmp_use_seen:
+			tg = self.bld.get_tgen_by_name(x)
+			if getattr(tg, 'link_task', None):
+				self.link_task.set_run_after(tg.link_task)
+
