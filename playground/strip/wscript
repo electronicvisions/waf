@@ -8,6 +8,6 @@ def configure(conf):
 	conf.load('strip', tooldir='.')
 
 def build(bld):
-	bld.shlib(features='strip', source='a.c', target='lib1')
-	bld.program(features='strip', source='main.c', target='app', use='lib1')
+	bld.shlib(source='a.c', target='lib1')
+	bld.program(source='main.c', target='app', use='lib1')
 
