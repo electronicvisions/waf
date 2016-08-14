@@ -45,7 +45,7 @@ else:
 
 import os
 from waflib.Tools import python
-from waflib import Task
+from waflib import Task, Options
 from waflib.TaskGen import feature, extension
 from waflib.Configure import conf
 from waflib import Logs
@@ -209,14 +209,28 @@ def find_pyqt5_binaries(self):
 	"""
 	env = self.env
 
-	self.find_program(['pyuic5','pyside2-uic'], var='QT_PYUIC')
+	if getattr(Options.options, 'want_pyside2', True):
+		self.find_program(['pyside2-uic'], var='QT_PYUIC')
+	else:
+		self.find_program(['pyuic5','pyside2-uic'], var='QT_PYUIC')
+
 	if not env.QT_PYUIC:
 		self.fatal('cannot find the uic compiler for python for qt5')
 
-	self.find_program(['pyrcc5','pyside2-rcc'], var='QT_PYRCC')
+	if getattr(Options.options, 'want_pyside2', True):
+		self.find_program(['pyside2-rcc'], var='QT_PYRCC')
+	else:
+		self.find_program(['pyrcc5','pyside2-rcc'], var='QT_PYRCC')
+
 	if not env.QT_PYUIC:
 		self.fatal('cannot find the rcc compiler for python for qt5')
 
 	self.find_program(['pylupdate5', 'pyside2-lupdate'], var='QT_PYLUPDATE')
 	self.find_program(['lrelease-qt5', 'lrelease'], var='QT_LRELEASE')
 
+def options(opt):
+	"""
+	Command-line options
+	"""
+	pyqt5opt=opt.add_option_group("Python QT5 Options")
+	pyqt5opt.add_option('--pyqt5-pyside2', action='store_true', default=False, dest='want_pyside2', help='use pyside2 bindings as python QT5 bindings (default PyQt5 is searched first, PySide2 after)')
