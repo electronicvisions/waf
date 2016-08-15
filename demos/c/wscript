@@ -36,10 +36,10 @@ def configure(conf):
 	conf.check_endianness()
 
 	conf.multicheck(
-		{'header_name':'stdio.h'},
-		{'header_name':'unistd.h'},
-		{'header_name':'stdlib.h'},
-		msg       = 'Checking for standard headers',
+		{'header_name':'stdio.h', 'msg':'... stdio'},
+		{'header_name':'unistd.h', 'msg':'... unistd'},
+		{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
+		msg       = 'Checking for headers in parallel',
 		mandatory = False
 	)
 	conf.check_cc(header_name='stdio.h', auto_add_header_name=True)

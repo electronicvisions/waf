@@ -1321,7 +1321,20 @@ def multicheck(self, *k, **kw):
 	for x in tasks:
 		if x.hasrun != Task.SUCCESS:
 			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW', **kw)
-			self.fatal(kw.get('fatalmsg') or 'One of the tests has failed, read config.log for more information')
+			break
+	else:
+		self.end_msg('ok', **kw)
 
-	self.end_msg('ok', **kw)
+	# optional output lines on msg/okmsg/errmsg
+	for x in tasks:
+		if 'msg' in x.args:
+			self.start_msg(x.args['msg'])
+			if x.hasrun != Task.SUCCESS:
+				self.end_msg(x.args.get('errmsg', 'no'), 'YELLOW')
+			else:
+				self.end_msg(x.args.get('okmsg', 'yes'), 'GREEN')
+	for x in tasks:
+		if x.hasrun != Task.SUCCESS:
+			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW', **kw)
+			self.fatal(kw.get('fatalmsg') or 'One of the tests has failed, read config.log for more information')
 

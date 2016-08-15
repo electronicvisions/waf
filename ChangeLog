@@ -1,3 +1,10 @@
+NEW IN WAF 1.9.3
+----------------
+* Enable configuration task class lookup in conf.multicheck
+* Enable individual output lines in conf.multicheck
+* Updated examples for stripping executables
+* More documentation
+
 NEW IN WAF 1.9.2
 ----------------
 * Fix a Python 3 encoding error when displaying the file hash in 'waf dist' #1769
