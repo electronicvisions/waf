@@ -26,7 +26,10 @@ def wrap_compiled_task(classname):
 	def run_all(self):
 		if self.env.NO_STRIPPING:
 			return cls1.run(self)
-		return cls1.run(self) or cls2.run(self)
+		ret = cls1.run(self)
+		if ret:
+			return ret
+		return cls2.run(self)
 	cls3.run = run_all
 
 for k in 'cprogram cshlib cxxprogram cxxshlib fcprogram fcshlib dprogram dshlib'.split():
