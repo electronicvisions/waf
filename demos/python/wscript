@@ -29,7 +29,8 @@ def configure(conf):
 
 def build(bld):
 
-	# first compile a few pyc and pyo files (set install_path=None to disable the installation...)
+	# first compile a few pyc and pyo files (set install_path=None to disable the installation,
+	# by default install_path is set to ${PYTHONDIR})
 	bld(features='py', source=bld.path.ant_glob('*.py'), install_from='.')
 
 	# then a c extension module

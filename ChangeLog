@@ -4,6 +4,7 @@ NEW IN WAF 1.9.3
 * Enable individual output lines in conf.multicheck
 * Updated examples for stripping executables
 * More documentation
+* Qt 5.7 detection
 
 NEW IN WAF 1.9.2
 ----------------
