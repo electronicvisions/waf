@@ -37,6 +37,9 @@ def configure(conf):
 
 	def test_build(ctx):
 		ctx(rule='echo hello', shell=True, always=True)
+		# Configuration tests may even be re-used:
+		#ctx.in_msg = True # suppress console outputs
+		#ctx.check_large_file(mandatory=False)
 
 	conf.multicheck(
 		{'header_name':'stdio.h', 'msg':'... stdio'},
