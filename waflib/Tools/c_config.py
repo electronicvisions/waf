@@ -1264,8 +1264,17 @@ class cfgtask(Task.TaskBase):
 		bld.init_dirs()
 		bld.in_msg = 1 # suppress top-level start_msg
 		bld.logger = self.logger
+		bld.multicheck_task = self
+		args = self.args
 		try:
-			bld.check(**self.args)
+			if 'func' in args:
+				bld.test(build_fun=args['func'],
+					msg=args.get('msg', ''),
+					okmsg=args.get('okmsg', ''),
+					errmsg=args.get('errmsg', ''),
+					)
+			else:
+				bld.check(**args)
 		except Exception:
 			return 1
 

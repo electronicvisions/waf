@@ -35,13 +35,18 @@ def configure(conf):
 	conf.check_inline()
 	conf.check_endianness()
 
+	def test_build(ctx):
+		ctx(rule='echo hello', shell=True, always=True)
+
 	conf.multicheck(
 		{'header_name':'stdio.h', 'msg':'... stdio'},
 		{'header_name':'unistd.h', 'msg':'... unistd'},
 		{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
+		{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
 		msg       = 'Checking for headers in parallel',
 		mandatory = False
 	)
+
 	conf.check_cc(header_name='stdio.h', auto_add_header_name=True)
 	#conf.check_cc(header_name='unistd.h')
 	conf.check_cc(fragment='int main() {return 0;}\n')
