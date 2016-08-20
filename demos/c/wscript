@@ -43,7 +43,7 @@ def configure(conf):
 
 	conf.multicheck(
 		{'header_name':'stdio.h', 'msg':'... stdio'},
-		{'header_name':'unistd.h', 'msg':'... unistd'},
+		{'header_name':'ueistd.h', 'msg':'... unistd', 'mandatory':False},
 		{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
 		{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
 		msg       = 'Checking for headers in parallel',
