@@ -43,11 +43,11 @@ def configure(conf):
 
 	conf.multicheck(
 		{'header_name':'stdio.h', 'msg':'... stdio'},
-		{'header_name':'ueistd.h', 'msg':'... unistd', 'mandatory':False},
+		{'header_name':'xyztabcd.h', 'msg':'... optional xyztabcd.h', 'mandatory': False},
 		{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
 		{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
 		msg       = 'Checking for headers in parallel',
-		mandatory = False
+		mandatory = False # failures will not cause an error message
 	)
 
 	conf.check_cc(header_name='stdio.h', auto_add_header_name=True)

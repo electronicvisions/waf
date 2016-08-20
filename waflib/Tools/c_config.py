@@ -1274,7 +1274,12 @@ class cfgtask(Task.TaskBase):
 					errmsg=args.get('errmsg', ''),
 					)
 			else:
-				bld.check(**args)
+				args['multicheck_mandatory'] = args.get('mandatory', True)
+				args['mandatory'] = True
+				try:
+					bld.check(**args)
+				finally:
+					args['mandatory'] = args['multicheck_mandatory']
 		except Exception:
 			return 1
 
@@ -1327,12 +1332,15 @@ def multicheck(self, *k, **kw):
 				self.end_msg('fail', color='RED')
 				raise Errors.WafError('There is an error in the library, read config.log for more information')
 
+	failure_count = 0
 	for x in tasks:
 		if x.hasrun != Task.SUCCESS:
-			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW', **kw)
-			break
+			failure_count += 1
+
+	if failure_count:
+		self.end_msg(kw.get('errmsg', '%s test failed' % failure_count), color='YELLOW', **kw)
 	else:
-		self.end_msg('ok', **kw)
+		self.end_msg('all ok', **kw)
 
 	# optional output lines on msg/okmsg/errmsg
 	for x in tasks:
@@ -1344,6 +1352,6 @@ def multicheck(self, *k, **kw):
 				self.end_msg(x.args.get('okmsg', 'yes'), 'GREEN')
 	for x in tasks:
 		if x.hasrun != Task.SUCCESS:
-			self.end_msg(kw.get('errmsg', 'no'), color='YELLOW', **kw)
-			self.fatal(kw.get('fatalmsg') or 'One of the tests has failed, read config.log for more information')
+			if x.args.get('mandatory', True):
+				self.fatal(kw.get('fatalmsg') or 'One of the tests has failed, read config.log for more information')
 
