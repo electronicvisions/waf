@@ -1,10 +1,11 @@
+The feature system enables binding new behaviours to task generators instances by scheduling class methods for execution. The methods are weaved in an order that this specified on the method definition (after/before constraints). One major benefit is that additional behaviours can be weaved onto existing targets without modifying the build scripts. This approach is comparable to the CSS class declations in the web design context.
 
-The Waf features are names linked to specific functions by the decorator
-:py:func:`waflib.TaskGen.feature`. The functions
-are mapped to the class :py:class:`waflib.TaskGen.task_gen` as methods.
+The Waf features are declared by annotating functions with a decorators
+:py:func:`waflib.TaskGen.feature`. These functions are then mapped
+as class methods onto :py:class:`waflib.TaskGen.task_gen` with the name given.
 
-The association between feature names and methods is *many-to-many*, which means
-that a method may be involved in several features, and that a feature may be bound
+The association between feature names and methods is *many-to-many*; in other words
+a method may be used by in several features, and that a feature may reference
 to several methods.
 
 Here is how to create and use a new feature named **foo**::
