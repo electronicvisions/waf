@@ -1,9 +1,8 @@
-The Waf *feature* system provides a way to weave specific behaviors onto existing targets (task generators) with minimum changes to the build scripts. The main benefits are flexibility and reduced maintenance efforts. This approach is comparable to the CSS class declarations in the web design context.
+The Waf `feature` system weaves additional behaviors onto existing targets (task generators) with no changes to the build scripts. The main benefits are flexibility and reduced maintenance efforts. This approach is comparable to the CSS class declarations in the web design context.
 
-The *features* themselves are declared by annotating functions with a name
-through a specific Python decorator function :py:func:`waflib.TaskGen.feature`.
-This decorator then binds the given functions as class methods
-onto the Task generator class :py:class:`waflib.TaskGen.task_gen.
+The `features` themselves are declared by annotating functions
+through a specific Python decorator function :py:func:`waflib.TaskGen.feature` and passing a name.
+Such functions then become methods bound to the Task generator class :py:class:`waflib.TaskGen.task_gen`.
 
 The association between feature names and methods is *many-to-many*; in other words
 a method may be used by in several features, and that a feature may reference

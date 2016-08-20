@@ -333,6 +333,10 @@ Configuration methods
 
 * find_scc_
 
+.. _find_single_qt5_lib: tools/qt5.html#waflib.Tools.qt5.find_single_qt5_lib
+
+* find_single_qt5_lib_
+
 .. _find_sxx: tools/suncxx.html#waflib.Tools.suncxx.find_sxx
 
 * find_sxx_
