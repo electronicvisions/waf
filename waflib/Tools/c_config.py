@@ -1294,17 +1294,18 @@ def multicheck(self, *k, **kw):
 			ctx.check_large_file(mandatory=False)
 
 		conf.multicheck(
-			{'header_name':'stdio.h', 'msg':'... stdio', uselib_store='STDIO'},
+			{'header_name':'stdio.h', 'msg':'... stdio', 'uselib_store':'STDIO', 'global_define':False},
 			{'header_name':'xyztabcd.h', 'msg':'... optional xyztabcd.h', 'mandatory': False},
 			{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
 			{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
 			msg       = 'Checking for headers in parallel',
-			mandatory = True # mandatory tests raise an error at the end
-			run_all_tests = True # try running all tests
+			mandatory = True, # mandatory tests raise an error at the end
+			run_all_tests = True, # try running all tests
 		)
 
-	The configuration tests may modify the values in conf.env in any order, so it is
-	strongly recommended to provide 'uselib_store' values to prevent race conditions
+	The configuration tests may modify the values in conf.env in any order, and the define
+	values can affect configuration tests being executed. It is hence recommended
+	to provide `uselib_store` values with `global_define=False` to prevent such issues.
 	"""
 	self.start_msg(kw.get('msg', 'Executing %d configuration tests' % len(k)), **kw)
 
