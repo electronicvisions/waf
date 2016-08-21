@@ -1,10 +1,10 @@
 NEW IN WAF 1.9.3
 ----------------
-* Parallel configuration tests enhancements (conf.multicheck) #1793
-* Fortran Nag compiler detection fix #1797
-* Qt 5.7 detection of -std=c++11 #1800
-* Boost python detection on Gentoo #1802
-* Updated examples for stripping executables
+* Improve the behaviour of parallel configuration tests (conf.multicheck) #1793
+* Fix the Fortran Nag compiler detection #1797
+* Detect Qt 5.7 (-std=c++11 flag) #1800
+* Detect Boost python on Gentoo #1802
+* Update the strip and netcache examples
 
 NEW IN WAF 1.9.2
 ----------------
