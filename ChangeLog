@@ -1,8 +1,6 @@
 NEW IN WAF 1.9.3
 ----------------
-* Enable configuration task class lookup in conf.multicheck
-* Enable individual output lines in conf.multicheck
-* Parallel configuration tests can use any build function
+* Parallel configuration tests enhancements (conf.multicheck)
 * Updated examples for stripping executables
 * Qt 5.7 detection of -std=c++11
 

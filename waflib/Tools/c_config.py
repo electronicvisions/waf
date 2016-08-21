@@ -1299,7 +1299,8 @@ def multicheck(self, *k, **kw):
 			{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
 			{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
 			msg       = 'Checking for headers in parallel',
-			mandatory = False # failures will not cause an error message
+			mandatory = True # mandatory tests raise an error at the end
+			run_all_tests = True # try running all tests
 		)
 
 	The configuration tests may modify the values in conf.env in any order, so it is
