@@ -1,5 +1,6 @@
 // Thomas Nagy, 2011
 
+// TODO security
 // TODO handle all exceptions properly
 
 import java.util.HashMap;

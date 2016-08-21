@@ -214,12 +214,16 @@ def can_retrieve_cache(self):
 				p = node.abspath()
 				recv_file(conn, ssig, cnt, p)
 				cnt += 1
+			else:
+				Logs.debug('netcache: obtained %r from cache', self.outputs)
 		except MissingFile as e:
 			Logs.debug('netcache: file is not in the cache %r', e)
 			err = True
 
 		except Exception as e:
-			Logs.debug('netcache: could not get the files %r', e)
+			Logs.debug('netcache: could not get the files %r', self.outputs)
+			if Logs.verbose > 1:
+				Logs.debug('netcache: exception %r', e)
 			err = True
 
 			# broken connection? remove this one
@@ -258,6 +262,7 @@ def put_files_cache(self):
 				if not conn:
 					conn = get_connection(push=True)
 				sock_send(conn, ssig, cnt, node.abspath())
+				Logs.debug('netcache: sent %r', node)
 			except Exception as e:
 				Logs.debug('netcache: could not push the files %r', e)
 
