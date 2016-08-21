@@ -42,12 +42,13 @@ def configure(conf):
 		#ctx.check_large_file(mandatory=False)
 
 	conf.multicheck(
-		{'header_name':'stdio.h', 'msg':'... stdio'},
+		{'header_name':'stdio.h', 'msg':'... stdio', 'uselib_store': 'STDIO'},
 		{'header_name':'xyztabcd.h', 'msg':'... optional xyztabcd.h', 'mandatory': False},
 		{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
 		{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
 		msg       = 'Checking for headers in parallel',
-		mandatory = False # failures will not cause an error message
+		#mandatory = False, # set to False to make all tests non-mandatory
+		#run_all_tests = False # set to False to stop at the first error
 	)
 
 	conf.check_cc(header_name='stdio.h', auto_add_header_name=True)

@@ -1286,10 +1286,34 @@ class cfgtask(Task.TaskBase):
 @conf
 def multicheck(self, *k, **kw):
 	"""
-	Runs configuration tests in parallel. The results are printed sequentially at the end of the build.
+	Runs configuration tests in parallel; results are printed sequentially at the end of the build
+	but each test must provide its own msg value to display a line::
+
+		def test_build(ctx):
+			ctx.in_msg = True # suppress console outputs
+			ctx.check_large_file(mandatory=False)
+
+		conf.multicheck(
+			{'header_name':'stdio.h', 'msg':'... stdio', uselib_store='STDIO'},
+			{'header_name':'xyztabcd.h', 'msg':'... optional xyztabcd.h', 'mandatory': False},
+			{'header_name':'stdlib.h', 'msg':'... stdlib', 'okmsg': 'aye', 'errmsg': 'nope'},
+			{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
+			msg       = 'Checking for headers in parallel',
+			mandatory = False # failures will not cause an error message
+		)
+
+	The configuration tests may modify the values in conf.env in any order, so it is
+	strongly recommended to provide 'uselib_store' values to prevent race conditions
 	"""
 	self.start_msg(kw.get('msg', 'Executing %d configuration tests' % len(k)), **kw)
 
+	# Force a copy so that threads append to the same list at least
+	# no order is guaranteed, but the values should not disappear at least
+	for var in ('DEFINES', DEFKEYS):
+		self.env.append_value(var, [])
+	self.env.DEFINE_COMMENTS = self.env.DEFINE_COMMENTS or {}
+
+	# define a task object that will execute our tests
 	class par(object):
 		def __init__(self):
 			self.keep = False
@@ -1301,6 +1325,7 @@ def multicheck(self, *k, **kw):
 			return
 
 	bld = par()
+	bld.keep = kw.get('run_all_tests', True)
 	tasks = []
 	for dct in k:
 		x = Task.classes['cfgtask'](bld=bld)
@@ -1334,7 +1359,7 @@ def multicheck(self, *k, **kw):
 
 	failure_count = 0
 	for x in tasks:
-		if x.hasrun != Task.SUCCESS:
+		if x.hasrun not in (Task.SUCCESS, Task.NOT_RUN):
 			failure_count += 1
 
 	if failure_count:
@@ -1346,7 +1371,9 @@ def multicheck(self, *k, **kw):
 	for x in tasks:
 		if 'msg' in x.args:
 			self.start_msg(x.args['msg'])
-			if x.hasrun != Task.SUCCESS:
+			if x.hasrun == Task.NOT_RUN:
+				self.end_msg('test cancelled', 'YELLOW')
+			elif x.hasrun != Task.SUCCESS:
 				self.end_msg(x.args.get('errmsg', 'no'), 'YELLOW')
 			else:
 				self.end_msg(x.args.get('okmsg', 'yes'), 'GREEN')
