@@ -368,14 +368,14 @@ class Dist(Context.Context):
 		files = self.get_files()
 
 		if self.algo.startswith('tar.'):
-			tar = tarfile.open(arch_name, 'w:' + self.algo.replace('tar.', ''))
+			tar = tarfile.open(node.abspath(), 'w:' + self.algo.replace('tar.', ''))
 
 			for x in files:
 				self.add_tar_file(x, tar)
 			tar.close()
 		elif self.algo == 'zip':
 			import zipfile
-			zip = zipfile.ZipFile(arch_name, 'w', compression=zipfile.ZIP_DEFLATED)
+			zip = zipfile.ZipFile(node.abspath(), 'w', compression=zipfile.ZIP_DEFLATED)
 
 			for x in files:
 				archive_name = self.get_base_name() + '/' + x.path_from(self.base_path)
