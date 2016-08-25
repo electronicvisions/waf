@@ -316,7 +316,7 @@ class BuildContext(Context.Context):
 					Logs.debug('build: Could not pickle the build cache %s: %r', dbfn, e)
 				else:
 					for x in SAVED_ATTRS:
-						setattr(self, x, data[x])
+						setattr(self, x, data.get(x, {}))
 			finally:
 				Node.pickle_lock.release()
 
