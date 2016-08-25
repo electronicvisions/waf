@@ -24,6 +24,12 @@ if os.name == 'posix' and sys.version_info[0] < 3:
 else:
 	import subprocess
 
+try:
+	TimeoutExpired = subprocess.TimeoutExpired
+except AttributeError:
+	class TimeoutExpired(object):
+		pass
+
 from collections import deque, defaultdict
 
 try:
@@ -856,11 +862,19 @@ def run_regular_process(cmd, kwargs, cargs={}):
 	"""
 	proc = subprocess.Popen(cmd, **kwargs)
 	if kwargs.get('stdout') or kwargs.get('stderr'):
-		out, err = proc.communicate(**cargs)
+		try:
+			out, err = proc.communicate(**cargs)
+		except TimeoutExpired:
+			proc.kill()
+			out, err = proc.communicate(**cargs)
 		status = proc.returncode
 	else:
 		out, err = (None, None)
-		status = proc.wait(**cargs)
+		try:
+			status = proc.wait(**cargs)
+		except TimeoutExpired:
+			proc.kill()
+			status = proc.wait(**cargs)
 	return status, out, err
 
 def run_process(cmd, kwargs, cargs={}):

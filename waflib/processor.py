@@ -13,6 +13,12 @@ try:
 except ImportError:
 	import subprocess
 
+try:
+	TimeoutExpired = subprocess.TimeoutExpired
+except AttributeError:
+	class TimeoutExpired(object):
+		pass
+
 def run():
 	txt = sys.stdin.readline().strip()
 	if not txt:
@@ -25,7 +31,11 @@ def run():
 	out, err, ex, trace = (None, None, None, None)
 	try:
 		proc = subprocess.Popen(cmd, **kwargs)
-		out, err = proc.communicate(**cargs)
+		try:
+			out, err = proc.communicate(**cargs)
+		except TimeoutExpired:
+			proc.kill()
+			out, err = proc.communicate(**cargs)
 		ret = proc.returncode
 	except (OSError, ValueError, Exception) as e:
 		exc_type, exc_value, tb = sys.exc_info()
