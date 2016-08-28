@@ -1283,6 +1283,18 @@ class cfgtask(Task.TaskBase):
 		except Exception:
 			return 1
 
+	def process(self):
+		Task.TaskBase.process(self)
+		if 'msg' in self.args:
+			with self.generator.bld.multicheck_lock:
+				self.conf.start_msg(self.args['msg'])
+				if self.hasrun == Task.NOT_RUN:
+					self.conf.end_msg('test cancelled', 'YELLOW')
+				elif self.hasrun != Task.SUCCESS:
+					self.conf.end_msg(self.args.get('errmsg', 'no'), 'YELLOW')
+				else:
+					self.conf.end_msg(self.args.get('okmsg', 'yes'), 'GREEN')
+
 @conf
 def multicheck(self, *k, **kw):
 	"""
@@ -1345,13 +1357,17 @@ def multicheck(self, *k, **kw):
 		while 1:
 			yield []
 	bld.producer = p = Runner.Parallel(bld, Options.options.jobs)
+	bld.multicheck_lock = Utils.threading.Lock()
 	p.biter = it()
+
+	self.end_msg('started')
 	p.start()
 
 	# flush the logs in order into the config.log
 	for x in tasks:
 		x.logger.memhandler.flush()
 
+	self.start_msg('-> processing test results')
 	if p.error:
 		for x in p.error:
 			if getattr(x, 'err_msg', None):
@@ -1369,16 +1385,6 @@ def multicheck(self, *k, **kw):
 	else:
 		self.end_msg('all ok', **kw)
 
-	# optional output lines on msg/okmsg/errmsg
-	for x in tasks:
-		if 'msg' in x.args:
-			self.start_msg(x.args['msg'])
-			if x.hasrun == Task.NOT_RUN:
-				self.end_msg('test cancelled', 'YELLOW')
-			elif x.hasrun != Task.SUCCESS:
-				self.end_msg(x.args.get('errmsg', 'no'), 'YELLOW')
-			else:
-				self.end_msg(x.args.get('okmsg', 'yes'), 'GREEN')
 	for x in tasks:
 		if x.hasrun != Task.SUCCESS:
 			if x.args.get('mandatory', True):
