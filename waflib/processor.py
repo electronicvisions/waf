@@ -37,7 +37,7 @@ def run():
 			proc.kill()
 			out, err = proc.communicate(**cargs)
 		ret = proc.returncode
-	except (OSError, ValueError, Exception) as e:
+	except Exception as e:
 		exc_type, exc_value, tb = sys.exc_info()
 		exc_lines = traceback.format_exception(exc_type, exc_value, tb)
 		trace = str(cmd) + '\n' + ''.join(exc_lines)
