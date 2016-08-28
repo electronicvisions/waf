@@ -866,15 +866,17 @@ def run_regular_process(cmd, kwargs, cargs={}):
 			out, err = proc.communicate(**cargs)
 		except TimeoutExpired:
 			proc.kill()
-			out, err = proc.communicate(**cargs)
+			out, err = proc.communicate()
+			raise TimeoutExpired(proc.args, timeout=cargs['timeout'], output=out, stderr=err)
 		status = proc.returncode
 	else:
 		out, err = (None, None)
 		try:
 			status = proc.wait(**cargs)
-		except TimeoutExpired:
+		except TimeoutExpired as e:
 			proc.kill()
-			status = proc.wait(**cargs)
+			proc.wait()
+			raise e
 	return status, out, err
 
 def run_process(cmd, kwargs, cargs={}):

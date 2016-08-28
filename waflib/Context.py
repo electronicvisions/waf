@@ -331,14 +331,15 @@ class Context(ctx):
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
 			raise Errors.WafError('Program %s not found!' % cmd[0])
 
-		wargs = {}
+		cargs = {}
 		if 'timeout' in kw:
 			if kw['timeout'] is not None:
-				wargs['timeout'] = kw['timeout']
+				if kw['shell']:
+					Logs.warn('Shell commands cannot timeout %r', cmd)
 			del kw['timeout']
 		if 'input' in kw:
 			if kw['input']:
-				wargs['input'] = kw['input']
+				cargs['input'] = kw['input']
 				kw['stdin'] = subprocess.PIPE
 			del kw['input']
 
@@ -347,7 +348,7 @@ class Context(ctx):
 				kw['cwd'] = kw['cwd'].abspath()
 
 		try:
-			ret, out, err = Utils.run_process(cmd, kw, wargs)
+			ret, out, err = Utils.run_process(cmd, kw, cargs)
 		except Exception as e:
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
@@ -415,14 +416,15 @@ class Context(ctx):
 		if quiet is None:
 			self.to_log(cmd)
 
-		wargs = {}
+		cargs = {}
 		if 'timeout' in kw:
 			if kw['timeout'] is not None:
-				wargs['timeout'] = kw['timeout']
+				if kw['shell']:
+					Logs.warn('Shell commands cannot timeout %r', cmd)
 			del kw['timeout']
 		if 'input' in kw:
 			if kw['input']:
-				wargs['input'] = kw['input']
+				cargs['input'] = kw['input']
 				kw['stdin'] = subprocess.PIPE
 			del kw['input']
 
@@ -431,7 +433,7 @@ class Context(ctx):
 				kw['cwd'] = kw['cwd'].abspath()
 
 		try:
-			ret, out, err = Utils.run_process(cmd, kw, wargs)
+			ret, out, err = Utils.run_process(cmd, kw, cargs)
 		except Exception as e:
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 

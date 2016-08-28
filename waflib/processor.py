@@ -35,7 +35,8 @@ def run():
 			out, err = proc.communicate(**cargs)
 		except TimeoutExpired:
 			proc.kill()
-			out, err = proc.communicate(**cargs)
+			out, err = proc.communicate()
+			raise TimeoutExpired(proc.args, timeout=cargs['timeout'], output=out, stderr=err)
 		ret = proc.returncode
 	except Exception as e:
 		exc_type, exc_value, tb = sys.exc_info()
