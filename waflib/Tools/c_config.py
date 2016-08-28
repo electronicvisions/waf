@@ -6,6 +6,8 @@
 C/C++/D configuration helpers
 """
 
+from __future__ import with_statement
+
 import os, re, shlex
 from waflib import Build, Utils, Task, Options, Logs, Errors, Runner
 from waflib.TaskGen import after_method, feature
