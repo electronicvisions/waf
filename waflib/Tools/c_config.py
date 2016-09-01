@@ -1250,10 +1250,17 @@ class cfgtask(Task.TaskBase):
 
 	Make sure to use locks if concurrent access to the same conf.env data is necessary.
 	"""
+	def __init__(self, *k, **kw):
+		Task.TaskBase.__init__(self, *k, **kw)
+		self.run_after = set()
+
 	def display(self):
 		return ''
 
 	def runnable_status(self):
+		for x in self.run_after:
+			if not x.hasrun:
+				return Task.ASK_LATER
 		return Task.RUN_ME
 
 	def uid(self):
@@ -1343,6 +1350,8 @@ def multicheck(self, *k, **kw):
 	bld = par()
 	bld.keep = kw.get('run_all_tests', True)
 	tasks = []
+
+	id_to_task = {}
 	for dct in k:
 		x = Task.classes['cfgtask'](bld=bld)
 		tasks.append(x)
@@ -1353,6 +1362,22 @@ def multicheck(self, *k, **kw):
 
 		# bind a logger that will keep the info in memory
 		x.logger = Logs.make_mem_logger(str(id(x)), self.logger)
+
+		if 'id' in dct:
+			id_to_task[dct['id']] = x
+
+	# second pass to set dependencies with after_test/before_test
+	for x in tasks:
+		for key in Utils.to_list(x.args.get('before_tests', [])):
+			tsk = id_to_task[key]
+			if not tsk:
+				raise ValueError('No test named %r' % key)
+			tsk.run_after.add(x)
+		for key in Utils.to_list(x.args.get('after_tests', [])):
+			tsk = id_to_task[key]
+			if not tsk:
+				raise ValueError('No test named %r' % key)
+			x.run_after.add(tsk)
 
 	def it():
 		yield tasks
