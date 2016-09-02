@@ -791,7 +791,7 @@ class c_parser(object):
 		self.curfile = ''
 		"""Current file"""
 
-		self.ban_includes = set([])
+		self.ban_includes = set()
 		"""Includes that must not be read (#pragma once)"""
 
 	def cached_find_resource(self, node, filename):

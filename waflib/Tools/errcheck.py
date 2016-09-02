@@ -73,13 +73,13 @@ def check_same_targets(self):
 					Logs.error('  - object %r (%r) defined in %r', tsk.__class__.__name__, tsk, tsk.generator)
 
 def check_invalid_constraints(self):
-	feat = set([])
+	feat = set()
 	for x in list(TaskGen.feats.values()):
 		feat.union(set(x))
 	for (x, y) in TaskGen.task_gen.prec.items():
 		feat.add(x)
 		feat.union(set(y))
-	ext = set([])
+	ext = set()
 	for x in TaskGen.task_gen.mappings.values():
 		ext.add(x.__name__)
 	invalid = ext & feat

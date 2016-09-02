@@ -77,7 +77,7 @@ def to_incnodes(self, inlst):
 	:return: list of include folders as nodes
 	"""
 	lst = []
-	seen = set([])
+	seen = set()
 	for x in self.to_list(inlst):
 		if x in seen or not x:
 			continue
@@ -333,7 +333,7 @@ def process_use(self):
 	See :py:func:`waflib.Tools.ccroot.use_rec`.
 	"""
 
-	use_not = self.tmp_use_not = set([])
+	use_not = self.tmp_use_not = set()
 	self.tmp_use_seen = [] # we would like an ordered set
 	use_prec = self.tmp_use_prec = {}
 	self.uselib = self.to_list(getattr(self, 'uselib', []))
@@ -441,7 +441,7 @@ def get_uselib_vars(self):
 	:return: the *uselib* variables associated to the *features* attribute (see :py:attr:`waflib.Tools.ccroot.USELIB_VARS`)
 	:rtype: list of string
 	"""
-	_vars = set([])
+	_vars = set()
 	for x in self.features:
 		if x in USELIB_VARS:
 			_vars |= USELIB_VARS[x]
@@ -456,7 +456,7 @@ def propagate_uselib_vars(self):
 		def build(bld):
 			bld.env.AFLAGS_aaa = ['bar']
 			from waflib.Tools.ccroot import USELIB_VARS
-			USELIB_VARS['aaa'] = set('AFLAGS')
+			USELIB_VARS['aaa'] = ['AFLAGS']
 
 			tg = bld(features='aaa', aflags='test')
 

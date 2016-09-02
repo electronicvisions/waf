@@ -484,7 +484,7 @@ class Task(TaskBase):
 		self.dep_nodes = []
 		"""List of additional nodes to depend on"""
 
-		self.run_after = set([])
+		self.run_after = set()
 		"""Set of tasks that must be executed before this one"""
 
 	def __str__(self):

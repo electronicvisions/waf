@@ -114,7 +114,7 @@ def parse_strace_deps(self, path, cwd):
 	pid_to_cwd = {}
 
 	global BANNED
-	done = set([])
+	done = set()
 	for m in re.finditer(re_lines, cnt):
 		# scraping the output of strace
 		pid = m.group('pid')

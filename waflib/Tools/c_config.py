@@ -696,7 +696,7 @@ def post_check(self, *k, **kw):
 	if is_success and 'uselib_store' in kw:
 		from waflib.Tools import ccroot
 		# See get_uselib_vars in ccroot.py
-		_vars = set([])
+		_vars = set()
 		for x in kw['features']:
 			if x in ccroot.USELIB_VARS:
 				_vars |= ccroot.USELIB_VARS[x]

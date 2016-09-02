@@ -217,7 +217,7 @@ class qxx(Task.classes['cxx']):
 		include_nodes = [node.parent] + self.generator.includes_nodes
 
 		moctasks = []
-		mocfiles = set([])
+		mocfiles = set()
 		for d in bld.raw_deps.get(self.uid(), []):
 			if not d.endswith('.moc'):
 				continue
