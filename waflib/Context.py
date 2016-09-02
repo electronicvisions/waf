@@ -333,6 +333,7 @@ class Context(ctx):
 
 		cargs = {}
 		if 'timeout' in kw:
+			cargs['timeout'] = kw['timeout']
 			if kw['timeout'] is not None:
 				if kw['shell']:
 					Logs.warn('Shell commands cannot timeout %r', cmd)
@@ -418,6 +419,7 @@ class Context(ctx):
 
 		cargs = {}
 		if 'timeout' in kw:
+			cargs['timeout'] = kw['timeout']
 			if kw['timeout'] is not None:
 				if kw['shell']:
 					Logs.warn('Shell commands cannot timeout %r', cmd)
