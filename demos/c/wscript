@@ -49,8 +49,8 @@ def configure(conf):
 		{'func': test_build, 'msg':'... testing an arbitrary build function', 'okmsg':'ok'},
 
 		# parallelism control with after_tests/before_tests
-		{'header_name':'malloc.h', 'msg':'... malloc', 'uselib_store': 'MALLOC', 'id': 'malloc_t'},
-		{'header_name':'unistd.h', 'msg':'... unistd', 'uselib_store': 'UNISTD', 'before_tests': ['malloc_t']},
+		{'header_name':'malloc.h', 'msg':'... malloc', 'uselib_store':'MALLOC', 'id':'malloc_t', 'mandatory':False},
+		{'header_name':'unistd.h', 'msg':'... unistd', 'uselib_store':'UNISTD', 'before_tests':['malloc_t'], 'mandatory':False},
 
 		msg       = 'Checking for headers in parallel',
 		#mandatory = False, # set to False to make all tests non-mandatory
