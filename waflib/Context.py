@@ -333,9 +333,10 @@ class Context(ctx):
 
 		cargs = {}
 		if 'timeout' in kw:
-			cargs['timeout'] = kw['timeout']
-			if not 'start_new_session' in kw:
-				kw['start_new_session'] = True
+			if sys.hexversion >= 0x3030000:
+				cargs['timeout'] = kw['timeout']
+				if not 'start_new_session' in kw:
+					kw['start_new_session'] = True
 			del kw['timeout']
 		if 'input' in kw:
 			if kw['input']:
@@ -418,9 +419,10 @@ class Context(ctx):
 
 		cargs = {}
 		if 'timeout' in kw:
-			cargs['timeout'] = kw['timeout']
-			if not 'start_new_session' in kw:
-				kw['start_new_session'] = True
+			if sys.hexversion >= 0x3030000:
+				cargs['timeout'] = kw['timeout']
+				if not 'start_new_session' in kw:
+					kw['start_new_session'] = True
 			del kw['timeout']
 		if 'input' in kw:
 			if kw['input']:
