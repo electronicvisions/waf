@@ -870,7 +870,9 @@ def run_regular_process(cmd, kwargs, cargs={}):
 			else:
 				proc.kill()
 			out, err = proc.communicate()
-			raise TimeoutExpired(proc.args, timeout=cargs['timeout'], output=out, stderr=err)
+			exc = TimeoutExpired(proc.args, timeout=cargs['timeout'], output=out)
+			exc.stderr = err
+			raise exc
 		status = proc.returncode
 	else:
 		out, err = (None, None)
