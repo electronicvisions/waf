@@ -1,3 +1,8 @@
+NEW IN WAF 1.9.4
+----------------
+* Enable 'waf dist' in arbitrary paths #1806
+* Handle subprocess timeouts in Python 3.3 #1807
+
 NEW IN WAF 1.9.3
 ----------------
 * Improve the behaviour of parallel configuration tests (conf.multicheck) #1793

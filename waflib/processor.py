@@ -34,9 +34,9 @@ def run():
 		try:
 			out, err = proc.communicate(**cargs)
 		except TimeoutExpired:
-			try:
+			if kwargs.get('start_new_session') and hasattr(os, 'killpg'):
 				os.killpg(proc.pid, signal.SIGKILL)
-			except AttributeError:
+			else:
 				proc.kill()
 			out, err = proc.communicate()
 			raise TimeoutExpired(proc.args, timeout=cargs['timeout'], output=out, stderr=err)
