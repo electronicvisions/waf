@@ -2,7 +2,7 @@
 # encoding: utf-8
 # Thomas Nagy, 2016 (ita)
 
-import sys, traceback, base64
+import os, sys, traceback, base64, signal
 try:
 	import cPickle
 except ImportError:
@@ -34,7 +34,10 @@ def run():
 		try:
 			out, err = proc.communicate(**cargs)
 		except TimeoutExpired:
-			proc.kill()
+			try:
+				os.killpg(proc.pid, signal.SIGKILL)
+			except AttributeError:
+				proc.kill()
 			out, err = proc.communicate()
 			raise TimeoutExpired(proc.args, timeout=cargs['timeout'], output=out, stderr=err)
 		ret = proc.returncode

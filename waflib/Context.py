@@ -334,9 +334,8 @@ class Context(ctx):
 		cargs = {}
 		if 'timeout' in kw:
 			cargs['timeout'] = kw['timeout']
-			if kw['timeout'] is not None:
-				if kw['shell']:
-					Logs.warn('Shell commands cannot timeout %r', cmd)
+			if not 'start_new_session' in kw:
+				kw['start_new_session'] = True
 			del kw['timeout']
 		if 'input' in kw:
 			if kw['input']:
@@ -420,9 +419,8 @@ class Context(ctx):
 		cargs = {}
 		if 'timeout' in kw:
 			cargs['timeout'] = kw['timeout']
-			if kw['timeout'] is not None:
-				if kw['shell']:
-					Logs.warn('Shell commands cannot timeout %r', cmd)
+			if not 'start_new_session' in kw:
+				kw['start_new_session'] = True
 			del kw['timeout']
 		if 'input' in kw:
 			if kw['input']:

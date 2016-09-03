@@ -9,7 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import os, sys, errno, traceback, inspect, re, datetime, platform, base64
+import os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal
 try:
 	import cPickle
 except ImportError:
@@ -865,7 +865,10 @@ def run_regular_process(cmd, kwargs, cargs={}):
 		try:
 			out, err = proc.communicate(**cargs)
 		except TimeoutExpired:
-			proc.kill()
+			try:
+				os.killpg(proc.pid, signal.SIGKILL)
+			except AttributeError:
+				proc.kill()
 			out, err = proc.communicate()
 			raise TimeoutExpired(proc.args, timeout=cargs['timeout'], output=out, stderr=err)
 		status = proc.returncode
@@ -874,7 +877,10 @@ def run_regular_process(cmd, kwargs, cargs={}):
 		try:
 			status = proc.wait(**cargs)
 		except TimeoutExpired as e:
-			proc.kill()
+			try:
+				os.killpg(proc.pid, signal.SIGKILL)
+			except AttributeError:
+				proc.kill()
 			proc.wait()
 			raise e
 	return status, out, err
