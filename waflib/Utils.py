@@ -852,6 +852,10 @@ def run_prefork_process(cmd, kwargs, cargs):
 			raise OSError(trace)
 		elif ex == 'ValueError':
 			raise ValueError(trace)
+		elif ex == 'TimeoutExpired':
+			exc = TimeoutExpired(cmd, timeout=cargs['timeout'], output=out)
+			exc.stderr = err
+			raise exc
 		else:
 			raise Exception(trace)
 	return ret, out, err
