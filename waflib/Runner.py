@@ -24,7 +24,6 @@ class Consumer(Utils.threading.Thread):
 	the coordinator :py:class:`waflib.Runner.Spawner`. There is one
 	instance per task to consume.
 	"""
-	__slots__ = ('task', 'spawner')
 	def __init__(self, spawner, task):
 		Utils.threading.Thread.__init__(self)
 		self.task = task
