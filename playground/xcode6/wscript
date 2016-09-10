@@ -62,7 +62,7 @@ def build(bld):
 		target='MyDynLib',
 	)
 
-	bld.exe(
+	bld.program(
 		source_files=['src/test.cpp'],
 		includes=tg.includes,
 		target='MyExe',

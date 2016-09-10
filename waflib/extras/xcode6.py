@@ -55,7 +55,7 @@ def build(bld):
 
 # TODO: support iOS projects
 
-from waflib import Context, TaskGen, Build, Utils, Errors
+from waflib import Context, TaskGen, Build, Utils, Errors, Logs
 import os, sys
 
 HEADERS_GLOB = '**/(*.h|*.hpp|*.H|*.inl)'
@@ -602,23 +602,28 @@ class xcode(Build.BuildContext):
 				files = [self.unique_filereference(PBXFileReference(n.name, n.abspath())) for n in hdrs]
 				target.add_build_phase(PBXHeadersBuildPhase([PBXBuildFile(f, {'ATTRIBUTES': ('Public',)}) for f in files]))
 
-				# Install path
-				installpaths = Utils.to_list(getattr(tg, 'install', []))
-				prodbuildfile = PBXBuildFile(target.productReference)
-				for instpath in installpaths:
-					target.add_build_phase(PBXCopyFilesBuildPhase([prodbuildfile], instpath))
-
 				# Merge frameworks and libs into one list, and prefix the frameworks
 				ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(tg.env.FRAMEWORK)]
 				ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
-
+				
 				# Override target specfic build settings
 				bldsettings = {
 					'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
 					'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.LIBPATH) + Utils.to_list(tg.env.STLIBPATH),
 					'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.FRAMEWORKPATH),
-					'OTHER_LDFLAGS': r'\n'.join(ld_flags)
+					'OTHER_LDFLAGS': r'\n'.join(ld_flags),
+					'INSTALL_PATH': []
 				}
+
+				# Install path
+				installpaths = Utils.to_list(getattr(tg, 'install', []))
+				prodbuildfile = PBXBuildFile(target.productReference)
+				for instpath in installpaths:
+					bldsettings['INSTALL_PATH'].append(instpath)
+					target.add_build_phase(PBXCopyFilesBuildPhase([prodbuildfile], instpath))
+
+				if len(bldsettings['INSTALL_PATH']) == 0:
+					del bldsettings['INSTALL_PATH']
 
 				# The keys represents different build configuration, e.g. Debug, Release and so on..
 				# Insert our generated build settings to all configuration names
@@ -641,10 +646,13 @@ class xcode(Build.BuildContext):
 	
 	def build_target(self, tgtype, *k, **kw):
 		"""
-		Provide user-friendly methods to build different target types
+		Provide aliases
 		E.g. bld.framework(source='..', ...) to build a Framework target.
 		E.g. bld.dylib(source='..', ...) to build a Dynamic library target. etc...
 		"""
+
+		# The following features are needed for this tool's use of
+		# env['INCPATHS'], env['LIB_xxx'] etc.
 		self.load('ccroot')
 		kw['features'] = 'cxx cxxprogram'
 		kw['target_type'] = tgtype
@@ -654,4 +662,7 @@ class xcode(Build.BuildContext):
 	def framework(self, *k, **kw): return self.build_target('framework', *k, **kw)
 	def dylib(self, *k, **kw): return self.build_target('dylib', *k, **kw)
 	def stlib(self, *k, **kw): return self.build_target('stlib', *k, **kw)
-	def exe(self, *k, **kw): return self.build_target('exe', *k, **kw)
+	def program(self, *k, **kw): return self.build_target('exe', *k, **kw)
+	def exe(self, *k, **kw):
+		Logs.warn("xcode6: alias 'bld.exe()' has changed name. Use 'bld.program()' instead.")
+		return self.build_target('exe', *k, **kw)
