@@ -534,7 +534,6 @@ def run_build(self, *k, **kw):
 		$ waf configure --confcache
 
 	"""
-
 	lst = [str(v) for (p, v) in kw.items() if p != 'env']
 	h = Utils.h_list(lst)
 	dir = self.bldnode.abspath() + os.sep + (not Utils.is_win32 and '.' or '') + 'conf_check_' + Utils.to_hex(h)
@@ -566,7 +565,8 @@ def run_build(self, *k, **kw):
 	if not os.path.exists(bdir):
 		os.makedirs(bdir)
 
-	self.test_bld = bld = Context.create_context('build', top_dir=dir, out_dir=bdir)
+	cls_name = getattr(self, 'run_build_cls', 'build')
+	self.test_bld = bld = Context.create_context(cls_name, top_dir=dir, out_dir=bdir)
 	bld.init_dirs()
 	bld.progress_bar = 0
 	bld.targets = '*'
