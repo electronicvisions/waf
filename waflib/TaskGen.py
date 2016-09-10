@@ -589,6 +589,9 @@ def process_rule(self):
 		if getattr(self, 'always', None):
 			cls.always_run = True
 
+		if getattr(self, 'timeout', None):
+			cls.timeout = self.timeout
+
 		for x in ('after', 'before', 'ext_in', 'ext_out'):
 			setattr(cls, x, getattr(self, x, []))
 

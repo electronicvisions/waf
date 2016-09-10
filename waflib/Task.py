@@ -229,6 +229,9 @@ class TaskBase(evil):
 		if not 'cwd' in kw:
 			kw['cwd'] = self.get_cwd()
 
+		if hasattr(self, 'timeout'):
+			kw['timeout'] = self.timeout
+
 		if self.env.PATH:
 			env = kw['env'] = dict(kw.get('env') or self.env.env or os.environ)
 			env['PATH'] = self.env.PATH if isinstance(self.env.PATH, str) else os.pathsep.join(self.env.PATH)
