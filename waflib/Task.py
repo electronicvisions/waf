@@ -179,9 +179,12 @@ class TaskBase(evil):
 		:rtype: :py:class:`waflib.Node.Node`
 		"""
 		bld = self.generator.bld
-		ret = getattr(self, 'cwd', None) or getattr(self.generator.bld, 'cwd', bld.bldnode)
+		ret = getattr(self, 'cwd', None) or getattr(bld, 'cwd', bld.bldnode)
 		if isinstance(ret, str):
-			self.generator.bld.fatal('Working folders given to tasks must be Node objects')
+			if os.path.isabs(ret):
+				ret = bld.root.make_node(ret)
+			else:
+				ret = self.generator.path.make_node(ret)
 		return ret
 
 	def quote_flag(self, x):
