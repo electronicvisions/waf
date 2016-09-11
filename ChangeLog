@@ -2,6 +2,9 @@ NEW IN WAF 1.9.4
 ----------------
 * Enable 'waf dist' in arbitrary paths #1806
 * Handle subprocess timeouts in Python 3.3 #1807
+* Set the configuration test build class on conf.run_build_cls
+* Provide execution order constraints in parallel configuration tests
+* Accept Task.cwd as str type
 
 NEW IN WAF 1.9.3
 ----------------
@@ -28,7 +31,7 @@ NEW IN WAF 1.9.1
 
 * Execute proceses with run_regular_process when arguments are not serializable #1764
 * Do not de-duplicate configuration flags assigned through uselib_store (conf.check tests)
-* Let the documentation scripts generate SVG outputs
+* Enable SVG pictures in the documentation
 
 NEW IN WAF 1.9.0
 ----------------
