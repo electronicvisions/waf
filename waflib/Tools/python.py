@@ -583,7 +583,7 @@ def configure(conf):
 	if Options.options.pythonarchdir:
 		v.PYTHONARCHDIR = Options.options.pythonarchdir
 
-	conf.find_program('python', var='PYTHON', value=Options.options.pythondir or sys.executable)
+	conf.find_program('python', var='PYTHON', value=Options.options.python or sys.executable)
 
 	v.PYFLAGS = ''
 	v.PYFLAGS_OPT = '-O'
