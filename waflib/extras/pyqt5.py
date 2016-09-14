@@ -30,7 +30,7 @@ Load the "pyqt5" tool.
 
 Add into the sources list also the qrc resources files or ui5
 definition files and they will be translated into python code
-with the system tools (PyQt5 or pyside2 are searched in this
+with the system tools (PyQt5, pyside2, PyQt4 are searched in this
 order) and then compiled
 """
 
@@ -211,21 +211,23 @@ def find_pyqt5_binaries(self):
 
 	if getattr(Options.options, 'want_pyside2', True):
 		self.find_program(['pyside2-uic'], var='QT_PYUIC')
+		self.find_program(['pyside2-rcc'], var='QT_PYRCC')
+		self.find_program(['pyside2-lupdate'], var='QT_PYLUPDATE')
+	elif getattr(Options.options, 'want_pyqt4', True):
+		self.find_program(['pyuic4'], var='QT_PYUIC')
+		self.find_program(['pyrcc4'], var='QT_PYRCC')
+		self.find_program(['pylupdate4'], var='QT_PYLUPDATE')
 	else:
-		self.find_program(['pyuic5','pyside2-uic'], var='QT_PYUIC')
+		self.find_program(['pyuic5','pyside2-uic','pyuic4'], var='QT_PYUIC')
+		self.find_program(['pyrcc5','pyside2-rcc','pyrcc4'], var='QT_PYRCC')
+		self.find_program(['pylupdate5', 'pyside2-lupdate','pylupdate4'], var='QT_PYLUPDATE')
 
 	if not env.QT_PYUIC:
 		self.fatal('cannot find the uic compiler for python for qt5')
 
-	if getattr(Options.options, 'want_pyside2', True):
-		self.find_program(['pyside2-rcc'], var='QT_PYRCC')
-	else:
-		self.find_program(['pyrcc5','pyside2-rcc'], var='QT_PYRCC')
-
 	if not env.QT_PYUIC:
 		self.fatal('cannot find the rcc compiler for python for qt5')
 
-	self.find_program(['pylupdate5', 'pyside2-lupdate'], var='QT_PYLUPDATE')
 	self.find_program(['lrelease-qt5', 'lrelease'], var='QT_LRELEASE')
 
 def options(opt):
@@ -234,3 +236,4 @@ def options(opt):
 	"""
 	pyqt5opt=opt.add_option_group("Python QT5 Options")
 	pyqt5opt.add_option('--pyqt5-pyside2', action='store_true', default=False, dest='want_pyside2', help='use pyside2 bindings as python QT5 bindings (default PyQt5 is searched first, PySide2 after)')
+	pyqt5opt.add_option('--pyqt5-pyqt4', action='store_true', default=False, dest='want_pyqt4', help='use PyQt4 bindings as python QT5 bindings (default PyQt5 is searched first, PySide2 after, PyQt4 last)')
