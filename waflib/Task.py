@@ -1041,7 +1041,7 @@ def compile_fun_shell(line):
 	Logs.debug('action: %s', c.strip().splitlines())
 	return (funex(c), dvars)
 
-reg_act_noshell = re.compile(r"(?P<space>\s+)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})|(?P<text>\S+)", re.M)
+reg_act_noshell = re.compile(r"(?P<space>\s+)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})|(?P<text>([^$ \t\n\r\f\v]|\$\$)+)", re.M)
 def compile_fun_noshell(line):
 	"""
 	Creates a compiled function to execute a process without a sub-shell
@@ -1068,7 +1068,7 @@ def compile_fun_noshell(line):
 			merge = False
 			continue
 		elif m.group('text'):
-			app('[%r]' % m.group('text'))
+			app('[%r]' % m.group('text').replace('$$', '$'))
 		elif m.group('subst'):
 			var = m.group('var')
 			code = m.group('code')
