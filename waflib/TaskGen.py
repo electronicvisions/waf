@@ -247,7 +247,8 @@ class task_gen(object):
 				# regexps objects
 				if k.match(name):
 					return self.mappings[k]
-		raise Errors.WafError("File %r has no mapping in %r (have you forgotten to load a waf tool?)" % (node, self.mappings.keys()))
+		keys = list(self.mappings.keys())
+		raise Errors.WafError("File %r has no mapping in %r (load a waf tool?)" % (node, keys))
 
 	def create_task(self, name, src=None, tgt=None, **kw):
 		"""
