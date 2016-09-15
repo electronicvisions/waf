@@ -1,3 +1,10 @@
+NEW IN WAF 1.9.5
+----------------
+* Fix the command-line option for the python executable (--python -> --pythondir) #1812
+* Add support for older PyQt4 bindings #1813
+* Expand properly `--xyz=${VAR}` when `shell=False` #1814
+* Add qt5 5.7.x new libraries to qt5 tool #1815
+
 NEW IN WAF 1.9.4
 ----------------
 * Enable 'waf dist' in arbitrary paths #1806
