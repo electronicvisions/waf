@@ -497,6 +497,9 @@ def configure(self):
 	if not has_xml:
 		Logs.error('No xml.sax support was found, rcc dependencies will be incomplete!')
 
+	if 'COMPILER_CXX' not in self.env:
+		self.fatal('No CXX compiler defined: did you forget to configure compiler_cxx first?')
+
 	# Qt5 may be compiled with '-reduce-relocations' which requires dependent programs to have -fPIE or -fPIC?
 	frag = '#include <QApplication>\nint main(int argc, char **argv) {return 0;}\n'
 	uses = 'QT5CORE QT5WIDGETS QT5GUI'
