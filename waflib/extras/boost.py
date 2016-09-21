@@ -158,11 +158,33 @@ def boost_get_version(self, d):
 	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True)
 
 @conf
+def __boost_get_environment_include_paths(self):
+	if Utils.is_win32:
+		return self.environ.get('INCLUDE', '').split(';')
+	else:
+		# ECM (2016-10-05): We prefer CPLUS_INCLUDE_PATH because it has -isystem semantics instead of -I
+		return self.environ.get('CPLUS_INCLUDE_PATH',
+		                    self.environ.get('CPATH', '')).split(':')
+
+@conf
+def __boost_get_environment_library_paths(self):
+	if Utils.is_win32:
+		return self.environ.get('LIB', '').split(';')
+	else:
+		return self.environ.get('LIBRARY_PATH', '').split(':')
+
+@conf
 def boost_get_includes(self, *k, **kw):
 	includes = k and k[0] or kw.get('includes', None)
 	if includes and self.__boost_get_version_file(includes):
 		return includes
-	for d in self.environ.get('INCLUDE', '').split(';') + BOOST_INCLUDES:
+	for d in self.__boost_get_environment_include_paths():
+		if self.__boost_get_version_file(d):
+			# ECM (2016-10-05): We do not need the -I option if env vars are set...
+			# This will break if env vars are unset between configure and build?!?
+			# However, this will yield problems anyway...
+			return ''
+	for d in BOOST_INCLUDES:
 		if self.__boost_get_version_file(d):
 			return d
 	if includes:
@@ -197,7 +219,7 @@ def __boost_get_libs_path(self, *k, **kw):
 		path = self.root.find_dir(libs)
 		files = path.ant_glob('*boost_*')
 	if not libs or not files:
-		for d in self.environ.get('LIB', '').split(';') + BOOST_LIBS:
+		for d in self.__boost_get_environment_library_paths() + BOOST_LIBS:
 			if not d:
 				continue
 			path = self.root.find_dir(d)
