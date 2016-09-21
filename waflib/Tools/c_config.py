@@ -173,7 +173,10 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 		elif x.startswith('-F'):
 			appu('FRAMEWORKPATH_' + uselib, [x[2:]])
 		elif x == '-Wl,-rpath':
-			app('RPATH_' + uselib, lst.pop(0))
+			tmp = lst.pop(0)
+			if tmp.startswith('-Wl,'):
+				tmp = tmp[4:] # skip extra "-Wl,"
+			app('RPATH_' + uselib, tmp)
 		elif x.startswith('-Wl,-R'):
 			app('RPATH_' + uselib, x[6:])
 		elif x.startswith('-Wl,-rpath,'):
