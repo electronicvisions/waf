@@ -124,6 +124,13 @@ TARGET_TYPES = {
 	'exe' :TARGET_TYPE_EXECUTABLE,
 }
 
+def delete_invalid_values(dct):
+	""" Deletes entries that are dictionaries or sets """
+	for k, v in list(dct.items()):
+		if isinstance(v, dict) or isinstance(v, set):
+			del dct[k]
+	return dct
+
 """
 Configuration of the global project settings. Sets an environment variable 'PROJ_CONFIGURATION'
 which is a dictionary of configuration name and buildsettings pair.
@@ -151,9 +158,10 @@ def configure(self):
 
 	# Create default project configuration?
 	if 'PROJ_CONFIGURATION' not in self.env:
+		defaults = delete_invalid_values(self.env.get_merged_dict())
 		self.env.PROJ_CONFIGURATION = {
-			"Debug": self.env.get_merged_dict(),
-			"Release": self.env.get_merged_dict(),
+			"Debug": defaults,
+			"Release": defaults,
 		}
 
 	# Some build settings are required to be present by XCode. We will supply default values
