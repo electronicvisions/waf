@@ -253,7 +253,12 @@ def boost_get_libs(self, *k, **kw):
 		if not lib_names:
 			return libs
 		t = []
-		if kw.get('mt', False):
+		# ECM (2016-10-05): Switch to multi-threading libs by default
+		# Caller passes empty string for unset kwargs...
+		multi_threading = True
+		if kw.has_key('mt') and kw.get('mt') != '':
+			multi_threading = bool(kw.get('mt'))
+		if multi_threading:
 			t.append('-mt')
 		if kw.get('abi', None):
 			t.append('%s%s' % (is_static and '-s' or '-', kw['abi']))
