@@ -116,12 +116,6 @@ class store_context(type):
 ctx = store_context('ctx', (object,), {})
 """Base class for all :py:class:`waflib.Context.Context` classes"""
 
-def decode(out):
-	try:
-		return out.decode(sys.stdout.encoding or 'iso8859-1', errors='replace')
-	except TypeError: # Python <= 2.6
-		return out.decode(sys.stdout.encoding or 'iso8859-1')
-
 class Context(ctx):
 	"""
 	Default context for waf commands, and base class for new command contexts.
@@ -361,14 +355,14 @@ class Context(ctx):
 
 		if out:
 			if not isinstance(out, str):
-				out = decode(out)
+				out = out.decode(sys.stdout.encoding or 'iso8859-1', replace=True)
 			if self.logger:
 				self.logger.debug('out: %s', out)
 			else:
 				Logs.info(out, extra={'stream':sys.stdout, 'c1': ''})
 		if err:
 			if not isinstance(err, str):
-				err = decode(err)
+				err = err.decode(sys.stdout.encoding or 'iso8859-1', replace=True)
 			if self.logger:
 				self.logger.error('err: %s' % err)
 			else:
@@ -446,9 +440,9 @@ class Context(ctx):
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
 		if not isinstance(out, str):
-			out = decode(out)
+			out = out.decode(sys.stdout.encoding or 'iso8859-1', replace=True)
 		if not isinstance(err, str):
-			err = decode(err)
+			err = err.decode(sys.stdout.encoding or 'iso8859-1', replace=True)
 
 		if out and quiet != STDOUT and quiet != BOTH:
 			self.to_log('out: %s' % out)
