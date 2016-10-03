@@ -244,6 +244,8 @@ class TaskBase(evil):
 				(fd, tmp) = tempfile.mkstemp()
 				os.write(fd, '\r\n'.join(args).encode())
 				os.close(fd)
+				if Logs.verbose:
+					Logs.debug('argfile: @%r -> %r', tmp, args)
 				return self.generator.bld.exec_command(cmd + ['@' + tmp], **kw)
 			finally:
 				try:
