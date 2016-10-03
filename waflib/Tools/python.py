@@ -122,6 +122,9 @@ class pyc(Task.Task):
 	Byte-compiling python files
 	"""
 	color = 'PINK'
+	def __str__(self):
+		node = self.outputs[0]
+		return node.path_from(node.ctx.launch_node())
 	def run(self):
 		cmd = [Utils.subst_vars('${PYTHON}', self.env), '-c', INST, self.inputs[0].abspath(), self.outputs[0].abspath(), self.pyd]
 		ret = self.generator.bld.exec_command(cmd)
@@ -132,6 +135,9 @@ class pyo(Task.Task):
 	Byte-compiling python files
 	"""
 	color = 'PINK'
+	def __str__(self):
+		node = self.outputs[0]
+		return node.path_from(node.ctx.launch_node())
 	def run(self):
 		cmd = [Utils.subst_vars('${PYTHON}', self.env), Utils.subst_vars('${PYFLAGS_OPT}', self.env), '-c', INST, self.inputs[0].abspath(), self.outputs[0].abspath(), self.pyd]
 		ret = self.generator.bld.exec_command(cmd)
