@@ -78,6 +78,9 @@ class Repo_DB(object):
     def get_init(self, name):
         return self.db[name].get("init_cmds",'')
 
+    def get_aliases(self, name):
+        return self.db[name].get("aliases", [])
+
     def get_type(self, name):
         return self.db[name]["type"]
 
@@ -240,8 +243,9 @@ class GitProject(Project):
         git_cmd = 'checkout'
         for changeset in self.required_gerrit_changes:
             cref = changeset['currentPatchSet']['ref']
+            project = changeset['project']
             cmds.append(fetch_cmd.format(BASE_URL=gerrit_url.geturl(),
-                                         PROJECT=self.name, REF=cref))
+                                         PROJECT=project, REF=cref))
             cmds.append(apply_cmd.format(git_cmd))
             # cherry-pick all following changesets
             git_cmd = 'cherry-pick --allow-empty  --keep-redundant-commits'
@@ -614,7 +618,12 @@ class MR(object):
             self.mr_print('Project "%s" is already required on branch "%s", but "%s" requires branch "%s"'\
                     % ( project, p.required_branch, parent_path, branch), 'YELLOW')
 
-        required_gerrit_changes = gerrit_changes.get(p.name, []) if gerrit_changes else []
+        required_gerrit_changes = []
+        if gerrit_changes:
+            for project_name in [p.name] + self.db.get_aliases(p.name):
+                tmp = gerrit_changes.get(project_name, [])
+                required_gerrit_changes += tmp
+
 
         if p.mr_registered and os.path.isdir(p.path) and os.listdir(p.path):
             if update_branch and p.required_branch != p.real_branch:
