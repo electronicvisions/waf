@@ -3,7 +3,7 @@
 from waflib import Utils, Build, Logs
 import os
 
-GRP = 'adm'
+GRP = os.environ.get('WAF_TEST_GROUP', 'adm')
 
 def test_chown(bld):
 	def create_and_chown(tsk):
@@ -62,7 +62,6 @@ def configure(conf):
 	if not conf.env.CAN_CHOWN:
 		return
 
-	Logs.info = Utils.nada
 	conf.test(build_fun=test_chown_install,
 		msg='Testing install_group="adm"',
 		okmsg='ok',
