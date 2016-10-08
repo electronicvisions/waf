@@ -78,7 +78,8 @@ class Spawner(Utils.threading.Thread):
 		while 1:
 			task = master.ready.get()
 			self.sem.acquire()
-			task.log_display(task.generator.bld)
+			if not master.stop:
+				task.log_display(task.generator.bld)
 			Consumer(self, task)
 
 class Parallel(object):
