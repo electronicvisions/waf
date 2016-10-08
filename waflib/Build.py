@@ -1190,13 +1190,13 @@ class inst(Task.Task):
 		This looks up for `install_user` or `install_group` attributes
 		on the task or on the task generator::
 
-		def build(bld):
-			bld.install_as('${PREFIX}/wscript',
-				'wscript',
-				install_user='nobody', install_group='nogroup')
-			bld.symlink_as('${PREFIX}/wscript_link',
-				Utils.subst_vars('${PREFIX}/wscript', bld.env),
-				install_user='nobody', install_group='nogroup')
+			def build(bld):
+				bld.install_as('${PREFIX}/wscript',
+					'wscript',
+					install_user='nobody', install_group='nogroup')
+				bld.symlink_as('${PREFIX}/wscript_link',
+					Utils.subst_vars('${PREFIX}/wscript', bld.env),
+					install_user='nobody', install_group='nogroup')
 		"""
 		if not Utils.is_win32:
 			user = getattr(self, 'install_user', None) or getattr(self.generator, 'install_user', None)
