@@ -283,7 +283,7 @@ class Context(ctx):
 						if not user_function:
 							if not mandatory:
 								continue
-							raise Errors.WafError('No function %s defined in %s' % (name or self.fun, node.abspath()))
+							raise Errors.WafError('No function %r defined in %s' % (name or self.fun, node.abspath()))
 						user_function(self)
 					finally:
 						self.post_recurse(node)

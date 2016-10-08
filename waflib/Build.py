@@ -956,6 +956,8 @@ def add_install_task(self, **kw):
 	tsk.install_to = tsk.dest = kw['install_to']
 	tsk.install_from = kw['install_from']
 	tsk.relative_base = kw.get('cwd') or kw.get('relative_base', self.path)
+	tsk.install_user = kw.get('install_user')
+	tsk.install_group = kw.get('install_group')
 	tsk.init_files()
 	if not kw.get('postpone', True):
 		tsk.run_now()
@@ -1065,7 +1067,9 @@ class inst(Task.Task):
 
 	def copy_fun(self, src, tgt):
 		"""
-		Copies a file from src to tgt, preserving permissions and trying to work around path limitations on Windows platforms
+		Copies a file from src to tgt, preserving permissions and trying to work
+		around path limitations on Windows platforms. On Unix-like platforms,
+		the owner/group of the target file may be set through install_user/install_group
 
 		:param src: absolute path
 		:type src: string
@@ -1077,7 +1081,7 @@ class inst(Task.Task):
 		if Utils.is_win32 and len(tgt) > 259 and not tgt.startswith('\\\\?\\'):
 			tgt = '\\\\?\\' + tgt
 		shutil.copy2(src, tgt)
-		os.chmod(tgt, self.chmod)
+		self.fix_perms(tgt)
 
 	def rm_empty_dirs(self, tgt):
 		"""
@@ -1180,6 +1184,32 @@ class inst(Task.Task):
 				Logs.error('Input %r is not a file', src)
 			raise Errors.WafError('Could not install the file %r' % tgt, e)
 
+	def fix_perms(self, tgt):
+		"""
+		Change the ownership of the file/folder/link pointed by the given path
+		This looks up for `install_user` or `install_group` attributes
+		on the task or on the task generator::
+
+		def build(bld):
+			bld.install_as('${PREFIX}/wscript',
+				'wscript',
+				install_user='nobody', install_group='nogroup')
+			bld.symlink_as('${PREFIX}/wscript_link',
+				Utils.subst_vars('${PREFIX}/wscript', bld.env),
+				install_user='nobody', install_group='nogroup')
+		"""
+		if not Utils.is_win32:
+			user = getattr(self, 'install_user', None) or getattr(self.generator, 'install_user', None)
+			group = getattr(self, 'install_group', None) or getattr(self.generator, 'install_group', None)
+			if user or group:
+				Utils.lchown(tgt, user or -1, group or -1)
+		if os.path.islink(tgt):
+			# BSD-specific
+			if hasattr(os, 'lchmod'):
+				os.lchmod(tgt, self.chmod)
+		else:
+			os.chmod(tgt, self.chmod)
+
 	def do_link(self, src, tgt, **kw):
 		"""
 		Creates a symlink from tgt to src.
@@ -1200,6 +1230,7 @@ class inst(Task.Task):
 			if not self.generator.bld.progress_bar:
 				Logs.info('+ symlink %s (to %s)', tgt, src)
 			os.symlink(src, tgt)
+			self.fix_perms(tgt)
 
 	def do_uninstall(self, src, tgt, lbl, **kw):
 		"""
