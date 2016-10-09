@@ -1203,11 +1203,7 @@ class inst(Task.Task):
 			group = getattr(self, 'install_group', None) or getattr(self.generator, 'install_group', None)
 			if user or group:
 				Utils.lchown(tgt, user or -1, group or -1)
-		if os.path.islink(tgt):
-			# BSD-specific
-			if hasattr(os, 'lchmod'):
-				os.lchmod(tgt, self.chmod)
-		else:
+		if not os.path.islink(tgt):
 			os.chmod(tgt, self.chmod)
 
 	def do_link(self, src, tgt, **kw):
