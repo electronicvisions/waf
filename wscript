@@ -232,27 +232,32 @@ def create_waf(self, *k, **kw):
 	if zipType not in zip_types:
 		zipType = zip_types[0]
 
-	directoryFiles = {}
+	directory_files = {}
 	files = []
 	add3rdparty = []
 	for x in Options.options.add3rdparty.split(','):
 		if os.path.isdir(x):
-			# Create mapping over files in directory to location in
-			# waflib.extras
-			root_dir = os.path.basename(os.path.normpath(x))
-			
-			for root, _, file_list in os.walk(x):
-				for file_name in file_list:
-					relative_dir = os.path.relpath(root, x)
-					relative_file = os.path.normpath(
-						os.path.join(root_dir, relative_dir, file_name))
-						
-					file_from = os.path.abspath(os.path.join(root, file_name))
-					file_to = relative_file
-					
-					directoryFiles[file_from] = file_to
-					files.append(file_from)
-			
+			# Create mapping from files absolute path to path in module
+			# directory (for module mylib):
+			#
+			#     {"/home/path/mylib/__init__.py": "mylib/__init__.py",
+			#      "/home/path/mylib/lib.py": "mylib/lib.py",
+			#      "/home/path/mylib/sub/sub.py": "mylib/sub/lib.py"
+			#     }
+			#
+			x_dir = self.generator.bld.root.find_dir(
+				os.path.abspath(os.path.expanduser(x)))
+
+			file_list = x_dir.ant_glob('**/*.py')
+
+			for f in file_list:
+
+				file_from = f.abspath()
+				file_to = os.path.join(x_dir.name, f.path_from(x_dir))
+
+				directory_files[file_from] = file_to
+				files.append(file_from)
+
 		elif os.path.isabs(x):
 			files.append(x)
 		else:
@@ -300,15 +305,17 @@ def create_waf(self, *k, **kw):
 		(code, size, cnt) = sfilter(x)
 		tarinfo.size = size
 
-		if x in directoryFiles:
-			tarinfo.name = 'waflib/extras/' + directoryFiles[x]
+		if x in directory_files:
+			tarinfo.name = 'waflib/extras/' + directory_files[x]
 		elif os.path.isabs(x):
 			tarinfo.name = 'waflib/extras/' + os.path.split(x)[1]
 
 		print('   adding %s as %s' % (x, tarinfo.name))
 		def dest(x):
-			if os.path.isabs(x):
-				return os.path.join('extras', os.path.basename(x))
+			if x in directory_files:
+				return os.path.join('waflib', 'extras', directory_files[x])
+			elif os.path.isabs(x):
+				return os.path.join('waflib', 'extras', os.path.basename(x))
 			else:
 				return os.path.normpath(os.path.relpath(x, "."))
 
