@@ -860,6 +860,30 @@ def run_prefork_process(cmd, kwargs, cargs):
 			raise Exception(trace)
 	return ret, out, err
 
+def lchown(path, user=-1, group=-1):
+	"""
+	Change the owner/group of a path, raises an OSError if the
+	ownership change fails.
+
+	:param user: user to change
+	:type user: int or str
+	:param group: group to change
+	:type group: int or str
+	"""
+	if isinstance(user, str):
+		import pwd
+		entry = pwd.getpwnam(user)
+		if not entry:
+			raise OSError('Unknown user %r' % user)
+		user = entry[2]
+	if isinstance(group, str):
+		import grp
+		entry = grp.getgrnam(group)
+		if not entry:
+			raise OSError('Unknown group %r' % group)
+		group = entry[2]
+	return os.lchown(path, user, group)
+
 def run_regular_process(cmd, kwargs, cargs={}):
 	"""
 	Executes a subprocess command by using subprocess.Popen

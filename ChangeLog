@@ -4,6 +4,10 @@ NEW IN WAF 1.9.5
 * Add support for older PyQt4 bindings #1813
 * Expand properly `--xyz=${VAR}` when `shell=False` #1814
 * Add qt5 5.7.x new libraries to qt5 tool #1815
+* Add install_user and install_group to bld.install/bld.install_as/bld.symlink_as
+* Reduce unnecesary build outputs verbosity #1819 #1828
+* Prevent broken console encoding settings from causing additional failures #1823
+* Let "waf --zones=argfile" display @argfile contents
 
 NEW IN WAF 1.9.4
 ----------------
