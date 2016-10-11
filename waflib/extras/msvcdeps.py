@@ -18,10 +18,7 @@ down to post_run() is cribbed from gccdeps.py.
 This affects the cxx class, so make sure to load Qt5 after this tool.
 '''
 
-import os
-import sys
-import tempfile
-import threading
+import os, sys, tempfile, threading
 
 from waflib import Context, Errors, Logs, Task, Utils
 from waflib.Tools import c_preproc, c, cxx, msvc
@@ -203,7 +200,8 @@ def exec_command(self, cmd, **kw):
 		kw['output'] = Context.STDOUT
 
 		out = []
-
+		if Logs.verbose:
+			Logs.debug('argfile: @%r -> %r', tmp, args)
 		try:
 			raw_out = self.generator.bld.cmd_and_log(cmd + ['@' + tmp], **kw)
 			ret = 0
