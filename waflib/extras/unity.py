@@ -22,8 +22,12 @@ def options(opt):
 class unity(Task.Task):
 	color = 'BLUE'
 	scan = c_preproc.scan
+	def to_include(self, node):
+		ret = node.path_from(self.get_cwd())
+		ret = ret.replace('\\', '\\\\').replace('"', '\\"')
+		return ret
 	def run(self):
-		lst = ['#include "%s"\n' % node.abspath() for node in self.inputs]
+		lst = ['#include "%s"\n' % self.to_include(node) for node in self.inputs]
 		txt = ''.join(lst)
 		self.outputs[0].write(txt)
 
