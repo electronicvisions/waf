@@ -23,7 +23,7 @@ class unity(Task.Task):
 	color = 'BLUE'
 	scan = c_preproc.scan
 	def to_include(self, node):
-		ret = node.path_from(self.get_cwd())
+		ret = node.path_from(self.outputs[0].parent)
 		ret = ret.replace('\\', '\\\\').replace('"', '\\"')
 		return ret
 	def run(self):
