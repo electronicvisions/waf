@@ -114,7 +114,10 @@ def make_pytest(self):
 			else:
 				self.ut_cwd = self.path.make_node(self.ut_cwd)
 	else:
-		self.ut_cwd = tsk.inputs[0].parent
+		if tsk.inputs:
+			self.ut_cwd = tsk.inputs[0].parent
+		else:
+			raise Errors.WafError("no valid input files for pytest task, check pytest_source value")
 
 	if not self.ut_cwd.exists():
 		self.ut_cwd.mkdir()
