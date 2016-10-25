@@ -134,6 +134,10 @@ def options(opt):
 		default='20', action='store',
 		help='maximum preprocessor (--max-configs) define iterations (default=20)')
 
+	opt.add_option('--cppcheck-jobs', dest='cppcheck_jobs',
+		default='1', action='store',
+		help='number of jobs (-j) to do the checking work (default=1)')
+
 
 def configure(conf):
 	if conf.options.cppcheck_skip:
@@ -143,6 +147,9 @@ def configure(conf):
 	conf.env.CPPCHECK_MAX_CONFIGS = conf.options.cppcheck_max_configs
 	conf.env.CPPCHECK_BIN_ENABLE = conf.options.cppcheck_bin_enable
 	conf.env.CPPCHECK_LIB_ENABLE = conf.options.cppcheck_lib_enable
+	conf.env.CPPCHECK_JOBS = conf.options.cppcheck_jobs
+	if conf.options.cppcheck_jobs != '1' and ('unusedFunction' in conf.options.cppcheck_bin_enable or 'unusedFunction' in conf.options.cppcheck_lib_enable or 'all' in conf.options.cppcheck_bin_enable or 'all' in conf.options.cppcheck_lib_enable):
+		Logs.warn('cppcheck: unusedFunction cannot be used with multiple threads, cppcheck will disable it automatically')
 	conf.find_program('cppcheck', var='CPPCHECK')
 
 
@@ -169,10 +176,12 @@ def _tgen_create_cmd(self):
 	max_configs = self.env.CPPCHECK_MAX_CONFIGS
 	bin_enable = self.env.CPPCHECK_BIN_ENABLE
 	lib_enable = self.env.CPPCHECK_LIB_ENABLE
+	jobs = self.env.CPPCHECK_JOBS
 
 	cmd  = self.env.CPPCHECK
 	args = ['--inconclusive','--report-progress','--verbose','--xml','--xml-version=2']
 	args.append('--max-configs=%s' % max_configs)
+	args.append('-j %s' % jobs)
 
 	if 'cxx' in features:
 		args.append('--language=c++')
