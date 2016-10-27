@@ -149,7 +149,7 @@ def configure(conf):
 @TaskGen.feature('c')
 @TaskGen.feature('cxx')
 def cppcheck_execute(self):
-	if hasattr(self.bld, 'conf') == True:
+	if hasattr(self.bld, 'conf'):
 		return
 	if len(self.env.CPPCHECK_SKIP) or Options.options.cppcheck_skip:
 		return
