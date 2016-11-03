@@ -160,20 +160,20 @@ class task_gen(object):
 		#. The tasks created are added to :py:attr:`waflib.TaskGen.task_gen.tasks`
 		"""
 		if getattr(self, 'posted', None):
-			#error("Task Generator already posted" + str(self))
 			return False
 		self.posted = True
 
 		keys = set(self.meths)
+		keys.update(feats['*'])
 
 		# add the methods listed in the features
 		self.features = Utils.to_list(self.features)
-		for x in self.features + ['*']:
+		for x in self.features:
 			st = feats[x]
-			if not st:
-				if not x in Task.classes:
-					Logs.warn('feature %r does not exist - bind at least one method to it', x)
-			keys.update(list(st)) # ironpython 2.7 wants the cast to list
+			if st:
+				keys.update(st)
+			elif not x in Task.classes:
+				Logs.warn('feature %r does not exist - bind at least one method to it?', x)
 
 		# copy the precedence table
 		prec = {}
@@ -196,7 +196,8 @@ class task_gen(object):
 		out = []
 		while tmp:
 			e = tmp.pop()
-			if e in keys: out.append(e)
+			if e in keys:
+				out.append(e)
 			try:
 				nlst = prec[e]
 			except KeyError:
