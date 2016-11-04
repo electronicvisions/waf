@@ -111,7 +111,9 @@ class tex(Task.Task):
 		:return: the return code
 		:rtype: int
 		"""
-		kw['stdout'] = kw['stderr'] = None
+		if self.env.PROMPT_LATEX:
+			# capture the outputs in configuration tests
+			kw['stdout'] = kw['stderr'] = None
 		return super(tex, self).exec_command(cmd, **kw)
 
 	def scan_aux(self, node):
@@ -227,6 +229,13 @@ class tex(Task.Task):
 		if retcode != 0:
 			raise Errors.WafError('%r command exit status %r' % (msg, retcode))
 
+	def info(self, *k, **kw):
+		try:
+			info = self.generator.bld.conf.logger.info
+		except AttributeError:
+			info = Logs.info
+		info(*k, **kw)
+
 	def bibfile(self):
 		"""
 		Parses *.aux* files to find bibfiles to process.
@@ -240,7 +249,7 @@ class tex(Task.Task):
 				continue
 
 			if g_bibtex_re.findall(ct):
-				Logs.info('calling bibtex')
+				self.info('calling bibtex')
 
 				self.env.env = {}
 				self.env.env.update(os.environ)
@@ -268,7 +277,7 @@ class tex(Task.Task):
 			if bibunits:
 				fn  = ['bu' + str(i) for i in range(1, len(bibunits) + 1)]
 				if fn:
-					Logs.info('calling bibtex on bibunits')
+					self.info('calling bibtex on bibunits')
 
 				for f in fn:
 					self.env.env = {'BIBINPUTS': self.texinputs(), 'BSTINPUTS': self.texinputs()}
@@ -285,9 +294,9 @@ class tex(Task.Task):
 			idx_path = self.idx_node.abspath()
 			os.stat(idx_path)
 		except OSError:
-			Logs.info('index file %s absent, not calling makeindex', idx_path)
+			self.info('index file %s absent, not calling makeindex', idx_path)
 		else:
-			Logs.info('calling makeindex')
+			self.info('calling makeindex')
 
 			self.env.SRCFILE = self.idx_node.name
 			self.env.env = {}
@@ -349,7 +358,7 @@ class tex(Task.Task):
 		# important, set the cwd for everybody
 		self.cwd = self.inputs[0].parent.get_bld()
 
-		Logs.info('first pass on %s', self.__class__.__name__)
+		self.info('first pass on %s', self.__class__.__name__)
 
 		# Hash .aux files before even calling the LaTeX compiler
 		cur_hash = self.hash_aux_nodes()
@@ -375,7 +384,7 @@ class tex(Task.Task):
 				break
 
 			# run the command
-			Logs.info('calling %s', self.__class__.__name__)
+			self.info('calling %s', self.__class__.__name__)
 			self.call_latex()
 
 	def hash_aux_nodes(self):
@@ -446,7 +455,13 @@ def apply_tex(self):
 	outs = Utils.to_list(getattr(self, 'outs', []))
 
 	# prompt for incomplete files (else the batchmode is used)
-	self.env.PROMPT_LATEX = getattr(self, 'prompt', 1)
+	try:
+		self.generator.bld.conf
+	except AttributeError:
+		default_prompt = False
+	else:
+		default_prompt = True
+	self.env.PROMPT_LATEX = getattr(self, 'prompt', default_prompt)
 
 	deps_lst = []
 
