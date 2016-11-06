@@ -44,13 +44,6 @@ def configure(conf):
 
 
 def build(bld):
-	"""
-	groups will be processed one by one during the build
-	the progress bar display will be inaccurate
-	"""
-
-	bld.post_mode = Build.POST_LAZY
-
 	import random
 	rnd = random.randint(0, 25)
 	bld(
@@ -62,7 +55,7 @@ def build(bld):
 
 	bld.program(source='main.c', target='app', dynamic_source='*.c')
 
-# support for the "dynamic_source" attribute follows
+# support for the "dynamic_source" attribute follows:
 
 from waflib import Build, Utils, TaskGen
 @TaskGen.feature('c')
