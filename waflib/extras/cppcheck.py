@@ -43,6 +43,11 @@ building the task.
 The result of the source code analysis will be stored both as xml and html
 files in the build location for the task. Should any error be detected by
 cppcheck the build will be aborted and a link to the html report will be shown.
+By default, one index.html file is created for each task generator. A global
+index.html file can be obtained by setting the following variable
+in the configuration section:
+
+	conf.env.CPPCHECK_SINGLE_HTML = False
 
 When needed source code checking by cppcheck can be disabled per task, per
 detected error or warning for a particular task. It can be also be disabled for
@@ -138,11 +143,6 @@ def options(opt):
 		default='1', action='store',
 		help='number of jobs (-j) to do the checking work (default=1)')
 
-	opt.add_option('--cppcheck-single-html', dest='cppcheck_single_html',
-		default=False, action='store_true',
-		help='output in single index.html for compatibility with old pre waf 1.9.5 versions (default=False)')
-
-
 def configure(conf):
 	if conf.options.cppcheck_skip:
 		conf.env.CPPCHECK_SKIP = [True]
@@ -154,8 +154,10 @@ def configure(conf):
 	conf.env.CPPCHECK_JOBS = conf.options.cppcheck_jobs
 	if conf.options.cppcheck_jobs != '1' and ('unusedFunction' in conf.options.cppcheck_bin_enable or 'unusedFunction' in conf.options.cppcheck_lib_enable or 'all' in conf.options.cppcheck_bin_enable or 'all' in conf.options.cppcheck_lib_enable):
 		Logs.warn('cppcheck: unusedFunction cannot be used with multiple threads, cppcheck will disable it automatically')
-	conf.env.CPPCHECK_SINGLE_HTML = conf.options.cppcheck_single_html
 	conf.find_program('cppcheck', var='CPPCHECK')
+
+	# set to True to get a single index.html file
+	conf.env.CPPCHECK_SINGLE_HTML = False
 
 @TaskGen.feature('c')
 @TaskGen.feature('cxx')
@@ -231,10 +233,10 @@ class cppcheck(Task.Task):
 		cmd = ElementTree.SubElement(root.find('cppcheck'), 'cmd')
 		cmd.text = str(self.cmd)
 		body = ElementTree.tostring(root)
+		body_html_name = 'cppcheck-%s.xml' % self.generator.get_name()
 		if self.env.CPPCHECK_SINGLE_HTML:
-			node = self.generator.path.get_bld().find_or_declare('cppcheck.xml')
-		else:
-			node = self.generator.path.get_bld().find_or_declare('cppcheck-%s.xml' % self.generator.get_name())
+			body_html_name = 'cppcheck.xml'
+		node = self.generator.path.get_bld().find_or_declare(body_html_name)
 		node.write(header + body)
 
 	def _get_defects(self, xml_string):
@@ -351,10 +353,10 @@ class cppcheck(Task.Task):
 
 		s = ElementTree.tostring(root, method='html')
 		s = CCPCHECK_HTML_TYPE + s
+		index_html_name = 'cppcheck/index-%s.html' % name
 		if self.env.CPPCHECK_SINGLE_HTML:
-			node = self.generator.path.get_bld().find_or_declare('cppcheck/index.html')
-		else:
-			node = self.generator.path.get_bld().find_or_declare('cppcheck/index-%s.html' % name)
+			index_html_name = 'cppcheck/index.html'
+		node = self.generator.path.get_bld().find_or_declare(index_html_name)
 		node.write(s)
 		return node
 
