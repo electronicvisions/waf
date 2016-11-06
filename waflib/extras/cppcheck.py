@@ -138,6 +138,10 @@ def options(opt):
 		default='1', action='store',
 		help='number of jobs (-j) to do the checking work (default=1)')
 
+	opt.add_option('--cppcheck-single-html', dest='cppcheck_single_html',
+		default=False, action='store_true',
+		help='output in single index.html for compatibility with old pre waf 1.9.5 versions (default=False)')
+
 
 def configure(conf):
 	if conf.options.cppcheck_skip:
@@ -150,8 +154,8 @@ def configure(conf):
 	conf.env.CPPCHECK_JOBS = conf.options.cppcheck_jobs
 	if conf.options.cppcheck_jobs != '1' and ('unusedFunction' in conf.options.cppcheck_bin_enable or 'unusedFunction' in conf.options.cppcheck_lib_enable or 'all' in conf.options.cppcheck_bin_enable or 'all' in conf.options.cppcheck_lib_enable):
 		Logs.warn('cppcheck: unusedFunction cannot be used with multiple threads, cppcheck will disable it automatically')
+	conf.env.CPPCHECK_SINGLE_HTML = conf.options.cppcheck_single_html
 	conf.find_program('cppcheck', var='CPPCHECK')
-
 
 @TaskGen.feature('c')
 @TaskGen.feature('cxx')
@@ -227,7 +231,10 @@ class cppcheck(Task.Task):
 		cmd = ElementTree.SubElement(root.find('cppcheck'), 'cmd')
 		cmd.text = str(self.cmd)
 		body = ElementTree.tostring(root)
-		node = self.generator.path.get_bld().find_or_declare('cppcheck.xml')
+		if self.env.CPPCHECK_SINGLE_HTML:
+			node = self.generator.path.get_bld().find_or_declare('cppcheck.xml')
+		else:
+			node = self.generator.path.get_bld().find_or_declare('cppcheck-%s.xml' % self.generator.get_name())
 		node.write(header + body)
 
 	def _get_defects(self, xml_string):
@@ -269,7 +276,10 @@ class cppcheck(Task.Task):
 		names = sources.keys()
 		for i in range(0,len(names)):
 			name = names[i]
-			htmlfile = 'cppcheck/%i.html' % (i)
+			if self.env.CPPCHECK_SINGLE_HTML:
+				htmlfile = 'cppcheck/%i.html' % (i)
+			else:
+				htmlfile = 'cppcheck/%s%i.html' % (self.generator.get_name(),i)
 			errors = sources[name]
 			files[name] = { 'htmlfile': '%s/%s' % (bpath, htmlfile), 'errors': errors }
 			css_style_defs = self._create_html_file(name, htmlfile, errors)
@@ -290,6 +300,12 @@ class cppcheck(Task.Task):
 			if div.get('id') == 'header':
 				h1 = div.find('h1')
 				h1.text = 'cppcheck report - %s' % name
+			if div.get('id') == 'menu':
+				indexlink = div.find('a')
+				if self.env.CPPCHECK_SINGLE_HTML:
+					indexlink.attrib['href'] = 'index.html'
+				else:
+					indexlink.attrib['href'] = 'index-%s.html' % name
 			if div.get('id') == 'content':
 				content = div
 				srcnode = self.generator.bld.root.find_node(sourcefile)
@@ -326,10 +342,19 @@ class cppcheck(Task.Task):
 			if div.get('id') == 'content':
 				content = div
 				self._create_html_table(content, files)
+			if div.get('id') == 'menu':
+				indexlink = div.find('a')
+				if self.env.CPPCHECK_SINGLE_HTML:
+					indexlink.attrib['href'] = 'index.html'
+				else:
+					indexlink.attrib['href'] = 'index-%s.html' % name
 
 		s = ElementTree.tostring(root, method='html')
 		s = CCPCHECK_HTML_TYPE + s
-		node = self.generator.path.get_bld().find_or_declare('cppcheck/index.html')
+		if self.env.CPPCHECK_SINGLE_HTML:
+			node = self.generator.path.get_bld().find_or_declare('cppcheck/index.html')
+		else:
+			node = self.generator.path.get_bld().find_or_declare('cppcheck/index-%s.html' % name)
 		node.write(s)
 		return node
 
