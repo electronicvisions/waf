@@ -33,6 +33,11 @@ def build(bld):
 	# by default install_path is set to ${PYTHONDIR})
 	bld(features='py', source=bld.path.ant_glob('*.py'), install_from='.')
 
+	# example for generated python files
+	target = bld.path.find_or_declare('abc.py')
+	bld(rule='touch ${TGT}', source='wscript', target=target)
+	bld(features='py', source=target, install_from=target.parent)
+
 	# then a c extension module
 	bld(
 		features = 'c cshlib pyext',
