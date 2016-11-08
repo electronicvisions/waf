@@ -3,3 +3,11 @@ Waf 1.9
 
 Documentation
 
+Waf 2.0
+-------
+
+Merge mem_reducer.py in the mainline
+Keep sorted lists in TaskGen.prec[]
+Improve the sorting in TaskGen.post()
+Default to force files into the build directory
+
