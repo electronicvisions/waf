@@ -10,6 +10,7 @@ Force all build files to go to the build directory:
 
 """
 
+import os
 from waflib import Node, Utils
 
 def find_or_declare(self, lst):
