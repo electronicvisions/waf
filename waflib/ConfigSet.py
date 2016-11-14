@@ -85,13 +85,13 @@ class ConfigSet(object):
 
 	def __setitem__(self, key, value):
 		"""
-		Dictionary interface: get value from key
+		Dictionary interface: set value from key
 		"""
 		self.table[key] = value
 
 	def __delitem__(self, key):
 		"""
-		Dictionary interface: get value from key
+		Dictionary interface: mark the value as missing
 		"""
 		self[key] = []
 
