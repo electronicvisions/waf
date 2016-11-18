@@ -48,7 +48,7 @@ cmd = %(cmd)r
 # if you want to debug with gdb:
 #cmd = ['gdb', '-args'] + cmd
 env = %(env)r
-status = subprocess.call(cmd, env=env, cwd=%(cwd)r)
+status = subprocess.call(cmd, env=env, cwd=%(cwd)r, shell=isinstance(cmd, str))
 sys.exit(status)
 """
 
