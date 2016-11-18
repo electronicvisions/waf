@@ -10,4 +10,5 @@ Merge mem_reducer.py in the mainline
 Keep sorted lists in TaskGen.prec[]
 Improve the sorting in TaskGen.post()
 Default to force files into the build directory
+Remove ut_exec, ut_fun, ut_cmd from waf_unit_test.py
 

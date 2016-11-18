@@ -32,9 +32,8 @@ the predefined callback::
 		from waflib.Tools import waf_unit_test
 		bld.add_post_fun(waf_unit_test.summary)
 
-By passing --dump-test-runner the execution will also create in the build directory a python file named as the task name with -run.py appended
-that can be executed manually to reproduce the exact execution manually for debugging purposes.
-If the script is run with arguments these will be used instead of the command itself. This can be used to run for example a debugger or profiler on the test manually.
+By passing --dump-test-scripts the build outputs corresponding python files
+(with extension _run.py) that are useful for debugging purposes.
 """
 
 import os, sys
@@ -42,6 +41,16 @@ from waflib.TaskGen import feature, after_method, taskgen_method
 from waflib import Utils, Task, Logs, Options
 from waflib.Tools import ccroot
 testlock = Utils.threading.Lock()
+
+SCRIPT_TEMPLATE = """#! %(python)s
+import subprocess, sys
+cmd = %(cmd)r
+# if you want to debug with gdb:
+#cmd = ['gdb', '-args'] + cmd
+env = %(env)r
+status = subprocess.call(cmd, env=env, cwd=%(cwd)r)
+sys.exit(status)
+"""
 
 @feature('test')
 @after_method('apply_link', 'process_use')
@@ -155,12 +164,18 @@ class utest(Task.Task):
 
 	def exec_command(self, cmd, **kw):
 		Logs.debug('runner: %r', cmd)
-		if getattr(Options.options, 'dump_test_runner', False):
-			if not self.generator.name:
-				Logs.warn('waf_unit_test: --dump-test-runner task with no name, outputs may collide')
-			runnername=os.path.join(str(self.generator.path.get_bld()), ( "%s-run.py" % (self.generator.name or 'dump-test-runner')))
-			Utils.writef(runnername, ENVFILE_TEXT %  { 'pyexe': sys.executable, 'env': self.get_test_env(), 'cwd': self.get_cwd().abspath(), 'cmd': cmd[0], 'cmdline': cmd })
-			os.chmod(runnername, Utils.O755)
+		if getattr(Options.options, 'dump_test_scripts', False):
+			global SCRIPT_TEMPLATE
+			script_code = SCRIPT_TEMPLATE % {
+				'python': sys.executable,
+				'env': self.get_test_env(),
+				'cwd': self.get_cwd().abspath(), 'cmd': cmd
+			}
+			script_file = self.inputs[0].abspath() + '_run.py'
+			Utils.writef(script_file, script_code)
+			os.chmod(script_file, Utils.O755)
+			if Logs.verbose > 1:
+				Logs.info('Test debug file written as %r' % script_file)
 
 		proc = Utils.subprocess.Popen(cmd, cwd=self.get_cwd().abspath(), env=self.get_test_env(),
 			stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE)
@@ -235,39 +250,6 @@ def options(opt):
 	 help = 'Run the unit tests using the test-cmd string'
 	 ' example "--test-cmd="valgrind --error-exitcode=1'
 	 ' %s" to run under valgrind', dest='testcmd')
-	opt.add_option('--dump-test-runner', action='store_true', default=False,
-	 help='Create a python script with full environment to run the test manually for debugging purposes', dest='dump_test_runner')
-
-
-"""
-ENVFILE_TEXT specifies the contents of the test runner script generated if
---dump-test-runner is used. This can be used to manually run tests which are
-failing in the exact environment as waf tests are run.
-By default when executed it will just run the test and exit. If any arguments
-are passed then those are executed. The use case is for example to pass
-'bash' and this will open the shell when gdb can then be used in the same
-environment as waf would have run the test.
-Test command line is exported as $UT_CMDLINE so this can be used inside the
-executed environment.
-To execute directly gdb something like 'bash -c "gdb \$UT_CMDLINE"' can be
-specified as argument as well.
-"""
-ENVFILE_TEXT = """#! %(pyexe)s
-# If executed with no parametrs the script will run the test exactly as waf
-# If parameters are passed they will be executed instead but in a waf-like
-# environment. Example executions:
-# Create a shell when you can manually invoke gdb or other tools:
-#   <script> bash
-# Start immediately gdb:
-#   <script> bash -c "gdb \$UT_CMDLINE"
-
-import subprocess, sys
-env = %(env)s
-env['UT_CMDLINE'] = " ".join(%(cmdline)s)
-if len(sys.argv) > 1:
-	status = subprocess.call(sys.argv[1:], env = env, cwd = '%(cwd)s')
-else:
-	status = subprocess.call(%(cmdline)s , env = env, cwd = '%(cwd)s')
-sys.exit(status)
-"""
+	opt.add_option('--dump-test-scripts', action='store_true', default=False,
+	 help='Create python scripts to help debug tests', dest='dump_test_scripts')
 
