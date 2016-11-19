@@ -126,8 +126,11 @@ def enhance_lib():
 		if k:
 			lst = Utils.to_list(k[0])
 			for pat in lst:
-				if '..' in pat.split('/'):
+				sp = pat.split('/')
+				if '..' in sp:
 					Logs.error("In ant_glob pattern %r: '..' means 'two dots', not 'parent directory'", k[0])
+				if '.' in sp:
+					Logs.error("In ant_glob pattern %r: '.' means 'one dot', not 'current directory'", k[0])
 		if kw.get('remove', True):
 			try:
 				if self.is_child_of(self.ctx.bldnode) and not kw.get('quiet', False):
