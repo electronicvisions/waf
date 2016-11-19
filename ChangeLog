@@ -1,3 +1,12 @@
+NEW IN WAF 1.9.6
+----------------
+* Display @argfile contents in msvcdeps #1831
+* Enable configurable preprocessor cache sizes #1833
+* Let unity builds use relative paths for msys #1834
+* Added --dump-test-scripts to the unit test module #1852
+* Added a warning on ant_glob '.' uses #1853
+* LaTeX configuration tests output results to config.log
+
 NEW IN WAF 1.9.5
 ----------------
 * Fix the command-line option for the python executable (--python -> --pythondir) #1812
