@@ -788,7 +788,7 @@ class Node(object):
 		:param lst: relative path
 		:type lst: string or list of string
 		"""
-		if os.path.isabs(lst):
+		if isinstance(lst, str) and os.path.isabs(lst):
 			node = self.ctx.root.make_node(lst)
 		else:
 			node = self.get_bld().make_node(lst)
