@@ -152,10 +152,8 @@ class utest(Task.Task):
 		if hasattr(self.generator, 'ut_run'):
 			return self.generator.ut_run(self)
 
-		# TODO ut_exec, ut_fun, ut_cmd should be considered obsolete
+		# TODO ut_exec, ut_cmd should be considered obsolete
 		self.ut_exec = getattr(self.generator, 'ut_exec', [self.inputs[0].abspath()])
-		if getattr(self.generator, 'ut_fun', None):
-			self.generator.ut_fun(self)
 		testcmd = getattr(self.generator, 'ut_cmd', False) or getattr(Options.options, 'testcmd', False)
 		if testcmd:
 			self.ut_exec = (testcmd % ' '.join(self.ut_exec)).split(' ')
