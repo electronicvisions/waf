@@ -2,4 +2,5 @@ NEW IN WAF 2.0.0
 ----------------
 * Keep sorted lists in TaskGen.prec[]
 * Removed ut_fun from waf_unit_test.py
+* Force files into the build directory by default
 

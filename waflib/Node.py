@@ -779,29 +779,19 @@ class Node(object):
 
 	def find_or_declare(self, lst):
 		"""
-		Use this method in the build phase to declare output files.
+		Use this method in the build phase to declare output files which
+		are meant to be written in the build directory.
 
-		If 'self' is in build directory, it first tries to return an existing node object.
-		If no Node is found, it tries to find one in the source directory.
-		If no Node is found, a new Node object is created in the build directory, and the
-		intermediate folders are added.
+		This method creates the Node object and its parent folder
+		as needed.
 
 		:param lst: relative path
 		:type lst: string or list of string
 		"""
-		if isinstance(lst, str):
-			lst = [x for x in Utils.split_path(lst) if x and x != '.']
-
-		node = self.get_bld().search_node(lst)
-		if node:
-			if not os.path.isfile(node.abspath()):
-				node.parent.mkdir()
-			return node
-		self = self.get_src()
-		node = self.find_node(lst)
-		if node:
-			return node
-		node = self.get_bld().make_node(lst)
+		if os.path.isabs(lst):
+			node = self.ctx.root.make_node(lst)
+		else:
+			node = self.get_bld().make_node(lst)
 		node.parent.mkdir()
 		return node
 
