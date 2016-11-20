@@ -11,18 +11,13 @@ Force all build files to go to the build directory:
 """
 
 import os
-from waflib import Node, Utils
+from waflib import Node
 
 def find_or_declare(self, lst):
-	if isinstance(lst, str):
-		lst = [x for x in Utils.split_path(lst) if x and x != '.']
-
-	node = self.get_bld().search_node(lst)
-	if node:
-		if not os.path.isfile(node.abspath()):
-			node.parent.mkdir()
-		return node
-	node = self.get_bld().make_node(lst)
+	if isinstance(lst, str) and os.path.isabs(lst):
+		node = self.ctx.root.make_node(lst)
+	else:
+		node = self.get_bld().make_node(lst)
 	node.parent.mkdir()
 	return node
 Node.Node.find_or_declare = find_or_declare
