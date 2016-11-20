@@ -82,6 +82,9 @@ def options(opt):
 	opt.add_option('--make-waf', action='store_true', default=True,
 		help='creates the waf script', dest='waf')
 
+	opt.add_option('--interpreter', action='store', default=None,
+		help='specify the #! line on top of the waf file', dest='interpreter')
+
 	opt.add_option('--sign', action='store_true', default=False, help='make a signed file', dest='signed')
 
 	default_zip = 'bz2'
@@ -385,6 +388,9 @@ def create_waf(self, *k, **kw):
 	(cnt, C2) = find_unused(cnt, '\r')
 	(cnt, C1) = find_unused(cnt, '\n')
 	ccc = code1.replace("C1='x'", "C1='%s'" % C1).replace("C2='x'", "C2='%s'" % C2).replace("C3='x'", "C3='%s'" % C3)
+
+	if getattr(Options.options, 'interpreter', None):
+		ccc = ccc.replace('#!/usr/bin/env python', Options.options.interpreter)
 
 	f = open('waf', 'wb')
 	try:
