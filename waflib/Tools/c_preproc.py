@@ -32,8 +32,8 @@ from waflib import Logs, Utils, Errors
 class PreprocError(Errors.WafError):
 	pass
 
-FILE_CACHE_SIZE = 1000
-LINE_CACHE_SIZE = 1000
+FILE_CACHE_SIZE = 100000
+LINE_CACHE_SIZE = 100000
 
 POPFILE = '-'
 "Constant representing a special token used in :py:meth:`waflib.Tools.c_preproc.c_parser.start` iteration to switch to a header read previously"
