@@ -165,7 +165,7 @@ def jar_files(self):
 	if manifest:
 		jarcreate = getattr(self, 'jarcreate', 'cfm')
 		if not isinstance(manifest,Node.Node):
-			node = self.path.find_or_declare(manifest)
+			node = self.path.find_resource(manifest)
 		else:
 			node = manifest
 		tsk.dep_nodes.append(node)
