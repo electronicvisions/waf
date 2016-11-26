@@ -124,7 +124,9 @@ class lru_node(object):
 		self.val = None
 
 class lru_cache(object):
-	"""A simple least-recently used cache that suits our purposes"""
+	"""
+	A simple least-recently used cache with lazy allocation
+	"""
 	__slots__ = ('maxlen', 'table', 'head')
 	def __init__(self, maxlen=100):
 		self.maxlen = maxlen
@@ -136,12 +138,8 @@ class lru_cache(object):
 		Mapping key-value
 		"""
 		self.head = lru_node()
-		for x in range(maxlen - 1):
-			node = lru_node()
-			node.prev = self.head.prev
-			node.next = self.head
-			node.prev.next = node
-			node.next.prev = node
+		self.head.next = self.head
+		self.head.prev = self.head
 
 	def __getitem__(self, key):
 		node = self.table[key]
@@ -156,23 +154,34 @@ class lru_cache(object):
 		# replace the head
 		node.next = self.head.next
 		node.prev = self.head
-		node.next.prev = node
-		node.prev.next = node
-		self.head = node
+		self.head = node.next.prev = node.prev.next = node
 
 		return node.val
 
 	def __setitem__(self, key, val):
-		# go past the head
-		node = self.head = self.head.next
-		try:
-			# remove existing keys if present
-			del self.table[node.key]
-		except KeyError:
-			pass
-		node.key = key
-		node.val = val
-		self.table[key] = node
+		if key in self.table:
+			# update the value for an existing key
+			node = self.table[key]
+			node.val = val
+			self.__getitem__(key)
+		else:
+			if len(self.table) < self.maxlen:
+				# the very first item is unused until the maximum is reached
+				node = lru_node()
+				node.prev = self.head
+				node.next = self.head.next
+				node.prev.next = node.next.prev = node
+			else:
+				node = self.head = self.head.next
+				try:
+					# that's another key
+					del self.table[node.key]
+				except KeyError:
+					pass
+
+			node.key = key
+			node.val = val
+			self.table[key] = node
 
 is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 """
