@@ -582,7 +582,13 @@ def h_fun(fun):
 	except AttributeError:
 		if isinstance(fun, functools.partial):
 			code = list(fun.args)
-			code.extend(fun.keywords.items())
+			# The method items() provides a sequence of tuples where the first element
+			# represents an optional argument of the partial function application
+			#
+			# The sorting result outcome will be consistent because:
+			# 1. tuples are compared in order of their elements
+			# 2. optional argument namess are unique
+			code.extend(sorted(fun.keywords.items()))
 			code.append(h_fun(fun.func))
 			fun.code = h_list(code)
 			return fun.code
