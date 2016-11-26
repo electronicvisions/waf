@@ -9,8 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal
-import functools
+import os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal, functools
 
 try:
 	import cPickle
@@ -581,6 +580,12 @@ def h_fun(fun):
 	try:
 		return fun.code
 	except AttributeError:
+		if isinstance(fun, functools.partial):
+			code = list(fun.args)
+			code.extend(fun.keywords.items())
+			code.append(h_fun(fun.func))
+			fun.code = h_list(code)
+			return fun.code
 		try:
 			h = inspect.getsource(fun)
 		except EnvironmentError:
@@ -606,10 +611,6 @@ def h_cmd(ins):
 	elif isinstance(ins, list) or isinstance(ins, tuple):
 		# or a list of functions/strings
 		ret = str([h_cmd(x) for x in ins])
-	elif isinstance(ins, functools.partial):
-		ret = str([h_list(ins.args),
-		           h_list(tuple(ins.keywords.items())),
-		           h_fun(ins.func)])
 	else:
 		# or just a python function
 		ret = str(h_fun(ins))
