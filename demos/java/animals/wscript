@@ -8,7 +8,7 @@ def build(bld):
 
 		# javac
 		srcdir    = 'src',
-		compat    = '1.5',
+		compat    = '1.7',
 
 		# jar
 		basedir   = '.',
