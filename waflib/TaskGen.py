@@ -634,7 +634,7 @@ def process_rule(self):
 	if getattr(self, 'cwd', None):
 		tsk.cwd = self.cwd
 
-	if type(tsk.run) is functools.partial:
+	if isinstance(tsk.run, functools.partial):
 		# Python documentation says: "partial objects defined in classes
 		# behave like static methods and do not transform into bound
 		# methods during instance attribute look-up."
