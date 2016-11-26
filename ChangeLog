@@ -6,6 +6,7 @@ NEW IN WAF 1.9.6
 * Added --dump-test-scripts to the unit test module #1852
 * Added a warning on ant_glob '.' uses #1853
 * LaTeX configuration tests output results to config.log
+* Accept functools.partial() as a task rule #1865
 
 NEW IN WAF 1.9.5
 ----------------
