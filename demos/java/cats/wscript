@@ -4,7 +4,7 @@ def build(bld):
 
 	bld(features  = 'javac',
 		srcdir    = 'src',
-		compat    = '1.5',
+		compat    = '1.7',
 		use       = 'animals',
 		name      = 'cats-src',
 	)
