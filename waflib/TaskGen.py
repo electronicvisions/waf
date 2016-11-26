@@ -10,8 +10,7 @@ The instances can have various parameters, but the creation of task nodes (Task.
 is deferred. To achieve this, various methods are called from the method "apply"
 """
 
-import copy, re, os
-from functools import partial
+import copy, re, os, functools
 from waflib import Task, Utils, Logs, Errors, ConfigSet, Node
 
 feats = Utils.defaultdict(set)
@@ -635,11 +634,11 @@ def process_rule(self):
 	if getattr(self, 'cwd', None):
 		tsk.cwd = self.cwd
 
-	if type(tsk.run) is partial:
+	if type(tsk.run) is functools.partial:
 		# Python documentation says: "partial objects defined in classes
 		# behave like static methods and do not transform into bound
 		# methods during instance attribute look-up."
-		tsk.run = partial(tsk.run, tsk)
+		tsk.run = functools.partial(tsk.run, tsk)
 
 
 @feature('seq')
