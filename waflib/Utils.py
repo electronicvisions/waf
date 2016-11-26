@@ -10,6 +10,8 @@ through Python versions 2.5 to 3.X and across different platforms (win32, linux,
 """
 
 import os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal
+import functools
+
 try:
 	import cPickle
 except ImportError:
@@ -604,6 +606,10 @@ def h_cmd(ins):
 	elif isinstance(ins, list) or isinstance(ins, tuple):
 		# or a list of functions/strings
 		ret = str([h_cmd(x) for x in ins])
+	elif isinstance(ins, functools.partial):
+		ret = str([h_list(ins.args),
+		           h_list(tuple(ins.keywords.items())),
+		           h_fun(ins.func)])
 	else:
 		# or just a python function
 		ret = str(h_fun(ins))

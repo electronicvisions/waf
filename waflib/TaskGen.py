@@ -11,6 +11,7 @@ is deferred. To achieve this, various methods are called from the method "apply"
 """
 
 import copy, re, os
+from functools import partial
 from waflib import Task, Utils, Logs, Errors, ConfigSet, Node
 
 feats = Utils.defaultdict(set)
@@ -633,6 +634,13 @@ def process_rule(self):
 
 	if getattr(self, 'cwd', None):
 		tsk.cwd = self.cwd
+
+	if type(tsk.run) is partial:
+		# Python documentation says: "partial objects defined in classes
+		# behave like static methods and do not transform into bound
+		# methods during instance attribute look-up."
+		tsk.run = partial(tsk.run, tsk)
+
 
 @feature('seq')
 def sequence_order(self):
