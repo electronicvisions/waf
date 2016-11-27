@@ -2,11 +2,12 @@ NEW IN WAF 1.9.6
 ----------------
 * Display @argfile contents in msvcdeps #1831
 * Enable configurable preprocessor cache sizes #1833
+* Allocate lru cache entries lazily
 * Let unity builds use relative paths for msys #1834
 * Added --dump-test-scripts to the unit test module #1852
 * Added a warning on ant_glob '.' uses #1853
 * LaTeX configuration tests output results to config.log
-* Accept functools.partial() as a task rule #1865
+* Accept functools.partial() as task rules #1865
 
 NEW IN WAF 1.9.5
 ----------------
