@@ -4,3 +4,5 @@ NEW IN WAF 2.0.0
 * Removed ut_fun from waf_unit_test.py
 * Force files into the build directory by default
 
+* Remove Node.sig and Node.cache_sig
+* Remove the BuildContext.rule decorator

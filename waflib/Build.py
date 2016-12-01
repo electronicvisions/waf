@@ -175,30 +175,6 @@ class BuildContext(Context.Context):
 		self.add_to_group(ret, group=kw.get('group'))
 		return ret
 
-	def rule(self, *k, **kw):
-		"""
-		Wrapper for creating a task generator using the decorator notation. The following code::
-
-			@bld.rule(target="foo")
-			def _(tsk):
-				print("bar")
-
-		is equivalent to::
-
-			def bar(tsk):
-				print("bar")
-
-			bld(
-				target = "foo",
-				rule = bar,
-			)
-		"""
-		def f(rule):
-			ret = self(*k, **kw)
-			ret.rule = rule
-			return ret
-		return f
-
 	def __copy__(self):
 		"""
 		Build contexts cannot be copied
