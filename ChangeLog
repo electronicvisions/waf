@@ -6,3 +6,4 @@ NEW IN WAF 2.0.0
 
 * Remove Node.sig and Node.cache_sig
 * Remove the BuildContext.rule decorator
+* Remove Task.update_outputs, Task.always_run

@@ -1212,22 +1212,3 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 	classes[name] = cls
 	return cls
 
-
-def always_run(cls):
-	"""
-	Deprecated Task class decorator (to be removed in waf 2.0)
-
-	Set all task instances of this class to be executed whenever a build is started
-	The task signature is calculated, but the result of the comparison between
-	task signatures is bypassed
-	"""
-	Logs.warn('This decorator is deprecated, set always_run on the task class instead!')
-	cls.always_run = True
-	return cls
-
-def update_outputs(cls):
-	"""
-	Obsolete, to be removed in waf 2.0
-	"""
-	return cls
-
