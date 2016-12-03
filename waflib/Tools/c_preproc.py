@@ -155,22 +155,6 @@ for x, syms in enumerate(ops):
 	for u in syms.split():
 		prec[u] = x
 
-def trimquotes(s):
-	"""
-	Remove the single quotes around an expression::
-
-		trimquotes("'test'") == "test"
-
-	:param s: expression to transform
-	:type s: string
-	:rtype: string
-	"""
-	# TODO remove in waf 2.0
-	if not s: return ''
-	s = s.rstrip()
-	if s[0] == "'" and s[-1] == "'": return s[1:-1]
-	return s
-
 def reduce_nums(val_1, val_2, val_op):
 	"""
 	Apply arithmetic rules to compute a result

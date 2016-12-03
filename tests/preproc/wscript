@@ -16,12 +16,6 @@ from waflib.Logs import pprint
 def configure(conf):
 	pass
 
-def trimquotes(s):
-	if not s: return ''
-	s = s.rstrip()
-	if s[0] == "'" and s[-1] == "'": return s[1:-1]
-	return s
-
 def build(bld):
 
 	bld.failure = 0

@@ -8,3 +8,5 @@ NEW IN WAF 2.0.0
 * Remove the BuildContext.rule decorator
 * Remove Task.update_outputs, Task.always_run
 * Remove atleast-version, exact-version and max-version from conf.check_cfg
+* Remove c_preproc.trimquotes
+
