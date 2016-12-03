@@ -19,12 +19,6 @@ WAF_CONFIG_H   = 'config.h'
 DEFKEYS = 'define_key'
 INCKEYS = 'include_key'
 
-cfg_ver = {
-	'atleast-version': '>=',
-	'exact-version': '==',
-	'max-version': '<=',
-}
-
 SNIP_FUNCTION = '''
 int main(int argc, char **argv) {
 	void (*p)();
@@ -269,19 +263,6 @@ def validate_cfg(self, kw):
 	if not 'msg' in kw:
 		kw['msg'] = 'Checking for %r' % (kw['package'] or kw['path'])
 
-	for x in cfg_ver:
-		# Gotcha: only one predicate is allowed at a time
-		# TODO remove in waf 2.0
-		y = x.replace('-', '_')
-		if y in kw:
-			package = kw['package']
-			if Logs.verbose:
-				Logs.warn('Passing %r to conf.check_cfg() is obsolete, pass parameters directly, eg:', y)
-				Logs.warn(" conf.check_cfg(package='%s', args=['--libs', '--cflags', '%s >= 1.6'])", package, package)
-			if not 'msg' in kw:
-				kw['msg'] = 'Checking for %r %s %s' % (package, cfg_ver[x], kw[y])
-			break
-
 @conf
 def exec_cfg(self, kw):
 	"""
@@ -332,16 +313,6 @@ def exec_cfg(self, kw):
 		if not 'okmsg' in kw:
 			kw['okmsg'] = 'yes'
 		return
-
-	for x in cfg_ver:
-		# TODO remove in waf 2.0
-		y = x.replace('-', '_')
-		if y in kw:
-			self.cmd_and_log(path + ['--%s=%s' % (x, kw[y]), kw['package']], env=env)
-			if not 'okmsg' in kw:
-				kw['okmsg'] = 'yes'
-			define_it()
-			break
 
 	# single version for a module
 	if 'modversion' in kw:
