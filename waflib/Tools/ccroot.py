@@ -268,7 +268,7 @@ def apply_link(self):
 	try:
 		inst_to = self.install_path
 	except AttributeError:
-		inst_to = self.link_task.__class__.inst_to
+		inst_to = self.link_task.inst_to
 	if inst_to:
 		# install a copy of the node list we have at this moment (implib not added)
 		self.install_task = self.add_install_files(
@@ -613,7 +613,7 @@ def apply_vnum(self):
 		try:
 			inst_to = self.install_path
 		except AttributeError:
-			inst_to = self.link_task.__class__.inst_to
+			inst_to = self.link_task.inst_to
 		if inst_to:
 			p = Utils.subst_vars(inst_to, self.env)
 			path = os.path.join(p, name2)
