@@ -402,9 +402,7 @@ class TaskBase(evil):
 		:return: a hash value
 		:rtype: string
 		"""
-		cls = self.__class__
-		tup = (str(cls.before), str(cls.after), str(cls.ext_in), str(cls.ext_out), cls.__name__, cls.hcode)
-		return hash(tup)
+		return (tuple(self.before), tuple(self.after), tuple(self.ext_in), tuple(self.ext_out), self.__class__.__name__, self.hcode)
 
 	def format_error(self):
 		"""
