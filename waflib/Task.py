@@ -607,7 +607,7 @@ class Task(TaskBase):
 
 		* explicit dependencies: files listed in the inputs (list of node objects) :py:meth:`waflib.Task.Task.sig_explicit_deps`
 		* implicit dependencies: list of nodes returned by scanner methods (when present) :py:meth:`waflib.Task.Task.sig_implicit_deps`
-		* hashed data: variables/values read from task.__class__.vars/task.env :py:meth:`waflib.Task.Task.sig_vars`
+		* hashed data: variables/values read from task.vars/task.env :py:meth:`waflib.Task.Task.sig_vars`
 
 		If the signature is expected to give a different result, clear the cache kept in ``self.cache_sig``::
 
@@ -739,7 +739,7 @@ class Task(TaskBase):
 		"""
 		Used by :py:meth:`waflib.Task.Task.signature`; it hashes :py:attr:`waflib.Task.Task.env` variables/values
 		"""
-		sig = self.generator.bld.hash_env_vars(self.env, self.__class__.vars)
+		sig = self.generator.bld.hash_env_vars(self.env, self.vars)
 		self.m.update(sig)
 
 	scan = None
