@@ -19,16 +19,13 @@ class CompilerTraits(object):
 		'release_with_debug',    # performance-optimied with debugging support
 	)
 
-	def get_ccdefines(self, level):
-		raise NotImplementedError(type(self))
-
-	def get_ccflags(self, level):
-		raise NotImplementedError(type(self))
-
-	def get_cxxdefines(self, level):
+	def get_cflags(self, level):
 		raise NotImplementedError(type(self))
 
 	def get_cxxflags(self, level):
+		raise NotImplementedError(type(self))
+
+	def get_defines(self, level):
 		raise NotImplementedError(type(self))
 
 	def get_linkflags(self, level):
@@ -37,7 +34,7 @@ class CompilerTraits(object):
 
 class CommonTraits(CompilerTraits):
 	warning_flags = '-Wall -Wextra -pedantic'.split()
-	ccflags = {
+	cflags = {
 		'gerrit':             '-O0'.split(),
 		'debug':              '-Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
 		'release_with_debug': '-O2 -g -fno-omit-frame-pointer'.split(),
@@ -49,22 +46,19 @@ class CommonTraits(CompilerTraits):
 		self.version = tuple([int(elem) for elem in version])
 		self.linker = linker
 
-	def get_ccdefines(self, build_profile):
-		if 'debug' not in build_profile:
-			return ['NDEBUG']
-		return []
-
-	def get_ccflags(self, build_profile):
-		return self.ccflags[build_profile] + self.warning_flags
-
-	def get_cxxdefines(self, build_profile):
-		return self.get_ccdefines(build_profile)
+	def get_cflags(self, build_profile):
+		return self.cflags[build_profile] + self.warning_flags
 
 	def get_cpp_language_standard_flags(self):
 		return []
 
 	def get_cxxflags(self, build_profile):
-		return self.get_cpp_language_standard_flags() + self.get_ccflags(build_profile)
+		return self.get_cpp_language_standard_flags() + self.get_cflags(build_profile)
+
+	def get_defines(self, build_profile):
+		if 'debug' not in build_profile:
+			return ['NDEBUG']
+		return []
 
 	def get_linkflags(self, build_profile):
 		if self.linker is not None:
@@ -80,11 +74,11 @@ class GccTraits(CommonTraits):
 			raise Errors.WafError('GCC >= 4.8 is required for gold linker')
 
 		# copy defaults into instance
-		self.ccflags = GccTraits.ccflags
+		self.cflags = GccTraits.cflags
 
 		if self.version[0] < 4 or (self.version[0] == 4 and self.version[1] <= 9):
-			for profile, flags in self.ccflags.items():
-				self.ccflags[profile] = [
+			for profile, flags in self.cflags.items():
+				self.cflags[profile] = [
 					('-O0' if flag == '-Og' else flag) for flag in flags
 				]
 
@@ -103,10 +97,10 @@ class ClangTraits(CommonTraits):
 		super(ClangTraits, self).__init__(version, linker)
 
 		# copy defaults into instance
-		self.ccflags = ClangTraits.ccflags
+		self.cflags = ClangTraits.cflags
 
-		for profile, flags in self.ccflags.items():
-			self.ccflags[profile] = [
+		for profile, flags in self.cflags.items():
+			self.cflags[profile] = [
 				('-O0' if flag == '-Og' else flag) for flag in flags
 			]
 
@@ -132,7 +126,7 @@ def options(opt):
 		default=DEFAULT_PROFILE,
 		help=("Specify the build profile.  "
 			"Build profiles control the default compilation flags"
-			" used for C/C++ programs, if CCFLAGS/CXXFLAGS are not"
+			" used for C/C++ programs, if CFLAGS/CXXFLAGS are not"
 			" set in the environment. [Allowed Values: %s]"
 			% ", ".join([repr(p) for p in profiles])),
 		choices=profiles,
@@ -167,7 +161,7 @@ def configure(conf):
 	build_profile = Options.options.build_profile
 	
 	# ECM: Policy => don't touch env vars if they are set! The user knows it better!
-	env_vars = 'CCDEFINES CCFLAGS CXXDEFINES CXXFLAGS LINKFLAGS'.split()
+	env_vars = 'DEFINES CFLAGS CXXFLAGS LINKFLAGS'.split()
 	user_vars = [ var for var in env_vars if os.environ.has_key(var) ]
 	if user_vars:
 		Logs.warn('Visionary build flags have been disabled due to user-defined '
@@ -180,8 +174,7 @@ def configure(conf):
 		app = shlex.split(os.environ.get('%s_APPEND' % var_name, ''))
 		return var_name, pre + content + app
 
-	conf.env.append_value(*sandwich('CCFLAGS',   compiler.get_ccflags(build_profile)))
-	conf.env.append_value(*sandwich('CCDEFINES', compiler.get_ccdefines(build_profile)))
+	conf.env.append_value(*sandwich('CFLAGS',   compiler.get_cflags(build_profile)))
+	conf.env.append_value(*sandwich('DEFINES', compiler.get_defines(build_profile)))
 	conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
-	conf.env.append_value(*sandwich('CXXDEFINES', compiler.get_cxxdefines(build_profile)))
 	conf.env.append_value(*sandwich('LINKFLAGS', compiler.get_linkflags(build_profile)))

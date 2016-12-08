@@ -151,7 +151,7 @@ def configure(conf):
 	conf.find_ar()
 	conf.gcc_common_flags()
 	conf.gcc_modifier_platform()
-	# ECM: If CCFLAGS/CCDEPS (or CXX) exist here, it has been provided by the
+	# ECM: If CFLAGS/CCDEPS (or CXX) exist here, it has been provided by the
 	# user. If we would load later, the env vars would have been already
 	# touched by waf. We could have the idea to push the load into the c_config
 	# file, but seems a bit too "intrusive"...
