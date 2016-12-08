@@ -115,6 +115,7 @@ COMPILER_MAPPING = {
 	'clang++': ClangTraits,
 	'g++': GccTraits,
 	'gcc': GccTraits,
+	'powerpc-eabi-gcc': GccTraits,
 }
 
 def options(opt):
