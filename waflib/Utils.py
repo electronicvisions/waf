@@ -9,7 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal, functools
+import atexit, os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal, functools
 
 try:
 	import cPickle
@@ -971,6 +971,17 @@ def alloc_process_pool(n, force=False):
 	else:
 		for x in lst:
 			process_pool.append(x)
+
+def atexit_pool():
+	for k in process_pool:
+		try:
+			os.kill(k.pid, 9)
+		except OSError:
+			pass
+		else:
+			k.wait()
+if sys.hexversion<0x207000f and not is_win32:
+	atexit.register(atexit_pool)
 
 if sys.platform == 'cli' or not sys.executable:
 	run_process = run_regular_process
