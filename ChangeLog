@@ -1,3 +1,9 @@
+NEW IN WAF 1.9.7
+----------------
+* Conceal Python 2.6 subprocess errors on Unix-like systems
+* Read variables from self.vars #1873
+* Revert archive permissions to be world-readable #1875
+
 NEW IN WAF 1.9.6
 ----------------
 * Display @argfile contents in msvcdeps #1831
