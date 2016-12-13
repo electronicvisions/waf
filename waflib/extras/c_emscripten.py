@@ -76,9 +76,8 @@ def configure(conf):
 	conf.env.ARFLAGS = ['rcs']
 	conf.env.cshlib_PATTERN = '%s.js'
 	conf.env.cxxshlib_PATTERN = '%s.js'
-	conf.env.cstlib_PATTERN = '%s.bc'
-	conf.env.cxxstlib_PATTERN = '%s.bc'
+	conf.env.cstlib_PATTERN = '%s.a'
+	conf.env.cxxstlib_PATTERN = '%s.a'
 	conf.env.cprogram_PATTERN = '%s.html'
 	conf.env.cxxprogram_PATTERN = '%s.html'
 	conf.env.append_value('LINKFLAGS',['-Wl,--enable-auto-import'])
-
