@@ -303,8 +303,13 @@ def process_settings(self):
 	def compile_schemas_callback(bld):
 		if not bld.is_install: return
 		Logs.pprint ('YELLOW','Updating GSettings schema cache')
-		command = Utils.subst_vars("${GLIB_COMPILE_SCHEMAS} ${GSETTINGSSCHEMADIR}", bld.env)
-		self.bld.exec_command(command)
+		env = bld.env
+		destdir = Options.options.destdir
+		if destdir:
+			path = os.path.join(destdir, env.GSETTINGSSCHEMADIR.lstrip(os.sep))
+		else:
+			path = env.GSETTINGSSCHEMADIR
+		self.bld.exec_command("%s %s" % (env.get_flat('GLIB_COMPILE_SCHEMAS'), path))
 
 	if self.bld.is_install:
 		if not self.env.GSETTINGSSCHEMADIR:
