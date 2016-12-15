@@ -103,7 +103,7 @@ def process_py(self, node):
 		pyd = node.abspath()
 
 	for ext in lst:
-		if self.env.PYTAG:
+		if self.env.PYTAG and not self.env.NOPYCACHE:
 			# __pycache__ installation for python 3.2 - PEP 3147
 			name = node.name[:-3]
 			pyobj = node.parent.get_bld().make_node('__pycache__').make_node("%s.%s.%s" % (name, self.env.PYTAG, ext))
@@ -588,6 +588,8 @@ def configure(conf):
 		v.PYTHONDIR = Options.options.pythondir
 	if Options.options.pythonarchdir:
 		v.PYTHONARCHDIR = Options.options.pythonarchdir
+	if Options.options.nopycache:
+		v.NOPYCACHE=Options.options.nopycache
 
 	conf.find_program('python', var='PYTHON', value=Options.options.python or sys.executable)
 
@@ -611,6 +613,8 @@ def options(opt):
 					 help = 'Do not install bytecode compiled .pyc files (configuration) [Default:install]')
 	pyopt.add_option('--nopyo', dest='pyo', action='store_false', default=1,
 					 help='Do not install optimised compiled .pyo files (configuration) [Default:install]')
+	pyopt.add_option('--nopycache',dest='nopycache', action='store_true',
+					 help='Do not use __pycache__ directory to install objects [Default:auto]')
 	pyopt.add_option('--python', dest="python",
 					 help='python binary to be used [Default: %s]' % sys.executable)
 	pyopt.add_option('--pythondir', dest='pythondir',
