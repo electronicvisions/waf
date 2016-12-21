@@ -56,7 +56,8 @@ def test(ctx):
 	tt('path_from', dd.path_from(pp), os.path.split(os.getcwd())[1])
 	tt('path_from (reverse)', pp.path_from(dd), '..')
 	tt('same path', pp.path_from(pp), '.')
-	tt('same_root', bld.root.path_from(bld.root), '.')
+	tt('path from root is abspath()', pp.path_from(bld.root), pp.abspath())
+	tt('root from root', bld.root.path_from(bld.root), bld.root.abspath())
 
 	tt('root height', bld.root.height(), 0)
 	tt('self height', dd.height(), len(absdir))
