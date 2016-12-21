@@ -430,10 +430,9 @@ class Node(object):
 
 		:param node: path to use as a reference
 		:type node: :py:class:`waflib.Node.Node`
-		:returns: the relative path
+		:returns: a relative path or an absolute one if that is better
 		:rtype: string
 		"""
-
 		c1 = self
 		c2 = node
 
@@ -461,13 +460,11 @@ class Node(object):
 			c2 = c2.parent
 
 		if c1.parent:
-			for i in range(up):
-				lst.append('..')
+			lst.extend(['..'] * up)
+			lst.reverse()
+			return os.sep.join(lst) or '.'
 		else:
-			if lst and not Utils.is_win32:
-				lst.append('')
-		lst.reverse()
-		return os.sep.join(lst) or '.'
+			return self.abspath()
 
 	def abspath(self):
 		"""
