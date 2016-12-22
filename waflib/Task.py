@@ -987,6 +987,7 @@ def compile_fun_shell(line):
 			return "%s"
 		return None
 	line = reg_act.sub(repl, line) or line
+	dvars = []
 
 	def replc(m):
 		# performs substitutions and populates dvars
@@ -1001,7 +1002,6 @@ def compile_fun_shell(line):
 			return 'env[%r]' % x
 
 	parm = []
-	dvars = []
 	app = parm.append
 	for (var, meth) in extr:
 		if var == 'SRC':
@@ -1165,7 +1165,7 @@ def compile_fun(line, shell=False):
 				if ret:
 					return ret
 			return None
-		return composed_fun, dvars
+		return composed_fun, dvars_lst
 	if shell:
 		return compile_fun_shell(line)
 	else:
