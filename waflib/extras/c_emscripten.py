@@ -80,4 +80,6 @@ def configure(conf):
 	conf.env.cxxstlib_PATTERN = '%s.a'
 	conf.env.cprogram_PATTERN = '%s.html'
 	conf.env.cxxprogram_PATTERN = '%s.html'
+	conf.env.CXX_TGT_F           = ['-c', '-o', '']
+	conf.env.CC_TGT_F            = ['-c', '-o', '']
 	conf.env.append_value('LINKFLAGS',['-Wl,--enable-auto-import'])
