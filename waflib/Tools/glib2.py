@@ -12,6 +12,7 @@ Support for GLib2 tools:
 """
 
 import os
+import functools
 from waflib import Context, Task, Utils, Options, Errors, Logs
 from waflib.TaskGen import taskgen_method, before_method, feature, extension
 from waflib.Configure import conf
@@ -303,25 +304,28 @@ def process_settings(self):
 	def compile_schemas_callback(bld):
 		if not bld.is_install:
 			return
-		env = bld.env
+		compile_schemas = Utils.to_list(bld.env.GLIB_COMPILE_SCHEMAS)
 		destdir = Options.options.destdir
+		paths = bld._compile_schemas_registered
 		if destdir:
-			path = os.path.join(destdir, env.GSETTINGSSCHEMADIR.lstrip(os.sep))
-		else:
-			path = env.GSETTINGSSCHEMADIR
-		Logs.pprint('YELLOW', 'Updating GSettings schema cache %r' % path)
-		command = Utils.to_list(env.GLIB_COMPILE_SCHEMAS) + [path]
-		self.bld.exec_command(command)
+			paths = (os.path.join(destdir, path.lstrip(os.sep)) for path in paths)
+		for path in paths:
+			Logs.pprint('YELLOW', 'Updating GSettings schema cache %r' % path)
+			if self.bld.exec_command(compile_schemas + [path]):
+				Logs.warn('Could not update GSettings schema cache %r' % path)
 
 	if self.bld.is_install:
-		if not self.env.GSETTINGSSCHEMADIR:
+		schemadir = self.env.GSETTINGSSCHEMADIR
+		if not schemadir:
 			raise Errors.WafError ('GSETTINGSSCHEMADIR not defined (should have been set up automatically during configure)')
 
 		if install_files:
-			self.add_install_files(install_to=self.env.GSETTINGSSCHEMADIR, install_from=install_files)
-			if not hasattr(self.bld, '_compile_schemas_registered'):
+			self.add_install_files(install_to=schemadir, install_from=install_files)
+			registered_schemas = getattr(self.bld, '_compile_schemas_registered', None)
+			if not registered_schemas:
+				registered_schemas = self.bld._compile_schemas_registered = set()
 				self.bld.add_post_fun(compile_schemas_callback)
-				self.bld._compile_schemas_registered = True
+			registered_schemas.add(schemadir)
 
 class glib_validate_schema(Task.Task):
 	"""
