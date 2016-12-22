@@ -571,7 +571,12 @@ def process_rule(self):
 			def chmod_fun(tsk):
 				for x in tsk.outputs:
 					os.chmod(x.abspath(), self.chmod)
-			rule = (self.rule, chmod_fun)
+			if isinstance(self.rule, tuple):
+				rule = list(self.rule)
+				rule.append(chmod_fun)
+				rule = tuple(rule)
+			else:
+				rule = (rule, chmod_fun)
 
 		cls = Task.task_factory(name, rule,
 			getattr(self, 'vars', []),

@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+from waflib import Utils
+
 top = '.'
 out = 'bin'
 
@@ -19,6 +21,7 @@ def build(bld):
 	t = bld(rule='touch ${TGT}', target='bbb', source='aaa')
 	t = bld(rule='touch ${TGT}', target='ccc', source='bbb')
 	t = bld(rule='touch ${TGT}', target='ddd', source='ccc')
+	t = bld(rule=('touch ${TGT}', 'touch ${TGT}'), target='eee', source='ddd', chmod=Utils.O755)
 	t.create_task('foo')
 
 	#print( 'path from srcnode', bld.path.find_or_declare('aaa').path_from(bld.bldnode) )
