@@ -8,6 +8,8 @@ APPNAME='glib2_test'
 top = '.'
 out = 'build'
 
+import os
+
 def options(opt):
 	opt.load ('compiler_c glib2')
 
@@ -46,3 +48,10 @@ def build(bld):
 		source   = 'org.glib2.test.gresource.xml',
 		install_path = 'lib/glib2_test'
 	)
+
+	# Install a schema to a different location.
+	# It will be compiled to a cache file besides it.
+	bld(
+		features = 'glib2',
+		settings_schema_files = ['org.gsettings.simple.gschema.xml']
+	).env.GSETTINGSSCHEMADIR = os.path.join('etc', 'glib-2.0', 'schemas')
