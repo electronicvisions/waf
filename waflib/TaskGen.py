@@ -558,10 +558,13 @@ def process_rule(self):
 	except AttributeError:
 		cache = self.bld.cache_rule_attr = {}
 
+	cache_rule =  getattr(self, 'cache_rule', 'True')
+	key = (name, self.rule)
+
 	cls = None
-	if getattr(self, 'cache_rule', 'True'):
+	if cache_rule:
 		try:
-			cls = cache[(name, self.rule)]
+			cls = cache[key]
 		except KeyError:
 			pass
 	if not cls:
@@ -571,8 +574,8 @@ def process_rule(self):
 			def chmod_fun(tsk):
 				for x in tsk.outputs:
 					os.chmod(x.abspath(), self.chmod)
-			if isinstance(self.rule, tuple):
-				rule = list(self.rule)
+			if isinstance(rule, tuple):
+				rule = list(rule)
 				rule.append(chmod_fun)
 				rule = tuple(rule)
 			else:
@@ -580,8 +583,8 @@ def process_rule(self):
 
 		cls = Task.task_factory(name, rule,
 			getattr(self, 'vars', []),
-			shell=getattr(self, 'shell', True), color=getattr(self, 'color', 'BLUE'),
-			scan = getattr(self, 'scan', None))
+			shell=getattr(self, 'shell', True), color=getattr(self, 'color', 'BLUE'))
+
 		if getattr(self, 'scan', None):
 			cls.scan = self.scan
 		elif getattr(self, 'deps', None):
@@ -604,8 +607,8 @@ def process_rule(self):
 		for x in ('after', 'before', 'ext_in', 'ext_out'):
 			setattr(cls, x, getattr(self, x, []))
 
-		if getattr(self, 'cache_rule', 'True'):
-			cache[(name, self.rule)] = cls
+		if cache_rule:
+			cache[key] = cls
 
 		if getattr(self, 'cls_str', None):
 			setattr(cls, '__str__', self.cls_str)
