@@ -241,7 +241,10 @@ def gtest_src_search_pathes(env):
 """
     l = Utils.to_list(getattr(Options.options, 'gtest_src', []))
     l += Utils.to_list(getattr(env, 'GTEST_SRC', []))
-    l += ['/usr/src/gtest', '/usr/src/gtest/src']
+    l += os.environ.get('CPLUS_INCLUDE_PATH', '').split(':')
+    l += os.environ.get('CPATH', '').split(':')
+    if not l:
+        l += ['/usr/src/gtest', '/usr/src/gtest/src']
     return l
     
 
