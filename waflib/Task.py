@@ -1192,10 +1192,6 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 		'vars': vars or [], # function arguments are static, and this one may be modified by the class
 		'color': color,
 		'name': name,
-		'ext_in': Utils.to_list(ext_in),
-		'ext_out': Utils.to_list(ext_out),
-		'before': Utils.to_list(before),
-		'after': Utils.to_list(after),
 		'shell': shell,
 		'scan': scan,
 	}
@@ -1208,5 +1204,15 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 	cls = type(Task)(name, (Task,), params)
 	global classes
 	classes[name] = cls
+
+	if ext_in:
+		cls.ext_in = Utils.to_list(ext_in)
+	if ext_out:
+		cls.ext_out = Utils.to_list(ext_out)
+	if before:
+		cls.before = Utils.to_list(before)
+	if after:
+		cls.after = Utils.to_list(after)
+
 	return cls
 
