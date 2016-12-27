@@ -385,11 +385,11 @@ class Dist(Context.Context):
 			self.fatal('Valid algo types are tar.bz2, tar.gz, tar.xz or zip')
 
 		try:
-			from hashlib import sha1
+			from hashlib import sha256
 		except ImportError:
 			digest = ''
 		else:
-			digest = ' (sha=%r)' % sha1(node.read(flags='rb')).hexdigest()
+			digest = ' (sha256=%r)' % sha256(node.read(flags='rb')).hexdigest()
 
 		Logs.info('New archive created: %s%s', self.arch_name, digest)
 
