@@ -195,7 +195,7 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			static = False
 		elif x.startswith('-Wl'):
 			app('LINKFLAGS', x)
-		elif x.startswith(('-m', '-f', '-dynamic', '-O')):
+		elif x.startswith(('-m', '-f', '-dynamic', '-O', '-W', '-g')):
 			app('CFLAGS', x)
 			app('CXXFLAGS', x)
 		elif x.startswith('-bundle'):
