@@ -210,6 +210,9 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			app('LINKFLAGS', tmp)
 		elif x.endswith(('.a', '.so', '.dylib', '.lib')):
 			appu('LINKFLAGS', x) # not cool, #762
+		elif x.startswith('-O'):
+			app('CFLAGS', x)
+			app('CXXFLAGS', x)
 
 @conf
 def validate_cfg(self, kw):
