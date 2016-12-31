@@ -195,7 +195,8 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			static = False
 		elif x.startswith('-Wl'):
 			app('LINKFLAGS', x)
-		elif x.startswith(('-m', '-f', '-dynamic', '-O', '-W', '-g')):
+		elif x.startswith(('-m', '-f', '-dynamic', '-O', '-g')):
+			# Adding the -W option breaks python builds on Openindiana
 			app('CFLAGS', x)
 			app('CXXFLAGS', x)
 		elif x.startswith('-bundle'):
