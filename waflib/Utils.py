@@ -9,7 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal, functools
+import os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal, functools, time
 
 try:
 	import cPickle
@@ -724,7 +724,7 @@ def nada(*k, **kw):
 class Timer(object):
 	"""
 	Simple object for timing the execution of commands.
-	Its string representation is the current time::
+	Its string representation is the duration::
 
 		from waflib.Utils import Timer
 		timer = Timer()
@@ -732,10 +732,12 @@ class Timer(object):
 		s = str(timer)
 	"""
 	def __init__(self):
-		self.start_time = datetime.datetime.utcnow()
+		self.start_time = self.now()
 
 	def __str__(self):
-		delta = datetime.datetime.utcnow() - self.start_time
+		delta = self.now() - self.start_time
+		if not isinstance(delta, datetime.timedelta):
+			delta = datetime.timedelta(seconds=delta)
 		days = delta.days
 		hours, rem = divmod(delta.seconds, 3600)
 		minutes, seconds = divmod(rem, 60)
@@ -748,6 +750,13 @@ class Timer(object):
 		if days or hours or minutes:
 			result += '%dm' % minutes
 		return '%s%.3fs' % (result, seconds)
+
+	def now(self):
+		return datetime.datetime.utcnow()
+
+	if hasattr(time, 'perf_counter'):
+		def now(self):
+			return time.perf_counter()
 
 def read_la_file(path):
 	"""
