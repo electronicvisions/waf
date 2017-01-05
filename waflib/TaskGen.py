@@ -190,7 +190,7 @@ class task_gen(object):
 			else:
 				tmp.append(a)
 
-		tmp.sort()
+		tmp.sort(reverse=True)
 
 		# topological sort
 		out = []
@@ -210,13 +210,13 @@ class task_gen(object):
 							break
 					else:
 						tmp.append(x)
+						tmp.sort(reverse=True)
 
 		if prec:
 			buf = ['Cycle detected in the method execution:']
 			for k, v in prec.items():
 				buf.append('- %s after %s' % (k, [x for x in v if x in prec]))
 			raise Errors.WafError('\n'.join(buf))
-		out.reverse()
 		self.meths = out
 
 		# then we run the methods in order
@@ -430,7 +430,7 @@ def before_method(*k):
 	def deco(func):
 		setattr(task_gen, func.__name__, func)
 		for fun_name in k:
-			task_gen.prec[fun_name].add(func.__name__)
+			task_gen.prec[func.__name__].add(fun_name)
 		return func
 	return deco
 before = before_method
@@ -457,7 +457,7 @@ def after_method(*k):
 	def deco(func):
 		setattr(task_gen, func.__name__, func)
 		for fun_name in k:
-			task_gen.prec[func.__name__].add(fun_name)
+			task_gen.prec[fun_name].add(func.__name__)
 		return func
 	return deco
 after = after_method
