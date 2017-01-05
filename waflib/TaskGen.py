@@ -34,7 +34,7 @@ class task_gen(object):
 	mappings = Utils.ordered_iter_dict()
 	"""Mappings are global file extension mappings that are retrieved in the order of definition"""
 
-	prec = Utils.defaultdict(list)
+	prec = Utils.defaultdict(set)
 	"""Dict that holds the precedence execution rules for task generator methods"""
 
 	def __init__(self, *k, **kw):
@@ -430,9 +430,7 @@ def before_method(*k):
 	def deco(func):
 		setattr(task_gen, func.__name__, func)
 		for fun_name in k:
-			if not func.__name__ in task_gen.prec[fun_name]:
-				task_gen.prec[fun_name].append(func.__name__)
-				task_gen.prec[fun_name].sort()
+			task_gen.prec[fun_name].add(func.__name__)
 		return func
 	return deco
 before = before_method
@@ -459,9 +457,7 @@ def after_method(*k):
 	def deco(func):
 		setattr(task_gen, func.__name__, func)
 		for fun_name in k:
-			if not fun_name in task_gen.prec[func.__name__]:
-				task_gen.prec[func.__name__].append(fun_name)
-				task_gen.prec[func.__name__].sort()
+			task_gen.prec[func.__name__].add(fun_name)
 		return func
 	return deco
 after = after_method
