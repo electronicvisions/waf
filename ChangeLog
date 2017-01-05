@@ -1,6 +1,7 @@
 NEW IN WAF 2.0.0
 ----------------
-* Keep sorted lists in TaskGen.prec[]
+* Reverse the mappping in TaskGen.prec[]
+* Sort TaskGen methods besides regular constraints
 * Removed ut_fun from waf_unit_test.py
 * Force files into the build directory by default
 
