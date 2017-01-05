@@ -119,6 +119,7 @@ Qt5Declarative
 Qt5DesignerComponents
 Qt5Designer
 Qt5EglDeviceIntegration
+Qt5EglFSDeviceIntegration
 Qt5Gamepad
 Qt5Gui
 Qt5Help
@@ -127,6 +128,7 @@ Qt5MultimediaQuick_p
 Qt5Multimedia
 Qt5MultimediaWidgets
 Qt5Network
+Qt5NetworkAuth
 Qt5Nfc
 Qt5OpenGL
 Qt5Positioning
@@ -148,6 +150,9 @@ Qt5SerialPort
 Qt5Sql
 Qt5Svg
 Qt5Test
+Qt5TextToSpeech
+Qt5WaylandClient
+Qt5WaylandCompositor
 Qt5WebChannel
 Qt5WebEngineCore
 Qt5WebEngine
