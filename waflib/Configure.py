@@ -415,7 +415,7 @@ def find_program(self, filename, **kw):
 
 	:param path_list: paths to use for searching
 	:type param_list: list of string
-	:param var: store the result to conf.env[var], by default use filename.upper()
+	:param var: store the result to conf.env[var] where var defaults to filename.upper() if not provided; the result is stored as a list of strings
 	:type var: string
 	:param value: obtain the program from the value passed exclusively
 	:type value: list or string (list is preferred)
