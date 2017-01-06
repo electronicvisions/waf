@@ -56,7 +56,7 @@ class compile_sym(Task):
 			raise WafError('NotImplemented')
 
 @feature('syms')
-@after_method('process_source', 'process_use', 'apply_link', 'process_uselib_local')
+@after_method('process_source', 'process_use', 'apply_link', 'propagate_uselib_vars')
 def do_the_symbol_stuff(self):
 	ins = [x.outputs[0] for x in self.compiled_tasks]
 	self.gen_sym_tasks = [self.create_task('gen_sym', x, x.change_ext('.%d.sym' % self.idx)) for x in ins]
