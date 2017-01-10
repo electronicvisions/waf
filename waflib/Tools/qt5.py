@@ -781,6 +781,9 @@ def set_qt5_libs_to_check(self):
 	if not hasattr(self, 'qt5_vars'):
 		self.qt5_vars = QT5_LIBS
 	self.qt5_vars = Utils.to_list(self.qt5_vars)
+	qtextralibs = getattr(Options.options, 'qtextralibs', None)
+	if qtextralibs:
+		self.qt5_vars.extend(qtextralibs.split(','))
 	if not hasattr(self, 'qt5_vars_debug'):
 		self.qt5_vars_debug = [a + '_DEBUG' for a in self.qt5_vars]
 	self.qt5_vars_debug = Utils.to_list(self.qt5_vars_debug)
@@ -803,4 +806,5 @@ def options(opt):
 		opt.add_option('--'+i, type='string', default='', dest=i)
 
 	opt.add_option('--translate', action='store_true', help='collect translation strings', dest='trans_qt5', default=False)
+	opt.add_option('--qtextralibs', type='string', default='', dest='qtextralibs', help='additional qt libraries on the system to add to default ones, comma separated')
 
