@@ -103,7 +103,7 @@ class BranchError(Exception):
 
 
 class Project(object):
-    def __init__(self, name, path, branch = None):
+    def __init__(self, name, path, branch = None, clone_depth = None):
         assert isinstance(name, basestring)
         assert os.path.isabs(path)
         self._name = name
@@ -111,6 +111,7 @@ class Project(object):
         self._branch = branch
         self._real_branch = None
         self._mr_registered = False
+        self._clone_depth = clone_depth
         self._gerrit_changes = []
         self.required = False
 
@@ -257,7 +258,7 @@ class GitProject(Project):
 
     def mr_checkout_cmd(self, base_node, url):
         path = self.path_from(base_node)
-        depth = Options.options.clone_depth
+        depth = self._clone_depth
         depth = '--depth {}'.format(depth) if depth >= 0 else ''
         cmd = ["git clone --branch '{branch}' {depth} '{url}' '{target}'".format(
             branch=self.required_branch, depth=depth,
@@ -299,7 +300,7 @@ class MR(object):
     }
 
     def __init__(self, ctx, db_url="git@example.com:db.git", db_type="git",
-                 top=None, cfg=None, clear_log=False, gerrit_url=None):
+                 top=None, cfg=None, clear_log=False, clone_depth=None, gerrit_url=None):
         # Note: Don't store the ctx. It gets finalized before MR
         if not top:
             top = getattr(ctx, 'srcnode', None)
@@ -325,6 +326,8 @@ class MR(object):
                 log.write("")
 
         Logs.debug('mr: commands are logged to "%s"' % self.log)
+
+        self.clone_depth = clone_depth
 
         if isinstance(gerrit_url, basestring):
             self.gerrit_url = urlparse.urlparse(gerrit_url)
@@ -746,7 +749,7 @@ class MR(object):
             Logs.error("Missing information in repository database: %s" % name)
             raise KeyError("Missing information in repository database. Missing key: '%s'" % e.message)
 
-        p = self.project_types[vcs](name=name, path=os.path.join(self.base, name))
+        p = self.project_types[vcs](name=name, path=os.path.join(self.base, name), clone_depth=self.clone_depth)
         self.projects[name] = p
         return p
 
@@ -941,11 +944,6 @@ def options(opt):
         "--full-description", dest="show_repos_fdesc", action="store_true",
         help="List the full description of the repositories, no matter what.",
         default=False
-    )
-    gr.add_option(
-        "--clone-depth", dest="clone_depth", action="store",
-        type=int, help="To clone the full history use -1 [default is full history]",
-        default=-1
     )
 
 

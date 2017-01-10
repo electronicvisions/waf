@@ -209,6 +209,11 @@ def options(opt):
             help="Stores graph in a dot file",
             default=None
             )
+    gr.add_option(
+        "--clone-depth", dest="clone_depth", action="store",
+        type=int, help="To clone the full history use -1 [default is full history]",
+        default=-1
+    )
 
 
 class Symwaf2icContext(Context.Context):
@@ -286,6 +291,7 @@ class MainContext(Symwaf2icContext):
 
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
+        self.clone_depth= cmdopts.clone_depth
         self.gerrit_url = cmdopts.gerrit_url
 
     def init_toplevel(self):
@@ -328,7 +334,7 @@ class MainContext(Symwaf2icContext):
         repoconf.mkdir()
         storage.repo_tool = mr.MR(
             self, self.repo_db_url, self.repo_db_type, top=self.toplevel,
-            cfg=repoconf, clear_log=True, gerrit_url=self.gerrit_url)
+            cfg=repoconf, clear_log=True, clone_depth=self.clone_depth, gerrit_url=self.gerrit_url)
 
 
 class OptionParserContext(Symwaf2icContext):
@@ -515,6 +521,7 @@ class DependencyContext(Symwaf2icContext):
                 self.gerrit_changes = storage.repo_tool.resolve_gerrit_changes(
                     self, storage.setup_options["gerrit_changes"])
         self.write_dot_file = storage.current_options["write_dot_file"]
+        self.clone_depth = storage.setup_options["clone_depth"]
         # Dependency graph
         self.dependencies = defaultdict(list)
         # Queue for breadth-first search
