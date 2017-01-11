@@ -106,7 +106,7 @@ Qt53DLogic
 Qt53DQuickExtras
 Qt53DQuickInput
 Qt53DQuickRender
-Qt53DQuick.so
+Qt53DQuick
 Qt53DRender
 Qt5Bluetooth
 Qt5Charts
