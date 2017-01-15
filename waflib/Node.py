@@ -564,9 +564,8 @@ class Node(object):
 					if isdir:
 						if dir:
 							yield node
-					else:
-						if src:
-							yield node
+					elif src:
+						yield node
 
 				if isdir:
 					node.cache_isdir = True
@@ -612,24 +611,21 @@ class Node(object):
 		:returns: The corresponding Nodes
 		:rtype: list of :py:class:`waflib.Node.Node` instances
 		"""
-
 		src = kw.get('src', True)
-		dir = kw.get('dir', False)
+		dir = kw.get('dir')
 
 		excl = kw.get('excl', exclude_regs)
 		incl = k and k[0] or kw.get('incl', '**')
-		reflags = kw.get('ignorecase', 0) and re.I
+		reflags = kw.get('ignorecase', re.I)
 
 		def to_pat(s):
-			lst = Utils.to_list(s)
 			ret = []
-			for x in lst:
+			for x in Utils.to_list(s):
 				x = x.replace('\\', '/').replace('//', '/')
 				if x.endswith('/'):
 					x += '**'
-				lst2 = x.split('/')
 				accu = []
-				for k in lst2:
+				for k in x.split('/'):
 					if k == '**':
 						accu.append(k)
 					else:
@@ -637,9 +633,11 @@ class Node(object):
 						k = '^%s$' % k
 						try:
 							#print "pattern", k
-							accu.append(re.compile(k, flags=reflags))
+							exp = re.compile(k, flags=reflags)
 						except Exception as e:
 							raise Errors.WafError('Invalid pattern: %s' % k, e)
+						else:
+							accu.append(exp)
 				ret.append(accu)
 			return ret
 
@@ -667,15 +665,13 @@ class Node(object):
 			return [nacc, nrej]
 
 		ret = [x for x in self.ant_iter(accept=accept, pats=[to_pat(incl), to_pat(excl)], maxdepth=kw.get('maxdepth', 25), dir=dir, src=src, remove=kw.get('remove', True))]
-		if kw.get('flat', False):
+		if kw.get('flat'):
 			return ' '.join([x.path_from(self) for x in ret])
 
 		return ret
 
-	# --------------------------------------------------------------------------------
-	# the following methods require the source/build folders (bld.srcnode/bld.bldnode)
-	# using a subclass is a possibility, but is that really necessary?
-	# --------------------------------------------------------------------------------
+	# ----------------------------------------------------------------------------
+	# the methods below require the source/build folders (bld.srcnode/bld.bldnode)
 
 	def is_src(self):
 		"""

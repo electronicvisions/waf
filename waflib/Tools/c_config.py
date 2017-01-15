@@ -476,7 +476,7 @@ def validate_c(self, kw):
 
 	if not 'compile_mode' in kw:
 		kw['compile_mode'] = 'c'
-		if 'cxx' in Utils.to_list(kw.get('features',[])) or kw.get('compiler', '') == 'cxx':
+		if 'cxx' in Utils.to_list(kw.get('features', [])) or kw.get('compiler') == 'cxx':
 			kw['compile_mode'] = 'cxx'
 
 	if not 'type' in kw:
@@ -499,22 +499,19 @@ def validate_c(self, kw):
 			return ''.join(['#include <%s>\n' % x for x in dct])
 		return ''
 
-	#OSX
 	if 'framework_name' in kw:
+		# OSX, not sure this is used anywhere
 		fwkname = kw['framework_name']
 		if not 'uselib_store' in kw:
 			kw['uselib_store'] = fwkname.upper()
-		if not kw.get('no_header', False):
-			if not 'header_name' in kw:
-				kw['header_name'] = []
+		if not kw.get('no_header'):
 			fwk = '%s/%s.h' % (fwkname, fwkname)
 			if kw.get('remove_dot_h'):
 				fwk = fwk[:-2]
-			kw['header_name'] = Utils.to_list(kw['header_name']) + [fwk]
-
+			val = kw.get('header_name', [])
+			kw['header_name'] = Utils.to_list(val) + [fwk]
 		kw['msg'] = 'Checking for framework %s' % fwkname
 		kw['framework'] = fwkname
-		#kw['frameworkpath'] = set it yourself
 
 	if 'function_name' in kw:
 		fu = kw['function_name']
@@ -605,11 +602,12 @@ def validate_c(self, kw):
 		kw['code'] = '\n'.join(['#include <%s>' % x for x in self.env[INCKEYS]]) + '\n' + kw['code']
 
 	# in case defines lead to very long command-lines
-	if kw.get('merge_config_header', False) or env.merge_config_header:
+	if kw.get('merge_config_header') or env.merge_config_header:
 		kw['code'] = '%s\n\n%s' % (self.get_config_header(), kw['code'])
 		env.DEFINES = [] # modify the copy
 
-	if not kw.get('success'): kw['success'] = None
+	if not kw.get('success'):
+		kw['success'] = None
 
 	if 'define_name' in kw:
 		self.undefine(kw['define_name'])
@@ -625,7 +623,7 @@ def post_check(self, *k, **kw):
 	is_success = 0
 	if kw['execute']:
 		if kw['success'] is not None:
-			if kw.get('define_ret', False):
+			if kw.get('define_ret'):
 				is_success = kw['success']
 			else:
 				is_success = (kw['success'] == 0)
@@ -662,7 +660,7 @@ def post_check(self, *k, **kw):
 				self.env[define_name] = int(is_success)
 
 	if 'header_name' in kw:
-		if kw.get('auto_add_header_name', False):
+		if kw.get('auto_add_header_name'):
 			self.env.append_value(INCKEYS, Utils.to_list(kw['header_name']))
 
 	if is_success and 'uselib_store' in kw:

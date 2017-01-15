@@ -133,7 +133,7 @@ def enhance_lib():
 					Logs.error("In ant_glob pattern %r: '.' means 'one dot', not 'current directory'", k[0])
 		if kw.get('remove', True):
 			try:
-				if self.is_child_of(self.ctx.bldnode) and not kw.get('quiet', False):
+				if self.is_child_of(self.ctx.bldnode) and not kw.get('quiet'):
 					Logs.error('Using ant_glob on the build folder (%r) is dangerous (quiet=True to disable this warning)', self)
 			except AttributeError:
 				pass
@@ -170,7 +170,7 @@ def enhance_lib():
 		else:
 			for x in ('before', 'after'):
 				for y in self.to_list(getattr(self, x, [])):
-					if not Task.classes.get(y, None):
+					if not Task.classes.get(y):
 						Logs.error('Erroneous order constraint %s=%r on %r (no such class)', x, y, self)
 	TaskGen.feature('*')(check_err_order)
 
