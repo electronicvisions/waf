@@ -609,7 +609,9 @@ class Node(object):
 		:param ignorecase: ignore case while matching (False by default)
 		:type ignorecase: bool
 		:returns: The corresponding Nodes
-		:rtype: list of :py:class:`waflib.Node.Node` instances
+		:type generator: bool
+		:returns: Whether to evaluate the Nodes lazily, alters the type of the returned value
+		:rtype: by default, list of :py:class:`waflib.Node.Node` instances
 		"""
 		src = kw.get('src', True)
 		dir = kw.get('dir')
@@ -664,11 +666,14 @@ class Node(object):
 				nacc = []
 			return [nacc, nrej]
 
-		ret = [x for x in self.ant_iter(accept=accept, pats=[to_pat(incl), to_pat(excl)], maxdepth=kw.get('maxdepth', 25), dir=dir, src=src, remove=kw.get('remove', True))]
+		it = self.ant_iter(accept=accept, pats=[to_pat(incl), to_pat(excl)], maxdepth=kw.get('maxdepth', 25), dir=dir, src=src, remove=kw.get('remove', True))
 		if kw.get('flat'):
-			return ' '.join([x.path_from(self) for x in ret])
-
-		return ret
+			# returns relative paths as a space-delimited string
+			# prefer Node objects whenever possible
+			return ' '.join(x.path_from(self) for x in it)
+		elif kw.get('generator'):
+			return it
+		return list(it)
 
 	# ----------------------------------------------------------------------------
 	# the methods below require the source/build folders (bld.srcnode/bld.bldnode)
