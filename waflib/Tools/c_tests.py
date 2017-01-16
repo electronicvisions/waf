@@ -211,7 +211,7 @@ class grep_for_endianness(Task.Task):
 @after_method('process_source')
 def grep_for_endianness_fun(self):
 	"""
-	Used by the endiannes configuration test
+	Used by the endianness configuration test
 	"""
 	self.create_task('grep_for_endianness', self.compiled_tasks[0].outputs[0])
 
