@@ -56,7 +56,7 @@ def subst(*k):
 def r1(code):
 	"utf-8 fixes for python < 2.6"
 	code = code.replace('as e:', ',e:')
-	code = code.replace(".decode(sys.stdout.encoding or'iso8859-1',errors='replace')", '')
+	code = code.replace(".decode(sys.stdout.encoding or'latin-1',errors='replace')", '')
 	return code.replace('.encode()', '')
 
 @subst('Runner.py')

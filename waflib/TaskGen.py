@@ -723,11 +723,11 @@ class subst_pc(Task.Task):
 				self.force_permissions()
 			return ret
 
-		code = self.inputs[0].read(encoding=getattr(self.generator, 'encoding', 'ISO8859-1'))
+		code = self.inputs[0].read(encoding=getattr(self.generator, 'encoding', 'latin-1'))
 		if getattr(self.generator, 'subst_fun', None):
 			code = self.generator.subst_fun(self, code)
 			if code is not None:
-				self.outputs[0].write(code, encoding=getattr(self.generator, 'encoding', 'ISO8859-1'))
+				self.outputs[0].write(code, encoding=getattr(self.generator, 'encoding', 'latin-1'))
 			self.force_permissions()
 			return None
 
@@ -758,7 +758,7 @@ class subst_pc(Task.Task):
 				d[x] = tmp
 
 		code = code % d
-		self.outputs[0].write(code, encoding=getattr(self.generator, 'encoding', 'ISO8859-1'))
+		self.outputs[0].write(code, encoding=getattr(self.generator, 'encoding', 'latin-1'))
 		self.generator.bld.raw_deps[self.uid()] = lst
 
 		# make sure the signature is updated

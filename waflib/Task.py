@@ -863,10 +863,10 @@ if sys.hexversion > 0x3000000:
 		try:
 			return self.uid_
 		except AttributeError:
-			m = Utils.md5(self.__class__.__name__.encode('iso8859-1', 'xmlcharrefreplace'))
+			m = Utils.md5(self.__class__.__name__.encode('latin-1', 'xmlcharrefreplace'))
 			up = m.update
 			for x in self.inputs + self.outputs:
-				up(x.abspath().encode('iso8859-1', 'xmlcharrefreplace'))
+				up(x.abspath().encode('latin-1', 'xmlcharrefreplace'))
 			self.uid_ = m.digest()
 			return self.uid_
 	uid.__doc__ = Task.uid.__doc__

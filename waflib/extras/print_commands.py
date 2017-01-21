@@ -62,14 +62,14 @@ def exec_command(self, cmd, **kw):
 
 	if out:
 		if not isinstance(out, str):
-			out = out.decode(sys.stdout.encoding or 'iso8859-1')
+			out = out.decode(sys.stdout.encoding or 'latin-1')
 		if self.logger:
 			self.logger.debug('out: %s' % out)
 		else:
 			Logs.info(out, extra={'stream':sys.stdout, 'c1': ''})
 	if err:
 		if not isinstance(err, str):
-			err = err.decode(sys.stdout.encoding or 'iso8859-1')
+			err = err.decode(sys.stdout.encoding or 'latin-1')
 		if self.logger:
 			self.logger.error('err: %s' % err)
 		else:

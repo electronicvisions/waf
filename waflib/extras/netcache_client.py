@@ -40,7 +40,7 @@ all_sigs_in_cache = (0.0, [])
 
 def put_data(conn, data):
 	if sys.hexversion > 0x3000000:
-		data = data.encode('iso8859-1')
+		data = data.encode('latin-1')
 	cnt = 0
 	while cnt < len(data):
 		sent = conn.send(data[cnt:])
@@ -107,8 +107,8 @@ def read_header(conn):
 		buf.append(data)
 		cnt += len(data)
 	if sys.hexversion > 0x3000000:
-		ret = ''.encode('iso8859-1').join(buf)
-		ret = ret.decode('iso8859-1')
+		ret = ''.encode('latin-1').join(buf)
+		ret = ret.decode('latin-1')
 	else:
 		ret = ''.join(buf)
 	return ret
@@ -140,8 +140,8 @@ def check_cache(conn, ssig):
 			cnt += len(data)
 
 		if sys.hexversion > 0x3000000:
-			ret = ''.encode('iso8859-1').join(buf)
-			ret = ret.decode('iso8859-1')
+			ret = ''.encode('latin-1').join(buf)
+			ret = ret.decode('latin-1')
 		else:
 			ret = ''.join(buf)
 

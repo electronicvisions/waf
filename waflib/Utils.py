@@ -188,7 +188,7 @@ is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 Whether this system is a Windows series
 """
 
-def readf(fname, m='r', encoding='ISO8859-1'):
+def readf(fname, m='r', encoding='latin-1'):
 	"""
 	Reads an entire file into a string. See also :py:meth:`waflib.Node.Node.readf`::
 
@@ -226,7 +226,7 @@ def readf(fname, m='r', encoding='ISO8859-1'):
 			f.close()
 	return txt
 
-def writef(fname, data, m='w', encoding='ISO8859-1'):
+def writef(fname, data, m='w', encoding='latin-1'):
 	"""
 	Writes an entire file from a string.
 	See also :py:meth:`waflib.Node.Node.writef`::
@@ -274,7 +274,7 @@ def h_file(fname):
 		f.close()
 	return m.digest()
 
-def readf_win32(f, m='r', encoding='ISO8859-1'):
+def readf_win32(f, m='r', encoding='latin-1'):
 	flags = os.O_NOINHERIT | os.O_RDONLY
 	if 'b' in m:
 		flags |= os.O_BINARY
@@ -304,7 +304,7 @@ def readf_win32(f, m='r', encoding='ISO8859-1'):
 			f.close()
 	return txt
 
-def writef_win32(f, data, m='w', encoding='ISO8859-1'):
+def writef_win32(f, data, m='w', encoding='latin-1'):
 	if sys.hexversion > 0x3000000 and not 'b' in m:
 		data = data.encode(encoding)
 		m += 'b'
@@ -473,7 +473,7 @@ def split_path_msys(path):
 		global msysroot
 		if not msysroot:
 			# msys has python 2.7 or 3, so we can use this
-			msysroot = subprocess.check_output(['cygpath', '-w', '/']).decode(sys.stdout.encoding or 'iso8859-1')
+			msysroot = subprocess.check_output(['cygpath', '-w', '/']).decode(sys.stdout.encoding or 'latin-1')
 			msysroot = msysroot.strip()
 		path = os.path.normpath(msysroot + os.sep + path)
 	return split_path_win32(path)
@@ -630,7 +630,7 @@ def h_cmd(ins):
 		# or just a python function
 		ret = str(h_fun(ins))
 	if sys.hexversion > 0x3000000:
-		ret = ret.encode('iso8859-1', 'xmlcharrefreplace')
+		ret = ret.encode('latin-1', 'xmlcharrefreplace')
 	return ret
 
 reg_subst = re.compile(r"(\\\\)|(\$\$)|\$\{([^}]+)\}")

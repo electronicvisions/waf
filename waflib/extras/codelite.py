@@ -302,7 +302,7 @@ def rm_blank_lines(txt):
 
 BOM = '\xef\xbb\xbf'
 try:
-        BOM = bytes(BOM, 'iso8859-1') # python 3
+        BOM = bytes(BOM, 'latin-1') # python 3
 except (TypeError, NameError):
         pass
 
