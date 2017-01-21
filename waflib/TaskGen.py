@@ -48,7 +48,7 @@ class task_gen(object):
 
 		The extra key/value elements passed in ``kw`` are set as attributes
 		"""
-		self.source = ''
+		self.source = []
 		self.target = ''
 
 		self.meths = []
@@ -490,7 +490,8 @@ def extension(*k):
 @taskgen_method
 def to_nodes(self, lst, path=None):
 	"""
-	Converts the input list into a list of nodes.
+	Flatten the input list of string/nodes/lists into a list of nodes.
+
 	It is used by :py:func:`waflib.TaskGen.process_source` and :py:func:`waflib.TaskGen.process_rule`.
 	It is designed for source files, for folders, see :py:func:`waflib.Tools.ccroot.to_incnodes`:
 
@@ -507,14 +508,16 @@ def to_nodes(self, lst, path=None):
 	if isinstance(lst, Node.Node):
 		lst = [lst]
 
-	# either a list or a string, convert to a list of nodes
 	for x in Utils.to_list(lst):
 		if isinstance(x, str):
 			node = find(x)
-		else:
+		elif hasattr(x, 'name'):
 			node = x
+		else:
+			tmp.extend(self.to_nodes(x))
+			continue
 		if not node:
-			raise Errors.WafError("source not found: %r in %r" % (x, self))
+			raise Errors.WafError('source not found: %r in %r' % (x, self))
 		tmp.append(node)
 	return tmp
 
