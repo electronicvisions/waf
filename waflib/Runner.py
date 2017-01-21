@@ -239,6 +239,12 @@ class Parallel(object):
 		"""
 		tsk.hasrun = Task.SKIPPED
 
+	def cancel(self, tsk):
+		"""
+		Mark a task as failed because of unsatisfiable dependencies
+		"""
+		tsk.hasrun = Task.CANCELED
+
 	def error_handler(self, tsk):
 		"""
 		Called when a task cannot be executed. The flag :py:attr:`waflib.Runner.Parallel.stop` is set, unless
@@ -274,7 +280,7 @@ class Parallel(object):
 			if not self.stop and self.bld.keep:
 				self.skip(tsk)
 				if self.bld.keep == 1:
-					# if -k stop at the first exception, if -kk try to go as far as possible
+					# if -k stop on the first exception, if -kk try to go as far as possible
 					if Logs.verbose > 1 or not self.error:
 						self.error.append(tsk)
 					self.stop = True
@@ -316,9 +322,8 @@ class Parallel(object):
 				self.processed += 1
 				continue
 
-			if self.stop: # stop immediately after a failure was detected
+			if self.stop: # stop immediately after a failure is detected
 				break
-
 
 			st = self.task_status(tsk)
 			if st == Task.RUN_ME:
@@ -333,12 +338,19 @@ class Parallel(object):
 						self.out.put(tsk)
 				else:
 					self.add_task(tsk)
-			if st == Task.ASK_LATER:
+			elif st == Task.ASK_LATER:
 				self.postpone(tsk)
 			elif st == Task.SKIP_ME:
 				self.processed += 1
 				self.skip(tsk)
 				self.add_more_tasks(tsk)
+			elif st == Task.CANCEL_ME:
+				# A dependency problem has occured, and the
+				# build is most likely run with `waf -k`
+				if Logs.verbose > 1:
+					self.error.append(tsk)
+				self.processed += 1
+				self.cancel(tsk)
 
 		# self.count represents the tasks that have been made available to the consumer threads
 		# collect all the tasks after an error else the message may be incomplete

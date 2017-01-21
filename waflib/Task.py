@@ -22,6 +22,9 @@ CRASHED = 2
 EXCEPTION = 3
 """An exception occured in the task execution"""
 
+CANCELED = 4
+"""A dependency for the task is missing so it was cancelled"""
+
 SKIPPED = 8
 """The task did not have to be executed"""
 
@@ -36,6 +39,9 @@ SKIP_ME = -2
 
 RUN_ME = -3
 """The task must be executed"""
+
+CANCEL_ME = -4
+"""The task cannot be executed because of a dependency problem"""
 
 COMPILE_TEMPLATE_SHELL = '''
 def f(tsk):
@@ -260,7 +266,8 @@ class TaskBase(evil):
 		"""
 		Returns the Task status
 
-		:return: a task state in :py:const:`waflib.Task.RUN_ME`, :py:const:`waflib.Task.SKIP_ME` or :py:const:`waflib.Task.ASK_LATER`.
+		:return: a task state in :py:const:`waflib.Task.RUN_ME`,
+			:py:const:`waflib.Task.SKIP_ME`, :py:const:`waflib.Task.CANCEL_ME` or :py:const:`waflib.Task.ASK_LATER`.
 		:rtype: int
 		"""
 		return RUN_ME
@@ -276,7 +283,8 @@ class TaskBase(evil):
 	def process(self):
 		"""
 		Assume that the task has had a ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
-		Execute the task and then put it back in the queue :py:attr:`waflib.Runner.Parallel.out` (may be replaced by subclassing).
+		Execute the task and then put it back in the queue :py:attr:`waflib.Runner.Parallel.out`
+		(may be replaced by subclassing).
 
 		:return: 0 or None if everything is fine
 		:rtype: integer
@@ -426,6 +434,8 @@ class TaskBase(evil):
 				return ' -> task in %r failed%s' % (name, msg)
 		elif self.hasrun == MISSING:
 			return ' -> missing files in %r%s' % (name, msg)
+		elif self.hasrun == CANCELED:
+			return ' -> %r canceled because of missing dependencies' % name
 		else:
 			return 'invalid status for task in %r: %r' % (name, self.hasrun)
 
@@ -646,11 +656,12 @@ class Task(TaskBase):
 		"""
 		See :py:meth:`waflib.Task.TaskBase.runnable_status`
 		"""
-		#return 0 # benchmarking
-
 		for t in self.run_after:
 			if not t.hasrun:
 				return ASK_LATER
+			elif t.hasrun < SKIPPED:
+				# a dependency has an error
+				return CANCEL_ME
 
 		# first compute the signature
 		try:
