@@ -656,6 +656,10 @@ class Task(TaskBase):
 		"""
 		See :py:meth:`waflib.Task.TaskBase.runnable_status`
 		"""
+		bld = self.generator.bld
+		if bld.is_install < 0:
+			return SKIP_ME
+
 		for t in self.run_after:
 			if not t.hasrun:
 				return ASK_LATER
@@ -670,7 +674,6 @@ class Task(TaskBase):
 			return ASK_LATER
 
 		# compare the signature to a signature computed previously
-		bld = self.generator.bld
 		key = self.uid()
 		try:
 			prev_sig = bld.task_sigs[key]

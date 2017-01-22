@@ -1251,22 +1251,6 @@ class UninstallContext(InstallContext):
 		super(UninstallContext, self).__init__(**kw)
 		self.is_install = UNINSTALL
 
-	def execute(self):
-		"""
-		See :py:func:`waflib.Build.BuildContext.execute`.
-		"""
-		# TODO just mark the tasks are already run with hasrun=Task.SKIPPED?
-		try:
-			# do not execute any tasks
-			def runnable_status(self):
-				return Task.SKIP_ME
-			setattr(Task.Task, 'runnable_status_back', Task.Task.runnable_status)
-			setattr(Task.Task, 'runnable_status', runnable_status)
-
-			super(UninstallContext, self).execute()
-		finally:
-			setattr(Task.Task, 'runnable_status', Task.Task.runnable_status_back)
-
 class CleanContext(BuildContext):
 	'''cleans the project'''
 	cmd = 'clean'
