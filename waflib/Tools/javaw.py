@@ -95,7 +95,7 @@ def apply_java(self):
 	tsk.srcdir = tmp
 
 	if getattr(self, 'compat', None):
-		tsk.env.append_value('JAVACFLAGS', ['-source', self.compat])
+		tsk.env.append_value('JAVACFLAGS', ['-source', str(self.compat)])
 
 	if hasattr(self, 'sourcepath'):
 		fold = [isinstance(x, Node.Node) and x or self.path.find_dir(x) for x in self.to_list(self.sourcepath)]
