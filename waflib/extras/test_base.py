@@ -496,10 +496,12 @@ class TestBase(Task.Task):
         thread.join(self.timeout)
         if thread.is_alive():
             # killing processes is difficult (race conditions all over the place)...
+            # first try to terminate then try to kill to be safe
+            # try/except as process could have finished in the meantime
             if hasattr(self, 'proc'):
-                self.proc.terminate()
-                sleep(0.5) # grace period
                 try:
+                    self.proc.terminate()
+                    sleep(0.5) # grace period
                     self.proc.kill()
                 except OSError, e:
                     # ignore "process not found"
