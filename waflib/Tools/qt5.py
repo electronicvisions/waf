@@ -698,7 +698,7 @@ def add_qt5_rpath(self):
 		def process_rpath(vars_, coreval):
 			for d in vars_:
 				var = d.upper()
-				value = env['LIBPATH_'+var]
+				value = env['LIBPATH_' + var]
 				if value:
 					core = env[coreval]
 					accu = []
@@ -707,32 +707,33 @@ def add_qt5_rpath(self):
 							if lib in core:
 								continue
 						accu.append('-Wl,--rpath='+lib)
-					env['RPATH_'+var] = accu
+					env['RPATH_' + var] = accu
 		process_rpath(self.qt5_vars,       'LIBPATH_QTCORE')
 		process_rpath(self.qt5_vars_debug, 'LIBPATH_QTCORE_DEBUG')
 
 @conf
 def set_qt5_libs_to_check(self):
-	if not hasattr(self, 'qt5_vars'):
-		self.qt5_vars = []
+	self.qt5_vars = Utils.to_list(getattr(self, 'qt5_vars', []))
+	if not self.qt5_vars:
 		dirlst = Utils.listdir(self.env.QTLIBS)
-		if dirlst:
-			if self.environ.get('QT5_FORCE_STATIC'):
-				libmatch = self.env.cxxstlib_PATTERN % 'Qt5.*'
-			else:
-				libmatch = self.env.cxxshlib_PATTERN % 'Qt5.*'
-			libnamere = re.compile(libmatch + '$')
-			qtliblist = filter(libnamere.match, dirlst)
-			for dentry in sorted(qtliblist):
-				self.qt5_vars.append(dentry.split('.')[0][dentry.find('Qt5'):])
-			if not self.qt5_vars:
-				self.fatal('cannot find any Qt5 library on the system')
-		else:
-			self.fatal('cannot find Qt5 library directory on the system')
-	self.qt5_vars = Utils.to_list(self.qt5_vars)
+
+		pat = self.env.cxxshlib_PATTERN
+		if Utils.is_win32:
+			pat = pat.replace('.dll', '.lib')
+		if self.environ.get('QT5_FORCE_STATIC'):
+			pat = self.env.cxxstlib_PATTERN
+		re_qt = re.compile(pat % '(?P<name>Qt5.*)' + '$')
+		for x in dirlst:
+			m = re_qt.match(x)
+			if m:
+				self.qt5_vars.append(m.group('name'))
+		if not self.qt5_vars:
+			self.fatal('cannot find any Qt5 library (%r)' % self.env.QTLIBS)
+
 	qtextralibs = getattr(Options.options, 'qtextralibs', None)
 	if qtextralibs:
 		self.qt5_vars.extend(qtextralibs.split(','))
+
 	if not hasattr(self, 'qt5_vars_debug'):
 		self.qt5_vars_debug = [a + '_DEBUG' for a in self.qt5_vars]
 	self.qt5_vars_debug = Utils.to_list(self.qt5_vars_debug)
