@@ -117,7 +117,7 @@ def fortran_modifier_win32(conf):
 	v.fcprogram_PATTERN = v.fcprogram_test_PATTERN  = '%s.exe'
 
 	v.fcshlib_PATTERN   = '%s.dll'
-	v.implib_PATTERN    = 'lib%s.dll.a'
+	v.implib_PATTERN    = '%s.dll.a'
 	v.IMPLIB_ST         = '-Wl,--out-implib,%s'
 
 	v.FCFLAGS_fcshlib   = []
