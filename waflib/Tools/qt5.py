@@ -651,16 +651,14 @@ def find_qt5_libraries(self):
 					self.msg('Checking for %s' % i, False, 'YELLOW')
 				env.append_unique('INCLUDES_' + uselib, os.path.join(env.QTLIBS, frameworkName, 'Headers'))
 			else:
-				for j in ('', 'd'):
-					k = '_DEBUG' if j == 'd' else ''
-					ret = self.find_single_qt5_lib(i + j, uselib + k, env.QTLIBS, qtincludes, force_static)
-					if not force_static and not ret:
-						ret = self.find_single_qt5_lib(i + j, uselib + k, env.QTLIBS, qtincludes, True)
-					self.msg('Checking for %s' % (i + j), ret, 'GREEN' if ret else 'YELLOW')
+				ret = self.find_single_qt5_lib(i, uselib, env.QTLIBS, qtincludes, force_static)
+				if not force_static and not ret:
+					ret = self.find_single_qt5_lib(i, uselib, env.QTLIBS, qtincludes, True)
+				self.msg('Checking for %s' % i, ret, 'GREEN' if ret else 'YELLOW')
 	else:
 		path = '%s:%s:%s/pkgconfig:/usr/lib/qt5/lib/pkgconfig:/opt/qt5/lib/pkgconfig:/usr/lib/qt5/lib:/opt/qt5/lib' % (
 			self.environ.get('PKG_CONFIG_PATH', ''), env.QTLIBS, env.QTLIBS)
-		for i in self.qt5_vars_debug + self.qt5_vars:
+		for i in self.qt5_vars:
 			self.check_cfg(package=i, args='--cflags --libs', mandatory=False, force_static=force_static, pkg_config_path=path)
 
 @conf
@@ -686,7 +684,6 @@ def simplify_qt5_libs(self):
 					accu.append(lib)
 				env['LIBPATH_'+var] = accu
 	process_lib(self.qt5_vars,       'LIBPATH_QTCORE')
-	process_lib(self.qt5_vars_debug, 'LIBPATH_QTCORE_DEBUG')
 
 @conf
 def add_qt5_rpath(self):
@@ -709,7 +706,6 @@ def add_qt5_rpath(self):
 						accu.append('-Wl,--rpath='+lib)
 					env['RPATH_' + var] = accu
 		process_rpath(self.qt5_vars,       'LIBPATH_QTCORE')
-		process_rpath(self.qt5_vars_debug, 'LIBPATH_QTCORE_DEBUG')
 
 @conf
 def set_qt5_libs_to_check(self):
@@ -734,10 +730,6 @@ def set_qt5_libs_to_check(self):
 	if qtextralibs:
 		self.qt5_vars.extend(qtextralibs.split(','))
 
-	if not hasattr(self, 'qt5_vars_debug'):
-		self.qt5_vars_debug = [a + '_DEBUG' for a in self.qt5_vars]
-	self.qt5_vars_debug = Utils.to_list(self.qt5_vars_debug)
-
 @conf
 def set_qt5_defines(self):
 	if sys.platform != 'win32':
@@ -745,7 +737,6 @@ def set_qt5_defines(self):
 	for x in self.qt5_vars:
 		y=x.replace('Qt5', 'Qt')[2:].upper()
 		self.env.append_unique('DEFINES_%s' % x.upper(), 'QT_%s_LIB' % y)
-		self.env.append_unique('DEFINES_%s_DEBUG' % x.upper(), 'QT_%s_LIB' % y)
 
 def options(opt):
 	"""
