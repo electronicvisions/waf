@@ -272,8 +272,8 @@ class BuildContext(Context.Context):
 			pass
 		else:
 			if env.version < Context.HEXVERSION:
-				raise Errors.WafError('Project was configured with a different version of Waf.\n'
-				                      'Please reconfigure it (this will discard old build information).')
+				raise Errors.WafError('Project was configured with a different version of Waf, please reconfigure it')
+
 			for t in env.tools:
 				self.setup(**t)
 
