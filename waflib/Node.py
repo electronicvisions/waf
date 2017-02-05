@@ -254,7 +254,7 @@ class Node(object):
 					os.remove(self.abspath())
 			except OSError as e:
 				if os.path.exists(self.abspath()):
-					raise e
+					raise
 		finally:
 			if evict:
 				self.evict()
