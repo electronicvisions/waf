@@ -252,7 +252,7 @@ class Node(object):
 					shutil.rmtree(self.abspath())
 				else:
 					os.remove(self.abspath())
-			except OSError as e:
+			except OSError:
 				if os.path.exists(self.abspath()):
 					raise
 		finally:
