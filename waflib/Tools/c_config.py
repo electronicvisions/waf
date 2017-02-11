@@ -19,39 +19,10 @@ WAF_CONFIG_H   = 'config.h'
 DEFKEYS = 'define_key'
 INCKEYS = 'include_key'
 
-SNIP_FUNCTION = '''
-int main(int argc, char **argv) {
-	void (*p)();
-	(void)argc; (void)argv;
-	p=(void(*)())(%s);
-	return !p;
-}
-'''
-"""Code template for checking for functions"""
-
-SNIP_TYPE = '''
-int main(int argc, char **argv) {
-	(void)argc; (void)argv;
-	if ((%(type_name)s *) 0) return 0;
-	if (sizeof (%(type_name)s)) return 0;
-	return 1;
-}
-'''
-"""Code template for checking for types"""
-
 SNIP_EMPTY_PROGRAM = '''
 int main(int argc, char **argv) {
 	(void)argc; (void)argv;
 	return 0;
-}
-'''
-
-SNIP_FIELD = '''
-int main(int argc, char **argv) {
-	char *off;
-	(void)argc; (void)argv;
-	off = (char*) &((%(type_name)s*)0)->%(field_name)s;
-	return (size_t) off < sizeof(%(type_name)s);
 }
 '''
 
@@ -456,6 +427,9 @@ def validate_c(self, kw):
 	:param auto_add_header_name: if header_name was set, add the headers in env.INCKEYS so the next tests will include these headers
 	:type auto_add_header_name: bool
 	"""
+	for x in ('type_name', 'field_name', 'function_name'):
+		if x in kw:
+			Logs.warn('Invalid argument %r in test' % x)
 
 	if not 'build_fun' in kw:
 		kw['build_fun'] = build_fun
@@ -512,34 +486,6 @@ def validate_c(self, kw):
 			kw['header_name'] = Utils.to_list(val) + [fwk]
 		kw['msg'] = 'Checking for framework %s' % fwkname
 		kw['framework'] = fwkname
-
-	if 'function_name' in kw:
-		fu = kw['function_name']
-		if not 'msg' in kw:
-			kw['msg'] = 'Checking for function %s' % fu
-		kw['code'] = to_header(kw) + SNIP_FUNCTION % fu
-		if not 'uselib_store' in kw:
-			kw['uselib_store'] = fu.upper()
-		if not 'define_name' in kw:
-			kw['define_name'] = self.have_define(fu)
-
-	elif 'type_name' in kw:
-		tu = kw['type_name']
-		if not 'header_name' in kw:
-			kw['header_name'] = 'stdint.h'
-		if 'field_name' in kw:
-			field = kw['field_name']
-			kw['code'] = to_header(kw) + SNIP_FIELD % {'type_name' : tu, 'field_name' : field}
-			if not 'msg' in kw:
-				kw['msg'] = 'Checking for field %s in %s' % (field, tu)
-			if not 'define_name' in kw:
-				kw['define_name'] = self.have_define((tu + '_' + field).upper())
-		else:
-			kw['code'] = to_header(kw) + SNIP_TYPE % {'type_name' : tu}
-			if not 'msg' in kw:
-				kw['msg'] = 'Checking for type %s' % tu
-			if not 'define_name' in kw:
-				kw['define_name'] = self.have_define(tu.upper())
 
 	elif 'header_name' in kw:
 		if not 'msg' in kw:
