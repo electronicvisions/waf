@@ -10,7 +10,7 @@ from waflib import Task, Runner
 Task.CANCELED = 4
 
 def cancel_next(self, tsk):
-	if not isinstance(tsk, Task.TaskBase):
+	if not isinstance(tsk, Task.Task):
 		return
 	if tsk.hasrun >= Task.SKIPPED:
 		# normal execution, no need to do anything here

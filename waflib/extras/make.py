@@ -48,7 +48,7 @@ class MakeContext(BuildContext):
 			for pat in self.files.split(','):
 				matcher = self.get_matcher(pat)
 				for tg in g:
-					if isinstance(tg, Task.TaskBase):
+					if isinstance(tg, Task.Task):
 						lst = [tg]
 					else:
 						lst = tg.tasks

@@ -1160,14 +1160,14 @@ def add_as_needed(self):
 
 # ============ parallel configuration
 
-class cfgtask(Task.TaskBase):
+class cfgtask(Task.Task):
 	"""
 	A task that executes build configuration tests (calls conf.check)
 
 	Make sure to use locks if concurrent access to the same conf.env data is necessary.
 	"""
 	def __init__(self, *k, **kw):
-		Task.TaskBase.__init__(self, *k, **kw)
+		Task.Task.__init__(self, *k, **kw)
 		self.run_after = set()
 
 	def display(self):
@@ -1180,6 +1180,9 @@ class cfgtask(Task.TaskBase):
 		return Task.RUN_ME
 
 	def uid(self):
+		return Utils.SIG_NIL
+
+	def signature(self):
 		return Utils.SIG_NIL
 
 	def run(self):
@@ -1209,7 +1212,7 @@ class cfgtask(Task.TaskBase):
 			return 1
 
 	def process(self):
-		Task.TaskBase.process(self)
+		Task.Task.process(self)
 		if 'msg' in self.args:
 			with self.generator.bld.multicheck_lock:
 				self.conf.start_msg(self.args['msg'])
@@ -1265,11 +1268,12 @@ def multicheck(self, *k, **kw):
 
 	bld = par()
 	bld.keep = kw.get('run_all_tests', True)
+	bld.imp_sigs = {} # TODO
 	tasks = []
 
 	id_to_task = {}
 	for dct in k:
-		x = Task.classes['cfgtask'](bld=bld)
+		x = Task.classes['cfgtask'](bld=bld, env=None)
 		tasks.append(x)
 		x.args = dct
 		x.bld = bld

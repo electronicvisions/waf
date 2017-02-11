@@ -587,7 +587,7 @@ class BuildContext(Context.Context):
 
 	def add_to_group(self, tgen, group=None):
 		"""Adds a task or a task generator to the build; there is no attempt to remove it if it was already added."""
-		assert(isinstance(tgen, TaskGen.task_gen) or isinstance(tgen, Task.TaskBase))
+		assert(isinstance(tgen, TaskGen.task_gen) or isinstance(tgen, Task.Task))
 		tgen.bld = self
 		self.get_group(group).append(tgen)
 
@@ -761,7 +761,7 @@ class BuildContext(Context.Context):
 		Returns all task instances for the build group at position idx,
 		used internally by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
 
-		:rtype: list of :py:class:`waflib.Task.TaskBase`
+		:rtype: list of :py:class:`waflib.Task.Task`
 		"""
 		tasks = []
 		for tg in self.groups[idx]:
@@ -776,7 +776,7 @@ class BuildContext(Context.Context):
 		Creates a Python generator object that returns lists of tasks that may be processed in parallel.
 
 		:return: tasks which can be executed immediatly
-		:rtype: generator returning lists of :py:class:`waflib.Task.TaskBase`
+		:rtype: generator returning lists of :py:class:`waflib.Task.Task`
 		"""
 		self.cur = 0
 
@@ -1366,7 +1366,7 @@ class StepContext(BuildContext):
 			for pat in self.files.split(','):
 				matcher = self.get_matcher(pat)
 				for tg in g:
-					if isinstance(tg, Task.TaskBase):
+					if isinstance(tg, Task.Task):
 						lst = [tg]
 					else:
 						lst = tg.tasks

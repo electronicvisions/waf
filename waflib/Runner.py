@@ -49,7 +49,7 @@ class Spawner(Utils.threading.Thread):
 	"""
 	Daemon thread that consumes tasks from :py:class:`waflib.Runner.Parallel` producer and
 	spawns a consuming thread :py:class:`waflib.Runner.Consumer` for each
-	:py:class:`waflib.Task.TaskBase` instance.
+	:py:class:`waflib.Task.Task` instance.
 	"""
 	def __init__(self, master):
 		Utils.threading.Thread.__init__(self)
@@ -103,16 +103,16 @@ class Parallel(object):
 		"""
 
 		self.outstanding = Utils.deque()
-		"""List of :py:class:`waflib.Task.TaskBase` that may be ready to be executed"""
+		"""List of :py:class:`waflib.Task.Task` that may be ready to be executed"""
 
 		self.frozen = Utils.deque()
-		"""List of :py:class:`waflib.Task.TaskBase` that are not ready yet"""
+		"""List of :py:class:`waflib.Task.Task` that are not ready yet"""
 
 		self.ready = Queue(0)
-		"""List of :py:class:`waflib.Task.TaskBase` ready to be executed by consumers"""
+		"""List of :py:class:`waflib.Task.Task` ready to be executed by consumers"""
 
 		self.out = Queue(0)
-		"""List of :py:class:`waflib.Task.TaskBase` returned by the task consumers"""
+		"""List of :py:class:`waflib.Task.Task` returned by the task consumers"""
 
 		self.count = 0
 		"""Amount of tasks that may be processed by :py:class:`waflib.Runner.TaskConsumer`"""
@@ -143,7 +143,7 @@ class Parallel(object):
 		"""
 		Obtains the next Task instance to run
 
-		:rtype: :py:class:`waflib.Task.TaskBase`
+		:rtype: :py:class:`waflib.Task.Task`
 		"""
 		if not self.outstanding:
 			return None
@@ -155,7 +155,7 @@ class Parallel(object):
 		The order is scrambled so as to consume as many tasks in parallel as possible.
 
 		:param tsk: task instance
-		:type tsk: :py:class:`waflib.Task.TaskBase`
+		:type tsk: :py:class:`waflib.Task.Task`
 		"""
 		if random.randint(0, 1):
 			self.frozen.appendleft(tsk)
@@ -200,11 +200,11 @@ class Parallel(object):
 
 	def add_more_tasks(self, tsk):
 		"""
-		If a task provides :py:attr:`waflib.Task.TaskBase.more_tasks`, then the tasks contained
+		If a task provides :py:attr:`waflib.Task.Task.more_tasks`, then the tasks contained
 		in that list are added to the current build and will be processed before the next build group.
 
 		:param tsk: task instance
-		:type tsk: :py:attr:`waflib.Task.TaskBase`
+		:type tsk: :py:attr:`waflib.Task.Task`
 		"""
 		if getattr(tsk, 'more_tasks', None):
 			self.outstanding.extend(tsk.more_tasks)
@@ -215,7 +215,7 @@ class Parallel(object):
 		Waits for a Task that task consumers add to :py:attr:`waflib.Runner.Parallel.out` after execution.
 		Adds more Tasks if necessary through :py:attr:`waflib.Runner.Parallel.add_more_tasks`.
 
-		:rtype: :py:attr:`waflib.Task.TaskBase`
+		:rtype: :py:attr:`waflib.Task.Task`
 		"""
 		tsk = self.out.get()
 		if not self.stop:
@@ -229,7 +229,7 @@ class Parallel(object):
 		Enqueue a Task to :py:attr:`waflib.Runner.Parallel.ready` so that consumers can run them.
 
 		:param tsk: task instance
-		:type tsk: :py:attr:`waflib.Task.TaskBase`
+		:type tsk: :py:attr:`waflib.Task.Task`
 		"""
 		self.ready.put(tsk)
 
@@ -253,7 +253,7 @@ class Parallel(object):
 			$ waf build -k
 
 		:param tsk: task instance
-		:type tsk: :py:attr:`waflib.Task.TaskBase`
+		:type tsk: :py:attr:`waflib.Task.Task`
 		"""
 		if hasattr(tsk, 'scan') and hasattr(tsk, 'uid'):
 			# TODO waf 2.0 - this breaks encapsulation

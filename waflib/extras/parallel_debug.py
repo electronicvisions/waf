@@ -244,8 +244,8 @@ def process(self):
 
 	self.generator.bld.producer.set_running(-1, id(Utils.threading.currentThread()), self)
 
-Task.TaskBase.process_back = Task.TaskBase.process
-Task.TaskBase.process = process
+Task.Task.process_back = Task.Task.process
+Task.Task.process = process
 
 old_start = Runner.Parallel.start
 def do_start(self):

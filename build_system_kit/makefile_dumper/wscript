@@ -39,16 +39,16 @@ def dump(bld):
 	bld.targets = []
 
 	# store the command executed
-	old_exec = Task.TaskBase.exec_command
+	old_exec = Task.Task.exec_command
 	def exec_command(self, *k, **kw):
 		ret = old_exec(self, *k, **kw)
 		self.command_executed = k[0]
 		self.path = kw['cwd'] or self.generator.bld.cwd
 		return ret
-	Task.TaskBase.exec_command = exec_command
+	Task.Task.exec_command = exec_command
 
 	# perform a fake build, and accumulate the makefile bits
-	old_process = Task.TaskBase.process
+	old_process = Task.Task.process
 	def process(self):
 		old_process(self)
 
@@ -67,7 +67,7 @@ def dump(bld):
 		else:
 			bld.commands.append(' '.join(lst))
 			bld.commands.append('\tcd %s && %s' % (self.path, self.command_executed))
-	Task.TaskBase.process = process
+	Task.Task.process = process
 
 	# write the makefile after the build is complete
 	def output_makefile(self):

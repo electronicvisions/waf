@@ -20,7 +20,7 @@ HEADER_EXTS = ['.h', '.hpp', '.hxx', '.hh']
 
 class task_gen(object):
 	"""
-	Instances of this class create :py:class:`waflib.Task.TaskBase` when
+	Instances of this class create :py:class:`waflib.Task.Task` when
 	calling the method :py:meth:`waflib.TaskGen.task_gen.post` from the main thread.
 	A few notes:
 
@@ -264,7 +264,7 @@ class task_gen(object):
 		:param tgt: output nodes
 		:type tgt: list of :py:class:`waflib.Tools.Node.Node`
 		:return: A task object
-		:rtype: :py:class:`waflib.Task.TaskBase`
+		:rtype: :py:class:`waflib.Task.Task`
 		"""
 		task = Task.classes[name](env=self.env.derive(), generator=self)
 		if src:
