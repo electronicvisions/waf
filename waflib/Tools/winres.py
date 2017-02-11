@@ -65,10 +65,6 @@ def configure(conf):
 	Detects the programs RC or windres, depending on the C/C++ compiler in use
 	"""
 	v = conf.env
-	v.WINRC_TGT_F = '-o'
-	v.WINRC_SRC_F = '-i'
-
-	# find rc.exe
 	if not v.WINRC:
 		if v.CC_NAME == 'msvc':
 			conf.find_program('RC', var='WINRC', path_list=v.PATH)
@@ -76,6 +72,6 @@ def configure(conf):
 			v.WINRC_SRC_F = ''
 		else:
 			conf.find_program('windres', var='WINRC', path_list=v.PATH)
-	if not v.WINRC:
-		conf.fatal('winrc was not found!')
+			v.WINRC_TGT_F = '-o'
+			v.WINRC_SRC_F = '-i'
 
