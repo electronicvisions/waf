@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2010-2016 (ita)
+# Thomas Nagy, 2010-2017 (ita)
 
 """
 Exceptions used in the Waf code

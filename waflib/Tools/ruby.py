@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # daniel.svensson at purplescout.se 2008
-# Thomas Nagy 2016 (ita)
+# Thomas Nagy 2016-2017 (ita)
 
 """
 Support for Ruby extensions. A C/C++ compiler is required::

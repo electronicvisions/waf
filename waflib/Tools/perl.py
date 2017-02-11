@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # andersg at 0x63.nu 2007
-# Thomas Nagy 2016 (ita)
+# Thomas Nagy 2016-2017 (ita)
 
 """
 Support for Perl extensions. A C/C++ compiler is required::

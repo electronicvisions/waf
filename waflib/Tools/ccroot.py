@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 """
 Classes and methods shared by tools providing support for C-like language such

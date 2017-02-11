@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-# Thomas Nagy, 2016
+# Thomas Nagy, 2016-2017
 
 """
 Force all build files to go to the build directory:

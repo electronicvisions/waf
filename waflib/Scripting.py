@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 "Module called for configuring, compiling and installing targets"
 

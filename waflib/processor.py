@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2016 (ita)
+# Thomas Nagy, 2016-2017 (ita)
 
 import os, sys, traceback, base64, signal
 try:
