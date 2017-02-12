@@ -145,7 +145,7 @@ class Task(evil):
 	after = []
 	"""List of task class names to execute after instances of this class"""
 
-	hcode = ''
+	hcode = Utils.SIG_NIL
 	"""String representing an additional hash for the class representation"""
 
 	keep_last_cmd = False
