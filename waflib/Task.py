@@ -209,6 +209,15 @@ class Task(evil):
 			x = '"%s"' % x
 		return x
 
+	def priority(self):
+		"""
+		The default priority for this task instance
+
+		:return: a positive numeric value representing the urgency of running this task early
+		:rtype: int
+		"""
+		return getattr(self, 'weight', 0)
+
 	def split_argfile(self, cmd):
 		"""
 		Splits a list of process commands into the executable part and its list of arguments
