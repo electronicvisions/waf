@@ -1,3 +1,17 @@
+NEW IN WAF 1.9.8
+----------------
+* Keep winres flags in subsequent detections #1908
+* New -qopenmp option #1900
+* Enable Java compat attribute as numbers #1899
+* Qt5 library detection enhancements
+* Save compiler optimization flags from foo-config #1887
+* Emscripten enhancements #1885
+* Fix chmod with tuple rules #1884
+* Include all vars in tuple rules #1883
+* Compile glib2 schemas per directory #1881
+* Boost libraries detection enhancements
+* Work around an annoying Python 3.6 regression #1889
+
 NEW IN WAF 1.9.7
 ----------------
 * Conceal Python 2.6 subprocess errors on Unix-like systems
