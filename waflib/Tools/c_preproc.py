@@ -567,7 +567,13 @@ def eval_macro(lst, defs):
 	"""
 	reduce_tokens(lst, defs, [])
 	if not lst: raise PreprocError('missing tokens to evaluate')
-	(p, v) = reduce_eval(lst)
+
+	if lst:
+		p, v = lst[0]
+		if p == IDENT and v not in defs:
+			raise PreprocError('missing macro %r' % lst)
+
+	p, v = reduce_eval(lst)
 	return int(v) != 0
 
 def extract_macro(txt):
