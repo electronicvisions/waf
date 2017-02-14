@@ -74,7 +74,11 @@ def post_run(self):
 
 	name = self.outputs[0].abspath()
 	name = re_o.sub('.d', name)
-	txt = Utils.readf(name)
+	try:
+		txt = Utils.readf(name)
+	except EnvironmentError:
+		Logs.error('Could not find a .d dependency file, are cflags/cxxflags overwritten?')
+		raise
 	#os.remove(name)
 
 	# Compilers have the choice to either output the file's dependencies
