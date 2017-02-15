@@ -722,11 +722,13 @@ def set_qt5_libs_to_check(self):
 			pat = pat.replace('.dll', '.lib')
 		if self.environ.get('QT5_FORCE_STATIC'):
 			pat = self.env.cxxstlib_PATTERN
-		re_qt = re.compile(pat % '(?P<name>Qt5.*)' + '$')
+		if Utils.unversioned_sys_platform() == 'darwin':
+			pat = "%s\.framework"
+		re_qt = re.compile(pat%'Qt5?(?P<name>.*)'+'$')
 		for x in dirlst:
 			m = re_qt.match(x)
 			if m:
-				self.qt5_vars.append(m.group('name'))
+				self.qt5_vars.append("Qt5%s" % m.group('name'))
 		if not self.qt5_vars:
 			self.fatal('cannot find any Qt5 library (%r)' % self.env.QTLIBS)
 
