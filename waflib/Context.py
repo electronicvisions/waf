@@ -372,7 +372,7 @@ class Context(ctx):
 
 	def cmd_and_log(self, cmd, **kw):
 		"""
-		Executes a proces and returns stdout/stderr if the execution is successful.
+		Executes a process and returns stdout/stderr if the execution is successful.
 		An exception is thrown when the exit status is non-0. In that case, both stderr and stdout
 		will be bound to the WafError object::
 
