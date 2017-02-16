@@ -245,7 +245,7 @@ class OptionsContext(Context.Context):
 
 	def parse_args(self, _args=None):
 		"""
-		Parses arguments from a list which is not necesarily the command-line.
+		Parses arguments from a list which is not necessarily the command-line.
 
 		:param _args: arguments
 		:type _args: list of strings

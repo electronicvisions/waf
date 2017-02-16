@@ -630,7 +630,7 @@ def check(self, *k, **kw):
 	For the complete list of parameters, see :py:func:`waflib.Tools.c_config.validate_c`.
 	To force a specific compiler, pass ``compiler='c'`` or ``compiler='cxx'`` to the list of arguments
 
-	Besides build targets, complete builds can be given though a build function. All files will
+	Besides build targets, complete builds can be given through a build function. All files will
 	be written to a temporary directory::
 
 		def build(bld):

@@ -418,7 +418,7 @@ class PBXProject(XCodeNode):
 		if not isinstance(env.PROJ_CONFIGURATION, dict):
 			raise Errors.WafError("Error: env.PROJ_CONFIGURATION must be a dictionary. This is done for you if you do not define one yourself. However, did you load the xcode module at the end of your wscript configure() ?")
 
-		# Retreive project configuration
+		# Retrieve project configuration
 		configurations = []
 		for config_name, settings in env.PROJ_CONFIGURATION.items():
 			cf = XCBuildConfiguration(config_name, settings)
@@ -588,7 +588,7 @@ class xcode(Build.BuildContext):
 					target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
 
 				# Create build settings which can override the project settings. Defaults to none if user
-				# did not pass argument. However, this will be filled up further below with target specfic
+				# did not pass argument. However, this will be filled up further below with target specific
 				# search paths, libs to link etc.
 				settings = getattr(tg, 'settings', {})
 
@@ -614,7 +614,7 @@ class xcode(Build.BuildContext):
 				ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(tg.env.FRAMEWORK)]
 				ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
 				
-				# Override target specfic build settings
+				# Override target specific build settings
 				bldsettings = {
 					'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
 					'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.LIBPATH) + Utils.to_list(tg.env.STLIBPATH),

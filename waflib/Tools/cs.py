@@ -80,7 +80,7 @@ def use_cs(self):
 		if not tsk:
 			self.bld.fatal('cs task has no link task for use %r' % self)
 		self.cs_task.dep_nodes.extend(tsk.outputs) # dependency
-		self.cs_task.set_run_after(tsk) # order (redundant, the order is infered from the nodes inputs/outputs)
+		self.cs_task.set_run_after(tsk) # order (redundant, the order is inferred from the nodes inputs/outputs)
 		self.env.append_value('CSFLAGS', '/reference:%s' % tsk.outputs[0].abspath())
 
 @feature('cs')

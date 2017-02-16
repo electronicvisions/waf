@@ -775,7 +775,7 @@ class BuildContext(Context.Context):
 		"""
 		Creates a Python generator object that returns lists of tasks that may be processed in parallel.
 
-		:return: tasks which can be executed immediatly
+		:return: tasks which can be executed immediately
 		:rtype: generator returning lists of :py:class:`waflib.Task.Task`
 		"""
 		self.cur = 0
