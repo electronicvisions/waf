@@ -20,7 +20,7 @@ CRASHED = 2
 """The task execution returned a non-zero exit status"""
 
 EXCEPTION = 3
-"""An exception occured in the task execution"""
+"""An exception occurred in the task execution"""
 
 SKIPPED = 8
 """The task did not have to be executed"""

@@ -325,7 +325,7 @@ def declare_chain(name='', rule=None, reentrant=None, color='BLUE',
 	:type before: list of string
 	:param after: execute instances of this task after classes of the given names
 	:type after: list of string
-	:param decider: if present, function that retuns a list of output file extensions (overrides ext_out for output files, but not for the build order)
+	:param decider: if present, function that returns a list of output file extensions (overrides ext_out for output files, but not for the build order)
 	:type decider: function
 	:param scan: scanner function for the task
 	:type scan: function

@@ -198,7 +198,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	compiler_name, linker_name, lib_name = _get_prog_names(conf, compiler)
 	cxx = conf.find_program(compiler_name, path_list=MSVC_PATH)
 
-	# delete CL if exists. because it could contain parameters wich can change cl's behaviour rather catastrophically.
+	# delete CL if exists. because it could contain parameters which can change cl's behaviour rather catastrophically.
 	if 'CL' in env:
 		del(env['CL'])
 
@@ -664,7 +664,7 @@ def libname_msvc(self, libname, is_static=False):
 
 	if lt_path != None and lt_libname != None:
 		if lt_static == True:
-			# file existance check has been made by find_lt_names
+			# file existence check has been made by find_lt_names
 			return os.path.join(lt_path,lt_libname)
 
 	if lt_path != None:

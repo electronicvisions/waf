@@ -224,7 +224,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	compiler_name, linker_name, lib_name = _get_prog_names(conf, compiler)
 	fc = conf.find_program(compiler_name, path_list=MSVC_PATH)
 
-	# delete CL if exists. because it could contain parameters wich can change cl's behaviour rather catastrophically.
+	# delete CL if exists. because it could contain parameters which can change cl's behaviour rather catastrophically.
 	if 'CL' in env:
 		del(env['CL'])
 
