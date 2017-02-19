@@ -1,6 +1,7 @@
 NEW IN WAF 2.0.0
 ----------------
 * Provide a new priority system to improve scalability on complex builds
+* Provide TaskGroup objects to improve scalability on complex builds
 * Force new files into the build directory by default (use Node objects to bypass)
 * Simplify the Task class hierarchy; TaskBase is removed
 * New ant_glob(..., generator=True) now returns a Python generator
@@ -14,4 +15,5 @@ NEW IN WAF 2.0.0
 * Remove atleast-version, exact-version and max-version from conf.check_cfg
 * Remove c_preproc.trimquotes
 * Remove field_name, type_name, function_name from conf.check() tests
+* Remove extras/mem_reducer.py as a better solution has been merged
 

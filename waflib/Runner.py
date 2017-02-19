@@ -137,7 +137,7 @@ class Parallel(object):
 		Flag that indicates that the build cache must be saved when a task was executed
 		(calls :py:meth:`waflib.Build.BuildContext.store`)"""
 
-		self.revdeps = Utils.defaultdict(list)
+		self.revdeps = Utils.defaultdict(set)
 		"""
 		The reverse dependency graph of dependencies obtained from Task.run_after
 		"""
@@ -239,18 +239,32 @@ class Parallel(object):
 
 	def mark_finished(self, tsk):
 		# we assume that frozen tasks will be consumed as the build goes
+
+		def try_unfreeze(x):
+			# ancestors are likely to be frozen
+			if x in self.frozen:
+				# TODO remove dependencies to free some memory?
+				# x.run_after.remove(tsk)
+				for k in x.run_after:
+					if not k.hasrun:
+						break
+				else:
+					self.frozen.remove(x)
+					self.insert_with_prio(x)
+
 		if tsk in self.revdeps:
 			for x in self.revdeps[tsk]:
-				# ancestors are likely to be frozen
-				if x in self.frozen:
-					# TODO remove dependencies to free some memory?
-					# x.run_after.remove(tsk)
-					for k in x.run_after:
-						if not k.hasrun:
-							break
-					else:
-						self.frozen.remove(x)
-						self.insert_with_prio(x)
+				if isinstance(x, Task.TaskGroup):
+					x.a.remove(tsk)
+					if not x.a:
+						for k in x.b:
+							# TODO necessary optimization?
+							k.run_after.remove(x)
+							try_unfreeze(k)
+						# TODO necessary optimization?
+						x.b = []
+				else:
+					try_unfreeze(x)
 			del self.revdeps[tsk]
 
 	def get_out(self):
@@ -428,10 +442,18 @@ class Parallel(object):
 
 		for x in tasks:
 			for k in x.run_after:
-				reverse[k].append(x)
+				if isinstance(k, Task.TaskGroup):
+					for j in k.a:
+						# use the group!
+						reverse[j].add(k)
+				else:
+					reverse[k].add(x)
 
 		# the priority number is not the tree size
 		def visit(n):
+			if isinstance(n, Task.TaskGroup):
+				return sum(visit(k) for k in n.b)
+
 			if n.visited == 0:
 				n.visited = 1
 				if n in reverse:
@@ -473,6 +495,9 @@ class Parallel(object):
 			tmp[x] = 0
 
 		def visit(n, acc):
+			if isinstance(n, Task.TaskGroup):
+				for k in n.b:
+					visit(k)
 			if tmp[n] == 0:
 				tmp[n] = 1
 				for k in reverse.get(n, []):

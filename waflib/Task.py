@@ -879,6 +879,28 @@ def set_file_constraints(tasks):
 		for a in ins[k]:
 			a.run_after.update(outs[k])
 
+
+class TaskGroup(object):
+	"""
+	Wrap nxm task order constraints into a single object
+	to prevent the creation of large list/set objects
+
+	This is an optimization
+	"""
+	def __init__(self, a, b):
+		self.a = a
+		self.b = b
+
+	def get_hasrun(self):
+		if not self.a:
+			return SUCCESS
+		for k in self.a:
+			if not k.hasrun:
+				return NOT_RUN
+		return SUCCESS
+
+	hasrun = property(get_hasrun, None)
+
 def set_precedence_constraints(tasks):
 	"""
 	Updates the ``run_after`` attribute of all tasks based on the after/before/ext_out/ext_in attributes
@@ -910,9 +932,16 @@ def set_precedence_constraints(tasks):
 			else:
 				continue
 
-			aval = set(cstr_groups[keys[a]])
-			for x in cstr_groups[keys[b]]:
-				x.run_after.update(aval)
+			a = cstr_groups[keys[a]]
+			b = cstr_groups[keys[b]]
+
+			if len(a) < 2 or len(b) < 2:
+				for x in b:
+					x.run_after.update(a)
+			else:
+				group = TaskGroup(set(a), set(b))
+				for x in b:
+					x.run_after.add(group)
 
 def funex(c):
 	"""
