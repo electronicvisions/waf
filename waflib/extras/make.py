@@ -56,7 +56,7 @@ class MakeContext(BuildContext):
 						all_tasks.append(tsk)
 
 						do_exec = False
-						for node in getattr(tsk, 'inputs', []):
+						for node in tsk.inputs:
 							try:
 								uses[node].append(tsk)
 							except:
@@ -66,7 +66,7 @@ class MakeContext(BuildContext):
 								do_exec = True
 								break
 
-						for node in getattr(tsk, 'outputs', []):
+						for node in tsk.outputs:
 							try:
 								provides[node].append(tsk)
 							except:
@@ -93,7 +93,7 @@ class MakeContext(BuildContext):
 					result |= cur
 					tosee = set()
 					for tsk in cur:
-						for node in getattr(tsk, 'inputs', []):
+						for node in tsk.inputs:
 							if node in seen:
 								continue
 							seen.add(node)

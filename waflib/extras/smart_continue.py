@@ -69,7 +69,7 @@ def get_next_task(self):
 				break
 		else:
 			# so far so good, now consider the nodes
-			for x in getattr(tsk, 'inputs', []) + getattr(tsk, 'deps', []):
+			for x in tsk.inputs + getattr(tsk, 'deps', []):
 				if x in canceled_nodes:
 					tsk.hasrun = Task.CANCELED
 					self.cancel_next(tsk)

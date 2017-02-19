@@ -867,10 +867,12 @@ def set_file_constraints(tasks):
 	ins = Utils.defaultdict(set)
 	outs = Utils.defaultdict(set)
 	for x in tasks:
-		for a in getattr(x, 'inputs', []) + getattr(x, 'dep_nodes', []):
-			ins[id(a)].add(x)
-		for a in getattr(x, 'outputs', []):
-			outs[id(a)].add(x)
+		for a in x.inputs:
+			ins[a].add(x)
+		for a in x.dep_nodes:
+			ins[a].add(x)
+		for a in x.outputs:
+			outs[a].add(x)
 
 	links = set(ins.keys()).intersection(outs.keys())
 	for k in links:

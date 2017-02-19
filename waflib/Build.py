@@ -1372,11 +1372,11 @@ class StepContext(BuildContext):
 						lst = tg.tasks
 					for tsk in lst:
 						do_exec = False
-						for node in getattr(tsk, 'inputs', []):
+						for node in tsk.inputs:
 							if matcher(node, output=False):
 								do_exec = True
 								break
-						for node in getattr(tsk, 'outputs', []):
+						for node in tsk.outputs:
 							if matcher(node, output=True):
 								do_exec = True
 								break
