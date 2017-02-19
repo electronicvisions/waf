@@ -1,11 +1,12 @@
 NEW IN WAF 2.0.0
 ----------------
-* New ant_glob(..., generator=True) returns a generator
+* Provide a new priority system to improve scalability on complex builds
+* Force new files into the build directory by default (use Node objects to bypass)
+* Simplify the Task class hierarchy; TaskBase is removed
+* New ant_glob(..., generator=True) now returns a Python generator
 * Accept nested lists and generators in bld(source=...)
-* Sort TaskGen methods in alphabetical order besides regular constraints
-  for this, the mappping order in TaskGen.prec[] is now reversed
+* Sort TaskGen methods in alphabetical order by reversing TaskGen.prec order
 * Remove 'ut_fun' from waf_unit_test.py
-* Force files into the build directory by default
 
 * Remove Node.sig and Node.cache_sig
 * Remove the BuildContext.rule decorator
