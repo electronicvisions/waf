@@ -443,9 +443,12 @@ class Parallel(object):
 		for x in tasks:
 			for k in x.run_after:
 				if isinstance(k, Task.TaskGroup):
-					for j in k.a:
-						# use the group!
-						reverse[j].add(k)
+					if k.done:
+						pass
+					else:
+						k.done = True
+						for j in k.a:
+							reverse[j].add(k)
 				else:
 					reverse[k].add(x)
 

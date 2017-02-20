@@ -890,6 +890,7 @@ class TaskGroup(object):
 	def __init__(self, a, b):
 		self.a = a
 		self.b = b
+		self.done = False
 
 	def get_hasrun(self):
 		if not self.a:
