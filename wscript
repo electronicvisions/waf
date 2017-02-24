@@ -258,7 +258,10 @@ def create_waf(self, *k, **kw):
 				file_from = f.abspath()
 				file_to = os.path.join(x_dir.name, f.path_from(x_dir))
 
-				directory_files[file_from] = file_to
+				# If this is executed on Windows, then file_to will contain
+				# '\' path separators. These should be changed to '/', otherwise
+				# the added tools will not be accessible on Unix systems.
+				directory_files[file_from] = file_to.replace('\\', '/')
 				files.append(file_from)
 
 		elif os.path.isabs(x):
