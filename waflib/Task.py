@@ -887,15 +887,13 @@ class TaskGroup(object):
 
 	This is an optimization
 	"""
-	def __init__(self, a, b):
-		self.a = a
-		self.b = b
+	def __init__(self, prev, next):
+		self.prev = prev
+		self.next = next
 		self.done = False
 
 	def get_hasrun(self):
-		if not self.a:
-			return SUCCESS
-		for k in self.a:
+		for k in self.prev:
 			if not k.hasrun:
 				return NOT_RUN
 		return SUCCESS

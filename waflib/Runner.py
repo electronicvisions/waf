@@ -241,7 +241,7 @@ class Parallel(object):
 		# we assume that frozen tasks will be consumed as the build goes
 
 		def try_unfreeze(x):
-			# ancestors are likely to be frozen
+			# DAG ancestors are likely to be frozen
 			if x in self.frozen:
 				# TODO remove dependencies to free some memory?
 				# x.run_after.remove(tsk)
@@ -255,14 +255,14 @@ class Parallel(object):
 		if tsk in self.revdeps:
 			for x in self.revdeps[tsk]:
 				if isinstance(x, Task.TaskGroup):
-					x.a.remove(tsk)
-					if not x.a:
-						for k in x.b:
+					x.prev.remove(tsk)
+					if not x.prev:
+						for k in x.next:
 							# TODO necessary optimization?
 							k.run_after.remove(x)
 							try_unfreeze(k)
 						# TODO necessary optimization?
-						x.b = []
+						x.next = []
 				else:
 					try_unfreeze(x)
 			del self.revdeps[tsk]
@@ -447,7 +447,7 @@ class Parallel(object):
 						pass
 					else:
 						k.done = True
-						for j in k.a:
+						for j in k.prev:
 							reverse[j].add(k)
 				else:
 					reverse[k].add(x)
@@ -455,7 +455,7 @@ class Parallel(object):
 		# the priority number is not the tree size
 		def visit(n):
 			if isinstance(n, Task.TaskGroup):
-				return sum(visit(k) for k in n.b)
+				return sum(visit(k) for k in n.next)
 
 			if n.visited == 0:
 				n.visited = 1
@@ -499,7 +499,7 @@ class Parallel(object):
 
 		def visit(n, acc):
 			if isinstance(n, Task.TaskGroup):
-				for k in n.b:
+				for k in n.next:
 					visit(k)
 			if tmp[n] == 0:
 				tmp[n] = 1
