@@ -989,7 +989,8 @@ def atexit_pool():
 			pass
 		else:
 			k.wait()
-if sys.hexversion<0x207000f and not is_win32:
+# see #1889
+if (sys.hexversion<0x207000f and not is_win32) or sys.hexversion>=0x306000f:
 	atexit.register(atexit_pool)
 
 if sys.platform == 'cli' or not sys.executable:
