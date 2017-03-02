@@ -340,6 +340,11 @@ class Node(object):
 		if isinstance(lst, str):
 			lst = [x for x in Utils.split_path(lst) if x and x != '.']
 
+		if lst and lst[0].startswith('\\\\') and not self.parent:
+			node = self.ctx.root.make_node(lst[0])
+			node.cache_isdir = True
+			return node.find_node(lst[1:])
+
 		cur = self
 		for x in lst:
 			if x == '..':

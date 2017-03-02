@@ -461,14 +461,16 @@ def split_path_cygwin(path):
 re_sp = re.compile('[/\\\\]+')
 def split_path_win32(path):
 	if path.startswith('\\\\'):
-		ret = re_sp.split(path)[2:]
-		ret[0] = '\\' + ret[0]
+		ret = re_sp.split(path)[1:]
+		ret[0] = '\\\\' + ret[0]
+		if ret[0] == '\\\\?':
+			return ret[1:]
 		return ret
 	return re_sp.split(path)
 
 msysroot = None
 def split_path_msys(path):
-	if path.startswith(('/', '\\')) and not path.startswith(('\\', '\\\\')):
+	if path.startswith(('/', '\\')) and not path.startswith(('//', '\\\\')):
 		# msys paths can be in the form /usr/bin
 		global msysroot
 		if not msysroot:
