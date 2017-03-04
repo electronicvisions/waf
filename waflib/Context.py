@@ -296,6 +296,15 @@ class Context(ctx):
 						raise Errors.WafError('Cannot read the folder %r' % d)
 					raise Errors.WafError('No wscript file in directory %s' % d)
 
+	def log_command(self, cmd, kw):
+		if Logs.verbose:
+			fmt = os.environ.get('WAF_CMD_FORMAT')
+			if fmt == 'string':
+				if not isinstance(cmd, str):
+					cmd = Utils.shell_escape(cmd)
+			Logs.debug('runner: %r', cmd)
+			Logs.debug('runner_env: kw=%s', kw)
+
 	def exec_command(self, cmd, **kw):
 		"""
 		Runs an external process and returns the exit status::
@@ -317,8 +326,7 @@ class Context(ctx):
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r', cmd)
-		Logs.debug('runner_env: kw=%s', kw)
+		self.log_command(cmd, kw)
 
 		if self.logger:
 			self.logger.info(cmd)
@@ -396,7 +404,7 @@ class Context(ctx):
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r', cmd)
+		self.log_command(cmd, kw)
 
 		if 'quiet' in kw:
 			quiet = kw['quiet']

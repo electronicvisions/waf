@@ -568,10 +568,26 @@ def quote_define_name(s):
 	fu = fu.upper()
 	return fu
 
+re_sh = re.compile('\\s|\'|"')
+"""
+Regexp used for shell_escape below
+"""
+
+def shell_escape(cmd):
+	"""
+	Escapes a command:
+	['ls', '-l', 'arg space'] -> ls -l 'arg space'
+	"""
+	if isinstance(cmd, str):
+		return cmd
+	return ' '.join(repr(x) if re_sh.search(x) else x for x in cmd)
+
 def h_list(lst):
 	"""
-	Hash lists. We would prefer to use hash(tup) for tuples because it is much more efficient,
-	but Python now enforces hash randomization by assuming everybody is running a web application.
+	Hashes lists of ordered data.
+
+	Using hash(tup) for tuples would be much more efficient,
+	but Python now enforces hash randomization
 
 	:param lst: list to hash
 	:type lst: list of strings

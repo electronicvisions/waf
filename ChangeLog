@@ -5,6 +5,7 @@ NEW IN WAF 2.0.0
 * Force new files into the build directory by default (use Node objects to bypass)
 * Process support for building over UNC paths
 * Simplify the Task class hierarchy; TaskBase is removed
+* Display commands as string with "WAF_CMD_FORMAT=string waf build -v"
 * New ant_glob(..., generator=True) now returns a Python generator
 * Accept nested lists and generators in bld(source=...)
 * Sort TaskGen methods in alphabetical order by reversing TaskGen.prec order
