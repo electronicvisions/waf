@@ -17,7 +17,7 @@ ccroot.USELIB_VARS['fcprogram_test'] = ccroot.USELIB_VARS['fcprogram'] = set(['L
 ccroot.USELIB_VARS['fcshlib'] = set(['LIB', 'STLIB', 'LIBPATH', 'STLIBPATH', 'LINKFLAGS', 'RPATH', 'LINKDEPS'])
 ccroot.USELIB_VARS['fcstlib'] = set(['ARFLAGS', 'LINKDEPS'])
 
-@extension('.f', '.f90', '.F', '.F90', '.for', '.FOR')
+@extension('.f','.F','.f90','.F90','.for','.FOR','.f95','.F95','.f03','.F03','.f08','.F08')
 def fc_hook(self, node):
 	"Binds the Fortran file extensions create :py:class:`waflib.Tools.fc.fc` instances"
 	return self.create_compiled_task('fc', node)
