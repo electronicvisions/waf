@@ -565,7 +565,7 @@ def run_build(self, *k, **kw):
 	if not os.path.exists(bdir):
 		os.makedirs(bdir)
 
-	cls_name = getattr(self, 'run_build_cls', 'build')
+	cls_name = kw.get('run_build_cls') or getattr(self, 'run_build_cls', 'build')
 	self.test_bld = bld = Context.create_context(cls_name, top_dir=dir, out_dir=bdir)
 	bld.init_dirs()
 	bld.progress_bar = 0
@@ -635,6 +635,4 @@ def test(self, *k, **kw):
 	else:
 		self.end_msg(self.ret_msg(kw['okmsg'], kw), **kw)
 	return ret
-
-
 
