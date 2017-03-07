@@ -51,6 +51,11 @@ class task_gen(object):
 		self.source = ''
 		self.target = ''
 
+		self.description = ''
+		"""
+		String describing the target, used for display purposes
+		"""
+
 		self.meths = []
 		"""
 		List of method names to execute (internal)

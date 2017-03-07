@@ -1335,6 +1335,10 @@ class ListContext(BuildContext):
 
 	def execute(self):
 		"""
+		In addition to printing the name of each build target,
+		a description column will include text for each task
+		generator which has a "description" field set.
+
 		See :py:func:`waflib.Build.BuildContext.execute`.
 		"""
 		self.restore()
@@ -1361,9 +1365,23 @@ class ListContext(BuildContext):
 			self.get_tgen_by_name('')
 		except Errors.WafError:
 			pass
+		
+		targets = sorted(self.task_gen_cache_names)
 
-		for k in sorted(self.task_gen_cache_names.keys()):
-			Logs.pprint('GREEN', k)
+		# figure out how much to left-justify, for largest target name
+		line_just = max(len(t) for t in targets) if targets else 0
+
+		for target in targets:
+			tgen = self.task_gen_cache_names[target]
+
+			# Support displaying the description for the target
+			# if it was set on the tgen
+			descript = getattr(tgen, 'description', None) or ''
+			if descript:
+				target = target.ljust(line_just)
+				descript = ': {}'.format(descript)
+
+			Logs.pprint('GREEN', target, label=descript)
 
 class StepContext(BuildContext):
 	'''executes tasks in a step-by-step fashion, for debugging'''
