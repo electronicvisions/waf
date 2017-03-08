@@ -232,7 +232,7 @@ class cppcheck(Task.Task):
 		root = ElementTree.fromstring(s)
 		cmd = ElementTree.SubElement(root.find('cppcheck'), 'cmd')
 		cmd.text = str(self.cmd)
-		body = ElementTree.tostring(root)
+		body = ElementTree.tostring(root).decode('us-ascii')
 		body_html_name = 'cppcheck-%s.xml' % self.generator.get_name()
 		if self.env.CPPCHECK_SINGLE_HTML:
 			body_html_name = 'cppcheck.xml'
@@ -264,10 +264,10 @@ class cppcheck(Task.Task):
 
 	def _create_html_files(self, defects):
 		sources = {}
-		defects = [defect for defect in defects if defect.has_key('file')]
+		defects = [defect for defect in defects if 'file' in defect]
 		for defect in defects:
 			name = defect['file']
-			if not sources.has_key(name):
+			if not name in sources:
 				sources[name] = [defect]
 			else:
 				sources[name].append(defect)
@@ -275,7 +275,7 @@ class cppcheck(Task.Task):
 		files = {}
 		css_style_defs = None
 		bpath = self.generator.path.get_bld().abspath()
-		names = sources.keys()
+		names = list(sources.keys())
 		for i in range(0,len(names)):
 			name = names[i]
 			if self.env.CPPCHECK_SINGLE_HTML:
@@ -311,16 +311,16 @@ class cppcheck(Task.Task):
 			if div.get('id') == 'content':
 				content = div
 				srcnode = self.generator.bld.root.find_node(sourcefile)
-				hl_lines = [e['line'] for e in errors if e.has_key('line')]
+				hl_lines = [e['line'] for e in errors if 'line' in e]
 				formatter = CppcheckHtmlFormatter(linenos=True, style='colorful', hl_lines=hl_lines, lineanchors='line')
-				formatter.errors = [e for e in errors if e.has_key('line')]
+				formatter.errors = [e for e in errors if 'line' in e]
 				css_style_defs = formatter.get_style_defs('.highlight')
 				lexer = pygments.lexers.guess_lexer_for_filename(sourcefile, "")
 				s = pygments.highlight(srcnode.read(), lexer, formatter)
 				table = ElementTree.fromstring(s)
 				content.append(table)
 
-		s = ElementTree.tostring(root, method='html')
+		s = ElementTree.tostring(root, method='html').decode('us-ascii')
 		s = CCPCHECK_HTML_TYPE + s
 		node = self.generator.path.get_bld().find_or_declare(htmlfile)
 		node.write(s)
@@ -351,7 +351,7 @@ class cppcheck(Task.Task):
 				else:
 					indexlink.attrib['href'] = 'index-%s.html' % name
 
-		s = ElementTree.tostring(root, method='html')
+		s = ElementTree.tostring(root, method='html').decode('us-ascii')
 		s = CCPCHECK_HTML_TYPE + s
 		index_html_name = 'cppcheck/index-%s.html' % name
 		if self.env.CPPCHECK_SINGLE_HTML:
@@ -368,9 +368,9 @@ class cppcheck(Task.Task):
 			row = ElementTree.fromstring(s)
 			table.append(row)
 
-			errors = sorted(val['errors'], key=lambda e: int(e['line']) if e.has_key('line') else sys.maxint)
+			errors = sorted(val['errors'], key=lambda e: int(e['line']) if 'line' in e else sys.maxint)
 			for e in errors:
-				if not e.has_key('line'):
+				if not 'line' in e:
 					s = '<tr><td></td><td>%s</td><td>%s</td><td>%s</td></tr>\n' % (e['id'], e['severity'], e['msg'])
 				else:
 					attr = ''
