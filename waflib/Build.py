@@ -1325,7 +1325,7 @@ class ListContext(BuildContext):
 			self.get_tgen_by_name('')
 		except Errors.WafError:
 			pass
-		
+
 		targets = sorted(self.task_gen_cache_names)
 
 		# figure out how much to left-justify, for largest target name
@@ -1336,10 +1336,10 @@ class ListContext(BuildContext):
 
 			# Support displaying the description for the target
 			# if it was set on the tgen
-			descript = getattr(tgen, 'description', None) or ''
+			descript = getattr(tgen, 'description', '')
 			if descript:
 				target = target.ljust(line_just)
-				descript = ': {}'.format(descript)
+				descript = ': %s' % descript
 
 			Logs.pprint('GREEN', target, label=descript)
 
