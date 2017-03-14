@@ -70,6 +70,9 @@ def write_compilation_database(ctx):
 # This will make sure compile_commands.json is always fully up to date.
 # Previously you could end up with a partial compile_commands.json if the build failed.
 for x in ('c', 'cxx'):
+	if x not in Task.classes:
+		continue
+
 	t = Task.classes[x]
 
 	def runnable_status(self):
