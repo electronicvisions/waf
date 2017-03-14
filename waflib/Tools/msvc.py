@@ -384,7 +384,10 @@ class target_compiler(object):
 def gather_msvc_targets(conf, versions, version, vc_path):
 	#Looking for normal MSVC compilers!
 	targets = {}
-	if os.path.isfile(os.path.join(vc_path, 'vcvarsall.bat')):
+	if os.path.isfile(os.path.join(vc_path, 'Common7', 'Tools', 'VsDevCmd.bat')):
+		for target,realtarget in all_msvc_platforms[::-1]:
+			targets[target] = target_compiler(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'Common7', 'Tools', 'VsDevCmd.bat'))
+	elif os.path.isfile(os.path.join(vc_path, 'vcvarsall.bat')):
 		for target,realtarget in all_msvc_platforms[::-1]:
 			targets[target] = target_compiler(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'vcvarsall.bat'))
 	elif os.path.isfile(os.path.join(vc_path, 'Common7', 'Tools', 'vsvars32.bat')):
@@ -435,6 +438,13 @@ def gather_msvc_versions(conf, versions):
 				msvc_version = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, reg + "\\Setup\\Microsoft Visual C++")
 			path,type = Utils.winreg.QueryValueEx(msvc_version, 'ProductDir')
 		except WindowsError:
+			try:
+				msvc_version = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432node\\Microsoft\\VisualStudio\\SxS\\VS7")
+				path,type = Utils.winreg.QueryValueEx(msvc_version, version)
+			except WindowsError:
+				continue
+			else:
+				vc_paths.append((version, os.path.abspath(str(path))))
 			continue
 		else:
 			vc_paths.append((version, os.path.abspath(str(path))))
