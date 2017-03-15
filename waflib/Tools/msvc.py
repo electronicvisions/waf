@@ -384,9 +384,13 @@ class target_compiler(object):
 def gather_msvc_targets(conf, versions, version, vc_path):
 	#Looking for normal MSVC compilers!
 	targets = {}
-	if os.path.isfile(os.path.join(vc_path, 'Common7', 'Tools', 'VsDevCmd.bat')):
-		for target,realtarget in all_msvc_platforms[::-1]:
-			targets[target] = target_compiler(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'Common7', 'Tools', 'VsDevCmd.bat'))
+
+	vs2017_x86 = os.path.join(vc_path, 'VC', 'Auxiliary', 'Build', 'vcvars32.bat')
+	if os.path.isfile(vs2017_x86):
+		targets['x86'] = target_compiler(conf, 'msvc', 'x86', version, 'x86', vs2017_x86)
+		vs2017_x64 = os.path.join(vc_path, 'VC', 'Auxiliary', 'Build', 'vcvars64.bat')
+		if os.path.isfile(vs2017_x64):
+			targets['x64'] = target_compiler(conf, 'msvc', 'x64', version, 'x64', vs2017_x64)
 	elif os.path.isfile(os.path.join(vc_path, 'vcvarsall.bat')):
 		for target,realtarget in all_msvc_platforms[::-1]:
 			targets[target] = target_compiler(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'vcvarsall.bat'))
