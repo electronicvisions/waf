@@ -108,6 +108,10 @@ class OptionsContext(Context.Context):
 		jobs = self.jobs()
 		p = self.add_option
 		color = os.environ.get('NOCOLOR', '') and 'no' or 'auto'
+		if os.environ.get('CLICOLOR', '') == '0':
+			color = 'no'
+		elif os.environ.get('CLICOLOR_FORCE', '') == '1':
+			color = 'yes'
 		p('-c', '--color',    dest='colors',  default=color, action='store', help='whether to use colors (yes/no/auto) [default: auto]', choices=('yes', 'no', 'auto'))
 		p('-j', '--jobs',     dest='jobs',    default=jobs,  type='int', help='amount of parallel jobs (%r)' % jobs)
 		p('-k', '--keep',     dest='keep',    default=0,     action='count', help='continue despite errors (-kk to try harder)')
