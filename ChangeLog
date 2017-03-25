@@ -5,6 +5,7 @@ NEW IN WAF 1.9.9
 * Fix python 3 compatibility with cppcheck #1921
 * Fix the thread index in parallel_debug
 * Fix install task for mac_files #1911
+* Fix msvc version detection #1907
 * Add VS2017 support #1927
 * Add newer fortran flag detection #1916
 * Add unity builds settings per task generator
