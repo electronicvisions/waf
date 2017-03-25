@@ -1,3 +1,16 @@
+NEW IN WAF 1.9.9
+----------------
+* Fix QT5 detection on macOS 1912
+* Fix Clang compilation database when no c compiler is found #1914
+* Fix python 3 compatibility with cppcheck #1921
+* Fix the thread index in parallel_debug
+* Fix install task for mac_files #1911
+* Add VS2017 support #1927
+* Add newer fortran flag detection #1916
+* Add unity builds settings per task generator
+* Add run_build_cls parameter to conf.run_build/conf.check
+* Add a warning for missing cflags/cxxflags in gccdeps
+
 NEW IN WAF 1.9.8
 ----------------
 * Keep winres flags in subsequent detections #1908
