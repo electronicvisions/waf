@@ -603,7 +603,7 @@ def get_msvc_versions(self):
 	:return: platform to compiler configurations
 	:rtype: dict
 	"""
-	dct = {}
+	dct = Utils.ordered_iter_dict()
 	self.gather_icl_versions(dct)
 	self.gather_intel_composer_versions(dct)
 	self.gather_wsdk_versions(dct)
