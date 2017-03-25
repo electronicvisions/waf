@@ -642,10 +642,13 @@ def find_qt5_libraries(self):
 			uselib = i.upper()
 			if Utils.unversioned_sys_platform() == 'darwin':
 				# Since at least qt 4.7.3 each library locates in separate directory
-				frameworkName = i + '.framework'
-				qtDynamicLib = os.path.join(env.QTLIBS, frameworkName, i)
+				fwk = i.replace('Qt5', 'Qt')
+				frameworkName = fwk + '.framework'
+
+				qtDynamicLib = os.path.join(env.QTLIBS, frameworkName, fwk)
 				if os.path.exists(qtDynamicLib):
-					env.append_unique('FRAMEWORK_' + uselib, i)
+					env.append_unique('FRAMEWORK_' + uselib, fwk)
+					env.append_unique('FRAMEWORKPATH_' + uselib, env.QTLIBS)
 					self.msg('Checking for %s' % i, qtDynamicLib, 'GREEN')
 				else:
 					self.msg('Checking for %s' % i, False, 'YELLOW')
