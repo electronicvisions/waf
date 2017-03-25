@@ -81,7 +81,9 @@ wintrust wldap32 wmiutils wow32 ws2_32 wsnmp32 wsock32 wst wtsapi32 xaswitch xol
 '''.split()
 """importlibs provided by MSVC/Platform SDK. Do NOT search them"""
 
-all_msvc_platforms = [ ('x64', 'amd64'), ('x86', 'x86'), ('ia64', 'ia64'), ('x86_amd64', 'amd64'), ('x86_ia64', 'ia64'), ('x86_arm', 'arm'), ('amd64_x86', 'x86'), ('amd64_arm', 'arm') ]
+all_msvc_platforms = [	('x64', 'amd64'), ('x86', 'x86'), ('ia64', 'ia64'),
+						('x86_amd64', 'amd64'), ('x86_ia64', 'ia64'), ('x86_arm', 'arm'), ('x86_arm64', 'arm64'),
+						('amd64_x86', 'x86'), ('amd64_arm', 'arm'), ('amd64_arm64', 'arm64') ]
 """List of msvc platforms"""
 
 all_wince_platforms = [ ('armv4', 'arm'), ('armv4i', 'arm'), ('mipsii', 'mips'), ('mipsii_fp', 'mips'), ('mipsiv', 'mips'), ('mipsiv_fp', 'mips'), ('sh4', 'sh'), ('x86', 'cex86') ]
@@ -385,12 +387,9 @@ def gather_msvc_targets(conf, versions, version, vc_path):
 	#Looking for normal MSVC compilers!
 	targets = {}
 
-	vs2017_x86 = os.path.join(vc_path, 'VC', 'Auxiliary', 'Build', 'vcvars32.bat')
-	if os.path.isfile(vs2017_x86):
-		targets['x86'] = target_compiler(conf, 'msvc', 'x86', version, 'x86', vs2017_x86)
-		vs2017_x64 = os.path.join(vc_path, 'VC', 'Auxiliary', 'Build', 'vcvars64.bat')
-		if os.path.isfile(vs2017_x64):
-			targets['x64'] = target_compiler(conf, 'msvc', 'x64', version, 'x64', vs2017_x64)
+	if os.path.isfile(os.path.join(vc_path, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat')):
+		for target,realtarget in all_msvc_platforms[::-1]:
+			targets[target] = target_compiler(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat'))
 	elif os.path.isfile(os.path.join(vc_path, 'vcvarsall.bat')):
 		for target,realtarget in all_msvc_platforms[::-1]:
 			targets[target] = target_compiler(conf, 'msvc', realtarget, version, target, os.path.join(vc_path, 'vcvarsall.bat'))
