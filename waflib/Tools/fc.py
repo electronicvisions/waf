@@ -29,7 +29,7 @@ def modfile(conf, name):
 	Defaults to all lower case.
 	"""
 	return {'lower'     :name.lower() + '.mod',
-		'lower.MOD' :name.upper() + '.MOD',
+		'lower.MOD' :name.lower() + '.MOD',
 		'UPPER.mod' :name.upper() + '.mod',
 		'UPPER'     :name.upper() + '.MOD'}[conf.env.FC_MOD_CAPITALIZATION or 'lower']
 
