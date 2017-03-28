@@ -278,6 +278,10 @@ class ConfigurationContext(Context.Context):
 
 			self.tools.append({'tool':tool, 'tooldir':tooldir, 'funs':funs})
 
+	def pre_recurse(self, node):
+		super(ConfigurationContext, self).pre_recurse(node)
+		Logs.info('\n{:=^72}'.format(' ' + node.relpath() + ' '))
+
 	def post_recurse(self, node):
 		"""
 		Records the path and a hash of the scripts visited, see :py:meth:`waflib.Context.Context.post_recurse`
