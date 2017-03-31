@@ -179,7 +179,7 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 		elif x.startswith('-std='):
 			prefix = 'CXXFLAGS' if '++' in x else 'CFLAGS'
 			app(prefix, x)
-		elif x == '-pthread' or x.startswith('+'):
+		elif x.startswith('+') or x in ('-pthread', '-fPIC', '-fpic', '-fPIE', '-fpie'):
 			app('CFLAGS', x)
 			app('CXXFLAGS', x)
 			app('LINKFLAGS', x)
@@ -199,7 +199,7 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			static = True
 		elif x == '-Wl,-Bdynamic' or x == '-Bdynamic':
 			static = False
-		elif x.startswith('-Wl'):
+		elif x.startswith('-Wl') or x == '-rdynamic':
 			app('LINKFLAGS', x)
 		elif x.startswith(('-m', '-f', '-dynamic', '-O')):
 			app('CFLAGS', x)
