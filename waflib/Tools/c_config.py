@@ -164,7 +164,7 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			static = True
 		elif x == '-Wl,-Bdynamic' or x == '-Bdynamic':
 			static = False
-		elif x.startswith('-Wl') or x == '-rdynamic':
+		elif x.startswith('-Wl') or x in ('-rdynamic', '-pie'):
 			app('LINKFLAGS', x)
 		elif x.startswith(('-m', '-f', '-dynamic', '-O', '-g')):
 			# Adding the -W option breaks python builds on Openindiana
@@ -182,6 +182,8 @@ def parse_flags(self, line, uselib_store, env=None, force_static=False, posix=No
 			app('LINKFLAGS', tmp)
 		elif x.endswith(('.a', '.so', '.dylib', '.lib')):
 			appu('LINKFLAGS', x) # not cool, #762
+		else:
+			self.to_log('Unhandled flag %r' % x)
 
 @conf
 def validate_cfg(self, kw):
