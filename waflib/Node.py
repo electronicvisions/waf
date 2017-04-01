@@ -710,7 +710,9 @@ class Node(object):
 
 	def get_src(self):
 		"""
-		Returns the corresponding Node object in the source directory (or self if not possible)
+		Returns the corresponding Node object in the source directory (or self if already
+		under the source directory). Use this method only if the purpose is to create
+		a Node object (this is common with folders but not with files, see ticket 1937)
 
 		:rtype: :py:class:`waflib.Node.Node`
 		"""
@@ -730,7 +732,9 @@ class Node(object):
 
 	def get_bld(self):
 		"""
-		Return the corresponding Node object in the build directory (or self if not possible)
+		Return the corresponding Node object in the build directory (or self if already
+		under the build directory). Use this method only if the purpose is to create
+		a Node object (this is common with folders but not with files, see ticket 1937)
 
 		:rtype: :py:class:`waflib.Node.Node`
 		"""
