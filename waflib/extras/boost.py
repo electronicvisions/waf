@@ -354,8 +354,9 @@ def check_boost(self, *k, **kw):
 		Logs.warn('boost: static parameter is deprecated, use stlib instead.')
 	self.start_msg('Checking boost libs')
 	path, libs, stlibs = self.boost_get_libs(**params)
-	self.env['LIBPATH_%s' % var] = [path]
-	self.env['STLIBPATH_%s' % var] = [path]
+	if params.get('libs', False):
+		self.env['LIBPATH_%s' % var] = [path]
+		self.env['STLIBPATH_%s' % var] = [path]
 	self.env['LIB_%s' % var] = libs
 	self.env['STLIB_%s' % var] = stlibs
 	self.end_msg('ok')
