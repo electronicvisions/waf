@@ -425,7 +425,7 @@ def create_waf(self, *k, **kw):
 	if sys.platform == 'win32' or Options.options.make_batch:
 		f = open('waf.bat', 'w')
 		try:
-			f.write('@python -x "%~dp0waf" %*\n@exit /b %ERRORLEVEL%\n')
+			f.write('@setlocal\n@set PYEXE=python\n@where %PYEXE% 1>NUL 2>NUL\n@if %ERRORLEVEL% neq 0 set PYEXE=py\n@%PYEXE% -x "%~dp0waf" %*\n@exit /b %ERRORLEVEL%\n')
 		finally:
 			f.close()
 
