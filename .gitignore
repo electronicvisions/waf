@@ -34,3 +34,5 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Windows build output
+waf.bat
