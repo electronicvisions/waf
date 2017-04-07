@@ -11,11 +11,9 @@ Usage:
 See also demos/xcode6/ folder
 
 def options(opt):
-	opt.load('xcode6')
+	opt.load('compiler_cxx xcode6')
 
 def configure(cnf):
-	# <do your stuff>
-
 	# For example
 	cnf.env.SDKROOT = 'macosx10.9'
 
@@ -31,13 +29,13 @@ def configure(cnf):
 	# }
 
 	# In the end of configure() do
-	cnf.load('xcode6')
+	cnf.load('compiler_cxx xcode6')
 
 def build(bld):
 
 	# Make a Framework target
 	bld.framework(
-		source_files={
+		source={
 			'Include': bld.path.ant_glob('include/MyLib/*.h'),
 			'Source': bld.path.ant_glob('src/MyLib/*.cpp')
 		},
@@ -45,7 +43,6 @@ def build(bld):
 		export_headers=bld.path.ant_glob('include/MyLib/*.h'),
 		target='MyLib',
 	)
-
 	# You can also make bld.dylib, bld.app, bld.stlib ...
 
 # To generate your XCode project, open the folder with the wscript
@@ -53,10 +50,13 @@ def build(bld):
 # $ waf configure xcode6
 """
 
-# TODO: support iOS projects
+# TODO: support iOS projects(?)
 
 from waflib import Context, TaskGen, Build, Utils, Errors, Logs
 import os, sys
+
+# FIXME too few extensions
+XCODE_EXTS = ['.c', '.cpp', '.m', '.mm']
 
 HEADERS_GLOB = '**/(*.h|*.hpp|*.H|*.inl)'
 
@@ -262,6 +262,7 @@ class PBXFileReference(XCodeNode):
 			_, ext = os.path.splitext(name)
 			filetype = MAP_EXT.get(ext, 'text')
 		self.lastKnownFileType = filetype
+		self.explicitFileType = filetype
 		self.name = name
 		self.path = path
 		self.sourceTree = sourcetree
@@ -276,7 +277,7 @@ class PBXBuildFile(XCodeNode):
 	""" This element indicate a file reference that is used in a PBXBuildPhase (either as an include or resource). """
 	def __init__(self, fileRef, settings={}):
 		XCodeNode.__init__(self)
-		
+
 		# fileRef is a reference to a PBXFileReference object
 		self.fileRef = fileRef
 
@@ -308,7 +309,6 @@ class PBXContainerItemProxy(XCodeNode):
 		self.remoteGlobalIDString = remoteGlobalIDString # PBXNativeTarget
 		self.remoteInfo = remoteInfo # Target name
 		self.proxyType = proxyType
-		
 
 class PBXTargetDependency(XCodeNode):
 	""" This is the element for referencing other target through content proxies. """
@@ -316,7 +316,7 @@ class PBXTargetDependency(XCodeNode):
 		XCodeNode.__init__(self)
 		self.target = native_target
 		self.targetProxy = proxy
-		
+
 class PBXFrameworksBuildPhase(XCodeNode):
 	""" This is the element for the framework link build phase, i.e. linking to frameworks """
 	def __init__(self, pbxbuildfiles):
@@ -490,8 +490,8 @@ class xcode(Build.BuildContext):
 
 	def create_group(self, name, files):
 		"""
-			Returns a new PBXGroup containing the files (paths) passed in the files arg 
-			:type files: string
+		Returns a new PBXGroup containing the files (paths) passed in the files arg
+		:type files: string
 		"""
 		group = PBXGroup(name)
 		"""
@@ -534,7 +534,7 @@ class xcode(Build.BuildContext):
 		appname = getattr(Context.g_module, Context.APPNAME, os.path.basename(self.srcnode.abspath()))
 
 		p = PBXProject(appname, ('Xcode 3.2', 46), self.env)
-		
+
 		# If we don't create a Products group, then
 		# XCode will create one, which entails that
 		# we'll start to see duplicate files in the UI
@@ -562,28 +562,26 @@ class xcode(Build.BuildContext):
 
 				# Create the output node
 				target_node = tg.path.find_or_declare(tg.name+file_ext)
-				
 				target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
 
 				products_group.children.append(target.productReference)
 
-				if hasattr(tg, 'source_files'):
+				if hasattr(tg, 'source_files') or hasattr(tg, 'source'):
 					# Create list of PBXFileReferences
 					sources = []
-					if isinstance(tg.source_files, dict):
+					if hasattr(tg, 'source_files') and isinstance(tg.source_files, dict):
 						for grpname,files in tg.source_files.items():
 							group = self.create_group(grpname, files)
 							target_group.children.append(group)
 							sources.extend(group.children)
-					elif isinstance(tg.source_files, list):
-						group = self.create_group("Source", tg.source_files)
+					else:
+						src = getattr(tg, 'source_files', []) or tg.source
+						group = self.create_group("Source", src)
 						target_group.children.append(group)
 						sources.extend(group.children)
-					else:
-						self.to_log("Argument 'source_files' passed to target '%s' was not a dictionary. Hence, some source files may not be included. Please provide a dictionary of source files, with group name as key and list of source files as value.\n" % tg.name)
 
-					supported_extensions = ['.c', '.cpp', '.m', '.mm']
-					sources = filter(lambda fileref: os.path.splitext(fileref.path)[1] in supported_extensions, sources)
+					# FIXME too complex
+					sources = list(filter(lambda fileref: os.path.splitext(fileref.path)[1] in XCODE_EXTS, sources))
 					buildfiles = [self.unique_buildfile(PBXBuildFile(fileref)) for fileref in sources]
 					target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
 
@@ -613,7 +611,7 @@ class xcode(Build.BuildContext):
 				# Merge frameworks and libs into one list, and prefix the frameworks
 				ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(tg.env.FRAMEWORK)]
 				ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
-				
+
 				# Override target specific build settings
 				bldsettings = {
 					'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
@@ -630,7 +628,7 @@ class xcode(Build.BuildContext):
 					bldsettings['INSTALL_PATH'].append(instpath)
 					target.add_build_phase(PBXCopyFilesBuildPhase([prodbuildfile], instpath))
 
-				if len(bldsettings['INSTALL_PATH']) == 0:
+				if not bldsettings['INSTALL_PATH']:
 					del bldsettings['INSTALL_PATH']
 
 				# The keys represents different build configuration, e.g. Debug, Release and so on..
@@ -646,31 +644,40 @@ class xcode(Build.BuildContext):
 					target.add_configuration(XCBuildConfiguration(k, v))
 
 				p.add_target(target)
-				
+
 		node = self.bldnode.make_node('%s.xcodeproj' % appname)
 		node.mkdir()
 		node = node.make_node('project.pbxproj')
-		p.write(open(node.abspath(), 'w'))
-	
-	def build_target(self, tgtype, *k, **kw):
-		"""
-		Provide aliases
-		E.g. bld.framework(source='..', ...) to build a Framework target.
-		E.g. bld.dylib(source='..', ...) to build a Dynamic library target. etc...
-		"""
+		with open(node.abspath(), 'w') as f:
+			p.write(f)
+		Logs.pprint('GREEN', 'Wrote %r' % node.abspath())
 
-		# The following features are needed for this tool's use of
-		# env['INCPATHS'], env['LIB_xxx'] etc.
-		self.load('ccroot')
-		kw['features'] = 'cxx cxxprogram'
+def bind_fun(tgtype):
+	def fun(self, *k, **kw):
+		tgtype = fun.__name__
+		if tgtype == 'shlib' or tgtype == 'dylib':
+			features = 'cxx cxxshlib'
+			tgtype = 'dylib'
+		elif tgtype == 'framework':
+			features = 'cxx cxxshlib'
+			tgtype = 'framework'
+		elif tgtype == 'program':
+			features = 'cxx cxxprogram'
+			tgtype = 'exe'
+		elif tgtype == 'app':
+			features = 'cxx cxxprogram'
+			tgtype = 'app'
+		elif tgtype == 'stlib':
+			features = 'cxx cxxstlib'
+			tgtype = 'stlib'
+		kw['features'] = features
+
 		kw['target_type'] = tgtype
 		return self(*k, **kw)
+	fun.__name__ = tgtype
+	setattr(Build.BuildContext, tgtype, fun)
+	return fun
 
-	def app(self, *k, **kw): return self.build_target('app', *k, **kw)
-	def framework(self, *k, **kw): return self.build_target('framework', *k, **kw)
-	def dylib(self, *k, **kw): return self.build_target('dylib', *k, **kw)
-	def stlib(self, *k, **kw): return self.build_target('stlib', *k, **kw)
-	def program(self, *k, **kw): return self.build_target('exe', *k, **kw)
-	def exe(self, *k, **kw):
-		Logs.warn("xcode6: alias 'bld.exe()' has changed name. Use 'bld.program()' instead.")
-		return self.build_target('exe', *k, **kw)
+for xx in 'app framework dylib shlib stlib program'.split():
+	bind_fun(xx)
+
