@@ -1,3 +1,10 @@
+NEW IN WAF 1.9.10
+-----------------
+* Xcode generator fixes for version 8 #1939
+* Detect -pie and -rdynamic in parse_flags #1936
+* Fixed Fortran module naming case
+* Improve Visual Studio 2017 compilers detection
+
 NEW IN WAF 1.9.9
 ----------------
 * Fix QT5 detection on macOS 1912
