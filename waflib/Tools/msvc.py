@@ -113,7 +113,7 @@ def setup_msvc(conf, versiondict):
 		platforms=Utils.to_list(conf.env.MSVC_TARGETS) or [i for i,j in all_msvc_platforms+all_icl_platforms+all_wince_platforms]
 	desired_versions = getattr(Options.options, 'msvc_version', '').split(',')
 	if desired_versions == ['']:
-		desired_versions = conf.env.MSVC_VERSIONS or list(reversed(list(versiondict.keys())))
+		desired_versions = conf.env.MSVC_VERSIONS or list(versiondict.keys())
 
 	# Override lazy detection by evaluating after the fact.
 	lazy_detect = getattr(Options.options, 'msvc_lazy', True)
@@ -607,6 +607,7 @@ def get_msvc_versions(self):
 	self.gather_intel_composer_versions(dct)
 	self.gather_wsdk_versions(dct)
 	self.gather_msvc_versions(dct)
+	Logs.debug('msvc: detected versions %r', list(dct.keys()))
 	return dct
 
 @conf
