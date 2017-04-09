@@ -470,12 +470,118 @@ class PBXProject(XCodeNode):
 				return t
 		return None
 
+@TaskGen.feature('c', 'cxx')
+@TaskGen.after('process_uselib_vars', 'apply_incpaths')
+def process_xcode(self):
+	if not hasattr(self, 'target_type'):
+		return
+	bld = self.bld
+	tg = self
+
+	p = bld.project
+	products_group = bld.products_group
+
+
+	target_group = PBXGroup(tg.name)
+	p.mainGroup.children.append(target_group)
+
+	# Determine what type to build - framework, app bundle etc.
+	target_type = getattr(tg, 'target_type', 'app')
+	if target_type not in TARGET_TYPES:
+		raise Errors.WafError("Target type '%s' does not exists. Available options are '%s'. In target '%s'" % (target_type, "', '".join(TARGET_TYPES.keys()), tg.name))
+	else:
+		target_type = TARGET_TYPES[target_type]
+	file_ext = target_type[2]
+
+	# Create the output node
+	target_node = tg.path.find_or_declare(tg.name+file_ext)
+	target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
+
+	products_group.children.append(target.productReference)
+
+	if hasattr(tg, 'source_files') or hasattr(tg, 'source'):
+		# Create list of PBXFileReferences
+		sources = []
+		if hasattr(tg, 'source_files') and isinstance(tg.source_files, dict):
+			for grpname,files in tg.source_files.items():
+				group = bld.create_group(grpname, files)
+				target_group.children.append(group)
+				sources.extend(group.children)
+		else:
+			src = getattr(tg, 'source_files', []) or tg.source
+			group = bld.create_group("Source", src)
+			target_group.children.append(group)
+			sources.extend(group.children)
+
+		# FIXME too complex
+		sources = list(filter(lambda fileref: os.path.splitext(fileref.path)[1] in XCODE_EXTS, sources))
+		buildfiles = [bld.unique_buildfile(PBXBuildFile(fileref)) for fileref in sources]
+		target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
+
+	# Create build settings which can override the project settings. Defaults to none if user
+	# did not pass argument. However, this will be filled up further below with target specific
+	# search paths, libs to link etc.
+	settings = getattr(tg, 'settings', {})
+
+	# Check if any framework to link against is some other target we've made
+	libs = getattr(tg, 'tmp_use_seen', [])
+	for lib in libs:
+		use_target = p.get_target(lib)
+		if use_target:
+			# Create an XCode dependency so that XCode knows to build the other target before this target
+			target.add_dependency(p.create_target_dependency(use_target, use_target.name))
+			target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
+			if lib in tg.env.LIB:
+				tg.env.LIB = list(filter(lambda x: x != lib, tg.env.LIB))
+
+	# If 'export_headers' is present, add files to the Headers build phase in xcode.
+	# These are files that'll get packed into the Framework for instance.
+	exp_hdrs = getattr(tg, 'export_headers', [])
+	hdrs = bld.as_nodes(Utils.to_list(exp_hdrs))
+	files = [bld.unique_filereference(PBXFileReference(n.name, n.abspath())) for n in hdrs]
+	target.add_build_phase(PBXHeadersBuildPhase([PBXBuildFile(f, {'ATTRIBUTES': ('Public',)}) for f in files]))
+
+	# Merge frameworks and libs into one list, and prefix the frameworks
+	ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(tg.env.FRAMEWORK)]
+	ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
+
+	# Override target specific build settings
+	bldsettings = {
+		'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
+		'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.LIBPATH) + Utils.to_list(tg.env.STLIBPATH),
+		'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.FRAMEWORKPATH),
+		'OTHER_LDFLAGS': r'\n'.join(ld_flags),
+		'INSTALL_PATH': []
+	}
+
+	# Install path
+	installpaths = Utils.to_list(getattr(tg, 'install', []))
+	prodbuildfile = PBXBuildFile(target.productReference)
+	for instpath in installpaths:
+		bldsettings['INSTALL_PATH'].append(instpath)
+		target.add_build_phase(PBXCopyFilesBuildPhase([prodbuildfile], instpath))
+
+	if not bldsettings['INSTALL_PATH']:
+		del bldsettings['INSTALL_PATH']
+
+	# The keys represents different build configuration, e.g. Debug, Release and so on..
+	# Insert our generated build settings to all configuration names
+	keys = set(settings.keys() + bld.env.PROJ_CONFIGURATION.keys())
+	for k in keys:
+		if k in settings:
+			settings[k].update(bldsettings)
+		else:
+			settings[k] = bldsettings
+
+	for k,v in settings.items():
+		target.add_configuration(XCBuildConfiguration(k, v))
+
+	p.add_target(target)
+
+
 class xcode(Build.BuildContext):
 	cmd = 'xcode6'
 	fun = 'build'
-
-	file_refs = dict()
-	build_files = dict()
 
 	def as_nodes(self, files):
 		""" Returns a list of waflib.Nodes from a list of string of file paths """
@@ -502,15 +608,19 @@ class xcode(Build.BuildContext):
 		group.add(files)
 		return group
 
-	def unique_filereference(self, fileref):
+	def unique_filereference(self, ref):
 		"""
-		Returns a unique fileref, possibly an existing one if the paths are the same.
+		Returns a unique file reference, possibly an existing one if the paths are the same.
 		Use this after you've constructed a PBXFileReference to make sure there is
 		only one PBXFileReference for the same file in the same project.
 		"""
-		if fileref not in self.file_refs:
-			self.file_refs[fileref] = fileref
-		return self.file_refs[fileref]
+		try:
+			file_refs = self.file_refs
+		except AttributeError:
+			file_refs = self.file_refs = {}
+		if ref not in file_refs:
+			file_refs[ref] = ref
+		return file_refs[ref]
 
 	def unique_buildfile(self, buildfile):
 		"""
@@ -518,9 +628,14 @@ class xcode(Build.BuildContext):
 		Use this after you've constructed a PBXBuildFile to make sure there is
 		only one PBXBuildFile for the same file in the same project.
 		"""
-		if buildfile not in self.build_files:
-			self.build_files[buildfile] = buildfile
-		return self.build_files[buildfile]
+		try:
+			build_files = self.build_files
+		except AttributeError:
+			build_files = self.build_files = {}
+
+		if buildfile not in build_files:
+			build_files[buildfile] = buildfile
+		return build_files[buildfile]
 
 	def execute(self):
 		"""
@@ -542,108 +657,15 @@ class xcode(Build.BuildContext):
 		products_group = PBXGroup('Products')
 		p.mainGroup.children.append(products_group)
 
-		for g in self.groups:
-			for tg in g:
-				if not isinstance(tg, TaskGen.task_gen):
-					continue
+		self.project = p
+		self.products_group = products_group
 
-				tg.post()
-
-				target_group = PBXGroup(tg.name)
-				p.mainGroup.children.append(target_group)
-
-				# Determine what type to build - framework, app bundle etc.
-				target_type = getattr(tg, 'target_type', 'app')
-				if target_type not in TARGET_TYPES:
-					raise Errors.WafError("Target type '%s' does not exists. Available options are '%s'. In target '%s'" % (target_type, "', '".join(TARGET_TYPES.keys()), tg.name))
-				else:
-					target_type = TARGET_TYPES[target_type]
-				file_ext = target_type[2]
-
-				# Create the output node
-				target_node = tg.path.find_or_declare(tg.name+file_ext)
-				target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
-
-				products_group.children.append(target.productReference)
-
-				if hasattr(tg, 'source_files') or hasattr(tg, 'source'):
-					# Create list of PBXFileReferences
-					sources = []
-					if hasattr(tg, 'source_files') and isinstance(tg.source_files, dict):
-						for grpname,files in tg.source_files.items():
-							group = self.create_group(grpname, files)
-							target_group.children.append(group)
-							sources.extend(group.children)
-					else:
-						src = getattr(tg, 'source_files', []) or tg.source
-						group = self.create_group("Source", src)
-						target_group.children.append(group)
-						sources.extend(group.children)
-
-					# FIXME too complex
-					sources = list(filter(lambda fileref: os.path.splitext(fileref.path)[1] in XCODE_EXTS, sources))
-					buildfiles = [self.unique_buildfile(PBXBuildFile(fileref)) for fileref in sources]
-					target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
-
-				# Create build settings which can override the project settings. Defaults to none if user
-				# did not pass argument. However, this will be filled up further below with target specific
-				# search paths, libs to link etc.
-				settings = getattr(tg, 'settings', {})
-
-				# Check if any framework to link against is some other target we've made
-				libs = getattr(tg, 'tmp_use_seen', [])
-				for lib in libs:
-					use_target = p.get_target(lib)
-					if use_target:
-						# Create an XCode dependency so that XCode knows to build the other target before this target
-						target.add_dependency(p.create_target_dependency(use_target, use_target.name))
-						target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
-						if lib in tg.env.LIB:
-							tg.env.LIB = list(filter(lambda x: x != lib, tg.env.LIB))
-
-				# If 'export_headers' is present, add files to the Headers build phase in xcode.
-				# These are files that'll get packed into the Framework for instance.
-				exp_hdrs = getattr(tg, 'export_headers', [])
-				hdrs = self.as_nodes(Utils.to_list(exp_hdrs))
-				files = [self.unique_filereference(PBXFileReference(n.name, n.abspath())) for n in hdrs]
-				target.add_build_phase(PBXHeadersBuildPhase([PBXBuildFile(f, {'ATTRIBUTES': ('Public',)}) for f in files]))
-
-				# Merge frameworks and libs into one list, and prefix the frameworks
-				ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(tg.env.FRAMEWORK)]
-				ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
-
-				# Override target specific build settings
-				bldsettings = {
-					'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
-					'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.LIBPATH) + Utils.to_list(tg.env.STLIBPATH),
-					'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.FRAMEWORKPATH),
-					'OTHER_LDFLAGS': r'\n'.join(ld_flags),
-					'INSTALL_PATH': []
-				}
-
-				# Install path
-				installpaths = Utils.to_list(getattr(tg, 'install', []))
-				prodbuildfile = PBXBuildFile(target.productReference)
-				for instpath in installpaths:
-					bldsettings['INSTALL_PATH'].append(instpath)
-					target.add_build_phase(PBXCopyFilesBuildPhase([prodbuildfile], instpath))
-
-				if not bldsettings['INSTALL_PATH']:
-					del bldsettings['INSTALL_PATH']
-
-				# The keys represents different build configuration, e.g. Debug, Release and so on..
-				# Insert our generated build settings to all configuration names
-				keys = set(settings.keys() + self.env.PROJ_CONFIGURATION.keys())
-				for k in keys:
-					if k in settings:
-						settings[k].update(bldsettings)
-					else:
-						settings[k] = bldsettings
-
-				for k,v in settings.items():
-					target.add_configuration(XCBuildConfiguration(k, v))
-
-				p.add_target(target)
+		# post all task generators
+		# the process_xcode method above will be called for each target
+		self.cur = 0
+		while self.cur < len(self.groups):
+			self.post_group()
+			self.cur += 1
 
 		node = self.bldnode.make_node('%s.xcodeproj' % appname)
 		node.mkdir()
