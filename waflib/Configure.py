@@ -449,7 +449,7 @@ def find_program(self, filename, **kw):
 	if kw.get('value'):
 		# user-provided in command-line options and passed to find_program
 		ret = self.cmd_to_list(kw['value'])
-	elif var in environ:
+	elif environ.get(var):
 		# user-provided in the os environment
 		ret = self.cmd_to_list(environ[var])
 	elif self.env[var]:
