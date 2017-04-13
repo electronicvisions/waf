@@ -584,14 +584,14 @@ def configure(conf):
 	Detect the python interpreter
 	"""
 	v = conf.env
-	if Options.options.pythondir:
+	if getattr(Options.options, 'pythondir', None):
 		v.PYTHONDIR = Options.options.pythondir
-	if Options.options.pythonarchdir:
+	if getattr(Options.options, 'pythonarchdir', None):
 		v.PYTHONARCHDIR = Options.options.pythonarchdir
-	if Options.options.nopycache:
+	if getattr(Options.options, 'nopycache', None):
 		v.NOPYCACHE=Options.options.nopycache
 
-	conf.find_program('python', var='PYTHON', value=Options.options.python or sys.executable)
+	conf.find_program('python', var='PYTHON', value=getattr(Options.options, 'python', sys.executable))
 
 	v.PYFLAGS = ''
 	v.PYFLAGS_OPT = '-O'
