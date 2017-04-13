@@ -591,7 +591,10 @@ def configure(conf):
 	if getattr(Options.options, 'nopycache', None):
 		v.NOPYCACHE=Options.options.nopycache
 
-	conf.find_program('python', var='PYTHON', value=getattr(Options.options, 'python', None) or sys.executable)
+	if not v.PYTHON:
+		v.PYTHON = getattr(Options.options, 'python', None) or sys.executable
+	v.PYTHON = Utils.to_list(v.PYTHON)
+	conf.find_program('python', var='PYTHON')
 
 	v.PYFLAGS = ''
 	v.PYFLAGS_OPT = '-O'
