@@ -604,6 +604,8 @@ def post_check(self, *k, **kw):
 		if kw.get('add_have_to_env', 1):
 			if kw.get('uselib_store'):
 				self.env[self.have_define(kw['uselib_store'])] = 1
+			elif kw['execute'] and kw.get('define_ret'):
+				self.env[define_name] = is_success
 			else:
 				self.env[define_name] = int(is_success)
 
