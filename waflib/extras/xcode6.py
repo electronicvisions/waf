@@ -473,42 +473,44 @@ class PBXProject(XCodeNode):
 @TaskGen.feature('c', 'cxx')
 @TaskGen.after('process_uselib_vars', 'apply_incpaths')
 def process_xcode(self):
+	bld = self.bld
+	try:
+		p = bld.project
+	except AttributeError:
+		return
+
 	if not hasattr(self, 'target_type'):
 		return
-	bld = self.bld
-	tg = self
 
-	p = bld.project
 	products_group = bld.products_group
 
-
-	target_group = PBXGroup(tg.name)
+	target_group = PBXGroup(self.name)
 	p.mainGroup.children.append(target_group)
 
 	# Determine what type to build - framework, app bundle etc.
-	target_type = getattr(tg, 'target_type', 'app')
+	target_type = getattr(self, 'target_type', 'app')
 	if target_type not in TARGET_TYPES:
-		raise Errors.WafError("Target type '%s' does not exists. Available options are '%s'. In target '%s'" % (target_type, "', '".join(TARGET_TYPES.keys()), tg.name))
+		raise Errors.WafError("Target type '%s' does not exists. Available options are '%s'. In target '%s'" % (target_type, "', '".join(TARGET_TYPES.keys()), self.name))
 	else:
 		target_type = TARGET_TYPES[target_type]
 	file_ext = target_type[2]
 
 	# Create the output node
-	target_node = tg.path.find_or_declare(tg.name+file_ext)
-	target = PBXNativeTarget(tg.name, target_node, target_type, [], [])
+	target_node = self.path.find_or_declare(self.name+file_ext)
+	target = PBXNativeTarget(self.name, target_node, target_type, [], [])
 
 	products_group.children.append(target.productReference)
 
-	if hasattr(tg, 'source_files') or hasattr(tg, 'source'):
+	if hasattr(self, 'source_files') or hasattr(self, 'source'):
 		# Create list of PBXFileReferences
 		sources = []
-		if hasattr(tg, 'source_files') and isinstance(tg.source_files, dict):
-			for grpname,files in tg.source_files.items():
+		if hasattr(self, 'source_files') and isinstance(self.source_files, dict):
+			for grpname,files in self.source_files.items():
 				group = bld.create_group(grpname, files)
 				target_group.children.append(group)
 				sources.extend(group.children)
 		else:
-			src = getattr(tg, 'source_files', []) or tg.source
+			src = getattr(self, 'source_files', []) or self.source
 			group = bld.create_group("Source", src)
 			target_group.children.append(group)
 			sources.extend(group.children)
@@ -521,41 +523,41 @@ def process_xcode(self):
 	# Create build settings which can override the project settings. Defaults to none if user
 	# did not pass argument. However, this will be filled up further below with target specific
 	# search paths, libs to link etc.
-	settings = getattr(tg, 'settings', {})
+	settings = getattr(self, 'settings', {})
 
 	# Check if any framework to link against is some other target we've made
-	libs = getattr(tg, 'tmp_use_seen', [])
+	libs = getattr(self, 'tmp_use_seen', [])
 	for lib in libs:
 		use_target = p.get_target(lib)
 		if use_target:
 			# Create an XCode dependency so that XCode knows to build the other target before this target
 			target.add_dependency(p.create_target_dependency(use_target, use_target.name))
 			target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
-			if lib in tg.env.LIB:
-				tg.env.LIB = list(filter(lambda x: x != lib, tg.env.LIB))
+			if lib in self.env.LIB:
+				self.env.LIB = list(filter(lambda x: x != lib, self.env.LIB))
 
 	# If 'export_headers' is present, add files to the Headers build phase in xcode.
 	# These are files that'll get packed into the Framework for instance.
-	exp_hdrs = getattr(tg, 'export_headers', [])
+	exp_hdrs = getattr(self, 'export_headers', [])
 	hdrs = bld.as_nodes(Utils.to_list(exp_hdrs))
 	files = [bld.unique_filereference(PBXFileReference(n.name, n.abspath())) for n in hdrs]
 	target.add_build_phase(PBXHeadersBuildPhase([PBXBuildFile(f, {'ATTRIBUTES': ('Public',)}) for f in files]))
 
 	# Merge frameworks and libs into one list, and prefix the frameworks
-	ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(tg.env.FRAMEWORK)]
-	ld_flags.extend(Utils.to_list(tg.env.STLIB) + Utils.to_list(tg.env.LIB))
+	ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(self.env.FRAMEWORK)]
+	ld_flags.extend(Utils.to_list(self.env.STLIB) + Utils.to_list(self.env.LIB))
 
 	# Override target specific build settings
 	bldsettings = {
-		'HEADER_SEARCH_PATHS': ['$(inherited)'] + tg.env['INCPATHS'],
-		'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.LIBPATH) + Utils.to_list(tg.env.STLIBPATH),
-		'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(tg.env.FRAMEWORKPATH),
+		'HEADER_SEARCH_PATHS': ['$(inherited)'] + self.env['INCPATHS'],
+		'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.LIBPATH) + Utils.to_list(self.env.STLIBPATH),
+		'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.FRAMEWORKPATH),
 		'OTHER_LDFLAGS': r'\n'.join(ld_flags),
 		'INSTALL_PATH': []
 	}
 
 	# Install path
-	installpaths = Utils.to_list(getattr(tg, 'install', []))
+	installpaths = Utils.to_list(getattr(self, 'install', []))
 	prodbuildfile = PBXBuildFile(target.productReference)
 	for instpath in installpaths:
 		bldsettings['INSTALL_PATH'].append(instpath)
