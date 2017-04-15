@@ -143,6 +143,12 @@ class BuildContext(Context.Context):
 			if not hasattr(self, v):
 				setattr(self, v, {})
 
+	def set_cur(self, cur):
+		self.current_group = cur
+	def get_cur(self):
+		return self.current_group
+	cur = property(get_cur, set_cur)
+
 	def get_variant_dir(self):
 		"""Getter for the variant_dir attribute"""
 		if not self.variant:
