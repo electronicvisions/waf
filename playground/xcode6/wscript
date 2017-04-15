@@ -20,6 +20,7 @@ a static library target and an executable target.
 The generated XCode project can then be opened
 and XCode can then build those targets.
 Tested with XCode 8.
+
 """
 
 def options(opt):
@@ -45,46 +46,58 @@ def configure(conf):
 	conf.check(cxxflags='-std=c++11', uselib_store='STD11', mandatory=False)
 
 def build(bld):
+
+	# Make .framework targets
 	tg = bld.framework(
 		includes='include',
 
-		# Specify source files for xcode
-		# This will become the groups (folders) inside XCode.
-		# Give a dictionary to group by name. Use a list to add everything in one
-		source_files={
-			'MyLibSource': bld.path.ant_glob('src/MyLib/*.cpp|*.m|*.mm'),
-			'Include': bld.path.ant_glob(incl=['include/MyLib/*.h', 'include'], dir=True)
-		},
-
-		# source files for waf builds
+		# Source files
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
 
-		# export_headers will put the files in the
-		# 'Header Build Phase' in Xcode - i.e tell XCode to ship them with your .framework
-		export_headers=bld.path.ant_glob(incl=['include/MyLib/*.h', 'include/MyLib/SupportLib'], dir=True),
+		# If you don't want the source files to appear in a default
+		# 'Source' folder, you can define your own folder structure
+		# using a dictionary, where the key is the desired name of the folder
+		# and the value are the files.
+		group_files={
+			'Source files': bld.path.ant_glob('src/MyLib/*.cpp|*.m|*.mm'),
+			'Include': bld.path.ant_glob(incl=['include/MyLib/*.h'], dir=True),
+			'Help': ['src/sample.txt']
+		},
+
+		# If you want to ship your header files with your .framework, then
+		# specify them using the 'export_headers' param
+		export_headers=bld.path.ant_glob(incl=['include/MyLib/*.h', 'include/MyLib/SupportLib/*.h']),
 		target='MyLib',
+
+		# The 'install' param will set the INSTALL_PATH for the
+		# binary, and will also trigger XCode to copy the target to that
+		# path
 		install='~/Library/Frameworks'
 	)
 
+	# Make .a static library targets
 	bld.stlib(
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
                 includes = 'include',
 		target='MyStaticLib',
 	)
 
+	# Make standard executable target
 	bld.program(
 		source=['src/test.cpp'],
 		includes='include',
 		target='MyExe',
 		use='MyDynLib'
 	)
+
+	# Make .dylib shared libraries
 	bld.shlib(
 		source=bld.path.ant_glob('src/MyLib/*.cpp'),
 		includes='include',
 		target='MyDynLib',
 	)
 
-	#bld.env.LIB_SDL2 = '/Library/Frameworks/SDL2.framework/SDL2'
+	# Make an app bundle target
 	tg2 = bld.app(
 		source=bld.path.ant_glob('src/*.cpp'),
 		includes='include',
@@ -96,5 +109,3 @@ def build(bld):
 		# Override default setting in a target
 		settings={"Debug": {"CONFIG_NAME": 'Debug'}}
 	)
-
-
