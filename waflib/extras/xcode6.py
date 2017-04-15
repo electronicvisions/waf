@@ -664,10 +664,10 @@ class xcode(Build.BuildContext):
 
 		# post all task generators
 		# the process_xcode method above will be called for each target
-		self.cur = 0
-		while self.cur < len(self.groups):
+		self.current_group = 0
+		while self.current_group < len(self.groups):
 			self.post_group()
-			self.cur += 1
+			self.current_group += 1
 
 		node = self.bldnode.make_node('%s.xcodeproj' % appname)
 		node.mkdir()
