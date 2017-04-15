@@ -6,51 +6,9 @@
 # XCode project file format based on http://www.monobjc.net/xcode-project-file-format.html
 
 """
-Usage:
+See playground/xcode6/ for usage examples.
 
-See also demos/xcode6/ folder
-
-def options(opt):
-	opt.load('compiler_cxx xcode6')
-
-def configure(cnf):
-	# For example
-	cnf.env.SDKROOT = 'macosx10.9'
-
-	# Use cnf.PROJ_CONFIGURATION to completely set/override
-	# global project settings
-	# cnf.env.PROJ_CONFIGURATION = {
-	# 	'Debug': {
-	# 		'SDKROOT': 'macosx10.9'
-	# 	}
-	# 	'MyCustomReleaseConfig': {
-	# 		'SDKROOT': 'macosx10.10'
-	# 	}
-	# }
-
-	# In the end of configure() do
-	cnf.load('compiler_cxx xcode6')
-
-def build(bld):
-
-	# Make a Framework target
-	bld.framework(
-		source={
-			'Include': bld.path.ant_glob('include/MyLib/*.h'),
-			'Source': bld.path.ant_glob('src/MyLib/*.cpp')
-		},
-		includes='include',
-		export_headers=bld.path.ant_glob('include/MyLib/*.h'),
-		target='MyLib',
-	)
-	# You can also make bld.dylib, bld.app, bld.stlib ...
-
-# To generate your XCode project, open the folder with the wscript
-# in your terminal and run the following:
-# $ waf configure xcode6
 """
-
-# TODO: support iOS projects(?)
 
 from waflib import Context, TaskGen, Build, Utils, Errors, Logs
 import os, sys
@@ -185,6 +143,13 @@ def newid():
 	id += 1
 	return "%04X%04X%04X%012d" % (0, 10000, 0, id)
 
+"""
+Represents a tree node in the XCode project plist file format.
+When written to a file, all attributes of XCodeNode are stringified together with
+its value. However, attributes starting with an underscore _ are ignored
+during that process and allows you to store arbitray values that are not supposed
+to be written out.
+"""
 class XCodeNode:
 	def __init__(self):
 		self._id = newid()
@@ -256,6 +221,7 @@ class XCConfigurationList(XCodeNode):
 # Group/Files
 class PBXFileReference(XCodeNode):
 	def __init__(self, name, path, filetype = '', sourcetree = "SOURCE_ROOT"):
+
 		XCodeNode.__init__(self)
 		self.fileEncoding = 4
 		if not filetype:
@@ -291,15 +257,48 @@ class PBXBuildFile(XCodeNode):
 		return self.fileRef == other.fileRef
 
 class PBXGroup(XCodeNode):
-	def __init__(self, name, sourcetree = "<group>"):
+	def __init__(self, name, sourcetree = 'SOURCE_TREE'):
 		XCodeNode.__init__(self)
 		self.children = []
 		self.name = name
 		self.sourceTree = sourcetree
 
+		# Maintain a lookup table for all PBXFileReferences
+		# that are contained in this group.
+		self._filerefs = {}
+
 	def add(self, sources):
-		""" sources param should be a list of PBXFileReference objects """
+		"""
+		Add a list of PBXFileReferences to this group
+
+		:param sources: list of PBXFileReferences objects
+		"""
+		self._filerefs.update(dict(zip(sources, sources)))
 		self.children.extend(sources)
+
+	def get_sub_groups(self):
+		"""
+		Returns all child PBXGroup objects contained in this group
+		"""
+		return list(filter(lambda x: isinstance(x, PBXGroup), self.children))
+
+	def find_fileref(self, fileref):
+		"""
+		Recursively search this group for an existing PBXFileReference. Returns None
+		if none were found.
+
+		The reason you'd want to reuse existing PBXFileReferences from a PBXGroup is that XCode doesn't like PBXFileReferences that aren't part of a PBXGroup heirarchy.
+		If it isn't, the consequence is that certain UI features like 'Reveal in Finder'
+		stops working.
+		"""
+		if fileref in self._filerefs:
+			return self._filerefs[fileref]
+		elif self.children:
+			for childgroup in self.get_sub_groups():
+				f = childgroup.find_fileref(fileref)
+				if f:
+					return f
+		return None
 
 class PBXContainerItemProxy(XCodeNode):
 	""" This is the element for to decorate a target item. """
@@ -501,29 +500,37 @@ def process_xcode(self):
 
 	products_group.children.append(target.productReference)
 
-	if hasattr(self, 'source_files') or hasattr(self, 'source'):
-		# Create list of PBXFileReferences
-		sources = []
-		if hasattr(self, 'source_files') and isinstance(self.source_files, dict):
-			for grpname,files in self.source_files.items():
-				group = bld.create_group(grpname, files)
-				target_group.children.append(group)
-				sources.extend(group.children)
-		else:
-			src = getattr(self, 'source_files', []) or self.source
-			group = bld.create_group("Source", src)
+	# Pull source files from the 'source' attribute and assign them to a UI group.
+	# Use a default UI group named 'Source' unless the user
+	# provides a 'group_files' dictionary to customize the UI grouping.
+	sources = getattr(self, 'source', [])
+	if hasattr(self, 'group_files'):
+		group_files = getattr(self, 'group_files', [])
+		for grpname,files in group_files.items():
+			group = bld.create_group(grpname, files)
 			target_group.children.append(group)
-			sources.extend(group.children)
+	else:
+		group = bld.create_group('Source', sources)
+		target_group.children.append(group)
 
-		# FIXME too complex
-		sources = list(filter(lambda fileref: os.path.splitext(fileref.path)[1] in XCODE_EXTS, sources))
-		buildfiles = [bld.unique_buildfile(PBXBuildFile(fileref)) for fileref in sources]
-		target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
+	# Create a PBXFileReference for each source file.
+	# If the source file already exists as a PBXFileReference in any of the UI groups, then
+	# reuse that PBXFileReference object (XCode does not like it if we don't reuse)
+	for idx, path in enumerate(sources):
+		fileref = PBXFileReference(path.name, path.abspath())
+		existing_fileref = target_group.find_fileref(fileref)
+		if existing_fileref:
+			sources[idx] = existing_fileref
+		else:
+			sources[idx] = fileref
 
-	# Create build settings which can override the project settings. Defaults to none if user
-	# did not pass argument. However, this will be filled up further below with target specific
-	# search paths, libs to link etc.
-	settings = getattr(self, 'settings', {})
+	# If the 'source' attribute contains any file extension that XCode can't work with,
+	# then remove it. The allowed file extensions are defined in XCODE_EXTS.
+	is_valid_file_extension = lambda file: os.path.splitext(file.path)[1] in XCODE_EXTS
+	sources = list(filter(is_valid_file_extension, sources))
+
+	buildfiles = [bld.unique_buildfile(PBXBuildFile(fileref)) for fileref in sources]
+	target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
 
 	# Check if any framework to link against is some other target we've made
 	libs = getattr(self, 'tmp_use_seen', [])
@@ -531,8 +538,11 @@ def process_xcode(self):
 		use_target = p.get_target(lib)
 		if use_target:
 			# Create an XCode dependency so that XCode knows to build the other target before this target
-			target.add_dependency(p.create_target_dependency(use_target, use_target.name))
-			target.add_build_phase(PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)]))
+			dependency = p.create_target_dependency(use_target, use_target.name)
+			target.add_dependency(dependency)
+
+			buildphase = PBXFrameworksBuildPhase([PBXBuildFile(use_target.productReference)])
+			target.add_build_phase(buildphase)
 			if lib in self.env.LIB:
 				self.env.LIB = list(filter(lambda x: x != lib, self.env.LIB))
 
@@ -540,8 +550,10 @@ def process_xcode(self):
 	# These are files that'll get packed into the Framework for instance.
 	exp_hdrs = getattr(self, 'export_headers', [])
 	hdrs = bld.as_nodes(Utils.to_list(exp_hdrs))
-	files = [bld.unique_filereference(PBXFileReference(n.name, n.abspath())) for n in hdrs]
-	target.add_build_phase(PBXHeadersBuildPhase([PBXBuildFile(f, {'ATTRIBUTES': ('Public',)}) for f in files]))
+	files = [p.mainGroup.find_fileref(PBXFileReference(n.name, n.abspath())) for n in hdrs]
+	files = [PBXBuildFile(f, {'ATTRIBUTES': ('Public',)}) for f in files]
+	buildphase = PBXHeadersBuildPhase(files)
+	target.add_build_phase(buildphase)
 
 	# Merge frameworks and libs into one list, and prefix the frameworks
 	ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(self.env.FRAMEWORK)]
@@ -565,6 +577,11 @@ def process_xcode(self):
 
 	if not bldsettings['INSTALL_PATH']:
 		del bldsettings['INSTALL_PATH']
+
+	# Create build settings which can override the project settings. Defaults to none if user
+	# did not pass argument. This will be filled up with target specific
+	# search paths, libs to link etc.
+	settings = getattr(self, 'settings', {})
 
 	# The keys represents different build configuration, e.g. Debug, Release and so on..
 	# Insert our generated build settings to all configuration names
@@ -593,6 +610,8 @@ class xcode(Build.BuildContext):
 				d = x
 			else:
 				d = self.srcnode.find_node(x)
+				if not d:
+					raise Errors.WafError('File \'%s\' was not found' % x)
 			nodes.append(d)
 		return nodes
 
@@ -606,23 +625,12 @@ class xcode(Build.BuildContext):
 		Do not use unique file reference here, since XCode seem to allow only one file reference
 		to be referenced by a group.
 		"""
-		files = [(PBXFileReference(d.name, d.abspath())) for d in self.as_nodes(files)]
-		group.add(files)
+		files_ = []
+		for d in self.as_nodes(Utils.to_list(files)):
+			fileref = PBXFileReference(d.name, d.abspath())
+			files_.append(fileref)
+		group.add(files_)
 		return group
-
-	def unique_filereference(self, ref):
-		"""
-		Returns a unique file reference, possibly an existing one if the paths are the same.
-		Use this after you've constructed a PBXFileReference to make sure there is
-		only one PBXFileReference for the same file in the same project.
-		"""
-		try:
-			file_refs = self.file_refs
-		except AttributeError:
-			file_refs = self.file_refs = {}
-		if ref not in file_refs:
-			file_refs[ref] = ref
-		return file_refs[ref]
 
 	def unique_buildfile(self, buildfile):
 		"""
