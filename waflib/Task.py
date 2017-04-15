@@ -797,9 +797,9 @@ class Task(evil):
 
 		# one cache per build group
 		try:
-			dct = cache[bld.cur]
+			dct = cache[bld.current_group]
 		except KeyError:
-			dct = cache[bld.cur] = {}
+			dct = cache[bld.current_group] = {}
 			for tsk in bld.cur_tasks:
 				for x in tsk.outputs:
 					dct[x] = tsk
