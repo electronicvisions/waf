@@ -17,6 +17,7 @@ class WafError(Exception):
 		:param ex: exception causing this error (optional)
 		:type ex: exception
 		"""
+		Exception.__init__(self)
 		self.msg = msg
 		assert not isinstance(msg, Exception)
 

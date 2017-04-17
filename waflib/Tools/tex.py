@@ -54,14 +54,16 @@ def bibunitscan(self):
 	for match in re_bibunit.finditer(code):
 		path = match.group('file')
 		if path:
+			found = None
 			for k in ('', '.bib'):
 				# add another loop for the tex include paths?
 				Logs.debug('tex: trying %s%s', path, k)
 				fi = node.parent.find_resource(path + k)
 				if fi:
+					found = True
 					nodes.append(fi)
-					# no break, people are crazy
-			else:
+					# no break
+			if not found:
 				Logs.debug('tex: could not find %s', path)
 
 	Logs.debug('tex: found the following bibunit files: %s', nodes)

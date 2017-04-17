@@ -150,7 +150,7 @@ its value. However, attributes starting with an underscore _ are ignored
 during that process and allows you to store arbitray values that are not supposed
 to be written out.
 """
-class XCodeNode:
+class XCodeNode(object):
 	def __init__(self):
 		self._id = newid()
 		self._been_written = False
