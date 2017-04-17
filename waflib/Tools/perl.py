@@ -36,7 +36,8 @@ def init_perlext(self):
 	*lib* prefix from library names.
 	"""
 	self.uselib = self.to_list(getattr(self, 'uselib', []))
-	if not 'PERLEXT' in self.uselib: self.uselib.append('PERLEXT')
+	if not 'PERLEXT' in self.uselib:
+		self.uselib.append('PERLEXT')
 	self.env.cshlib_PATTERN = self.env.cxxshlib_PATTERN = self.env.perlext_PATTERN
 
 @extension('.xs')

@@ -699,7 +699,8 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 			Context.tools[tool] = ret
 			return ret
 		else:
-			if not with_sys_path: sys.path.insert(0, waf_dir)
+			if not with_sys_path:
+				sys.path.insert(0, waf_dir)
 			try:
 				for x in ('waflib.Tools.%s', 'waflib.extras.%s', 'waflib.%s', '%s'):
 					try:
@@ -710,7 +711,8 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 				else: # raise an exception
 					__import__(tool)
 			finally:
-				if not with_sys_path: sys.path.remove(waf_dir)
+				if not with_sys_path:
+					sys.path.remove(waf_dir)
 			ret = sys.modules[x % tool]
 			Context.tools[tool] = ret
 			return ret

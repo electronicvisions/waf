@@ -70,7 +70,8 @@ class glib_genmarshal(Task.Task):
 		)
 
 		ret = bld.exec_command(cmd1)
-		if ret: return ret
+		if ret:
+			return ret
 
 		#print self.outputs[1].abspath()
 		c = '''#include "%s"\n''' % self.outputs[0].name

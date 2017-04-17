@@ -186,32 +186,56 @@ def reduce_nums(val_1, val_2, val_op):
 	#print val_1, val_2, val_op
 
 	# now perform the operation, make certain a and b are numeric
-	try:    a = 0 + val_1
-	except TypeError: a = int(val_1)
-	try:    b = 0 + val_2
-	except TypeError: b = int(val_2)
+	try:
+		a = 0 + val_1
+	except TypeError:
+		a = int(val_1)
+	try:
+		b = 0 + val_2
+	except TypeError:
+		b = int(val_2)
 
 	d = val_op
-	if d == '%':  c = a%b
-	elif d=='+':  c = a+b
-	elif d=='-':  c = a-b
-	elif d=='*':  c = a*b
-	elif d=='/':  c = a/b
-	elif d=='^':  c = a^b
-	elif d=='==': c = int(a == b)
-	elif d=='|'  or d == 'bitor':  c = a|b
-	elif d=='||' or d == 'or' : c = int(a or b)
-	elif d=='&'  or d == 'bitand':  c = a&b
-	elif d=='&&' or d == 'and': c = int(a and b)
-	elif d=='!=' or d == 'not_eq': c = int(a != b)
-	elif d=='^'  or d == 'xor':  c = int(a^b)
-	elif d=='<=': c = int(a <= b)
-	elif d=='<':  c = int(a < b)
-	elif d=='>':  c = int(a > b)
-	elif d=='>=': c = int(a >= b)
-	elif d=='<<': c = a<<b
-	elif d=='>>': c = a>>b
-	else: c = 0
+	if d == '%':
+		c = a % b
+	elif d=='+':
+		c = a + b
+	elif d=='-':
+		c = a - b
+	elif d=='*':
+		c = a * b
+	elif d=='/':
+		c = a / b
+	elif d=='^':
+		c = a ^ b
+	elif d=='==':
+		c = int(a == b)
+	elif d=='|'  or d == 'bitor':
+		c = a | b
+	elif d=='||' or d == 'or' :
+		c = int(a or b)
+	elif d=='&'  or d == 'bitand':
+		c = a & b
+	elif d=='&&' or d == 'and':
+		c = int(a and b)
+	elif d=='!=' or d == 'not_eq':
+		c = int(a != b)
+	elif d=='^'  or d == 'xor':
+		c = int(a^b)
+	elif d=='<=':
+		c = int(a <= b)
+	elif d=='<':
+		c = int(a < b)
+	elif d=='>':
+		c = int(a > b)
+	elif d=='>=':
+		c = int(a >= b)
+	elif d=='<<':
+		c = a << b
+	elif d=='>>':
+		c = a >> b
+	else:
+		c = 0
 	return c
 
 def get_num(lst):
@@ -223,7 +247,8 @@ def get_num(lst):
 	:return: a pair containing the number and the rest of the list
 	:rtype: tuple(value, list)
 	"""
-	if not lst: raise PreprocError('empty list for get_num')
+	if not lst:
+		raise PreprocError('empty list for get_num')
 	(p, v) = lst[0]
 	if p == OP:
 		if v == '(':
@@ -279,7 +304,8 @@ def get_term(lst):
 	:rtype: value, list
 	"""
 
-	if not lst: raise PreprocError('empty list for get_term')
+	if not lst:
+		raise PreprocError('empty list for get_term')
 	num, lst = get_num(lst)
 	if not lst:
 		return (num, [])
@@ -462,18 +488,22 @@ def reduce_tokens(lst, defs, ban=[]):
 							one_param.append((p2, v2))
 							count_paren += 1
 						elif v2 == ')':
-							if one_param: args.append(one_param)
+							if one_param:
+								args.append(one_param)
 							break
 						elif v2 == ',':
-							if not one_param: raise PreprocError('empty param in funcall %r' % v)
+							if not one_param:
+								raise PreprocError('empty param in funcall %r' % v)
 							args.append(one_param)
 							one_param = []
 						else:
 							one_param.append((p2, v2))
 					else:
 						one_param.append((p2, v2))
-						if   v2 == '(': count_paren += 1
-						elif v2 == ')': count_paren -= 1
+						if   v2 == '(':
+							count_paren += 1
+						elif v2 == ')':
+							count_paren -= 1
 				else:
 					raise PreprocError('malformed macro')
 
@@ -518,7 +548,8 @@ def reduce_tokens(lst, defs, ban=[]):
 								for x in args[pt-st+1:]:
 									va_toks.extend(x)
 									va_toks.append((OP, ','))
-								if va_toks: va_toks.pop() # extra comma
+								if va_toks:
+									va_toks.pop() # extra comma
 								if len(accu)>1:
 									(p3, v3) = accu[-1]
 									(p4, v4) = accu[-2]
@@ -566,7 +597,8 @@ def eval_macro(lst, defs):
 	:rtype: int
 	"""
 	reduce_tokens(lst, defs, [])
-	if not lst: raise PreprocError('missing tokens to evaluate')
+	if not lst:
+		raise PreprocError('missing tokens to evaluate')
 
 	if lst:
 		p, v = lst[0]
@@ -593,7 +625,8 @@ def extract_macro(txt):
 		p, name = t[0]
 
 		p, v = t[1]
-		if p != OP: raise PreprocError('expected (')
+		if p != OP:
+			raise PreprocError('expected (')
 
 		i = 1
 		pindex = 0
@@ -696,16 +729,20 @@ def parse_char(txt):
 		return ord(txt)
 	c = txt[1]
 	if c == 'x':
-		if len(txt) == 4 and txt[3] in string.hexdigits: return int(txt[2:], 16)
+		if len(txt) == 4 and txt[3] in string.hexdigits:
+			return int(txt[2:], 16)
 		return int(txt[2:], 16)
 	elif c.isdigit():
-		if c == '0' and len(txt)==2: return 0
+		if c == '0' and len(txt)==2:
+			return 0
 		for i in 3, 2, 1:
 			if len(txt) > i and txt[1:1+i].isdigit():
 				return (1+i, int(txt[1:1+i], 8))
 	else:
-		try: return chr_esc[c]
-		except KeyError: raise PreprocError('could not parse char literal %r' % txt)
+		try:
+			return chr_esc[c]
+		except KeyError:
+			raise PreprocError('could not parse char literal %r' % txt)
 
 def tokenize(s):
 	"""
@@ -738,16 +775,23 @@ def tokenize_private(s):
 							v = 0
 							name = NUM
 				elif name == NUM:
-					if m('oct'): v = int(v, 8)
-					elif m('hex'): v = int(m('hex'), 16)
-					elif m('n0'): v = m('n0')
+					if m('oct'):
+						v = int(v, 8)
+					elif m('hex'):
+						v = int(m('hex'), 16)
+					elif m('n0'):
+						v = m('n0')
 					else:
 						v = m('char')
-						if v: v = parse_char(v)
-						else: v = m('n2') or m('n4')
+						if v:
+							v = parse_char(v)
+						else:
+							v = m('n2') or m('n4')
 				elif name == OP:
-					if v == '%:': v = '#'
-					elif v == '%:%:': v = '##'
+					if v == '%:':
+						v = '#'
+					elif v == '%:%:':
+						v = '##'
 				elif name == STR:
 					# remove the quotes around the string
 					v = v[1:-1]
@@ -883,7 +927,8 @@ class c_parser(object):
 		# return a list of tuples : keyword, line
 		code = node.read()
 		if use_trigraphs:
-			for (a, b) in trig_def: code = code.split(a).join(b)
+			for (a, b) in trig_def:
+				code = code.split(a).join(b)
 		code = re_nl.sub('', code)
 		code = re_cpp.sub(repl, code)
 		return re_lines.findall(code)
@@ -960,7 +1005,8 @@ class c_parser(object):
 
 			try:
 				ve = Logs.verbose
-				if ve: Logs.debug('preproc: line is %s - %s state is %s', token, line, self.state)
+				if ve:
+					Logs.debug('preproc: line is %s - %s state is %s', token, line, self.state)
 				state = self.state
 
 				# make certain we define the state if we are about to enter in an if block
@@ -976,19 +1022,26 @@ class c_parser(object):
 
 				if token == 'if':
 					ret = eval_macro(tokenize(line), self.defs)
-					if ret: state[-1] = accepted
-					else: state[-1] = ignored
+					if ret:
+						state[-1] = accepted
+					else:
+						state[-1] = ignored
 				elif token == 'ifdef':
 					m = re_mac.match(line)
-					if m and m.group() in self.defs: state[-1] = accepted
-					else: state[-1] = ignored
+					if m and m.group() in self.defs:
+						state[-1] = accepted
+					else:
+						state[-1] = ignored
 				elif token == 'ifndef':
 					m = re_mac.match(line)
-					if m and m.group() in self.defs: state[-1] = ignored
-					else: state[-1] = accepted
+					if m and m.group() in self.defs:
+						state[-1] = ignored
+					else:
+						state[-1] = accepted
 				elif token == 'include' or token == 'import':
 					(kind, inc) = extract_include(line, self.defs)
-					if ve: Logs.debug('preproc: include found %s    (%s) ', inc, kind)
+					if ve:
+						Logs.debug('preproc: include found %s    (%s) ', inc, kind)
 					if kind == '"' or not strict_quotes:
 						self.current_file = self.tryfind(inc)
 						if token == 'import':
@@ -1000,8 +1053,10 @@ class c_parser(object):
 						if eval_macro(tokenize(line), self.defs):
 							state[-1] = accepted
 				elif token == 'else':
-					if state[-1] == accepted: state[-1] = skipped
-					elif state[-1] == ignored: state[-1] = accepted
+					if state[-1] == accepted:
+						state[-1] = skipped
+					elif state[-1] == ignored:
+						state[-1] = accepted
 				elif token == 'define':
 					try:
 						self.defs[self.define_name(line)] = line

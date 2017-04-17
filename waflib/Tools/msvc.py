@@ -500,8 +500,10 @@ def gather_icl_versions(conf, versions):
 			continue
 		targets = {}
 		for target,arch in all_icl_platforms:
-			if target=='intel64': targetDir='EM64T_NATIVE'
-			else: targetDir=target
+			if target=='intel64':
+				targetDir='EM64T_NATIVE'
+			else:
+				targetDir=target
 			try:
 				Utils.winreg.OpenKey(all_versions,version+'\\'+targetDir)
 				icl_version=Utils.winreg.OpenKey(all_versions,version)
@@ -552,8 +554,10 @@ def gather_intel_composer_versions(conf, versions):
 			continue
 		targets = {}
 		for target,arch in all_icl_platforms:
-			if target=='intel64': targetDir='EM64T_NATIVE'
-			else: targetDir=target
+			if target=='intel64':
+				targetDir='EM64T_NATIVE'
+			else:
+				targetDir=target
 			try:
 				try:
 					defaults = Utils.winreg.OpenKey(all_versions,version+'\\Defaults\\C++\\'+targetDir)
@@ -796,7 +800,8 @@ def find_msvc(conf):
 
 	# before setting anything, check if the compiler is really msvc
 	env = dict(conf.environ)
-	if path: env.update(PATH = ';'.join(path))
+	if path:
+		env.update(PATH = ';'.join(path))
 	if not conf.cmd_and_log(cxx + ['/nologo', '/help'], env=env):
 		conf.fatal('the msvc compiler could not be identified')
 

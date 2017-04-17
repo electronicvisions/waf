@@ -400,11 +400,13 @@ class BuildContext(Context.Context):
 		:param funs: unused variable
 		"""
 		if isinstance(tool, list):
-			for i in tool: self.setup(i, tooldir)
+			for i in tool:
+				self.setup(i, tooldir)
 			return
 
 		module = Context.load_tool(tool, tooldir)
-		if hasattr(module, "setup"): module.setup(self)
+		if hasattr(module, "setup"):
+			module.setup(self)
 
 	def get_env(self):
 		"""Getter for the env property"""
@@ -544,7 +546,8 @@ class BuildContext(Context.Context):
 		right = '][%s%s%s]' % (col1, self.timer, col2)
 
 		cols = Logs.get_term_cols() - len(left) - len(right) + 2*len(col1) + 2*len(col2)
-		if cols < 7: cols = 7
+		if cols < 7:
+			cols = 7
 
 		ratio = ((cols * idx)//total) - 1
 

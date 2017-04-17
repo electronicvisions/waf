@@ -54,9 +54,9 @@ def apply_run_py_script(tg):
 	Attributes:
 
 		* source -- A **single** source node or string. (required)
-		* target -- A single target or list of targets (nodes or strings). 
+		* target -- A single target or list of targets (nodes or strings)
 		* deps -- A single dependency or list of dependencies (nodes or strings)
-		* add_to_pythonpath -- A string that will be appended to the PYTHONPATH environment variable.
+		* add_to_pythonpath -- A string that will be appended to the PYTHONPATH environment variable
 
 	If the build environment has an attribute "PROJECT_PATHS" with
 	a key "PROJECT_ROOT", its value will be appended to the PYTHONPATH.
@@ -64,7 +64,8 @@ def apply_run_py_script(tg):
 
 	# Set the Python version to use, default to 3.
 	v = getattr(tg, 'version', 3)
-	if v not in (2, 3): raise ValueError("Specify the 'version' attribute for run_py_script task generator as integer 2 or 3.\n Got: %s" %v)
+	if v not in (2, 3):
+		raise ValueError("Specify the 'version' attribute for run_py_script task generator as integer 2 or 3.\n Got: %s" %v)
 
 	# Convert sources and targets to nodes
 	src_node = tg.path.find_resource(tg.source)
@@ -83,7 +84,7 @@ def apply_run_py_script(tg):
 	if getattr(tg, 'add_to_pythonpath', None):
 		tsk.env.env['PYTHONPATH'] += os.pathsep + tg.add_to_pythonpath
 
-	# Clean up the PYTHONPATH -- replace double occurrences of path separator 
+	# Clean up the PYTHONPATH -- replace double occurrences of path separator
 	tsk.env.env['PYTHONPATH'] = re.sub(os.pathsep + '+', os.pathsep, tsk.env.env['PYTHONPATH'])
 
 	# Clean up the PYTHONPATH -- doesn't like starting with path separator

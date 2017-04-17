@@ -22,7 +22,8 @@ def flexfun(tsk):
 	bld = tsk.generator.bld
 	wd = bld.variant_dir
 	def to_list(xx):
-		if isinstance(xx, str): return [xx]
+		if isinstance(xx, str):
+			return [xx]
 		return xx
 	tsk.last_cmd = lst = []
 	lst.extend(to_list(env.FLEX))

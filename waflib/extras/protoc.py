@@ -5,7 +5,7 @@
 
 import re
 from waflib.Task import Task
-from waflib.TaskGen import extension 
+from waflib.TaskGen import extension
 
 """
 A simple tool to integrate protocol buffers into your build system.
@@ -18,9 +18,9 @@ Example::
     def build(bld):
         bld(
                 features = 'cxx cxxprogram'
-                source   = 'main.cpp file1.proto proto/file2.proto', 
+                source   = 'main.cpp file1.proto proto/file2.proto',
                 include  = '. proto',
-                target   = 'executable') 
+                target   = 'executable')
 
 Notes when using this tool:
 
@@ -49,7 +49,8 @@ class protoc(Task):
 		names = []
 		seen = []
 
-		if not node: return (nodes, names)
+		if not node:
+			return (nodes, names)
 
 		def parse_node(node):
 			if node in seen:

@@ -275,7 +275,8 @@ def error(*k, **kw):
 				buf.append('  File %r, line %d, in %s' % (filename, lineno, name))
 				if line:
 					buf.append('	%s' % line.strip())
-			if buf: log.error('\n'.join(buf))
+			if buf:
+				log.error('\n'.join(buf))
 
 def warn(*k, **kw):
 	"""

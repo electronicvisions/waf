@@ -48,7 +48,8 @@ def bibunitscan(self):
 	node = self.inputs[0]
 
 	nodes = []
-	if not node: return nodes
+	if not node:
+		return nodes
 
 	code = node.read()
 	for match in re_bibunit.finditer(code):
@@ -158,7 +159,8 @@ class tex(Task.Task):
 		nodes = []
 		names = []
 		seen = []
-		if not node: return (nodes, names)
+		if not node:
+			return (nodes, names)
 
 		def parse_node(node):
 			if node in seen:

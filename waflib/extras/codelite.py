@@ -244,7 +244,8 @@ def compile_template(line):
         extr = []
         def repl(match):
                 g = match.group
-                if g('dollar'): return "$"
+                if g('dollar'):
+                        return "$"
                 elif g('backslash'):
                         return "\\"
                 elif g('subst'):
@@ -871,9 +872,4 @@ class codelite_generator(BuildContext):
                         # make a folder for each task generator
                         p.iter_path = p.tg.path
                         make_parents(p)
-
-
-
-def options(ctx):      
-        pass        
 

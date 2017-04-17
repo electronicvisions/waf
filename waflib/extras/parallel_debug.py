@@ -13,8 +13,10 @@ a file named pdebug.svg in the source directory::
 """
 
 import time, sys, re, threading
-try: from Queue import Queue
-except: from queue import Queue
+try:
+	from Queue import Queue
+except:
+	from queue import Queue
 from waflib import Runner, Options, Utils, Task, Logs, Errors
 
 #import random
@@ -125,7 +127,8 @@ def compile_template(line):
 	extr = []
 	def repl(match):
 		g = match.group
-		if g('dollar'): return "$"
+		if g('dollar'):
+			return "$"
 		elif g('backslash'):
 			return "\\"
 		elif g('subst'):
