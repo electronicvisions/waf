@@ -313,8 +313,6 @@ class Task(evil):
 		if self.hasrun != SUCCESS:
 			m.error_handler(self)
 
-		pass
-
 	def log_display(self, bld):
 		"Writes the execution status on the context logger"
 		if self.generator.bld.progress_bar == 3:

@@ -95,8 +95,8 @@ class store_context(type):
 	Context classes must provide an attribute 'cmd' representing the command name, and a function
 	attribute 'fun' representing the function name that the command uses.
 	"""
-	def __init__(cls, name, bases, dict):
-		super(store_context, cls).__init__(name, bases, dict)
+	def __init__(cls, name, bases, dct):
+		super(store_context, cls).__init__(name, bases, dct)
 		name = cls.__name__
 
 		if name in ('ctx', 'Context'):
