@@ -238,7 +238,8 @@ class ConfigurationContext(Context.Context):
 		"""
 
 		tools = Utils.to_list(input)
-		if tooldir: tooldir = Utils.to_list(tooldir)
+		if tooldir:
+			tooldir = Utils.to_list(tooldir)
 		for tool in tools:
 			# avoid loading the same tool more than once with the same functions
 			# used by composite projects
@@ -265,8 +266,10 @@ class ConfigurationContext(Context.Context):
 			else:
 				func = getattr(module, 'configure', None)
 				if func:
-					if type(func) is type(Utils.readf): func(self)
-					else: self.eval_rules(func)
+					if type(func) is type(Utils.readf):
+						func(self)
+					else:
+						self.eval_rules(func)
 
 			self.tools.append({'tool':tool, 'tooldir':tooldir, 'funs':funs})
 

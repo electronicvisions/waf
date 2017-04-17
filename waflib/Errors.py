@@ -50,7 +50,8 @@ class BuildError(WafError):
 		lst = ['Build failed']
 		for tsk in self.tasks:
 			txt = tsk.format_error()
-			if txt: lst.append(txt)
+			if txt:
+				lst.append(txt)
 		return '\n'.join(lst)
 
 class ConfigurationError(WafError):

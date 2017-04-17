@@ -460,8 +460,10 @@ class Task(evil):
 
 		src_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.inputs])
 		tgt_str = ' '.join([a.path_from(a.ctx.launch_node()) for a in self.outputs])
-		if self.outputs: sep = ' -> '
-		else: sep = ''
+		if self.outputs:
+			sep = ' -> '
+		else:
+			sep = ''
 		return '%s: %s%s%s' % (self.__class__.__name__, src_str, sep, tgt_str)
 
 	def keyword(self):
@@ -522,8 +524,10 @@ class Task(evil):
 		:param inp: input nodes
 		:type inp: node or list of nodes
 		"""
-		if isinstance(inp, list): self.inputs += inp
-		else: self.inputs.append(inp)
+		if isinstance(inp, list):
+			self.inputs += inp
+		else:
+			self.inputs.append(inp)
 
 	def set_outputs(self, out):
 		"""
@@ -532,8 +536,10 @@ class Task(evil):
 		:param out: output nodes
 		:type out: node or list of nodes
 		"""
-		if isinstance(out, list): self.outputs += out
-		else: self.outputs.append(out)
+		if isinstance(out, list):
+			self.outputs += out
+		else:
+			self.outputs.append(out)
 
 	def set_run_after(self, task):
 		"""
@@ -990,11 +996,15 @@ def compile_fun_shell(line):
 	app = parm.append
 	for (var, meth) in extr:
 		if var == 'SRC':
-			if meth: app('tsk.inputs%s' % meth)
-			else: app('" ".join([a.path_from(cwdx) for a in tsk.inputs])')
+			if meth:
+				app('tsk.inputs%s' % meth)
+			else:
+				app('" ".join([a.path_from(cwdx) for a in tsk.inputs])')
 		elif var == 'TGT':
-			if meth: app('tsk.outputs%s' % meth)
-			else: app('" ".join([a.path_from(cwdx) for a in tsk.outputs])')
+			if meth:
+				app('tsk.outputs%s' % meth)
+			else:
+				app('" ".join([a.path_from(cwdx) for a in tsk.outputs])')
 		elif meth:
 			if meth.startswith(':'):
 				if var not in dvars:
@@ -1022,8 +1032,10 @@ def compile_fun_shell(line):
 			if var not in dvars:
 				dvars.append(var)
 			app("p('%s')" % var)
-	if parm: parm = "%% (%s) " % (',\n\t\t'.join(parm))
-	else: parm = ''
+	if parm:
+		parm = "%% (%s) " % (',\n\t\t'.join(parm))
+	else:
+		parm = ''
 
 	c = COMPILE_TEMPLATE_SHELL % (line, parm)
 	Logs.debug('action: %s', c.strip().splitlines())

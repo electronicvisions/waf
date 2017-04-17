@@ -86,8 +86,10 @@ def apply_intltool_in_f(self):
 	:param install_path: installation path
 	:type install_path: string
 	"""
-	try: self.meths.remove('process_source')
-	except ValueError: pass
+	try:
+		self.meths.remove('process_source')
+	except ValueError:
+		pass
 
 	self.ensure_localedir()
 
@@ -141,8 +143,10 @@ def apply_intltool_po(self):
 
 	The file LINGUAS must be present in the directory pointed by *podir* and list the translation files to process.
 	"""
-	try: self.meths.remove('process_source')
-	except ValueError: pass
+	try:
+		self.meths.remove('process_source')
+	except ValueError:
+		pass
 
 	self.ensure_localedir()
 

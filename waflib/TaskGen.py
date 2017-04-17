@@ -186,7 +186,8 @@ class task_gen(object):
 		tmp = []
 		for a in keys:
 			for x in prec.values():
-				if a in x: break
+				if a in x:
+					break
 			else:
 				tmp.append(a)
 
@@ -762,8 +763,10 @@ class subst_pc(Task.Task):
 		self.generator.bld.raw_deps[self.uid()] = lst
 
 		# make sure the signature is updated
-		try: delattr(self, 'cache_sig')
-		except AttributeError: pass
+		try:
+			delattr(self, 'cache_sig')
+		except AttributeError:
+			pass
 
 		self.force_permissions()
 

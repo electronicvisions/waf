@@ -21,10 +21,14 @@ def find_pgi_compiler(conf, var, name):
 
 	v = conf.env
 	cc = None
-	if v[var]: cc = v[var]
-	elif var in conf.environ: cc = conf.environ[var]
-	if not cc: cc = conf.find_program(name, var=var)
-	if not cc: conf.fatal('PGI Compiler (%s) was not found' % name)
+	if v[var]:
+		cc = v[var]
+	elif var in conf.environ:
+		cc = conf.environ[var]
+	if not cc:
+		cc = conf.find_program(name, var=var)
+	if not cc:
+		conf.fatal('PGI Compiler (%s) was not found' % name)
 
 	v[var + '_VERSION'] = conf.get_pgi_version(cc)
 	v[var] = cc
@@ -41,8 +45,10 @@ def get_pgi_version(conf, cc):
 	except Exception:
 		conf.fatal('Could not find pgi compiler %r' % cmd)
 
-	if out: match = version_re(out)
-	else: match = version_re(err)
+	if out:
+		match = version_re(out)
+	else:
+		match = version_re(err)
 
 	if not match:
 		conf.fatal('Could not verify PGI signature')

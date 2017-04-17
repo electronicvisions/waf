@@ -328,7 +328,8 @@ def apply_qt5(self):
 
 	lst = []
 	for flag in self.to_list(self.env.CXXFLAGS):
-		if len(flag) < 2: continue
+		if len(flag) < 2:
+			continue
 		f = flag[0:2]
 		if f in ('-D', '-I', '/D', '/I'):
 			if (f[0] == '/'):
@@ -375,8 +376,10 @@ class rcc(Task.Task):
 		root = self.inputs[0].parent
 		for x in curHandler.files:
 			nd = root.find_resource(x)
-			if nd: nodes.append(nd)
-			else: names.append(x)
+			if nd:
+				nodes.append(nd)
+			else:
+				names.append(x)
 		return (nodes, names)
 
 class moc(Task.Task):

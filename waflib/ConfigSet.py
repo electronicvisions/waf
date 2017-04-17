@@ -44,9 +44,12 @@ class ConfigSet(object):
 			if 'foo' in env:
 				print(env['foo'])
 		"""
-		if key in self.table: return True
-		try: return self.parent.__contains__(key)
-		except AttributeError: return False # parent may not exist
+		if key in self.table:
+			return True
+		try:
+			return self.parent.__contains__(key)
+		except AttributeError:
+			return False # parent may not exist
 
 	def keys(self):
 		"""Dict interface"""
@@ -180,7 +183,8 @@ class ConfigSet(object):
 		:type key: string
 		"""
 		s = self[key]
-		if isinstance(s, str): return s
+		if isinstance(s, str):
+			return s
 		return ' '.join(s)
 
 	def _get_list_value_for_modification(self, key):
@@ -264,8 +268,10 @@ class ConfigSet(object):
 		env = self
 		while 1:
 			table_list.insert(0, env.table)
-			try: env = env.parent
-			except AttributeError: break
+			try:
+				env = env.parent
+			except AttributeError:
+				break
 		merged_table = {}
 		for table in table_list:
 			merged_table.update(table)

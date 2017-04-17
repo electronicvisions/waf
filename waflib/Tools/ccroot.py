@@ -227,8 +227,10 @@ class stlink_task(link_task):
 def rm_tgt(cls):
 	old = cls.run
 	def wrap(self):
-		try: os.remove(self.outputs[0].abspath())
-		except OSError: pass
+		try:
+			os.remove(self.outputs[0].abspath())
+		except OSError:
+			pass
 		return old(self)
 	setattr(cls, 'run', wrap)
 rm_tgt(stlink_task)

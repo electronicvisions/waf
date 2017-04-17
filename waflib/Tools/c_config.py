@@ -898,7 +898,8 @@ def write_config_header(self, configfile='', guard='', top=False, defines=True, 
 	:type define_prefix: string
 	:param define_prefix: prefix all the defines in the file with a particular prefix
 	"""
-	if not configfile: configfile = WAF_CONFIG_H
+	if not configfile:
+		configfile = WAF_CONFIG_H
 	waf_guard = guard or 'W_%s_WAF' % Utils.quote_define_name(configfile)
 
 	node = top and self.bldnode or self.path.get_bld()
