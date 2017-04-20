@@ -69,8 +69,11 @@ def check_same_targets(self):
 		for (k, v) in uids.items():
 			if len(v) > 1:
 				Logs.error('* Several tasks use the same identifier. Please check the information on\n   https://waf.io/apidocs/Task.html?highlight=uid#waflib.Task.Task.uid')
+				tg_details = tsk.generator.name
+				if Logs.verbose > 2:
+					tg_details = tsk.generator
 				for tsk in v:
-					Logs.error('  - object %r (%r) defined in %r', tsk.__class__.__name__, tsk, tsk.generator)
+					Logs.error('  - object %r (%r) defined in %r', tsk.__class__.__name__, tsk, tg_details)
 
 def check_invalid_constraints(self):
 	feat = set()
