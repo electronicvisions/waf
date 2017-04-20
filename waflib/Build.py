@@ -840,12 +840,12 @@ class BuildContext(Context.Context):
 			Task.set_precedence_constraints(tasks)
 
 			self.cur_tasks = tasks
+			if tasks:
+				yield tasks
 			self.current_group += 1
-			if not tasks: # return something else the build will stop
-				continue
-			yield tasks
 
 		while 1:
+			# the build stops once there are no tasks to process
 			yield []
 
 	def install_files(self, dest, files, **kw):
