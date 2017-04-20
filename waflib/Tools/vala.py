@@ -9,7 +9,7 @@ this tool to be too stable either (apis, etc)
 """
 
 import re
-from waflib import Context, Task, Utils, Logs, Options, Errors, Node
+from waflib import Build, Context, Task, Utils, Logs, Options, Errors, Node
 from waflib.TaskGen import extension, taskgen_method
 from waflib.Configure import conf
 
@@ -145,8 +145,15 @@ def init_vala_task(self):
 				package_obj = self.bld.get_tgen_by_name(package)
 			except Errors.WafError:
 				continue
+
+			# in practice the other task is already processed
+			# but this makes it explicit
+			package_obj.post()
 			package_name = package_obj.target
 			for task in package_obj.tasks:
+				if isinstance(task, Build.inst):
+					# TODO are we not expecting just valatask here?
+					continue
 				for output in task.outputs:
 					if output.name == package_name + ".vapi":
 						valatask.set_run_after(task)
@@ -181,21 +188,15 @@ def init_vala_task(self):
 
 	if self.is_lib and valatask.install_binding:
 		headers_list = [o for o in valatask.outputs if o.suffix() == ".h"]
-		try:
-			self.install_vheader.source = headers_list
-		except AttributeError:
+		if headers_list:
 			self.install_vheader = self.add_install_files(install_to=valatask.header_path, install_from=headers_list)
 
 		vapi_list = [o for o in valatask.outputs if (o.suffix() in (".vapi", ".deps"))]
-		try:
-			self.install_vapi.source = vapi_list
-		except AttributeError:
+		if vapi_list:
 			self.install_vapi = self.add_install_files(install_to=valatask.vapi_path, install_from=vapi_list)
 
 		gir_list = [o for o in valatask.outputs if o.suffix() == '.gir']
-		try:
-			self.install_gir.source = gir_list
-		except AttributeError:
+		if gir_list:
 			self.install_gir = self.add_install_files(
 				install_to=getattr(self, 'gir_path', '${DATAROOTDIR}/gir-1.0'), install_from=gir_list)
 
