@@ -251,6 +251,15 @@ def vala_file(self, node):
 	valatask.outputs.append(c_node)
 	self.source.append(c_node)
 
+@extension('.vapi')
+def vapi_file(self, node):
+	try:
+		valatask = self.valatask
+	except AttributeError:
+		valatask = self.valatask = self.create_task('valac')
+		self.init_vala_task()
+	valatask.inputs.append(node)
+
 @conf
 def find_valac(self, valac_name, min_version):
 	"""
