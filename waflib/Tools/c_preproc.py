@@ -747,17 +747,14 @@ def tokenize_private(s):
 			v = m(name)
 			if v:
 				if name == IDENT:
-					try:
-						g_optrans[v]
+					if v in g_optrans:
 						name = OP
-					except KeyError:
-						# c++ specific
-						if v.lower() == "true":
-							v = 1
-							name = NUM
-						elif v.lower() == "false":
-							v = 0
-							name = NUM
+					elif v.lower() == "true":
+						v = 1
+						name = NUM
+					elif v.lower() == "false":
+						v = 0
+						name = NUM
 				elif name == NUM:
 					if m('oct'):
 						v = int(v, 8)
