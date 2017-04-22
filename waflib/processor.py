@@ -16,7 +16,7 @@ except ImportError:
 try:
 	TimeoutExpired = subprocess.TimeoutExpired
 except AttributeError:
-	class TimeoutExpired(object):
+	class TimeoutExpired(Exception):
 		pass
 
 def run():

@@ -230,6 +230,7 @@ class XMLHandler(ContentHandler):
 	Parses ``.qrc`` files
 	"""
 	def __init__(self):
+		ContentHandler.__init__(self)
 		self.buf = []
 		self.files = []
 	def startElement(self, name, attrs):
@@ -455,7 +456,6 @@ def configure(self):
 		self.fatal('Could not build a simple Qt application')
 
 	# FreeBSD does not add /usr/local/lib and the pkg-config files do not provide it either :-/
-	from waflib import Utils
 	if Utils.unversioned_sys_platform() == 'freebsd':
 		frag = '#include <QApplication>\nint main(int argc, char **argv) { QApplication app(argc, argv); return NULL != (void*) (&app);}\n'
 		try:

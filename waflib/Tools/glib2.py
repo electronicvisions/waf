@@ -244,7 +244,7 @@ def add_settings_enums(self, namespace, filename_list):
 		raise Errors.WafError("Tried to add gsettings enums to %r more than once" % self.name)
 	self.settings_enum_namespace = namespace
 
-	if type(filename_list) != 'list':
+	if not isinstance(filename_list, list):
 		filename_list = [filename_list]
 	self.settings_enum_files = filename_list
 
