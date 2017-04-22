@@ -2,11 +2,12 @@ NEW IN WAF 1.9.10
 -----------------
 * Detect -pie and -rdynamic in parse_flags #1936
 * Fix Fortran module naming case
-* Improve Visual Studio 2017 compilers detection
-* Fix a few Vala warnings
+* Improve Visual Studio 2017 compilers detection (no vswhere/tools yet) #1925
+* Prevent unnecessary Vala rebuilds due to vapi file installation
+* Process .vapi files as input source files
 * Reflect the current build group in bld.current_group
 * Obtain NO_LOCK_IN_TOP/RUN/OUT from os.environ too
-* Xcode generator fixes and example update for version 8 #1939
+* Xcode9 generator fixes and example update #1939 #1943
 
 NEW IN WAF 1.9.9
 ----------------
