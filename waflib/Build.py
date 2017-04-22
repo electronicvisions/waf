@@ -781,25 +781,24 @@ class BuildContext(Context.Context):
 		:return: tasks which can be executed immediately
 		:rtype: generator returning lists of :py:class:`waflib.Task.Task`
 		"""
-		self.current_group = 0
-
 		if self.targets and self.targets != '*':
 			(self._min_grp, self._exact_tg) = self.get_targets()
 
-		global lazy_post
 		if self.post_mode != POST_LAZY:
-			while self.current_group < len(self.groups):
+			for i, g in enumerate(self.groups):
+				self.current_group = i
 				self.post_group()
-				self.current_group += 1
-			self.current_group = 0
 
-		while self.current_group < len(self.groups):
+		for i, g in enumerate(self.groups):
+			self.current_group = i
+
 			# first post the task generators for the group
 			if self.post_mode != POST_AT_ONCE:
 				self.post_group()
 
 			# then extract the tasks
 			tasks = self.get_tasks_group(self.current_group)
+
 			# if the constraints are set properly (ext_in/ext_out, before/after)
 			# the call to set_file_constraints may be removed (can be a 15% penalty on no-op rebuilds)
 			# (but leave set_file_constraints for the installation step)
@@ -812,7 +811,6 @@ class BuildContext(Context.Context):
 			self.cur_tasks = tasks
 			if tasks:
 				yield tasks
-			self.current_group += 1
 
 		while 1:
 			# the build stops once there are no tasks to process
