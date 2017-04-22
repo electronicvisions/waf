@@ -431,6 +431,32 @@ def gather_winphone_targets(conf, versions, version, vc_path, vsvars):
 		versions['winphone ' + version] = targets
 
 @conf
+def gather_vswhere_versions(conf, versions):
+	prg_path = os.environ.get('ProgramFiles(x86)', os.environ.get('ProgramFiles', ''))
+	vswhere = os.path.join(prg_path, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
+	if not os.path.exists(vswhere):
+		return None
+	args = [vswhere,
+					'-latest',
+					'-products', '*',
+					'-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64']
+	try:
+		inst_path_lines = conf.cmd_and_log(args).splitlines()
+		ver = None
+		vc_path = None
+		for line in inst_path_lines:
+			parts = line.split(': ', 1)
+			if len(parts) == 2:
+				if parts[0] == 'installationPath': vc_path = os.path.abspath(parts[1])
+				if parts[0] == 'installationVersion': ver = parts[1]
+		if ver and vc_path and os.path.exists(vc_path):
+			version = '.'.join(ver.split('.')[:2])
+			conf.gather_msvc_targets(versions, version, vc_path)
+	except Exception as e:
+		Logs.debug('msvc: gather_vswhere_versions: failure %s', str(e))
+
+
+@conf
 def gather_msvc_versions(conf, versions):
 	vc_paths = []
 	for (v,version,reg) in gather_msvc_detected_versions():
@@ -611,6 +637,7 @@ def get_msvc_versions(self):
 	self.gather_intel_composer_versions(dct)
 	self.gather_wsdk_versions(dct)
 	self.gather_msvc_versions(dct)
+	self.gather_vswhere_versions(dct)
 	Logs.debug('msvc: detected versions %r', list(dct.keys()))
 	return dct
 
