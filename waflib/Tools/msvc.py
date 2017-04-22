@@ -969,7 +969,7 @@ def make_winphone_app(self):
 	Insert configuration flags for windows phone applications (adds /ZW, /TP...)
 	"""
 	make_winapp(self, 'WINAPI_FAMILY_PHONE_APP')
-	conf.env.append_unique('LINKFLAGS', ['/NODEFAULTLIB:ole32.lib', 'PhoneAppModelHost.lib'])
+	self.env.append_unique('LINKFLAGS', ['/NODEFAULTLIB:ole32.lib', 'PhoneAppModelHost.lib'])
 
 @feature('winapp')
 @after_method('process_use')
