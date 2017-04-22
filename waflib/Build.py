@@ -1428,9 +1428,9 @@ class StepContext(BuildContext):
 			pattern = re.compile(pat)
 
 		def match(node, output):
-			if output == True and not out:
+			if output and not out:
 				return False
-			if output == False and not inn:
+			if not output and not inn:
 				return False
 
 			if anode:

@@ -585,9 +585,9 @@ class Context(ctx):
 		result = kw.get('result') or k[0]
 
 		defcolor = 'GREEN'
-		if result == True:
+		if result is True:
 			msg = 'ok'
-		elif result == False:
+		elif not result:
 			msg = 'not found'
 			defcolor = 'YELLOW'
 		else:
