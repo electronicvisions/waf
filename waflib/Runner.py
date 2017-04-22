@@ -500,7 +500,8 @@ class Parallel(object):
 		def visit(n, acc):
 			if isinstance(n, Task.TaskGroup):
 				for k in n.next:
-					visit(k)
+					visit(k, acc)
+				return
 			if tmp[n] == 0:
 				tmp[n] = 1
 				for k in reverse.get(n, []):
