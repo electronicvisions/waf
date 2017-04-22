@@ -215,7 +215,7 @@ def enhance_lib():
 		elif name == 'prepend':
 			raise Errors.WafError('env.prepend does not exist: use env.prepend_value')
 		if name in self.__slots__:
-			return object.__getattr__(self, name, default)
+			return super(ConfigSet.ConfigSet, self).__getattr__(name, default)
 		else:
 			return self[name]
 	ConfigSet.ConfigSet.__getattr__ = _getattr
