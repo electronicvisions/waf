@@ -785,13 +785,10 @@ class BuildContext(Context.Context):
 			(self._min_grp, self._exact_tg) = self.get_targets()
 
 		if self.post_mode != POST_LAZY:
-			for i, g in enumerate(self.groups):
-				self.current_group = i
+			for self.current_group, _ in enumerate(self.groups):
 				self.post_group()
 
-		for i, g in enumerate(self.groups):
-			self.current_group = i
-
+		for self.current_group, _ in enumerate(self.groups):
 			# first post the task generators for the group
 			if self.post_mode != POST_AT_ONCE:
 				self.post_group()
