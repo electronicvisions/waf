@@ -1004,9 +1004,6 @@ class c_parser(object):
 				continue
 
 			try:
-				ve = Logs.verbose
-				if ve:
-					Logs.debug('preproc: line is %s - %s state is %s', token, line, self.state)
 				state = self.state
 
 				# make certain we define the state if we are about to enter in an if block
