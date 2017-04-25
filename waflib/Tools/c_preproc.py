@@ -1037,8 +1037,6 @@ class c_parser(object):
 						state[-1] = accepted
 				elif token == 'include' or token == 'import':
 					(kind, inc) = extract_include(line, self.defs)
-					if ve:
-						Logs.debug('preproc: include found %s    (%s) ', inc, kind)
 					if kind == '"' or not strict_quotes:
 						self.current_file = self.tryfind(inc)
 						if token == 'import':
@@ -1104,4 +1102,3 @@ def scan(task):
 	tmp = c_parser(nodepaths)
 	tmp.start(task.inputs[0], task.env)
 	return (tmp.nodes, tmp.names)
-
