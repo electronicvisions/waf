@@ -194,15 +194,15 @@ def cpplint_includes(self, node):
 @TaskGen.feature('cpplint')
 @TaskGen.before_method('process_source')
 def post_cpplint(self):
-    if self.env.CPPLINT_SKIP:
-        return
-
     if not self.env.CPPLINT_INITIALIZED:
         for key, value in Options.options.__dict__.items():
             if not key.startswith('CPPLINT_') or self.env[key]:
                continue
             self.env[key] = value
         self.env.CPPLINT_INITIALIZED = True
+
+    if self.env.CPPLINT_SKIP:
+        return
 
     if not self.env.CPPLINT_OUTPUT in CPPLINT_RE:
         return
@@ -215,5 +215,4 @@ def post_cpplint(self):
         if not node:
             self.bld.fatal('Could not find %r' % src)
         self.create_task('cpplint', node)
-
 
