@@ -190,15 +190,16 @@ class eclipse(Build.BuildContext):
 					 'name': 'Gnu Make Builder',
 					 'superClass': cdt_bld + '.settings.default.builder'})
 
+		tool_index = 1;
 		for tool_name in ("Assembly", "GNU C++", "GNU C"):
 			tool = self.add(doc, toolChain, 'tool',
-					{'id': cdt_bld + '.settings.holder.1',
+					{'id': cdt_bld + '.settings.holder.' + str(tool_index),
 					 'name': tool_name,
 					 'superClass': cdt_bld + '.settings.holder'})
 			if cpppath or workspace_includes:
 				incpaths = cdt_bld + '.settings.holder.incpaths'
 				option = self.add(doc, tool, 'option',
-						{'id': incpaths+'.1',
+						{'id': incpaths + '.' +  str(tool_index),
 						 'name': 'Include Paths',
 						 'superClass': incpaths,
 						 'valueType': 'includePath'})
@@ -211,10 +212,12 @@ class eclipse(Build.BuildContext):
 								{'builtIn': 'false',
 								'value': '"%s"'%(i)})
 			if tool_name == "GNU C++" or tool_name == "GNU C":
-				self.add(doc,tool,'inputType',{ 'id':'org.eclipse.cdt.build.core.settings.holder.inType.1', \
+				self.add(doc,tool,'inputType',{ 'id':'org.eclipse.cdt.build.core.settings.holder.inType.' + str(tool_index), \
 					'languageId':'org.eclipse.cdt.core.gcc' if tool_name == "GNU C" else 'org.eclipse.cdt.core.g++','languageName':tool_name, \
 					'sourceContentType':'org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader', \
 					'superClass':'org.eclipse.cdt.build.core.settings.holder.inType' })
+			tool_index = tool_index + 1
+
 		if source_dirs:
 			sourceEntries = self.add(doc, config, 'sourceEntries')
 			for i in source_dirs:
