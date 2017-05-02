@@ -212,7 +212,7 @@ class eclipse(Build.BuildContext):
 								'value': '"%s"'%(i)})
 			if tool_name == "GNU C++" or tool_name == "GNU C":
 				self.add(doc,tool,'inputType',{ 'id':'org.eclipse.cdt.build.core.settings.holder.inType.1', \
-					'languageId':'org.eclipse.cdt.core.gcc','languageName':tool_name, \
+					'languageId':'org.eclipse.cdt.core.gcc' if tool_name == "GNU C" else 'org.eclipse.cdt.core.g++','languageName':tool_name, \
 					'sourceContentType':'org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader', \
 					'superClass':'org.eclipse.cdt.build.core.settings.holder.inType' })
 		if source_dirs:
