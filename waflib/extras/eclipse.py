@@ -78,7 +78,11 @@ class eclipse(Build.BuildContext):
 				incnodes = tg.to_incnodes(tg.to_list(getattr(tg, 'includes', [])) + tg.env['INCLUDES'])
 				for p in incnodes:
 					path = p.path_from(self.srcnode)
-					workspace_includes.append(path)
+
+					if (path.startswith("/")):
+						cpppath.append(path)
+					else:
+						workspace_includes.append(path)
 
 					if is_cc and path not in source_dirs:
 						source_dirs.append(path)
