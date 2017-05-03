@@ -278,7 +278,7 @@ class eclipse(Build.BuildContext):
 			prop = self.add(doc, pydevproject, 'pydev_pathproperty',
 					{'name':'org.python.pydev.PROJECT_SOURCE_PATH'})
 			for i in user_path:
-				self.add(doc, prop, 'path', '/'+appname+'/'+i)
+				self.add(doc, prop, 'path', '/${PROJECT_DIR_NAME}/'+i)
 
 		doc.appendChild(pydevproject)
 		return doc
