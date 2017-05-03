@@ -60,6 +60,14 @@ class eclipse(Build.BuildContext):
 				if not isinstance(tg, TaskGen.task_gen):
 					continue
 
+				# Add local Python modules paths to configuration so object resolving will work in IDE
+				if 'py' in tg.features:
+					pypath = tg.path.relpath()
+					py_installfrom = getattr(tg, 'install_from', None)
+					if py_installfrom:
+						pypath += os.sep + py_installfrom
+					pythonpath.append(pypath)
+
 				tg.post()
 				if not getattr(tg, 'link_task', None):
 					continue
