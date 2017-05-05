@@ -1156,6 +1156,8 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 			conf.env.DEST_BINFMT = 'elf'
 		elif isD('__WINNT__') or isD('__CYGWIN__') or isD('_WIN32'):
 			conf.env.DEST_BINFMT = 'pe'
+			if not conf.env.IMPLIBDIR:
+				conf.env.IMPLIBDIR = conf.env.LIBDIR # for .lib or .dll.a files
 			conf.env.LIBDIR = conf.env.BINDIR
 		elif isD('__APPLE__'):
 			conf.env.DEST_BINFMT = 'mac-o'
