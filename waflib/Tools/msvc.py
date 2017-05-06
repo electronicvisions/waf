@@ -113,7 +113,7 @@ def setup_msvc(conf, versiondict):
 		platforms=Utils.to_list(conf.env.MSVC_TARGETS) or [i for i,j in all_msvc_platforms+all_icl_platforms+all_wince_platforms]
 	desired_versions = getattr(Options.options, 'msvc_version', '').split(',')
 	if desired_versions == ['']:
-		desired_versions = conf.env.MSVC_VERSIONS or list(versiondict.keys())
+		desired_versions = conf.env.MSVC_VERSIONS or list(reversed(sorted(versiondict.keys())))
 
 	# Override lazy detection by evaluating after the fact.
 	lazy_detect = getattr(Options.options, 'msvc_lazy', True)
@@ -130,15 +130,23 @@ def setup_msvc(conf, versiondict):
 		conf.env.MSVC_INSTALLED_VERSIONS = versiondict
 
 	for version in desired_versions:
+		Logs.debug('msvc: detecting %r - %r', version, desired_versions)
 		try:
 			targets = versiondict[version]
 		except KeyError:
 			continue
+
+		seen = set()
 		for arch in platforms:
+			if arch in seen:
+				continue
+			else:
+				seen.add(arch)
 			try:
 				cfg = targets[arch]
 			except KeyError:
 				continue
+
 			cfg.evaluate()
 			if cfg.is_valid:
 				compiler,revision = version.rsplit(' ', 1)
@@ -377,10 +385,10 @@ class target_compiler(object):
 		(self.bindirs, self.incdirs, self.libdirs) = vs
 
 	def __str__(self):
-		return str((self.bindirs, self.incdirs, self.libdirs))
+		return str((self.compiler, self.cpu, self.version, self.bat_target, self.bat))
 
 	def __repr__(self):
-		return repr((self.bindirs, self.incdirs, self.libdirs))
+		return repr((self.compiler, self.cpu, self.version, self.bat_target, self.bat))
 
 @conf
 def gather_msvc_targets(conf, versions, version, vc_path):
@@ -398,7 +406,7 @@ def gather_msvc_targets(conf, versions, version, vc_path):
 	elif os.path.isfile(os.path.join(vc_path, 'Bin', 'vcvars32.bat')):
 		targets['x86'] = target_compiler(conf, 'msvc', 'x86', version, '', os.path.join(vc_path, 'Bin', 'vcvars32.bat'))
 	if targets:
-		versions['msvc ' + version] = targets
+		versions['msvc %s' % version] = targets
 
 @conf
 def gather_wince_targets(conf, versions, version, vc_path, vsvars, supported_platforms):
@@ -432,29 +440,30 @@ def gather_winphone_targets(conf, versions, version, vc_path, vsvars):
 
 @conf
 def gather_vswhere_versions(conf, versions):
-	prg_path = os.environ.get('ProgramFiles(x86)', os.environ.get('ProgramFiles', ''))
-	vswhere = os.path.join(prg_path, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
-	if not os.path.exists(vswhere):
-		return None
-	args = [vswhere,
-					'-latest',
-					'-products', '*',
-					'-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64']
 	try:
-		inst_path_lines = conf.cmd_and_log(args).splitlines()
-		ver = None
-		vc_path = None
-		for line in inst_path_lines:
-			parts = line.split(': ', 1)
-			if len(parts) == 2:
-				if parts[0] == 'installationPath': vc_path = os.path.abspath(parts[1])
-				if parts[0] == 'installationVersion': ver = parts[1]
-		if ver and vc_path and os.path.exists(vc_path):
-			version = '.'.join(ver.split('.')[:2])
-			conf.gather_msvc_targets(versions, version, vc_path)
-	except Exception as e:
-		Logs.debug('msvc: gather_vswhere_versions: failure %s', str(e))
+		import json
+	except ImportError:
+		Logs.error('Visual Studio 2017 detection requires Python 2.6')
+		return
 
+	prg_path = os.environ.get('ProgramFiles(x86)', os.environ.get('ProgramFiles', 'C:\\Program Files (x86)'))
+
+	vswhere = os.path.join(prg_path, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
+	args = [vswhere, '-products', '*', '-legacy', '-format', 'json']
+	try:
+		txt = conf.cmd_and_log(args)
+	except Errors.WafError as e:
+		Logs.debug('msvc: vswhere.exe failed %s', e)
+		return
+
+	arr = json.loads(txt)
+	arr.sort(key=lambda x: x['installationVersion'])
+	for entry in arr:
+		ver = entry['installationVersion']
+		ver = str('.'.join(ver.split('.')[:2]))
+		path = str(os.path.abspath(entry['installationPath']))
+		if os.path.exists(path) and ('msvc %s' % ver) not in versions:
+			conf.gather_msvc_targets(versions, ver, path)
 
 @conf
 def gather_msvc_versions(conf, versions):
