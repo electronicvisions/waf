@@ -1,3 +1,11 @@
+NEW IN WAF 1.9.11
+-----------------
+* Detect Visual Studio 2017 Build Tools using vswhere.exe #1945
+* Improve preprocessor performance on system paths in verbose mode #1950
+* Better installation defaults for windows import libraries #1860
+* cpplint enhancements: --cpplint-root #1953 #1956
+* eclipse project generator enhancements #1957 #1958
+
 NEW IN WAF 1.9.10
 -----------------
 * Detect -pie and -rdynamic in parse_flags #1936
