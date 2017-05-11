@@ -91,7 +91,7 @@ def configure(conf):
         conf.end_msg('not found, skipping it.')
 
 
-class cpplint_formatter(Logs.formatter):
+class cpplint_formatter(Logs.formatter, object):
     def __init__(self, fmt):
         logging.Formatter.__init__(self, CPPLINT_FORMAT)
         self.fmt = fmt
@@ -105,7 +105,7 @@ class cpplint_formatter(Logs.formatter):
         return super(cpplint_formatter, self).format(rec)
 
 
-class cpplint_handler(Logs.log_handler):
+class cpplint_handler(Logs.log_handler, object):
     def __init__(self, stream=sys.stderr, **kw):
         super(cpplint_handler, self).__init__(stream, **kw)
         self.stream = stream
