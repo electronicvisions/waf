@@ -715,6 +715,8 @@ class subst_pc(Task.Task):
 		if getattr(self.generator, 'is_copy', None):
 			for i, x in enumerate(self.outputs):
 				x.write(self.inputs[i].read('rb'), 'wb')
+				stat = os.stat(self.inputs[i].abspath()) # Preserve mtime of the copy
+				os.utime(self.outputs[i].abspath(), (stat.st_atime, stat.st_mtime))
 			self.force_permissions()
 			return None
 
