@@ -456,6 +456,8 @@ def gather_vswhere_versions(conf, versions):
 		Logs.debug('msvc: vswhere.exe failed %s', e)
 		return
 
+	if sys.version_info[0] < 3:
+		txt = txt.decode(sys.stdout.encoding or 'windows-1252')
 	arr = json.loads(txt)
 	arr.sort(key=lambda x: x['installationVersion'])
 	for entry in arr:
