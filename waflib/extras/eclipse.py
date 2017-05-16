@@ -51,6 +51,7 @@ class eclipse(Build.BuildContext):
 		"""
 		source_dirs = []
 		cpppath = self.env['CPPPATH']
+		javasrcpath = []
 		if sys.platform != 'win32':
 			cpppath += STANDARD_INCLUDES
 		Logs.warn('Generating Eclipse CDT project files')
@@ -67,6 +68,18 @@ class eclipse(Build.BuildContext):
 					if py_installfrom:
 						pypath += os.sep + py_installfrom
 					pythonpath.append(pypath)
+
+
+				# Add Java source directories so object resolving works in IDE
+				if 'java' in tg.features:
+					java_src = tg.path.relpath()
+					java_srcdir = getattr(tg, 'srcdir', None)
+					if java_srcdir:
+						if java_src == '.':
+							java_src = java_srcdir
+						else:
+							java_src += os.sep + java_srcdir
+					javasrcpath.append(java_src)
 
 				tg.post()
 				if not getattr(tg, 'link_task', None):
@@ -105,6 +118,9 @@ class eclipse(Build.BuildContext):
 		project = self.impl_create_pydevproject(appname, sys.path, pythonpath)
 		self.srcnode.make_node('.pydevproject').write(project.toprettyxml())
 
+		project = self.impl_create_javaproject(javasrcpath)
+		self.srcnode.make_node('.classpath').write(project.toprettyxml())
+
 	def impl_create_project(self, executable, appname):
 		doc = Document()
 		projectDescription = doc.createElement('projectDescription')
@@ -137,6 +153,7 @@ class eclipse(Build.BuildContext):
 			self.add(doc, natures, 'nature', oe_cdt + '.' + n)
 
 		self.add(doc, natures, 'nature', 'org.python.pydev.pythonNature')
+		self.add(doc, natures, 'nature', 'org.eclipse.jdt.core.javanature')
 
 		doc.appendChild(projectDescription)
 		return doc
@@ -289,6 +306,20 @@ class eclipse(Build.BuildContext):
 				self.add(doc, prop, 'path', '/${PROJECT_DIR_NAME}/'+i)
 
 		doc.appendChild(pydevproject)
+		return doc
+
+	def impl_create_javaproject(self, javasrcpath):
+		# create a .classpath file for java usage
+		doc = Document()
+		javaproject = doc.createElement('classpath')
+		if javasrcpath:
+			for i in javasrcpath:
+				self.add(doc, javaproject, 'classpathentry',
+					{'kind': 'src', 'path': i})
+
+		self.add(doc, javaproject, 'classpathentry', {'kind': 'con', 'path': 'org.eclipse.jdt.launching.JRE_CONTAINER'})
+		self.add(doc, javaproject, 'classpathentry', {'kind': 'output', 'path': Context.g_module.out})
+		doc.appendChild(javaproject)
 		return doc
 
 	def addDictionary(self, doc, parent, k, v):
