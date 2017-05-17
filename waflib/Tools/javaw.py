@@ -107,6 +107,7 @@ def apply_java(self):
 		tsk.env.append_value('JAVACFLAGS', ['-sourcepath', names])
 
 @feature('javac')
+@before_method('propagate_uselib_vars')
 @after_method('apply_java')
 def use_javac_files(self):
 	"""
