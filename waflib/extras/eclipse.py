@@ -85,16 +85,9 @@ class eclipse(Build.BuildContext):
 				if not getattr(tg, 'link_task', None):
 					continue
 
-				#l = Utils.to_list(getattr(tg, "includes", ''))
-				#sources = Utils.to_list(getattr(tg, 'source', ''))
 				features = Utils.to_list(getattr(tg, 'features', ''))
 
 				is_cc = 'c' in features or 'cxx' in features
-
-				#bldpath = tg.path.bldpath()
-				#base = os.path.normpath(os.path.join(self.bldnode.name, tg.path.srcpath()))
-				#if is_cc:
-				#	sources_dirs = set([src.parent for src in tg.to_nodes(sources)])
 
 				incnodes = tg.to_incnodes(tg.to_list(getattr(tg, 'includes', [])) + tg.env['INCLUDES'])
 				for p in incnodes:
@@ -115,7 +108,7 @@ class eclipse(Build.BuildContext):
 		project = self.impl_create_cproject(sys.executable, waf, appname, workspace_includes, cpppath, source_dirs)
 		self.srcnode.make_node('.cproject').write(project.toprettyxml())
 
-		project = self.impl_create_pydevproject(appname, sys.path, pythonpath)
+		project = self.impl_create_pydevproject(sys.path, pythonpath)
 		self.srcnode.make_node('.pydevproject').write(project.toprettyxml())
 
 		project = self.impl_create_javaproject(javasrcpath)
@@ -245,7 +238,7 @@ class eclipse(Build.BuildContext):
 					'languageId':'org.eclipse.cdt.core.gcc' if tool_name == "GNU C" else 'org.eclipse.cdt.core.g++','languageName':tool_name, \
 					'sourceContentType':'org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader', \
 					'superClass':'org.eclipse.cdt.build.core.settings.holder.inType' })
-			tool_index = tool_index + 1
+			tool_index += 1
 
 		if source_dirs:
 			sourceEntries = self.add(doc, config, 'sourceEntries')
@@ -281,7 +274,7 @@ class eclipse(Build.BuildContext):
 		doc.appendChild(cproject)
 		return doc
 
-	def impl_create_pydevproject(self, appname, system_path, user_path):
+	def impl_create_pydevproject(self, system_path, user_path):
 		# create a pydevproject file
 		doc = Document()
 		doc.appendChild(doc.createProcessingInstruction('eclipse-pydev', 'version="1.0"'))
