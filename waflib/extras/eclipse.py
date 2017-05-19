@@ -49,6 +49,7 @@ class eclipse(Build.BuildContext):
 			  "Unresolved Inclusion" errors in the Eclipse editor
 		@param pythonpath Optional project specific python paths
 		"""
+		hasc = hasjava = haspython = False
 		source_dirs = []
 		cpppath = self.env['CPPPATH']
 		javasrcpath = []
@@ -68,6 +69,7 @@ class eclipse(Build.BuildContext):
 					if py_installfrom:
 						pypath += os.sep + py_installfrom
 					pythonpath.append(pypath)
+					haspython = True
 
 
 				# Add Java source directories so object resolving works in IDE
@@ -80,6 +82,7 @@ class eclipse(Build.BuildContext):
 						else:
 							java_src += os.sep + java_srcdir
 					javasrcpath.append(java_src)
+					hasjava = True
 
 				tg.post()
 				if not getattr(tg, 'link_task', None):
@@ -101,20 +104,25 @@ class eclipse(Build.BuildContext):
 					if is_cc and path not in source_dirs:
 						source_dirs.append(path)
 
-		project = self.impl_create_project(sys.executable, appname)
+					hasc = True
+
+		project = self.impl_create_project(sys.executable, appname, hasc, hasjava, haspython)
 		self.srcnode.make_node('.project').write(project.toprettyxml())
 
-		waf = os.path.abspath(sys.argv[0])
-		project = self.impl_create_cproject(sys.executable, waf, appname, workspace_includes, cpppath, source_dirs)
-		self.srcnode.make_node('.cproject').write(project.toprettyxml())
+		if hasc:
+			waf = os.path.abspath(sys.argv[0])
+			project = self.impl_create_cproject(sys.executable, waf, appname, workspace_includes, cpppath, source_dirs)
+			self.srcnode.make_node('.cproject').write(project.toprettyxml())
 
-		project = self.impl_create_pydevproject(sys.path, pythonpath)
-		self.srcnode.make_node('.pydevproject').write(project.toprettyxml())
+		if haspython:
+			project = self.impl_create_pydevproject(sys.path, pythonpath)
+			self.srcnode.make_node('.pydevproject').write(project.toprettyxml())
 
-		project = self.impl_create_javaproject(javasrcpath)
-		self.srcnode.make_node('.classpath').write(project.toprettyxml())
+		if hasjava:
+			project = self.impl_create_javaproject(javasrcpath)
+			self.srcnode.make_node('.classpath').write(project.toprettyxml())
 
-	def impl_create_project(self, executable, appname):
+	def impl_create_project(self, executable, appname, hasc, hasjava, haspython):
 		doc = Document()
 		projectDescription = doc.createElement('projectDescription')
 		self.add(doc, projectDescription, 'name', appname)
@@ -136,17 +144,21 @@ class eclipse(Build.BuildContext):
 			self.addDictionary(doc, arguments, k, v)
 
 		natures = self.add(doc, projectDescription, 'natures')
-		nature_list = """
-			core.ccnature
-			managedbuilder.core.ScannerConfigNature
-			managedbuilder.core.managedBuildNature
-			core.cnature
-		""".split()
-		for n in nature_list:
-			self.add(doc, natures, 'nature', oe_cdt + '.' + n)
 
-		self.add(doc, natures, 'nature', 'org.python.pydev.pythonNature')
-		self.add(doc, natures, 'nature', 'org.eclipse.jdt.core.javanature')
+		if hasc:
+			nature_list = """
+				core.ccnature
+				managedbuilder.core.ScannerConfigNature
+				managedbuilder.core.managedBuildNature
+				core.cnature
+			""".split()
+			for n in nature_list:
+				self.add(doc, natures, 'nature', oe_cdt + '.' + n)
+
+		if haspython:
+			self.add(doc, natures, 'nature', 'org.python.pydev.pythonNature')
+		if hasjava:
+			self.add(doc, natures, 'nature', 'org.eclipse.jdt.core.javanature')
 
 		doc.appendChild(projectDescription)
 		return doc
