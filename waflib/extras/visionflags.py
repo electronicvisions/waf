@@ -39,8 +39,8 @@ class CommonTraits(CompilerTraits):
 		'coverage':           '-O0 --coverage'.split(),
 		'gerrit':             '-O0'.split(),
 		'debug':              '-Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
-		'release_with_debug': '-O2 -g -fno-omit-frame-pointer'.split(),
-		'release':            '-O2'.split(),
+		'release_with_debug': '-O2 -g -fno-omit-frame-pointer -fno-strict-aliasing'.split(),
+		'release':            '-O2 -fno-strict-aliasing'.split(),
 	}
 	ldflags = {
 		'coverage':           '--coverage'.split(),
