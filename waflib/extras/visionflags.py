@@ -13,6 +13,7 @@ from waflib import Logs, Options, Errors
 
 class CompilerTraits(object):
 	profiles = (
+		'coverage',              # coverage
 		'gerrit',                # gerrit, build fast, warn a lot
 		'debug',                 # optimized for debugging
 		'release',               # performance-optimized
@@ -35,10 +36,14 @@ class CompilerTraits(object):
 class CommonTraits(CompilerTraits):
 	warning_flags = '-Wall -Wextra -pedantic'.split()
 	cflags = {
+		'coverage':           '-O0 --coverage'.split(),
 		'gerrit':             '-O0'.split(),
 		'debug':              '-Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
 		'release_with_debug': '-O2 -g -fno-omit-frame-pointer'.split(),
 		'release':            '-O2'.split(),
+	}
+	ldflags = {
+		'coverage':           '--coverage'.split(),
 	}
 
 	def __init__(self, version, linker=None):
@@ -61,9 +66,11 @@ class CommonTraits(CompilerTraits):
 		return []
 
 	def get_linkflags(self, build_profile):
+		linkflags = []
 		if self.linker is not None:
-			return ['-fuse-ld={}'.format(self.linker)]
-		return []
+			linkflags += ['-fuse-ld={}'.format(self.linker)]
+		linkflags += self.ldflags.get(build_profile, [])
+		return linkflags
 
 
 class GccTraits(CommonTraits):
