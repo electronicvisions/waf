@@ -592,7 +592,7 @@ def configure(conf):
 		v.NOPYCACHE=Options.options.nopycache
 
 	if not v.PYTHON:
-		v.PYTHON = getattr(Options.options, 'python', None) or sys.executable
+		v.PYTHON = [getattr(Options.options, 'python', None) or sys.executable]
 	v.PYTHON = Utils.to_list(v.PYTHON)
 	conf.find_program('python', var='PYTHON')
 
