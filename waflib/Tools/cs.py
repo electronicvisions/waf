@@ -124,10 +124,16 @@ class mcs(Task.Task):
 	color   = 'YELLOW'
 	run_str = '${MCS} ${CSTYPE} ${CSFLAGS} ${ASS_ST:ASSEMBLIES} ${RES_ST:RESOURCES} ${OUT} ${SRC}'
 
-	def exec_command(self, cmd, **kw):
-		if '/noconfig' in cmd:
-			raise ValueError('/noconfig is not allowed when using response files, check your flags!')
-		return super(self.__class__, self).exec_command(cmd, **kw)
+	def split_argfile(self, cmd):
+		inline = [cmd[0]]
+		infile = []
+		for x in cmd[1:]:
+			# csc doesn't want /noconfig in @file
+			if x.lower() == '/noconfig':
+				inline.append(x)
+			else:
+				infile.append(self.quote_flag(x))
+		return (inline, infile)
 
 def configure(conf):
 	"""
