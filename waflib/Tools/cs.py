@@ -116,6 +116,29 @@ def debug_cs(self):
 		val = ['/debug-']
 	self.env.append_value('CSFLAGS', val)
 
+@feature('cs')
+@after_method('debug_cs')
+def doc_cs(self):
+	"""
+	The C# targets may create .xml documentation files::
+
+		def build(bld):
+			bld(features='cs', source='My.cs', bintype='library', gen='my.dll', csdoc=True)
+			# csdoc is a boolean value
+	"""
+	csdoc = getattr(self, 'csdoc', self.env.CSDOC)
+	if not csdoc:
+		return
+
+	node = self.cs_task.outputs[0]
+	out = node.change_ext('.xml')
+	self.cs_task.outputs.append(out)
+
+	if getattr(self, 'install_task', None):
+		self.doc_install_task = self.add_install_files(
+			install_to=self.install_task.install_to, install_from=out)
+
+	self.env.append_value('CSFLAGS', '/doc:%s' % out.abspath())
 
 class mcs(Task.Task):
 	"""
