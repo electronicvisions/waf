@@ -103,10 +103,10 @@ def debug_cs(self):
 	else:
 		out = node.change_ext('.pdb')
 	self.cs_task.outputs.append(out)
-	try:
-		self.install_task.source.append(out)
-	except AttributeError:
-		pass
+
+	if getattr(self, 'install_task', None):
+		self.pdb_install_task = self.add_install_files(
+			install_to=self.install_task.install_to, install_from=out)
 
 	if csdebug == 'pdbonly':
 		val = ['/debug+', '/debug:pdbonly']
