@@ -328,7 +328,7 @@ def make_logger(path, name):
 	:type name: string
 	"""
 	logger = logging.getLogger(name)
-	hdlr = logging.FileHandler(path, 'w')
+	hdlr = logging.FileHandler(path, 'w', encoding=sys.stdout.encoding)
 	formatter = logging.Formatter('%(message)s')
 	hdlr.setFormatter(formatter)
 	logger.addHandler(hdlr)
