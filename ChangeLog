@@ -1,3 +1,14 @@
+NEW IN WAF 1.9.12
+-----------------
+* Work around Python 3.6 encoding issues #1974
+* Handle spaces in python path detection on windows #1973
+* Set a better default path for windows import libraries #1959
+* Fix variable propagation for javac targets #1969
+* Various cpplint enhancements #1961 #1963
+* Various eclipse project generator enhancements #1967 #1968 #1970
+* Various C# enhancements #1975 #1976 #1977
+* Override resx namespaces #1978
+
 NEW IN WAF 1.9.11
 -----------------
 * Detect Visual Studio 2017 Build Tools using vswhere.exe #1945
