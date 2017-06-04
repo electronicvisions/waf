@@ -1,4 +1,4 @@
-NEW IN WAF 2.0.0 (preview 3)
+NEW IN WAF 2.0.0 (preview 4)
 ----------------------------
 * Provide a new priority system to improve scalability on complex builds
 * Provide TaskGroup objects to improve scalability on complex builds
