@@ -1,6 +1,6 @@
 NEW IN WAF 1.9.12
 -----------------
-* Work around Python 3.6 encoding issues #1974
+* Work around config.log encoding issues on windows/Python3.6/console #1974
 * Handle spaces in python path detection on windows #1973
 * Set a better default path for windows import libraries #1959
 * Fix variable propagation for javac targets #1969
