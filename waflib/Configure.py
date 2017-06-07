@@ -398,7 +398,7 @@ def find_file(self, filename, path_list=[]):
 
 	:param filename: name of the file to search for
 	:param path_list: list of directories to search
-	:return: the first occurrence filename or '' if filename could not be found
+	:return: the first matching filename; else a configuration exception is raised
 	"""
 	for n in Utils.to_list(filename):
 		for d in Utils.to_list(path_list):
