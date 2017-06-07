@@ -213,8 +213,12 @@ class Parallel(object):
 
 	def insert_with_prio(self, tsk):
 		# TODO the deque interface has insert in python 3.5 :-/
-		if self.outstanding and tsk.prio >= self.outstanding[0].prio:
-			self.outstanding.appendleft(tsk)
+		if self.outstanding:
+			try:
+				if tsk.prio >= self.outstanding[0].prio:
+					self.outstanding.appendleft(tsk)
+			except AttributeError:
+				self.outstanding.appendleft(tsk)
 		else:
 			self.outstanding.append(tsk)
 
@@ -230,7 +234,7 @@ class Parallel(object):
 		:type tsk: :py:attr:`waflib.Task.Task`
 		"""
 		if getattr(tsk, 'more_tasks', None):
-			ready, waiting = self.prio_and_split(tsk.tasks)
+			ready, waiting = self.prio_and_split(tsk.more_tasks)
 			for k in ready:
 				# TODO could be better, but we will have 1 task in general?
 				self.insert_with_prio(k)
