@@ -105,9 +105,6 @@ class Parallel(object):
 		self.outstanding = Utils.deque()
 		"""List of :py:class:`waflib.Task.Task` that may be ready to be executed"""
 
-		self.frozen = set()
-		"""Set of :py:class:`waflib.Task.Task` that need other tasks to complete first"""
-
 		self.incomplete = Utils.deque()
 		"""List of :py:class:`waflib.Task.Task` with incomplete dependencies"""
 
@@ -207,7 +204,7 @@ class Parallel(object):
 				# We cannot use a priority queue because the implementation
 				# must be able to handle incomplete dependencies
 				self.outstanding.extend(ready)
-				self.frozen.update(waiting)
+				self.incomplete.extend(waiting)
 				self.total = self.bld.total()
 				break
 
@@ -240,22 +237,22 @@ class Parallel(object):
 			for k in ready:
 				# TODO could be better, but we will have 1 task in general?
 				self.insert_with_prio(k)
-			self.frozen.update(waiting)
+			self.incomplete.update(waiting)
 			self.total += len(tsk.more_tasks)
 
 	def mark_finished(self, tsk):
-		# we assume that frozen tasks will be consumed as the build goes
+		# we assume that incomplete tasks can be consumed as the build goes
 
 		def try_unfreeze(x):
-			# DAG ancestors are likely to be frozen
-			if x in self.frozen:
+			# DAG ancestors are likely to be in the incomplete list
+			if x in self.incomplete:
 				# TODO remove dependencies to free some memory?
 				# x.run_after.remove(tsk)
 				for k in x.run_after:
 					if not k.hasrun:
 						break
 				else:
-					self.frozen.remove(x)
+					self.incomplete.remove(x)
 					self.insert_with_prio(x)
 
 		if tsk in self.revdeps:
@@ -426,6 +423,7 @@ class Parallel(object):
 
 		self.ready.put(None)
 		assert (self.count == 0 or self.stop)
+		assert not self.incomplete
 
 	def prio_and_split(self, tasks):
 		"""
