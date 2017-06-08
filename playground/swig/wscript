@@ -169,7 +169,7 @@ def exec_test_python(bld):
 		proc = subprocess.Popen('''
 PYTHONPATH=$PYTHONPATH:build/extend/python
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:build/extend/python:build/extend
-python -c "import test_swig_waf; a=test_swig_waf.A(); print 'Testing: a.add(2, 3) ->', a.add(2, 3)"
+python -c "import test_swig_waf; a=test_swig_waf.A(); print('Testing: a.add(2, 3) -> %r' % a.add(2, 3))"
 '''.replace('\n', ' '), shell=True)
 		proc.wait()
 	except:
