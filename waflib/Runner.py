@@ -217,6 +217,8 @@ class Parallel(object):
 			try:
 				if tsk.prio >= self.outstanding[0].prio:
 					self.outstanding.appendleft(tsk)
+				else:
+					self.outstanding.append(tsk)
 			except AttributeError:
 				self.outstanding.appendleft(tsk)
 		else:
