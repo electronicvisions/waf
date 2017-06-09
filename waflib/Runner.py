@@ -237,7 +237,7 @@ class Parallel(object):
 			for k in ready:
 				# TODO could be better, but we will have 1 task in general?
 				self.insert_with_prio(k)
-			self.incomplete.update(waiting)
+			self.incomplete.extend(waiting)
 			self.total += len(tsk.more_tasks)
 
 	def mark_finished(self, tsk):
