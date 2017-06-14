@@ -29,6 +29,8 @@ class PriorityTasks(object):
 		self.lst = []
 	def append(self, task):
 		heapq.heappush(self.lst, task)
+	def appendleft(self, task):
+		heapq.heappush(self.lst, task)
 	def pop(self):
 		return heapq.heappop(self.lst)
 	def extend(self, lst):
@@ -41,7 +43,7 @@ class PriorityTasks(object):
 				self.lst = lst
 				heapq.heapify(lst)
 			else:
-				self.lst = lst.queue
+				self.lst = lst.lst
 
 class Consumer(Utils.threading.Thread):
 	"""

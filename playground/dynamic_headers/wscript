@@ -56,7 +56,7 @@ def runnable_status(self):
 					tsk = mock_tasks[m_node]
 				except KeyError:
 					tsk = mock_tasks[m_node] = self.generator.create_task('mock', [h_node], [m_node])
-					bld.producer.outstanding.appendleft(tsk)
+					bld.producer.outstanding.append(tsk)
 					bld.producer.total += 1
 
 					# preprocessor cache :-/
@@ -86,7 +86,7 @@ def runnable_status(self):
 					tsk = mock_tasks[x]
 				except KeyError:
 					tsk = mock_tasks[x] = self.generator.create_task('mock', [h_node], [x])
-					bld.producer.outstanding.appendleft(tsk)
+					bld.producer.outstanding.append(tsk)
 					bld.producer.total += 1
 
 				add = True

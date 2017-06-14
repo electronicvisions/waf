@@ -113,7 +113,7 @@ def swig_c(self):
 	c_tsk.set_run_after(self)
 
 	ge = self.generator.bld.producer
-	ge.outstanding.appendleft(c_tsk)
+	ge.outstanding.append(c_tsk)
 	ge.total += 1
 
 	try:

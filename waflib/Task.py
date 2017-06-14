@@ -178,7 +178,6 @@ class Task(evil):
 		"""Set of tasks that must be executed before this one"""
 
 		self.__order = 0
-		"""Task build order; used internally"""
 
 	def __lt__(self, other):
 		return self.__order > other.__order or id(self) > id(other)
