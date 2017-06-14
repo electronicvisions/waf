@@ -422,9 +422,10 @@ class Parallel(object):
 			self.get_out()
 
 		self.ready.put(None)
-		assert (self.count == 0 or self.stop)
-		assert not self.postponed
-		assert (not self.incomplete or self.stop)
+		if not self.stop:
+			assert not self.count
+			assert not self.postponed
+			assert not self.incomplete
 
 	def prio_and_split(self, tasks):
 		"""
