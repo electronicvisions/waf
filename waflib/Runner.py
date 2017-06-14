@@ -105,8 +105,11 @@ class Parallel(object):
 		self.outstanding = Utils.deque()
 		"""List of :py:class:`waflib.Task.Task` that may be ready to be executed"""
 
-		self.incomplete = Utils.deque()
-		"""List of :py:class:`waflib.Task.Task` with incomplete dependencies"""
+		self.postponed = Utils.deque()
+		"""List of :py:class:`waflib.Task.Task` which are not ready to run for non-DAG reasons"""
+
+		self.incomplete = set()
+		"""List of :py:class:`waflib.Task.Task` waiting for dependent tasks to complete (DAG)"""
 
 		self.ready = Queue(0)
 		"""List of :py:class:`waflib.Task.Task` ready to be executed by consumers"""
@@ -156,16 +159,16 @@ class Parallel(object):
 
 	def postpone(self, tsk):
 		"""
-		Adds the task to the list :py:attr:`waflib.Runner.Parallel.incomplete`.
+		Adds the task to the list :py:attr:`waflib.Runner.Parallel.postponed`.
 		The order is scrambled so as to consume as many tasks in parallel as possible.
 
 		:param tsk: task instance
 		:type tsk: :py:class:`waflib.Task.Task`
 		"""
 		if random.randint(0, 1):
-			self.incomplete.appendleft(tsk)
+			self.postponed.appendleft(tsk)
 		else:
-			self.incomplete.append(tsk)
+			self.postponed.append(tsk)
 
 	def refill_task_list(self):
 		"""
@@ -177,7 +180,7 @@ class Parallel(object):
 		while not self.outstanding:
 			if self.count:
 				self.get_out()
-			elif self.incomplete:
+			elif self.postponed:
 				try:
 					cond = self.deadlock == self.processed
 				except AttributeError:
@@ -185,26 +188,26 @@ class Parallel(object):
 				else:
 					if cond:
 						msg = 'check the build order for the tasks'
-						for tsk in self.incomplete:
+						for tsk in self.postponed:
 							if not tsk.run_after:
 								msg = 'check the methods runnable_status'
 								break
 						lst = []
-						for tsk in self.incomplete:
+						for tsk in self.postponed:
 							lst.append('%s\t-> %r' % (repr(tsk), [id(x) for x in tsk.run_after]))
 						raise Errors.WafError('Deadlock detected: %s%s' % (msg, ''.join(lst)))
 				self.deadlock = self.processed
 
-			if self.incomplete:
-				self.outstanding.extend(self.incomplete)
-				self.incomplete.clear()
+			if self.postponed:
+				self.outstanding.extend(self.postponed)
+				self.postponed.clear()
 			elif not self.count:
 				tasks = next(self.biter)
 				ready, waiting = self.prio_and_split(tasks)
 				# We cannot use a priority queue because the implementation
-				# must be able to handle incomplete dependencies
+				# must be able to handle postponed dependencies
 				self.outstanding.extend(ready)
-				self.incomplete.extend(waiting)
+				self.postponed.extend(waiting)
 				self.total = self.bld.total()
 				break
 
@@ -226,8 +229,7 @@ class Parallel(object):
 		If a task provides :py:attr:`waflib.Task.Task.more_tasks`, then the tasks contained
 		in that list are added to the current build and will be processed before the next build group.
 
-		Assume that the task is done, so that task priorities do not need
-		to be re-calculated
+		The priorities for dependent tasks are not calculated globally
 
 		:param tsk: task instance
 		:type tsk: :py:attr:`waflib.Task.Task`
@@ -237,14 +239,12 @@ class Parallel(object):
 			for k in ready:
 				# TODO could be better, but we will have 1 task in general?
 				self.insert_with_prio(k)
-			self.incomplete.extend(waiting)
+			self.incomplete.update(waiting)
 			self.total += len(tsk.more_tasks)
 
 	def mark_finished(self, tsk):
-		# we assume that incomplete tasks can be consumed as the build goes
-
 		def try_unfreeze(x):
-			# DAG ancestors are likely to be in the incomplete list
+			# DAG ancestors are likely to be in the incomplete set
 			if x in self.incomplete:
 				# TODO remove dependencies to free some memory?
 				# x.run_after.remove(tsk)
@@ -423,7 +423,8 @@ class Parallel(object):
 
 		self.ready.put(None)
 		assert (self.count == 0 or self.stop)
-		assert not self.incomplete
+		assert not self.postponed
+		assert (not self.incomplete or self.stop)
 
 	def prio_and_split(self, tasks):
 		"""
@@ -432,7 +433,8 @@ class Parallel(object):
 		waiting for other tasks to complete.
 
 		The priority system is really meant as an optional layer for optimization:
-		dependency cycles are found more quickly, and build should be more efficient
+		dependency cycles are found quickly, and builds should be more efficient.
+		A high priority number means that a task is processed first.
 
 		:return: A pair of task lists
 		:rtype: tuple
@@ -456,7 +458,7 @@ class Parallel(object):
 				else:
 					reverse[k].add(x)
 
-		# the priority number is not the tree size
+		# the priority number is not the tree depth
 		def visit(n):
 			if isinstance(n, Task.TaskGroup):
 				return sum(visit(k) for k in n.next)
