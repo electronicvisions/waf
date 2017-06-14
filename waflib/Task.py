@@ -153,7 +153,7 @@ class Task(evil):
 	This may be useful for certain extensions but it can a lot of memory.
 	"""
 
-	__slots__ = ('hasrun', 'generator', 'env', 'inputs', 'outputs', 'dep_nodes', 'run_after')
+	__slots__ = ('hasrun', 'generator', 'env', 'inputs', 'outputs', 'dep_nodes', 'run_after', '__order')
 
 	def __init__(self, *k, **kw):
 		self.hasrun = NOT_RUN
@@ -176,6 +176,18 @@ class Task(evil):
 
 		self.run_after = set()
 		"""Set of tasks that must be executed before this one"""
+
+		self.__order = 0
+		"""Task build order; used internally"""
+
+	def __lt__(self, other):
+		return self.__order > other.__order or id(self) > id(other)
+	def __le__(self, other):
+		return self.__order >= other.__order or id(self) >= id(other)
+	def __gt__(self, other):
+		return self.__order < other.__order or id(self) < id(other)
+	def __ge__(self, other):
+		return self.__order <= other.__order or id(self) <= id(other)
 
 	def get_cwd(self):
 		"""
@@ -213,7 +225,7 @@ class Task(evil):
 		"""
 		The default priority for this task instance
 
-		:return: a positive numeric value representing the urgency of running this task early
+		:return: a numeric value representing the urgency of running this task (the higher, the sooner)
 		:rtype: int
 		"""
 		return getattr(self, 'weight', 0)
