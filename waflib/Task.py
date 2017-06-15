@@ -238,7 +238,7 @@ class Task(evil):
 		:return: the priority value
 		:rtype: a tuple of numeric values
 		"""
-		return (self.weight + self.prio_order, - self.generator.tg_idx_count)
+		return (self.weight + self.prio_order, - getattr(self.generator, 'tg_idx_count', 0))
 
 	def split_argfile(self, cmd):
 		"""
