@@ -153,7 +153,20 @@ class Task(evil):
 	This may be useful for certain extensions but it can a lot of memory.
 	"""
 
-	__slots__ = ('hasrun', 'generator', 'env', 'inputs', 'outputs', 'dep_nodes', 'run_after', '__order')
+	weight = 0
+	"""Optional weight to tune the priority for task instances.
+	The higher, the earlier. The weight only applies to single task objects."""
+
+	tree_weight = 0
+	"""Optional weight to tune the priority of task instances and whole subtrees.
+	The higher, the earlier."""
+
+	prio_order = 0
+	"""Priority order set by the scheduler on instances during the build phase.
+	You most likely do not need to set it.
+	"""
+
+	__slots__ = ('hasrun', 'generator', 'env', 'inputs', 'outputs', 'dep_nodes', 'run_after')
 
 	def __init__(self, *k, **kw):
 		self.hasrun = NOT_RUN
@@ -177,16 +190,14 @@ class Task(evil):
 		self.run_after = set()
 		"""Set of tasks that must be executed before this one"""
 
-		self.__order = 0
-
 	def __lt__(self, other):
-		return self.__order > other.__order or id(self) > id(other)
+		return self.priority() > other.priority()
 	def __le__(self, other):
-		return self.__order >= other.__order or id(self) >= id(other)
+		return self.priority() >= other.priority()
 	def __gt__(self, other):
-		return self.__order < other.__order or id(self) < id(other)
+		return self.priority() < other.priority()
 	def __ge__(self, other):
-		return self.__order <= other.__order or id(self) <= id(other)
+		return self.priority() <= other.priority()
 
 	def get_cwd(self):
 		"""
@@ -222,12 +233,12 @@ class Task(evil):
 
 	def priority(self):
 		"""
-		The default priority for this task instance
+		Priority of execution; the higher, the earlier
 
-		:return: a numeric value representing the urgency of running this task (the higher, the sooner)
-		:rtype: int
+		:return: the priority value
+		:rtype: a tuple of numeric values
 		"""
-		return getattr(self, 'weight', 0)
+		return (self.weight + self.prio_order, - self.generator.tg_idx_count)
 
 	def split_argfile(self, cmd):
 		"""

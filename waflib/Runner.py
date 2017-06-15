@@ -228,8 +228,6 @@ class Parallel(object):
 			elif not self.count:
 				tasks = next(self.biter)
 				ready, waiting = self.prio_and_split(tasks)
-				# We cannot use a priority queue because the implementation
-				# must be able to handle postponed dependencies
 				self.outstanding.extend(ready)
 				self.incomplete.update(waiting)
 				self.total = self.bld.total()
@@ -447,6 +445,11 @@ class Parallel(object):
 		dependency cycles are found quickly, and builds should be more efficient.
 		A high priority number means that a task is processed first.
 
+		This method can be overridden to disable the priority system::
+
+			def prio_and_split(self, tasks):
+				return tasks, []
+
 		:return: A pair of task lists
 		:rtype: tuple
 		"""
@@ -476,15 +479,17 @@ class Parallel(object):
 
 			if n.visited == 0:
 				n.visited = 1
+
 				if n in reverse:
 					rev = reverse[n]
-					n.__order = n.priority() + len(rev) + sum(visit(k) for k in rev)
+					n.prio_order = n.tree_weight + len(rev) + sum(visit(k) for k in rev)
 				else:
-					n.__order = n.priority()
+					n.prio_order = n.tree_weight
+
 				n.visited = 2
 			elif n.visited == 1:
 				raise Errors.WafError('Dependency cycle found!')
-			return n.__order
+			return n.prio_order
 
 		for x in tasks:
 			if x.visited != 0:

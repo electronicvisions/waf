@@ -76,12 +76,19 @@ class task_gen(object):
 			self.env = self.bld.env.derive()
 			self.path = self.bld.path # emulate chdir when reading scripts
 
-			# provide a unique id
+			# Provide a unique index per folder
+			# This is part of a measure to prevent output file name collisions
 			try:
 				self.idx = self.bld.idx[self.path] = self.bld.idx.get(self.path, 0) + 1
 			except AttributeError:
 				self.bld.idx = {}
 				self.idx = self.bld.idx[self.path] = 1
+
+			# Record the global task generator count
+			try:
+				self.tg_idx_count = self.bld.tg_idx_count = self.bld.tg_idx_count + 1
+			except AttributeError:
+				self.tg_idx_count = self.bld.tg_idx_count = 1
 
 		for key, val in kw.items():
 			setattr(self, key, val)
