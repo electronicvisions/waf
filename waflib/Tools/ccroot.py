@@ -131,6 +131,9 @@ class link_task(Task.Task):
 	"""
 	color   = 'YELLOW'
 
+	weight  = 3
+	"""Try to process link tasks as early as possible"""
+
 	inst_to = None
 	"""Default installation path for the link task outputs, or None to disable"""
 
