@@ -556,15 +556,24 @@ def process_xcode(self):
 	target.add_build_phase(buildphase)
 
 	# Merge frameworks and libs into one list, and prefix the frameworks
-	ld_flags = ['-framework %s' % lib.split('.framework')[0] for lib in Utils.to_list(self.env.FRAMEWORK)]
-	ld_flags.extend(Utils.to_list(self.env.STLIB) + Utils.to_list(self.env.LIB))
+	frameworks = Utils.to_list(self.env.FRAMEWORK)
+	frameworks = ' '.join(['-framework %s' % (f.split('.framework')[0]) for f in frameworks])
+
+	libs = Utils.to_list(self.env.STLIB) + Utils.to_list(self.env.LIB)
+	libs = ' '.join(bld.env['STLIB_ST'] % t for t in libs)
+
+	linkflags = bld.env['LINKFLAGS']
+	ldflags = bld.env['LDFLAGS']
 
 	# Override target specific build settings
 	bldsettings = {
 		'HEADER_SEARCH_PATHS': ['$(inherited)'] + self.env['INCPATHS'],
-		'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.LIBPATH) + Utils.to_list(self.env.STLIBPATH),
+		'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.LIBPATH) + Utils.to_list(self.env.STLIBPATH) + Utils.to_list(self.env.LIBDIR) ,
 		'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.FRAMEWORKPATH),
-		'OTHER_LDFLAGS': r'\n'.join(ld_flags),
+		'OTHER_LDFLAGS': libs + ' ' + frameworks,
+		'OTHER_LIBTOOLFLAGS': bld.env['LINKFLAGS'],
+		'OTHER_CPLUSPLUSFLAGS': Utils.to_list(self.env['CXXFLAGS']),
+		'OTHER_CFLAGS': Utils.to_list(self.env['CFLAGS']),
 		'INSTALL_PATH': []
 	}
 
