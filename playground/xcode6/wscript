@@ -43,6 +43,8 @@ def configure(conf):
 	# This must be called at the end of configure()
 	conf.load('compiler_cxx xcode6')
 
+	conf.env.CXXFLAGS='-std=c++11'
+
 	conf.check(cxxflags='-std=c++11', uselib_store='STD11', mandatory=False)
 
 def build(bld):
