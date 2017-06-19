@@ -122,7 +122,11 @@ def swig_c(self):
 		pass
 	else:
 		ltask.set_run_after(c_tsk)
+		# setting input nodes does not declare the build order
+		# because the build already started
 		ltask.inputs.append(c_tsk.outputs[0])
+		# set the build order after the build started:
+		ge.revdeps[c_tsk].add(ltask)
 
 	self.outputs.append(out_node)
 
