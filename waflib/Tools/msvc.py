@@ -457,7 +457,10 @@ def gather_vswhere_versions(conf, versions):
 		return
 
 	if sys.version_info[0] < 3:
-		txt = txt.decode(sys.stdout.encoding or 'windows-1252')
+		try:
+			txt = txt.decode(sys.stdout.encoding or 'cp1252')
+		except UnicodeError:
+			txt = txt.decode('utf-8', 'replace')
 	arr = json.loads(txt)
 	arr.sort(key=lambda x: x['installationVersion'])
 	for entry in arr:
