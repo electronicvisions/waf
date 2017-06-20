@@ -196,7 +196,8 @@ class Parallel(object):
 
 	def refill_task_list(self):
 		"""
-		Adds the next group of tasks to execute in :py:attr:`waflib.Runner.Parallel.outstanding`.
+		Pulls a next group of tasks to execute in :py:attr:`waflib.Runner.Parallel.outstanding`.
+		Ensures that all tasks in the current build group are complete before processing the next one.
 		"""
 		while self.count > self.numjobs * GAP:
 			self.get_out()
@@ -204,6 +205,8 @@ class Parallel(object):
 		while not self.outstanding:
 			if self.count:
 				self.get_out()
+				if self.outstanding:
+					break
 			elif self.postponed:
 				try:
 					cond = self.deadlock == self.processed
@@ -226,12 +229,25 @@ class Parallel(object):
 				self.outstanding.extend(self.postponed)
 				self.postponed.clear()
 			elif not self.count:
-				tasks = next(self.biter)
-				ready, waiting = self.prio_and_split(tasks)
-				self.outstanding.extend(ready)
-				self.incomplete.update(waiting)
-				self.total = self.bld.total()
-				break
+				if self.incomplete:
+					for x in self.incomplete:
+						for k in x.run_after:
+							if not k.hasrun:
+								break
+						else:
+							# dependency added after the build started without updating revdeps
+							self.incomplete.remove(x)
+							self.outstanding.append(x)
+							break
+					else:
+						raise Errors.WafError('Broken revdeps detected on %r' % self.incomplete)
+				else:
+					tasks = next(self.biter)
+					ready, waiting = self.prio_and_split(tasks)
+					self.outstanding.extend(ready)
+					self.incomplete.update(waiting)
+					self.total = self.bld.total()
+					break
 
 	def add_more_tasks(self, tsk):
 		"""
