@@ -1024,7 +1024,7 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 	env = conf.env.env or None
 	try:
 		out, err = conf.cmd_and_log(cmd, output=0, input='\n'.encode(), env=env)
-	except Exception:
+	except Errors.WafError:
 		conf.fatal('Could not determine the compiler version %r' % cmd)
 
 	if gcc:

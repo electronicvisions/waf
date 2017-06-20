@@ -428,6 +428,7 @@ def find_program(self, filename, **kw):
 	:type msg: string
 	:param interpreter: interpreter for the program
 	:type interpreter: ConfigSet variable key
+	:raises: :py:class:`waflib.Errors.ConfigurationError`
 	"""
 
 	exts = kw.get('exts', Utils.is_win32 and '.exe,.com,.bat,.cmd' or ',.sh,.pl,.py')

@@ -7,6 +7,7 @@ Detect the PGI C compiler
 """
 
 import sys, re
+from waflib import Errors
 from waflib.Configure import conf
 from waflib.Tools.compiler_c import c_compiler
 c_compiler['linux'].append('pgicc')
@@ -42,7 +43,7 @@ def get_pgi_version(conf, cc):
 
 	try:
 		out, err = conf.cmd_and_log(cmd, output=0)
-	except Exception:
+	except Errors.WafError:
 		conf.fatal('Could not find pgi compiler %r' % cmd)
 
 	if out:
@@ -56,7 +57,7 @@ def get_pgi_version(conf, cc):
 	cmd = cc + ['-help=variable']
 	try:
 		out, err = conf.cmd_and_log(cmd, output=0)
-	except Exception:
+	except Errors.WafError:
 		conf.fatal('Could not find pgi compiler %r' % cmd)
 
 	version = re.findall('^COMPVER\s*=(.*)', out, re.M)

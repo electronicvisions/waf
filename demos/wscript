@@ -87,7 +87,7 @@ def configure(conf):
 			conf.find_program('python'+x, var=x)
 			# unpacking the waf directory concurrently can lead to a race condition, we'll need to take care of this (thanks, build farm!)
 			conf.cmd_and_log(conf.env[x] + ['./waf', '--version'], env={})
-		except Exception as e:
+		except Errors.WafError as e:
 			pass
 		else:
 			conf.env.append_value('PYTHONS', x)

@@ -323,6 +323,8 @@ class Context(ctx):
 		:type kw: dict
 		:returns: process exit status
 		:rtype: integer
+		:raises: :py:class:`waflib.Errors.WafError` if an invalid executable is specified for a non-shell process
+		:raises: :py:class:`waflib.Errors.WafError` in case of execution failure
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
@@ -382,7 +384,7 @@ class Context(ctx):
 		"""
 		Executes a process and returns stdout/stderr if the execution is successful.
 		An exception is thrown when the exit status is non-0. In that case, both stderr and stdout
-		will be bound to the WafError object::
+		will be bound to the WafError object (configuration tests)::
 
 			def configure(conf):
 				out = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.STDOUT, quiet=waflib.Context.BOTH)
@@ -390,7 +392,7 @@ class Context(ctx):
 				(out, err) = conf.cmd_and_log(cmd, input='\\n'.encode(), output=waflib.Context.STDOUT)
 				try:
 					conf.cmd_and_log(['which', 'someapp'], output=waflib.Context.BOTH)
-				except Exception as e:
+				except Errors.WafError as e:
 					print(e.stdout, e.stderr)
 
 		:param cmd: args for subprocess.Popen

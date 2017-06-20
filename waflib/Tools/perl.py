@@ -24,7 +24,7 @@ Support for Perl extensions. A C/C++ compiler is required::
 """
 
 import os
-from waflib import Task, Options, Utils
+from waflib import Task, Options, Utils, Errors
 from waflib.Configure import conf
 from waflib.TaskGen import extension, feature, before_method
 
@@ -99,7 +99,7 @@ def check_perl_module(self, module):
 	self.start_msg('perl module %s' % module)
 	try:
 		r = self.cmd_and_log(cmd)
-	except Exception:
+	except Errors.WafError:
 		self.end_msg(False)
 		return None
 	self.end_msg(r or True)

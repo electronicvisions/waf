@@ -23,7 +23,7 @@ PRELUDE = ''
 import os, sys, re, io, optparse, tokenize
 from hashlib import md5
 
-from waflib import Utils, Options, Logs, Scripting
+from waflib import Errors, Utils, Options, Logs, Scripting
 from waflib import Configure
 Configure.autoconfig = 1
 
@@ -64,9 +64,10 @@ def init(ctx):
 
 		try:
 			rev = ctx.cmd_and_log("git rev-parse HEAD").strip()
-			pats.append(('^WAFREVISION(.*)', 'WAFREVISION="%s"' % rev))
-		except Exception:
+		except Errors.WafError:
 			rev = ''
+		else:
+			pats.append(('^WAFREVISION(.*)', 'WAFREVISION="%s"' % rev))
 
 		sub_file('waflib/Context.py', pats)
 
@@ -344,7 +345,7 @@ def create_waf(self, *k, **kw):
 	bld = self.generator.bld
 	try:
 		rev = bld.cmd_and_log('git rev-parse HEAD', quiet=0).strip()
-	except Exception:
+	except Errors.WafError:
 		rev = ''
 	else:
 		reg = re.compile('^GIT(.*)', re.M)
