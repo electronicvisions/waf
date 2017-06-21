@@ -14,7 +14,7 @@ $ waf configure eclipse
 """
 
 import sys, os
-from waflib import Utils, Logs, Context, Build, TaskGen, Scripting
+from waflib import Utils, Logs, Context, Build, TaskGen, Scripting, Errors
 from xml.dom.minidom import Document
 
 STANDARD_INCLUDES = [ '/usr/local/include', '/usr/include' ]
@@ -54,16 +54,17 @@ class eclipse(Build.BuildContext):
 		cpppath = self.env['CPPPATH']
 		javasrcpath = []
 		if sys.platform != 'win32':
-			try:
-				cccmd = self.env.get_flat('CC') or self.env.get_flat('CXX')
-				if cccmd:
-					gccout = self.cmd_and_log([cccmd, '-xc++', '-E', '-Wp,-v', '-'], output=Context.STDERR, quiet=Context.BOTH, input='\n'.encode()).split('\n')
+			cccmd = self.env.get_flat('CC') or self.env.get_flat('CXX')
+			if cccmd:
+				try:
+					gccout = self.cmd_and_log([cccmd, '-xc++', '-E', '-Wp,-v', '-'], output=Context.STDERR, quiet=Context.BOTH, input='\n'.encode()).splitlines()
+				except Errors.WafError:
+					pass	# if cc command failed, fall back to hardcoded STANDARD_INCLUDES
+				else:
 					STANDARD_INCLUDES[:] = []
 					for ipath in gccout:
 						if ipath.startswith(' /'):
 							STANDARD_INCLUDES.append(ipath[1:])
-			except Exception:
-				pass	# if cc command failed, fall back to hardcoded STANDARD_INCLUDES
 			cpppath += STANDARD_INCLUDES
 		Logs.warn('Generating Eclipse CDT project files')
 
