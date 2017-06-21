@@ -53,19 +53,21 @@ class eclipse(Build.BuildContext):
 		source_dirs = []
 		cpppath = self.env['CPPPATH']
 		javasrcpath = []
+		includes = STANDARD_INCLUDES
 		if sys.platform != 'win32':
-			cccmd = self.env.get_flat('CC') or self.env.get_flat('CXX')
-			if cccmd:
+			cc = self.env.CC or self.env.CXX
+			if cc:
+				cmd = cc + ['-xc++', '-E', '-Wp,-v', '-']
 				try:
-					gccout = self.cmd_and_log([cccmd, '-xc++', '-E', '-Wp,-v', '-'], output=Context.STDERR, quiet=Context.BOTH, input='\n'.encode()).splitlines()
+					gccout = self.cmd_and_log(cmd, output=Context.STDERR, quiet=Context.BOTH, input='\n'.encode()).splitlines()
 				except Errors.WafError:
-					pass	# if cc command failed, fall back to hardcoded STANDARD_INCLUDES
+					pass
 				else:
-					STANDARD_INCLUDES[:] = []
+					includes = []
 					for ipath in gccout:
 						if ipath.startswith(' /'):
-							STANDARD_INCLUDES.append(ipath[1:])
-			cpppath += STANDARD_INCLUDES
+							includes.append(ipath[1:])
+			cpppath += includes
 		Logs.warn('Generating Eclipse CDT project files')
 
 		for g in self.groups:
