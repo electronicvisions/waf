@@ -147,7 +147,7 @@ class Parallel(object):
 		self.count = 0
 		"""Amount of tasks that may be processed by :py:class:`waflib.Runner.TaskConsumer`"""
 
-		self.processed = 1
+		self.processed = 0
 		"""Amount of tasks processed"""
 
 		self.stop = False
