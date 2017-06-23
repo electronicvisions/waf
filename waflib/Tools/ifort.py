@@ -110,16 +110,16 @@ def gather_ifort_versions(conf, versions):
 	version_pattern = re.compile('^...?.?\....?.?')
 	try:
 		all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Intel\\Compilers\\Fortran')
-	except WindowsError:
+	except OSError:
 		try:
 			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Intel\\Compilers\\Fortran')
-		except WindowsError:
+		except OSError:
 			return
 	index = 0
 	while 1:
 		try:
 			version = Utils.winreg.EnumKey(all_versions, index)
-		except WindowsError:
+		except OSError:
 			break
 		index += 1
 		if not version_pattern.match(version):
@@ -134,7 +134,7 @@ def gather_ifort_versions(conf, versions):
 				Utils.winreg.OpenKey(all_versions,version+'\\'+targetDir)
 				icl_version=Utils.winreg.OpenKey(all_versions,version)
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
-			except WindowsError:
+			except OSError:
 				pass
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
@@ -145,7 +145,7 @@ def gather_ifort_versions(conf, versions):
 			try:
 				icl_version = Utils.winreg.OpenKey(all_versions, version+'\\'+target)
 				path,type = Utils.winreg.QueryValueEx(icl_version,'ProductDir')
-			except WindowsError:
+			except OSError:
 				continue
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')

@@ -830,7 +830,7 @@ def get_registry_app_path(key, filename):
 		return None
 	try:
 		result = winreg.QueryValue(key, "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\%s.exe" % filename[0])
-	except WindowsError:
+	except OSError:
 		pass
 	else:
 		if os.path.isfile(result):
