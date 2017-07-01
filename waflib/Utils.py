@@ -895,7 +895,10 @@ def run_prefork_process(cmd, kwargs, cargs):
 		raise OSError('Preforked sub-process %r died' % proc.pid)
 
 	process_pool.append(proc)
-	ret, out, err, ex, trace = cPickle.loads(base64.b64decode(obj))
+	lst = cPickle.loads(base64.b64decode(obj))
+	# Jython wrapper failures (bash/execvp)
+	assert len(lst) == 5
+	ret, out, err, ex, trace = lst
 	if ex:
 		if ex == 'OSError':
 			raise OSError(trace)
