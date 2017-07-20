@@ -489,9 +489,15 @@ class Context(ctx):
 		if self.logger:
 			self.logger.info('from %s: %s' % (self.path.abspath(), msg))
 		try:
-			msg = '%s\n(complete log in %s)' % (msg, self.logger.handlers[0].baseFilename)
+			logfile = self.logger.handlers[0].baseFilename
 		except AttributeError:
 			pass
+		else:
+			if os.environ.get('WAF_PRINT_FAILURE_LOG'):
+				# see #1930
+				msg = 'Log from (%s):\n%s\n' % (logfile, Utils.readf(logfile))
+			else:
+				msg = '%s\n(complete log in %s)' % (msg, logfile)
 		raise self.errors.ConfigurationError(msg, ex=ex)
 
 	def to_log(self, msg):
