@@ -233,7 +233,7 @@ def validate_cfg(self, kw):
 			kw['define_name'] = '%s_VERSION' % Utils.quote_define_name(kw['uselib_store'])
 	else:
 		if not 'uselib_store' in kw:
-			kw['uselib_store'] = kw['package'].upper()
+			kw['uselib_store'] = Utils.to_list(kw['package'])[0].upper()
 		if not 'define_name' in kw:
 			kw['define_name'] = self.have_define(kw['uselib_store'])
 
@@ -340,8 +340,6 @@ def check_cfg(self, *k, **kw):
 		def configure(conf):
 			conf.load('compiler_c')
 			conf.check_cfg(package='glib-2.0', args='--libs --cflags')
-			conf.check_cfg(package='glib-2.0', uselib_store='GLIB', atleast_version='2.10.0',
-				args='--cflags --libs')
 			conf.check_cfg(package='pango')
 			conf.check_cfg(package='pango', uselib_store='MYPANGO', args=['--cflags', '--libs'])
 			conf.check_cfg(package='pango',
@@ -354,11 +352,6 @@ def check_cfg(self, *k, **kw):
 			conf.check_cfg(package='gtk+-2.0', variables=['includedir', 'prefix'], uselib_store='FOO')
 			print(conf.env.FOO_includedir)
 	"""
-	if k:
-		lst = k[0].split()
-		kw['package'] = lst[0]
-		kw['args'] = ' '.join(lst[1:])
-
 	self.validate_cfg(kw)
 	if 'msg' in kw:
 		self.start_msg(kw['msg'], **kw)
