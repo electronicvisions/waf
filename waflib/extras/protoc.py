@@ -35,8 +35,7 @@ Notes when using this tool:
 """
 
 class protoc(Task):
-	# protoc expects the input proto file to be an absolute path.
-	run_str = '${PROTOC} ${PROTOC_FLAGS} ${PROTOC_ST:INCPATHS} ${SRC[0].abspath()}'
+	run_str = '${PROTOC} ${PROTOC_FLAGS} ${PROTOC_ST:INCPATHS} ${SRC[0].bldpath()}'
 	color   = 'BLUE'
 	ext_out = ['.h', 'pb.cc']
 	def scan(self):
