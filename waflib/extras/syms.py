@@ -24,17 +24,17 @@ class gen_sym(Task):
 		obj = self.inputs[0]
 		kw = {}
 		if 'msvc' in (self.env.CC_NAME, self.env.CXX_NAME):
-			re_nm = re.compile(r'External\s+\|\s+_(' + self.generator.export_symbols_regex + r')\b')
+			re_nm = re.compile(r'External\s+\|\s+_(?P<symbol>' + self.generator.export_symbols_regex + r')\b')
 			cmd = (self.env.DUMPBIN or ['dumpbin']) + ['/symbols', obj.abspath()]
 		else:
 			if self.env.DEST_BINFMT == 'pe': #gcc uses nm, and has a preceding _ on windows
-				re_nm = re.compile(r'T\s+_(' + self.generator.export_symbols_regex + r')\b')
+				re_nm = re.compile(r'(T|D)\s+_(?P<symbol>' + self.generator.export_symbols_regex + r')\b')
 			elif self.env.DEST_BINFMT=='mac-o':
-				re_nm=re.compile(r'T\s+(_?'+self.generator.export_symbols_regex+r')\b')
+				re_nm=re.compile(r'(T|D)\s+(?P<symbol>_?'+self.generator.export_symbols_regex+r')\b')
 			else:
-				re_nm = re.compile(r'T\s+(' + self.generator.export_symbols_regex + r')\b')
+				re_nm = re.compile(r'(T|D)\s+(?P<symbol>' + self.generator.export_symbols_regex + r')\b')
 			cmd = (self.env.NM or ['nm']) + ['-g', obj.abspath()]
-		syms = re_nm.findall(self.generator.bld.cmd_and_log(cmd, quiet=STDOUT, **kw))
+		syms = [m.group('symbol') for m in re_nm.finditer(self.generator.bld.cmd_and_log(cmd, quiet=STDOUT, **kw))]
 		self.outputs[0].write('%r' % syms)
 
 class compile_sym(Task):
