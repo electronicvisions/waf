@@ -691,10 +691,16 @@ class BuildContext(Context.Context):
 
 	def get_targets(self):
 		"""
-		Returns the task generator corresponding to the 'targets' list; used internally
-		by :py:meth:`waflib.Build.BuildContext.get_build_iterator` to perform partial builds::
+		This method returns a pair containing the index of the last build group to post,
+		and the list of task generator objects corresponding to the target names.
+
+		This is used internally by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
+		to perform partial builds::
 
 			$ waf --targets=myprogram,myshlib
+
+		:return: the minimum build group index, and list of task generators
+		:rtype: tuple
 		"""
 		to_post = []
 		min_grp = 0
