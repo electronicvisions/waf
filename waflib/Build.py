@@ -728,23 +728,21 @@ class BuildContext(Context.Context):
 		Post task generators from the group indexed by self.current_group; used internally
 		by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
 		"""
+		def tgpost(tg):
+			try:
+				f = tg.post
+			except AttributeError:
+				pass
+			else:
+				f()
+
 		if self.targets == '*':
 			for tg in self.groups[self.current_group]:
-				try:
-					f = tg.post
-				except AttributeError:
-					pass
-				else:
-					f()
+				tgpost(tg)
 		elif self.targets:
 			if self.current_group < self._min_grp:
 				for tg in self.groups[self.current_group]:
-					try:
-						f = tg.post
-					except AttributeError:
-						pass
-					else:
-						f()
+					tgpost(tg)
 			else:
 				for tg in self._exact_tg:
 					tg.post()
@@ -757,13 +755,8 @@ class BuildContext(Context.Context):
 				Logs.warn('CWD %s is not under %s, forcing --targets=* (run distclean?)', ln.abspath(), self.srcnode.abspath())
 				ln = self.srcnode
 			for tg in self.groups[self.current_group]:
-				try:
-					f = tg.post
-				except AttributeError:
-					pass
-				else:
-					if tg.path.is_child_of(ln):
-						f()
+				if tg.path.is_child_of(ln):
+					tgpost(tg)
 
 	def get_tasks_group(self, idx):
 		"""
