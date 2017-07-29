@@ -85,7 +85,7 @@ def configure(conf):
 		v.MSVC_COMPILER = compiler
 		try:
 			v.MSVC_VERSION = float(version)
-		except TypeError:
+		except ValueError:
 			v.MSVC_VERSION = float(version[:-3])
 
 		conf.find_ifort_win32()
