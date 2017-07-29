@@ -806,7 +806,7 @@ def autodetect(conf, arch=False):
 	v.MSVC_COMPILER = compiler
 	try:
 		v.MSVC_VERSION = float(version)
-	except TypeError:
+	except ValueError:
 		v.MSVC_VERSION = float(version[:-3])
 
 def _get_prog_names(conf, compiler):
