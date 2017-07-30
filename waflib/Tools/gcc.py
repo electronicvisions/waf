@@ -152,4 +152,5 @@ def configure(conf):
 	conf.cc_load_tools()
 	conf.cc_add_flags()
 	conf.link_add_flags()
+	conf.check_gcc_o_space()
 
