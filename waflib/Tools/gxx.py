@@ -153,4 +153,5 @@ def configure(conf):
 	conf.cxx_load_tools()
 	conf.cxx_add_flags()
 	conf.link_add_flags()
+	conf.check_gcc_o_space('cxx')
 

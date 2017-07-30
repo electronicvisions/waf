@@ -1333,3 +1333,21 @@ def multicheck(self, *k, **kw):
 			if x.args.get('mandatory', True):
 				self.fatal(kw.get('fatalmsg') or 'One of the tests has failed, read config.log for more information')
 
+@conf
+def check_gcc_o_space(self, mode='c'):
+	if int(self.env.CC_VERSION[0]) > 4:
+		# this is for old compilers
+		return
+	self.env.stash()
+	if mode == 'c':
+		self.env.CCLNK_TGT_F = ['-o', '']
+	elif mode == 'cxx':
+		self.env.CXXLNK_TGT_F = ['-o', '']
+	features = '%s %sshlib' % (mode, mode)
+	try:
+		self.check(msg='Checking if the -o link must be split from arguments', fragment=SNIP_EMPTY_PROGRAM, features=features)
+	except self.errors.ConfigurationError:
+		self.env.revert()
+	else:
+		self.env.commit()
+
