@@ -571,7 +571,7 @@ def find_qt5_binaries(self):
 	uicver = uicver.replace('Qt User Interface Compiler ','').replace('User Interface Compiler for Qt', '')
 	self.end_msg(uicver)
 	if uicver.find(' 3.') != -1 or uicver.find(' 4.') != -1:
-		self.fatal('this uic compiler is for qt3 or qt5, add uic for qt5 to your path')
+		self.fatal('this uic compiler is for qt3 or qt4, add uic for qt5 to your path')
 
 	find_bin(['moc-qt5', 'moc'], 'QT_MOC')
 	find_bin(['rcc-qt5', 'rcc'], 'QT_RCC')
