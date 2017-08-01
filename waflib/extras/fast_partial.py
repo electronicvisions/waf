@@ -22,12 +22,17 @@ Assuptions:
 """
 
 import os
-from waflib import Build, Context, Errors, Logs, Task, Utils
+from waflib import Build, Errors, Logs, Task, Runner, Utils
 from waflib.TaskGen import feature, after_method, taskgen_method
 
 DONE = 0
 DIRTY = 1
 NEEDED = 2
+
+STALE_FLAG_FILE_COMMITTED = '.stale-flag-committed'
+STALE_FLAG_FILE_TMP = '.stale-flag-tmp'
+
+SKIPPABLE = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib', 'cprogram', 'cxxprogram']
 
 class bld(Build.BuildContext):
 	def store(self):
@@ -51,41 +56,58 @@ class bld(Build.BuildContext):
 								pass
 							break
 					else:
-						wscript_time = os.stat(tg.path.abspath()).st_mtime
 						if not do_cache:
 							try:
-								cache = self.raw_deps[(tg.path.abspath(), tg.idx)]
+								self.raw_deps[(tg.path.abspath(), tg.idx)]
 							except KeyError:
 								# probably cleared because a wscript file changed
 								do_cache = True
-							else:
-								cache[0] = wscript_time
-
 
 						if do_cache:
-							cache = self.raw_deps[(tg.path.abspath(), tg.idx)] = [wscript_time]
 							st = set()
 							for tsk in tg.tasks:
 								st.update(tsk.inputs)
 								st.update(self.node_deps.get(tsk.uid(), []))
-							cache += sorted(x.abspath() for x in st)
-		return Build.BuildContext.store(self)
+							lst = list(sorted(x.abspath() for x in st))
+							self.raw_deps[(tg.path.abspath(), tg.idx)] = lst
+
+		stale_file_tmp = os.path.join(self.variant_dir, STALE_FLAG_FILE_TMP)
+		stale_file_committed = os.path.join(self.variant_dir, STALE_FLAG_FILE_COMMITTED)
+		os.rename(stale_file_tmp, stale_file_committed)
+
+		if self.producer.dirty:
+			return Build.BuildContext.store(self)
+
+	def compile(self):
+		Logs.debug('build: compile()')
+		self.producer = Runner.Parallel(self, self.jobs)
+		self.producer.biter = self.get_build_iterator()
+		try:
+			self.producer.start()
+		except KeyboardInterrupt:
+			self.store()
+			raise
+		else:
+			# always store here
+			self.store()
+
+		if self.producer.error:
+			raise Errors.BuildError(self.producer.error)
 
 	def compute_needed_tgs(self):
 		# assume the 'use' keys are not modified during the build phase
 
 		# 1. obtain task generators that contain rebuilds
+		# 2. obtain the 'use' graph and its dual
 		stales = set()
+		reverse_use_map = Utils.defaultdict(list)
+		use_map = Utils.defaultdict(list)
+
 		for g in self.groups:
 			for tg in g:
 				if tg.is_stale():
 					stales.add(tg)
-		reverse_use_map = Utils.defaultdict(list)
-		use_map = Utils.defaultdict(list)
 
-		# 2. obtain the 'use' graph and its dual
-		for g in self.groups:
-			for tg in g:
 				try:
 					lst = tg.use = Utils.to_list(tg.use)
 				except AttributeError:
@@ -99,6 +121,8 @@ class bld(Build.BuildContext):
 						else:
 							use_map[tg].append(xtg)
 							reverse_use_map[xtg].append(tg)
+
+		Logs.debug('rev_use: found %r stale tgs', len(stales))
 
 		# 3. dfs to post downstream tg as stale
 		visited = set()
@@ -153,15 +177,21 @@ class bld(Build.BuildContext):
 
 	def get_build_iterator(self):
 		if not self.targets or self.targets == '*':
+			stale_file_tmp = os.path.join(self.variant_dir, STALE_FLAG_FILE_TMP)
+			Utils.writef(stale_file_tmp, '')
 			self.compute_needed_tgs()
 		return Build.BuildContext.get_build_iterator(self)
 
 @taskgen_method
 def is_stale(self):
 	# assume no globs
-
 	self.staleness = DIRTY
-	db = os.path.join(self.bld.variant_dir, Context.DBFILE)
+
+	# 0. the case of always stale targets
+	if getattr(self, 'always_stale', False):
+		return True
+
+	db = os.path.join(self.bld.variant_dir, STALE_FLAG_FILE_COMMITTED)
 	try:
 		dbstat = os.stat(db).st_mtime
 	except OSError:
@@ -179,28 +209,37 @@ def is_stale(self):
 		Logs.debug('rev_use: must post %r because there is no cached data', self.name)
 		return True
 
-	# 3. check if the wscript file changed from the previous dep storage
-	# assume that the folder timestamp reflects the wscript state
-	folder_tstamp = os.stat(self.path.abspath()).st_mtime
-	if folder_tstamp != lst[0]:
-		Logs.debug('rev_use: must post %r because the tg definition may have changed', self.name)
-		return True
 
-	# 4. check the timestamp of dependency files listed are not newer than the last build
-	# assume that a file is not modified during a build ~
+	try:
+		cache = self.bld.cache_tstamp_rev_use
+	except AttributeError:
+		cache = self.bld.cache_tstamp_rev_use = {}
+
 	def tstamp(x):
-		# do some caching
-		try:
-			cache = self.bld.cache_tstamp_rev_use
-		except AttributeError:
-			cache = self.bld.cache_tstamp_rev_use = {}
+		# compute files timestamps with some caching
 		try:
 			return cache[x]
 		except KeyError:
 			ret = cache[x] = os.stat(x).st_mtime
 			return ret
 
-	for x in lst[1:]:
+	# 3. double-check if this is the first build
+	rev_path = os.path.join(self.bld.variant_dir, STALE_FLAG_FILE_COMMITTED)
+	try:
+		dbstat = tstamp(rev_path)
+	except OSError:
+		Logs.debug('rev_use: must post %r because there is no rev path file %r', self.name, rev_path)
+		return True
+
+	# 4. check if the wscript file changed from the previous dep storage
+	# assume that the folder timestamp reflects the wscript state
+	folder_tstamp = os.stat(self.path.abspath()).st_mtime
+	if folder_tstamp >= dbstat:
+		Logs.debug('rev_use: must post %r because the tg definition may have changed', self.name)
+		return True
+
+	# 5. check the timestamp of dependency files listed are not newer than the last build
+	for x in lst:
 		try:
 			ts = tstamp(x)
 		except OSError:
@@ -208,7 +247,7 @@ def is_stale(self):
 			Logs.debug('rev_use: must post %r because %r does not exist anymore', self.name, x)
 			return True
 		else:
-			if ts > dbstat:
+			if ts >= dbstat:
 				Logs.debug('rev_use: must post %r because %r is newer than the db file', self.name, x)
 				return True
 
@@ -217,8 +256,12 @@ def is_stale(self):
 
 @taskgen_method
 def create_compiled_task(self, name, node):
+	# the purpose is to skip the creation of object files
 	if self.staleness == NEEDED:
-		return None
+		# only libraries/programs can skip object files
+		for x in SKIPPABLE:
+			if x in self.features:
+				return None
 
 	out = '%s.%d.o' % (node.name, self.idx)
 	task = self.create_task(name, node, node.parent.find_or_declare(out))
@@ -228,9 +271,11 @@ def create_compiled_task(self, name, node):
 		self.compiled_tasks = [task]
 	return task
 
-@feature('c', 'cxx', 'd', 'fc', 'asm')
+@feature(*SKIPPABLE)
 @after_method('apply_link')
 def apply_link_after(self):
+	# assumption: object-only targets are not skippable
+	# cprogram/cxxprogram might be unnecessary
 	if self.staleness != NEEDED:
 		return
 	try:
