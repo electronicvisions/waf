@@ -14,85 +14,62 @@ a single file change.
 
 Assuptions:
 * Mostly for C/C++/Fortran targets with link tasks (object-only targets are not handled)
-* This is only for full project builds, so this does not interfere with --targets
-* Building from a subfolder does not prune targets from that folder
+* For full project builds: no --targets and no pruning from subfolders
 * The installation phase is ignored
 * `use=` dependencies are fully specified up front even across build groups
-* Files are not modified while building
+* Task generator source files are not obtained from globs
 """
 
 import os
-from waflib import Build, Errors, Logs, Task, Runner, Utils
+from waflib import Build, Context, Errors, Logs, Task, Runner, Utils
 from waflib.TaskGen import feature, after_method, taskgen_method
 
 DONE = 0
 DIRTY = 1
 NEEDED = 2
 
-STALE_FLAG_FILE_COMMITTED = '.stale-flag-committed'
-STALE_FLAG_FILE_TMP = '.stale-flag-tmp'
-
 SKIPPABLE = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib', 'cprogram', 'cxxprogram']
 
 class bld(Build.BuildContext):
 	def store(self):
-		if self.producer.dirty:
-			# For each task generator, record all files involved in task objects
-			# optimization: done only if there was something built
-			for g in self.groups:
-				for tg in g:
-					do_cache = False
-					for tsk in tg.tasks:
-						if tsk.hasrun == Task.SUCCESS:
-							do_cache = True
-							pass
-						elif tsk.hasrun == Task.SKIPPED:
-							pass
-						else:
-							# dependencies are incomplete, clear the cache
-							try:
-								del self.raw_deps[(tg.path.abspath(), tg.idx)]
-							except KeyError:
-								pass
-							break
+		# For each task generator, record all files involved in task objects
+		# optimization: done only if there was something built
+		for g in self.groups:
+			for tg in g:
+				do_cache = False
+				for tsk in tg.tasks:
+					if tsk.hasrun == Task.SUCCESS:
+						do_cache = True
+						pass
+					elif tsk.hasrun == Task.SKIPPED:
+						pass
 					else:
-						if not do_cache:
-							try:
-								self.raw_deps[(tg.path.abspath(), tg.idx)]
-							except KeyError:
-								# probably cleared because a wscript file changed
-								do_cache = True
+						# dependencies are incomplete, clear the cache
+						try:
+							del self.raw_deps[(tg.path.abspath(), tg.idx)]
+						except KeyError:
+							pass
+						break
+				else:
+					if not do_cache:
+						try:
+							self.raw_deps[(tg.path.abspath(), tg.idx)]
+						except KeyError:
+							# probably cleared because a wscript file changed
+							do_cache = True
 
-						if do_cache:
-							st = set()
-							for tsk in tg.tasks:
-								st.update(tsk.inputs)
-								st.update(self.node_deps.get(tsk.uid(), []))
-							lst = list(sorted(x.abspath() for x in st))
-							self.raw_deps[(tg.path.abspath(), tg.idx)] = lst
+					if do_cache:
+						st = set()
+						for tsk in tg.tasks:
+							st.update(tsk.inputs)
+							st.update(self.node_deps.get(tsk.uid(), []))
 
-		stale_file_tmp = os.path.join(self.variant_dir, STALE_FLAG_FILE_TMP)
-		stale_file_committed = os.path.join(self.variant_dir, STALE_FLAG_FILE_COMMITTED)
-		os.rename(stale_file_tmp, stale_file_committed)
+						lst = [x.abspath() for x in tg.path.ant_glob('wscript*')]
+						lst.extend(sorted(x.abspath() for x in st))
+						tss = [os.stat(x).st_mtime for x in lst]
+						self.raw_deps[(tg.path.abspath(), tg.idx)] = (lst, tss)
 
-		if self.producer.dirty:
-			return Build.BuildContext.store(self)
-
-	def compile(self):
-		Logs.debug('build: compile()')
-		self.producer = Runner.Parallel(self, self.jobs)
-		self.producer.biter = self.get_build_iterator()
-		try:
-			self.producer.start()
-		except KeyboardInterrupt:
-			self.store()
-			raise
-		else:
-			# always store here
-			self.store()
-
-		if self.producer.error:
-			raise Errors.BuildError(self.producer.error)
+		return Build.BuildContext.store(self)
 
 	def compute_needed_tgs(self):
 		# assume the 'use' keys are not modified during the build phase
@@ -177,8 +154,6 @@ class bld(Build.BuildContext):
 
 	def get_build_iterator(self):
 		if not self.targets or self.targets == '*':
-			stale_file_tmp = os.path.join(self.variant_dir, STALE_FLAG_FILE_TMP)
-			Utils.writef(stale_file_tmp, '')
 			self.compute_needed_tgs()
 		return Build.BuildContext.get_build_iterator(self)
 
@@ -187,26 +162,28 @@ def is_stale(self):
 	# assume no globs
 	self.staleness = DIRTY
 
-	# 0. the case of always stale targets
+	# 1. the case of always stale targets
 	if getattr(self, 'always_stale', False):
 		return True
 
-	db = os.path.join(self.bld.variant_dir, STALE_FLAG_FILE_COMMITTED)
+	# 2. check if the db file exists
+	db = os.path.join(self.bld.variant_dir, Context.DBFILE)
 	try:
 		dbstat = os.stat(db).st_mtime
 	except OSError:
+		Logs.debug('rev_use: must post %r because this is a clean build')
 		return True
 
-	# 1. check if the configuration changed
-	if os.stat(self.bld.bldnode.find_node('c4che').abspath()).st_mtime > dbstat:
+	# 3. check if the configuration changed
+	if os.stat(self.bld.bldnode.find_node('c4che/build.config.py').abspath()).st_mtime > dbstat:
 		Logs.debug('rev_use: must post %r because the configuration has changed', self.name)
 		return True
 
-	# 2. check if this is the first build (no cache)
+	# 4. check if this is the first build (no cache)
 	try:
-		lst = self.bld.raw_deps[(self.path.abspath(), self.idx)]
+		lst, tss = self.bld.raw_deps[(self.path.abspath(), self.idx)]
 	except KeyError:
-		Logs.debug('rev_use: must post %r because there is no cached data', self.name)
+		Logs.debug('rev_use: must post %r because there it has no cached data', self.name)
 		return True
 
 
@@ -223,23 +200,8 @@ def is_stale(self):
 			ret = cache[x] = os.stat(x).st_mtime
 			return ret
 
-	# 3. double-check if this is the first build
-	rev_path = os.path.join(self.bld.variant_dir, STALE_FLAG_FILE_COMMITTED)
-	try:
-		dbstat = tstamp(rev_path)
-	except OSError:
-		Logs.debug('rev_use: must post %r because there is no rev path file %r', self.name, rev_path)
-		return True
-
-	# 4. check if the wscript file changed from the previous dep storage
-	# assume that the folder timestamp reflects the wscript state
-	folder_tstamp = os.stat(self.path.abspath()).st_mtime
-	if folder_tstamp >= dbstat:
-		Logs.debug('rev_use: must post %r because the tg definition may have changed', self.name)
-		return True
-
-	# 5. check the timestamp of dependency files listed are not newer than the last build
-	for x in lst:
+	# 5. check the timestamp of each dependency files listed is unchanged
+	for x, old_ts in zip(lst, tss):
 		try:
 			ts = tstamp(x)
 		except OSError:
@@ -247,8 +209,8 @@ def is_stale(self):
 			Logs.debug('rev_use: must post %r because %r does not exist anymore', self.name, x)
 			return True
 		else:
-			if ts >= dbstat:
-				Logs.debug('rev_use: must post %r because %r is newer than the db file', self.name, x)
+			if ts != old_ts:
+				Logs.debug('rev_use: must post %r because the timestamp on %r changed %r %r', self.name, x, old_ts, ts)
 				return True
 
 	self.staleness = DONE
