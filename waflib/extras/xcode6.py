@@ -470,7 +470,7 @@ class PBXProject(XCodeNode):
 		return None
 
 @TaskGen.feature('c', 'cxx')
-@TaskGen.after('process_uselib_vars', 'apply_incpaths')
+@TaskGen.after('propagate_uselib_vars', 'apply_incpaths')
 def process_xcode(self):
 	bld = self.bld
 	try:
@@ -561,9 +561,6 @@ def process_xcode(self):
 
 	libs = Utils.to_list(self.env.STLIB) + Utils.to_list(self.env.LIB)
 	libs = ' '.join(bld.env['STLIB_ST'] % t for t in libs)
-
-	linkflags = bld.env['LINKFLAGS']
-	ldflags = bld.env['LDFLAGS']
 
 	# Override target specific build settings
 	bldsettings = {
