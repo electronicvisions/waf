@@ -21,7 +21,7 @@ Assuptions:
 """
 
 import os
-from waflib import Build, Context, Errors, Logs, Task, Runner, Utils
+from waflib import Build, Context, Errors, Logs, Task, Utils
 from waflib.TaskGen import feature, after_method, taskgen_method
 
 DONE = 0
@@ -205,7 +205,7 @@ def is_stale(self):
 		try:
 			ts = tstamp(x)
 		except OSError:
-			self.bld.raw_deps[(self.path.abspath(), self.idx)] = [folder_tstamp]
+			del self.bld.raw_deps[(self.path.abspath(), self.idx)]
 			Logs.debug('rev_use: must post %r because %r does not exist anymore', self.name, x)
 			return True
 		else:
