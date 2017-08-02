@@ -1,3 +1,10 @@
+NEW IN WAF 1.9.13
+-----------------
+* Fix a regression introduced by #1974 on Python2 with unicode characters in config.log
+* Protobuf example update #2000
+* Better detection for old msvc compilers #2002
+* Better detection for old gcc compilers #2003
+
 NEW IN WAF 1.9.12
 -----------------
 * Work around config.log encoding issues on windows/Python3.6/console #1974
