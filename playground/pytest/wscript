@@ -65,7 +65,7 @@ def build(bld):
 		install_from = 'src')
 
 	# The bar module has a non-Python dependency to resource.txt which we want to copy,
-	# but in this case we cannot add resource.txt to the sources because there's not feature
+	# but in this case we cannot add resource.txt to the sources because there's no feature
 	# for it. Therefore, we use the attribute buildcopy_source instead.
 	bld(name             = 'bar',
 		features         = 'py buildcopy',

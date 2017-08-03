@@ -287,7 +287,7 @@ class PBXGroup(XCodeNode):
 		Recursively search this group for an existing PBXFileReference. Returns None
 		if none were found.
 
-		The reason you'd want to reuse existing PBXFileReferences from a PBXGroup is that XCode doesn't like PBXFileReferences that aren't part of a PBXGroup heirarchy.
+		The reason you'd want to reuse existing PBXFileReferences from a PBXGroup is that XCode doesn't like PBXFileReferences that aren't part of a PBXGroup hierarchy.
 		If it isn't, the consequence is that certain UI features like 'Reveal in Finder'
 		stops working.
 		"""
