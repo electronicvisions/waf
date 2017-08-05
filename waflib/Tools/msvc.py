@@ -38,7 +38,7 @@ Supported platforms: ia64, x64, x86, x86_amd64, x86_ia64, x86_arm, amd64_x86, am
 
 Compilers supported:
 
-* msvc       => Visual Studio, versions 6.0 (VC 98, VC .NET 2002) to 12.0 (Visual Studio 2013)
+* msvc       => Visual Studio, versions 6.0 (VC 98, VC .NET 2002) to 15 (Visual Studio 2017)
 * wsdk       => Windows SDK, versions 6.0, 6.1, 7.0, 7.1, 8.0
 * icl        => Intel compiler, versions 9, 10, 11, 13
 * winphone   => Visual Studio to target Windows Phone 8 native (version 8.0 for now)
