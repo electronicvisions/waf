@@ -347,11 +347,14 @@ class BuildContext(Context.Context):
 			self.store()
 			raise
 		else:
-			if self.producer.dirty:
+			if self.is_dirty():
 				self.store()
 
 		if self.producer.error:
 			raise Errors.BuildError(self.producer.error)
+
+	def is_dirty(self):
+		return self.producer.dirty
 
 	def setup(self, tool, tooldir=None, funs=None):
 		"""
