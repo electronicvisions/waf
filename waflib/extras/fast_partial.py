@@ -30,12 +30,36 @@ NEEDED = 2
 
 SKIPPABLE = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib', 'cprogram', 'cxxprogram']
 
+TSTAMP_DB = '.wafpickle_tstamp_db_file'
+
 class bld(Build.BuildContext):
-	def store(self):
+	def is_dirty(self):
+		return True
+
+	def store_tstamps(self):
 		# For each task generator, record all files involved in task objects
 		# optimization: done only if there was something built
+		do_store = False
+		try:
+			f_deps = self.f_deps
+		except AttributeError:
+			f_deps = self.f_deps = {}
+
 		for g in self.groups:
 			for tg in g:
+				try:
+					staleness = tg.staleness
+				except AttributeError:
+					staleness = DIRTY
+
+				if staleness != DIRTY:
+					# DONE case: there was nothing built
+					# NEEDED case: the tg was brought in because of 'use' propagation
+					# but nothing really changed for them, there may be incomplete
+					# tasks (object files) and in this case it is best to let the next build
+					# figure out if an input/output file changed
+					continue
+
 				do_cache = False
 				for tsk in tg.tasks:
 					if tsk.hasrun == Task.SUCCESS:
@@ -44,21 +68,31 @@ class bld(Build.BuildContext):
 					elif tsk.hasrun == Task.SKIPPED:
 						pass
 					else:
-						# dependencies are incomplete, clear the cache
+						# one failed task, clear the cache for this tg
 						try:
-							del self.raw_deps[(tg.path.abspath(), tg.idx)]
+							del f_deps[(tg.path.abspath(), tg.idx)]
 						except KeyError:
 							pass
+						else:
+							# just store the new state because there is a change
+							do_store = True
+
+						# skip the rest because there is no valid cache possible
 						break
 				else:
 					if not do_cache:
+						# all skipped, but is there anything in cache?
 						try:
-							self.raw_deps[(tg.path.abspath(), tg.idx)]
+							f_deps[(tg.path.abspath(), tg.idx)]
 						except KeyError:
 							# probably cleared because a wscript file changed
+							# store it
 							do_cache = True
 
 					if do_cache:
+						# all tasks skipped but no cache
+						# or a successful task build
+						do_store = True
 						st = set()
 						for tsk in tg.tasks:
 							st.update(tsk.inputs)
@@ -67,12 +101,40 @@ class bld(Build.BuildContext):
 						lst = [x.abspath() for x in tg.path.ant_glob('wscript*')]
 						lst.extend(sorted(x.abspath() for x in st))
 						tss = [os.stat(x).st_mtime for x in lst]
-						self.raw_deps[(tg.path.abspath(), tg.idx)] = (lst, tss)
+						f_deps[(tg.path.abspath(), tg.idx)] = (lst, tss)
 
-		return Build.BuildContext.store(self)
+		if do_store:
+			dbfn = os.path.join(self.variant_dir, TSTAMP_DB)
+			Logs.debug('rev_use: storing %s', dbfn)
+			dbfn_tmp = dbfn + '.tmp'
+			x = Build.cPickle.dumps(f_deps)
+			Utils.writef(dbfn_tmp, x, m='wb')
+			os.rename(dbfn_tmp, dbfn)
+
+	def store(self):
+		self.store_tstamps()
+		if self.producer.dirty:
+			Build.BuildContext.store(self)
 
 	def compute_needed_tgs(self):
 		# assume the 'use' keys are not modified during the build phase
+
+		dbfn = os.path.join(self.variant_dir, TSTAMP_DB)
+		Logs.debug('rev_use: Loading %s', dbfn)
+		try:
+			data = Utils.readf(dbfn, 'rb')
+		except (EnvironmentError, EOFError):
+			Logs.debug('rev_use: Could not load the build cache %s (missing)', dbfn)
+			self.f_deps = {}
+		else:
+			try:
+				self.f_deps = Build.cPickle.loads(data)
+			except Exception as e:
+				Logs.debug('rev_use: Could not pickle the build cache %s: %r', dbfn, e)
+				self.f_deps = {}
+			else:
+				Logs.debug('rev_use: Loaded %s', dbfn)
+
 
 		# 1. obtain task generators that contain rebuilds
 		# 2. obtain the 'use' graph and its dual
@@ -179,9 +241,16 @@ def is_stale(self):
 		Logs.debug('rev_use: must post %r because the configuration has changed', self.name)
 		return True
 
+	# 3.a any tstamp data?
+	try:
+		f_deps = self.bld.f_deps
+	except AttributeError:
+		Logs.debug('rev_use: must post %r because there is no f_deps', self.name)
+		return True
+
 	# 4. check if this is the first build (no cache)
 	try:
-		lst, tss = self.bld.raw_deps[(self.path.abspath(), self.idx)]
+		lst, tss = f_deps[(self.path.abspath(), self.idx)]
 	except KeyError:
 		Logs.debug('rev_use: must post %r because there it has no cached data', self.name)
 		return True
@@ -205,7 +274,7 @@ def is_stale(self):
 		try:
 			ts = tstamp(x)
 		except OSError:
-			del self.bld.raw_deps[(self.path.abspath(), self.idx)]
+			del f_deps[(self.path.abspath(), self.idx)]
 			Logs.debug('rev_use: must post %r because %r does not exist anymore', self.name, x)
 			return True
 		else:
@@ -219,6 +288,7 @@ def is_stale(self):
 @taskgen_method
 def create_compiled_task(self, name, node):
 	# the purpose is to skip the creation of object files
+	# assumption: object-only targets are not skippable
 	if self.staleness == NEEDED:
 		# only libraries/programs can skip object files
 		for x in SKIPPABLE:
@@ -236,7 +306,6 @@ def create_compiled_task(self, name, node):
 @feature(*SKIPPABLE)
 @after_method('apply_link')
 def apply_link_after(self):
-	# assumption: object-only targets are not skippable
 	# cprogram/cxxprogram might be unnecessary
 	if self.staleness != NEEDED:
 		return
