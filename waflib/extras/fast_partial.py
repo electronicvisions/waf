@@ -98,10 +98,11 @@ class bld(Build.BuildContext):
 							st.update(tsk.inputs)
 							st.update(self.node_deps.get(tsk.uid(), []))
 
+						lst = []
 						for k in ('wscript', 'wscript_build'):
 							n = tg.path.find_node(k)
 							if n:
-								lst.append(n.path.abspath())
+								lst.append(n.abspath())
 
 						lst.extend(sorted(x.abspath() for x in st))
 						tss = [os.stat(x).st_mtime for x in lst]
