@@ -344,7 +344,8 @@ class BuildContext(Context.Context):
 		try:
 			self.producer.start()
 		except KeyboardInterrupt:
-			self.store()
+			if self.is_dirty():
+				self.store()
 			raise
 		else:
 			if self.is_dirty():

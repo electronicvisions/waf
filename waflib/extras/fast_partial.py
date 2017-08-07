@@ -98,7 +98,11 @@ class bld(Build.BuildContext):
 							st.update(tsk.inputs)
 							st.update(self.node_deps.get(tsk.uid(), []))
 
-						lst = [x.abspath() for x in tg.path.ant_glob('wscript*')]
+						for k in ('wscript', 'wscript_build'):
+							n = tg.path.find_node(k)
+							if n:
+								lst.append(n.path.abspath())
+
 						lst.extend(sorted(x.abspath() for x in st))
 						tss = [os.stat(x).st_mtime for x in lst]
 						f_deps[(tg.path.abspath(), tg.idx)] = (lst, tss)
@@ -110,6 +114,7 @@ class bld(Build.BuildContext):
 			x = Build.cPickle.dumps(f_deps)
 			Utils.writef(dbfn_tmp, x, m='wb')
 			os.rename(dbfn_tmp, dbfn)
+			Logs.debug('rev_use: stored %s', dbfn)
 
 	def store(self):
 		self.store_tstamps()
