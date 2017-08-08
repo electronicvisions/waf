@@ -274,7 +274,11 @@ def is_stale(self):
 		Logs.debug('rev_use: must post %r because there it has no cached data', self.name)
 		return True
 
-	cache = {}
+	try:
+		cache = self.bld.cache_tstamp_rev_use
+	except AttributeError:
+		cache = self.bld.cache_tstamp_rev_use = {}
+
 	def tstamp(x):
 		# compute files timestamps with some caching
 		try:
