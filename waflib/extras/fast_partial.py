@@ -32,6 +32,9 @@ SKIPPABLE = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib', 'cprogram', 'cxxprogram
 
 TSTAMP_DB = '.wafpickle_tstamp_db_file'
 
+def configure(conf):
+	conf.load('md5_tstamp')
+
 class bld(Build.BuildContext):
 	def is_dirty(self):
 		return True
@@ -44,7 +47,9 @@ class bld(Build.BuildContext):
 			f_deps = self.f_deps
 		except AttributeError:
 			f_deps = self.f_deps = {}
+			self.f_tstamps = {}
 
+		allfiles = set()
 		for g in self.groups:
 			for tg in g:
 				try:
@@ -98,21 +103,27 @@ class bld(Build.BuildContext):
 							st.update(tsk.inputs)
 							st.update(self.node_deps.get(tsk.uid(), []))
 
+						# TODO do last/when loading the tgs
 						lst = []
 						for k in ('wscript', 'wscript_build'):
 							n = tg.path.find_node(k)
 							if n:
+								n.get_bld_sig()
 								lst.append(n.abspath())
 
 						lst.extend(sorted(x.abspath() for x in st))
-						tss = [os.stat(x).st_mtime for x in lst]
-						f_deps[(tg.path.abspath(), tg.idx)] = (lst, tss)
+						allfiles.update(lst)
+						f_deps[(tg.path.abspath(), tg.idx)] = lst
+
+		for x in allfiles:
+			# f_tstamps has everything, while md5_tstamp can be relatively empty on partial builds
+			self.f_tstamps[x] = self.hashes_md5_tstamp[x][0]
 
 		if do_store:
 			dbfn = os.path.join(self.variant_dir, TSTAMP_DB)
 			Logs.debug('rev_use: storing %s', dbfn)
 			dbfn_tmp = dbfn + '.tmp'
-			x = Build.cPickle.dumps(f_deps)
+			x = Build.cPickle.dumps([self.f_tstamps, f_deps], -1)
 			Utils.writef(dbfn_tmp, x, m='wb')
 			os.rename(dbfn_tmp, dbfn)
 			Logs.debug('rev_use: stored %s', dbfn)
@@ -132,12 +143,14 @@ class bld(Build.BuildContext):
 		except (EnvironmentError, EOFError):
 			Logs.debug('rev_use: Could not load the build cache %s (missing)', dbfn)
 			self.f_deps = {}
+			self.f_tstamps = {}
 		else:
 			try:
-				self.f_deps = Build.cPickle.loads(data)
+				self.f_tstamps, self.f_deps = Build.cPickle.loads(data)
 			except Exception as e:
 				Logs.debug('rev_use: Could not pickle the build cache %s: %r', dbfn, e)
 				self.f_deps = {}
+				self.f_tstamps = {}
 			else:
 				Logs.debug('rev_use: Loaded %s', dbfn)
 
@@ -256,17 +269,12 @@ def is_stale(self):
 
 	# 4. check if this is the first build (no cache)
 	try:
-		lst, tss = f_deps[(self.path.abspath(), self.idx)]
+		lst = f_deps[(self.path.abspath(), self.idx)]
 	except KeyError:
 		Logs.debug('rev_use: must post %r because there it has no cached data', self.name)
 		return True
 
-
-	try:
-		cache = self.bld.cache_tstamp_rev_use
-	except AttributeError:
-		cache = self.bld.cache_tstamp_rev_use = {}
-
+	cache = {}
 	def tstamp(x):
 		# compute files timestamps with some caching
 		try:
@@ -276,7 +284,13 @@ def is_stale(self):
 			return ret
 
 	# 5. check the timestamp of each dependency files listed is unchanged
-	for x, old_ts in zip(lst, tss):
+	for x in lst:
+		try:
+			old_ts = self.bld.f_tstamps[x]
+		except KeyError:
+			Logs.debug('rev_use: must post %r because %r is not in cache', self.name, x)
+			return True
+
 		try:
 			ts = tstamp(x)
 		except OSError:
