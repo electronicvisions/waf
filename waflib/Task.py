@@ -710,10 +710,11 @@ class Task(evil):
 					continue
 
 				for v in d:
-					if isinstance(v, bld.root.__class__):
+					try:
 						v = v.get_bld_sig()
-					elif hasattr(v, '__call__'):
-						v = v() # dependency is a function, call it
+					except AttributeError:
+						if hasattr(v, '__call__'):
+							v = v() # dependency is a function, call it
 					upd(v)
 
 	def sig_vars(self):
