@@ -78,11 +78,12 @@ class task_gen(object):
 
 			# Provide a unique index per folder
 			# This is part of a measure to prevent output file name collisions
+			path = self.path.abspath()
 			try:
-				self.idx = self.bld.idx[self.path] = self.bld.idx.get(self.path, 0) + 1
+				self.idx = self.bld.idx[path] = self.bld.idx.get(path, 0) + 1
 			except AttributeError:
 				self.bld.idx = {}
-				self.idx = self.bld.idx[self.path] = 1
+				self.idx = self.bld.idx[path] = 1
 
 			# Record the global task generator count
 			try:
