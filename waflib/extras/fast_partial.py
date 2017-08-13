@@ -7,22 +7,40 @@ A system for fast partial rebuilds
 
 Creating a large amount of task objects up front can take some time.
 By making a few assumptions, it is possible to avoid posting creating
-task objects for targets that are already up-to-date
+task objects for targets that are already up-to-date.
 
-On a silly benchmark the gain observed for 20000 tasks can be 5s->1s for
-a single file change.
+On a silly benchmark the gain observed for 1M tasks can be 5m->17s
+for a single file change.
+
+Usage::
+
+	def options(opt):
+		opt.load('fast_partial')
+	def configure(conf):
+		conf.load('fast_partial')
 
 Assuptions:
 * Mostly for C/C++/Fortran targets with link tasks (object-only targets are not handled)
 * For full project builds: no --targets and no pruning from subfolders
 * The installation phase is ignored
-* `use=` dependencies are fully specified up front even across build groups
+* `use=` dependencies are specified up front even across build groups
 * Task generator source files are not obtained from globs
+
+Implementation details:
+* The first layer obtains file timestamps (md5_tstamp); the timestamps
+  are then stored in a dedicated pickle file
+* The second layer associates each task generator with sets of files to
+  detect changes. Task generators then create tasks only when changes are
+  detected. A specific db file is created to store such data (5m -> 1m10)
+* The third layer binds build context proxies onto each task
+  generator. While loading data for the full build takes more memory
+  (4GB -> 6GB), performing a partial build is then much faster (1m10 -> 17s)
 """
 
 import os
-from waflib import Build, Context, Errors, Logs, Task, Utils
+from waflib import Build, Context, Errors, Logs, Task, TaskGen, Utils
 from waflib.TaskGen import feature, after_method, taskgen_method
+import waflib.Node
 
 DONE = 0
 DIRTY = 1
@@ -32,14 +50,125 @@ SKIPPABLE = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib', 'cprogram', 'cxxprogram
 
 TSTAMP_DB = '.wafpickle_tstamp_db_file'
 
+def options(opt):
+	opt.load('md5_tstamp')
+
 def configure(conf):
 	conf.load('md5_tstamp')
 
+class bld_proxy(object):
+	def __init__(self, bld):
+		object.__setattr__(self, 'bld', bld)
+
+		object.__setattr__(self, 'node_class', type('Nod3', (waflib.Node.Node,), {}))
+		self.node_class.__module__ = 'waflib.Node'
+		self.node_class.ctx = self
+
+		object.__setattr__(self, 'root', self.node_class('', None))
+		for x in Build.SAVED_ATTRS:
+			if x not in ('root', 'hashes_md5_tstamp'):
+				object.__setattr__(self, x, {})
+
+		self.fix_nodes()
+
+	def __setattr__(self, name, value):
+		bld = object.__getattribute__(self, 'bld')
+		setattr(bld, name, value)
+
+	def __delattr__(self, name):
+		bld = object.__getattribute__(self, 'bld')
+		delattr(bld, name)
+
+	def __getattribute__(self, name):
+		try:
+			return object.__getattribute__(self, name)
+		except AttributeError:
+			bld = object.__getattribute__(self, 'bld')
+			return getattr(bld, name)
+
+	def __call__(self, *k, **kw):
+		return self.bld(*k, **kw)
+
+	def fix_nodes(self):
+		for x in ('srcnode', 'path', 'bldnode'):
+			node = self.root.find_dir(getattr(self.bld, x).abspath())
+			object.__setattr__(self, x, node)
+
+	def set_key(self, store_key):
+		object.__setattr__(self, 'store_key', store_key)
+
+	def fix_tg_path(self, *tgs):
+		# changing Node objects on task generators is possible
+		# yet, all Node objects must belong to the same parent
+		for tg in tgs:
+			tg.path = self.root.make_node(tg.path.abspath())
+
+	def restore(self):
+		dbfn = os.path.join(self.variant_dir, Context.DBFILE + self.store_key)
+		Logs.debug('rev_use: reading %s', dbfn)
+		try:
+			data = Utils.readf(dbfn, 'rb')
+		except (EnvironmentError, EOFError):
+			# handle missing file/empty file
+			Logs.debug('rev_use: Could not load the build cache %s (missing)', dbfn)
+		else:
+			try:
+				waflib.Node.pickle_lock.acquire()
+				waflib.Node.Nod3 = self.node_class
+				try:
+					data = Build.cPickle.loads(data)
+				except Exception as e:
+					Logs.debug('rev_use: Could not pickle the build cache %s: %r', dbfn, e)
+				else:
+					for x in Build.SAVED_ATTRS:
+						if x not in ('hashes_md5_tstamp', ):
+							object.__setattr__(self, x, data.get(x, {}))
+			finally:
+				waflib.Node.pickle_lock.release()
+		self.fix_nodes()
+
+	def store(self):
+		data = {}
+		for x in Build.SAVED_ATTRS:
+			if x not in ('hashes_md5_tstamp', ):
+				data[x] = getattr(self, x)
+		db = os.path.join(self.variant_dir, Context.DBFILE + self.store_key)
+
+		try:
+			waflib.Node.pickle_lock.acquire()
+			waflib.Node.Nod3 = self.node_class
+			x = Build.cPickle.dumps(data, Build.PROTOCOL)
+		finally:
+			waflib.Node.pickle_lock.release()
+
+		Logs.debug('rev_use: storing %s', db)
+		Utils.writef(db + '.tmp', x, m='wb')
+		try:
+			st = os.stat(db)
+			os.remove(db)
+			if not Utils.is_win32:
+				os.chown(db + '.tmp', st.st_uid, st.st_gid)
+		except (AttributeError, OSError):
+			Logs.debug('rev_use: there was an error %s', db)
+			pass
+		os.rename(db + '.tmp', db)
+
 class bld(Build.BuildContext):
+	def __call__(self, *k, **kw):
+		# this is one way of doing it, one could use a task generator method too
+		bld = kw['bld'] = bld_proxy(self)
+		ret = TaskGen.task_gen(*k, **kw)
+		self.task_gen_cache_names = {}
+		self.add_to_group(ret, group=kw.get('group'))
+		ret.bld = bld
+		bld.set_key(ret.path.abspath().replace(os.sep, '') + str(ret.idx))
+		return ret
+
 	def is_dirty(self):
 		return True
 
 	def store_tstamps(self):
+		# Called after a build is finished
 		# For each task generator, record all files involved in task objects
 		# optimization: done only if there was something built
 		do_store = False
@@ -95,6 +224,10 @@ class bld(Build.BuildContext):
 							do_cache = True
 
 					if do_cache:
+
+						# there was a rebuild, store the data structure too
+						tg.bld.store()
+
 						# all tasks skipped but no cache
 						# or a successful task build
 						do_store = True
@@ -103,7 +236,7 @@ class bld(Build.BuildContext):
 							st.update(tsk.inputs)
 							st.update(self.node_deps.get(tsk.uid(), []))
 
-						# TODO do last/when loading the tgs
+						# TODO do last/when loading the tgs?
 						lst = []
 						for k in ('wscript', 'wscript_build'):
 							n = tg.path.find_node(k)
@@ -123,7 +256,7 @@ class bld(Build.BuildContext):
 			dbfn = os.path.join(self.variant_dir, TSTAMP_DB)
 			Logs.debug('rev_use: storing %s', dbfn)
 			dbfn_tmp = dbfn + '.tmp'
-			x = Build.cPickle.dumps([self.f_tstamps, f_deps], -1)
+			x = Build.cPickle.dumps([self.f_tstamps, f_deps], Build.PROTOCOL)
 			Utils.writef(dbfn_tmp, x, m='wb')
 			os.rename(dbfn_tmp, dbfn)
 			Logs.debug('rev_use: stored %s', dbfn)
@@ -210,6 +343,11 @@ class bld(Build.BuildContext):
 			mark_needed(xx)
 
 		# so we have the whole tg trees to post in the set "needed"
+		# load their build trees
+		for tg in needed_tgs:
+			tg.bld.restore()
+			tg.bld.fix_tg_path(tg)
+
 		# the stale ones should be fully build, while the needed ones
 		# may skip a few tasks, see create_compiled_task and apply_link_after below
 		Logs.debug('rev_use: amount of needed task gens: %r', len(needed_tgs))
@@ -311,7 +449,7 @@ def is_stale(self):
 
 @taskgen_method
 def create_compiled_task(self, name, node):
-	# the purpose is to skip the creation of object files
+	# skip the creation of object files
 	# assumption: object-only targets are not skippable
 	if self.staleness == NEEDED:
 		# only libraries/programs can skip object files
@@ -333,10 +471,14 @@ def apply_link_after(self):
 	# cprogram/cxxprogram might be unnecessary
 	if self.staleness != NEEDED:
 		return
-	try:
-		link_task = self.link_task
-	except AttributeError:
-		pass
-	else:
-		link_task.hasrun = Task.SKIPPED
+	for tsk in self.tasks:
+		tsk.hasrun = Task.SKIPPED
+
+def path_from(self, node):
+	# TODO
+	if node.ctx is not self.ctx:
+		node = self.ctx.root.make_node(node.abspath())
+	return self.default_path_from(node)
+waflib.Node.Node.default_path_from = waflib.Node.Node.path_from
+waflib.Node.Node.path_from = path_from
 
