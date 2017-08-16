@@ -61,7 +61,7 @@ class protoc(Task):
 				if m:
 					dep = m.groups()[0]
 					for incpath in self.env.INCPATHS:
-						found = incpath.find_resource(dep)
+						found = self.generator.includes_nodes.find_resource(dep)
 						if found:
 							nodes.append(found)
 							parse_node(found)
