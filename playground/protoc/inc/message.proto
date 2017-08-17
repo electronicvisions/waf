@@ -1,5 +1,7 @@
 package udp.tc.tests;
 
+import "message_inc.proto";
+
 option java_package = "com.udp.tc.tests";
 option java_outer_classname = "MessageProtos";
 option cc_generic_services = false;

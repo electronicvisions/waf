@@ -12,7 +12,7 @@ def configure(conf):
 def build(bld):
 	bld(
 		features = 'cxx cxxshlib',
-		source   = ['inc/message.proto'],
+		source   = ['inc/message_inc.proto','inc/message.proto'],
 		target   = 'somelib',
 		includes = ['inc'])
 
