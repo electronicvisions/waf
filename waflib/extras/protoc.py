@@ -60,8 +60,8 @@ class protoc(Task):
 				m = re.search(r'^import\s+"(.*)";.*(//)?.*', line)
 				if m:
 					dep = m.groups()[0]
-					for incpath in self.env.INCPATHS:
-						found = self.generator.includes_nodes.find_resource(dep)
+					for incnode in self.generator.includes_nodes:
+						found = incnode.find_resource(dep)
 						if found:
 							nodes.append(found)
 							parse_node(found)
