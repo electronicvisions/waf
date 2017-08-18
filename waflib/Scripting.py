@@ -38,6 +38,10 @@ def waf_entry_point(current_directory, version, wafdir):
 		ctx.parse_args()
 		sys.exit(0)
 
+	# Store current directory before any chdir
+	Context.waf_dir = wafdir
+	Context.launch_dir = current_directory
+
 	if len(sys.argv) > 1:
 		# os.path.join handles absolute paths in sys.argv[1] accordingly (it discards the previous ones)
 		# if sys.argv[1] is not an absolute path, then it is relative to the current working directory
@@ -49,9 +53,6 @@ def waf_entry_point(current_directory, version, wafdir):
 			# TODO abspath?
 			current_directory = os.path.normpath(os.path.dirname(potential_wscript))
 			sys.argv.pop(1)
-
-	Context.waf_dir = wafdir
-	Context.launch_dir = current_directory
 
 	# if 'configure' is in the commands, do not search any further
 	no_climb = os.environ.get('NOCLIMB')
