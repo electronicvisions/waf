@@ -302,13 +302,19 @@ def distclean_dir(dirname):
 
 def distclean(ctx):
 	'''removes the build directory'''
-	lst = os.listdir('.')
+
+	refDir = '.'
+	if getattr(Options.options, 'no_lock_in_top'):
+		refDir = ctx.options.out
+
+	lst = os.listdir(refDir)
 	for f in lst:
+		fp = os.path.normpath(os.path.join(refDir, f))
 		if f == Options.lockfile:
 			try:
-				proj = ConfigSet.ConfigSet(f)
+				proj = ConfigSet.ConfigSet(fp)
 			except IOError:
-				Logs.warn('Could not read %r', f)
+				Logs.warn('Could not read %r', fp)
 				continue
 
 			if proj['out_dir'] != proj['top_dir']:
@@ -332,7 +338,7 @@ def distclean(ctx):
 		if not Options.commands:
 			for x in '.waf-1. waf-1. .waf3-1. waf3-1.'.split():
 				if f.startswith(x):
-					shutil.rmtree(f, ignore_errors=True)
+					shutil.rmtree(fp, ignore_errors=True)
 
 class Dist(Context.Context):
 	'''creates an archive containing the project source code'''
