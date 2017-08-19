@@ -336,7 +336,7 @@ def distclean(ctx):
 
 		# remove local waf cache folders
 		if not Options.commands:
-			for x in '.waf-1. waf-1. .waf3-1. waf3-1.'.split():
+			for x in '.waf-2 waf-2 .waf3-2 waf3-2'.split():
 				if f.startswith(x):
 					shutil.rmtree(fp, ignore_errors=True)
 
@@ -492,7 +492,7 @@ class Dist(Context.Context):
 		try:
 			return self.excl
 		except AttributeError:
-			self.excl = Node.exclude_regs + ' **/waf-1.8.* **/.waf-1.8* **/waf3-1.8.* **/.waf3-1.8* **/*~ **/*.rej **/*.orig **/*.pyc **/*.pyo **/*.bak **/*.swp **/.lock-w*'
+			self.excl = Node.exclude_regs + ' **/waf-2.* **/.waf-2.* **/waf3-2.* **/.waf3-2.* **/*~ **/*.rej **/*.orig **/*.pyc **/*.pyo **/*.bak **/*.swp **/.lock-w*'
 			if Context.out_dir:
 				nd = self.root.find_node(Context.out_dir)
 				if nd:

@@ -30,14 +30,14 @@ Let's start with a new wscript file in the directory '/tmp/myproject'::
 	def build(bld):
 		print("build!")
 
-We will also use a Waf binary file, for example waf-1.8.8, which we will copy in the project directory::
+We will also use a Waf binary file, for example waf-2.0.0, which we will copy in the project directory::
 
 	$ cd /tmp/myproject
-	$ wget https://waf.io/waf-1.8.8
+	$ wget https://waf.io/waf-2.0.0
 
 To execute the project, we will simply call the command as an argument to ``waf``::
 
-	$ ./waf-1.8.8 configure build
+	$ ./waf-2.0.0 configure build
 	configure!
 	build!
 
