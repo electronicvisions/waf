@@ -3,7 +3,7 @@
 # DC 2008
 # Thomas Nagy 2016-2017 (ita)
 
-import os, re
+import os, re, traceback
 from waflib import Utils, Logs, Errors
 from waflib.Tools import fc, fc_config, fc_scan, ar, ccroot
 from waflib.Configure import conf
@@ -232,7 +232,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	try:
 		conf.cmd_and_log(fc + ['/help'], env=env)
 	except UnicodeError:
-		st = Utils.ex_stack()
+		st = traceback.format_exc()
 		if conf.logger:
 			conf.logger.error(st)
 		conf.fatal('ifort: Unicode error - check the code page?')

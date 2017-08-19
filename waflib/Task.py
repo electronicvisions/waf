@@ -6,7 +6,7 @@
 Tasks represent atomic operations such as processes.
 """
 
-import os, re, sys, tempfile
+import os, re, sys, tempfile, traceback
 from waflib import Utils, Logs, Errors
 
 # task states
@@ -312,7 +312,7 @@ class Task(evil):
 		try:
 			ret = self.run()
 		except Exception:
-			self.err_msg = Utils.ex_stack()
+			self.err_msg = traceback.format_exc()
 			self.hasrun = EXCEPTION
 
 			# TODO cleanup
@@ -328,7 +328,7 @@ class Task(evil):
 			except Errors.WafError:
 				pass
 			except Exception:
-				self.err_msg = Utils.ex_stack()
+				self.err_msg = traceback.format_exc()
 				self.hasrun = EXCEPTION
 			else:
 				self.hasrun = SUCCESS

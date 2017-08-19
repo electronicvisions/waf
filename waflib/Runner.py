@@ -6,7 +6,7 @@
 Runner.py: Task scheduling and execution
 """
 
-import heapq
+import heapq, traceback
 try:
 	from queue import Queue
 except ImportError:
@@ -364,7 +364,7 @@ class Parallel(object):
 			return tsk.runnable_status()
 		except Exception:
 			self.processed += 1
-			tsk.err_msg = Utils.ex_stack()
+			tsk.err_msg = traceback.format_exc()
 			if not self.stop and self.bld.keep:
 				self.skip(tsk)
 				if self.bld.keep == 1:

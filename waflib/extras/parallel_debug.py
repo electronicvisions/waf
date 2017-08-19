@@ -12,7 +12,7 @@ a file named pdebug.svg in the source directory::
 		...
 """
 
-import time, sys, re, threading
+import re, sys, threading, time, traceback
 try:
 	from Queue import Queue
 except:
@@ -222,7 +222,7 @@ def process(self):
 	try:
 		ret = self.run()
 	except Exception:
-		self.err_msg = Utils.ex_stack()
+		self.err_msg = traceback.format_exc()
 		self.hasrun = Task.EXCEPTION
 
 		# TODO cleanup
@@ -238,7 +238,7 @@ def process(self):
 		except Errors.WafError:
 			pass
 		except Exception:
-			self.err_msg = Utils.ex_stack()
+			self.err_msg = traceback.format_exc()
 			self.hasrun = Task.EXCEPTION
 		else:
 			self.hasrun = Task.SUCCESS

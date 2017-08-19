@@ -18,4 +18,4 @@ NEW IN WAF 2.0.0 (preview 4)
 * Remove c_preproc.trimquotes
 * Remove field_name, type_name, function_name from conf.check() tests
 * Remove extras/mem_reducer.py as a better solution has been merged
-
+* Remove Utils.ex_stack (use traceback.format_exc())

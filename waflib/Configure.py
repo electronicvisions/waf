@@ -12,7 +12,7 @@ A :py:class:`waflib.Configure.ConfigurationContext` instance is created when ``w
 * hold configuration routines such as ``find_program``, etc
 """
 
-import os, shlex, sys, time, re, shutil
+import os, re, shlex, shutil, sys, time, traceback
 from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
 
 WAF_CONFIG_LOG = 'config.log'
@@ -258,7 +258,7 @@ class ConfigurationContext(Context.Context):
 				self.fatal('Could not load the Waf tool %r from %r\n%s' % (tool, sys.path, e))
 			except Exception as e:
 				self.to_log('imp %r (%r & %r)' % (tool, tooldir, funs))
-				self.to_log(Utils.ex_stack())
+				self.to_log(traceback.format_exc())
 				raise
 
 			if funs is not None:
@@ -587,7 +587,7 @@ def run_build(self, *k, **kw):
 		try:
 			bld.compile()
 		except Errors.WafError:
-			ret = 'Test does not build: %s' % Utils.ex_stack()
+			ret = 'Test does not build: %s' % traceback.format_exc()
 			self.fatal(ret)
 		else:
 			ret = getattr(bld, 'retval', 0)

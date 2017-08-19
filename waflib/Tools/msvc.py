@@ -52,7 +52,7 @@ cmd.exe  /C  "chcp 1252 & set PYTHONUNBUFFERED=true && set && waf  configure"
 Setting PYTHONUNBUFFERED gives the unbuffered output.
 """
 
-import os, sys, re
+import os, sys, re, traceback
 from waflib import Utils, Logs, Options, Errors
 from waflib.TaskGen import after_method, feature
 
@@ -213,7 +213,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	try:
 		conf.cmd_and_log(cxx + ['/help'], env=env)
 	except UnicodeError:
-		st = Utils.ex_stack()
+		st = traceback.format_exc()
 		if conf.logger:
 			conf.logger.error(st)
 		conf.fatal('msvc: Unicode error - check the code page?')

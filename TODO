@@ -1,7 +1,6 @@
 Waf 2.0
 -------
 
-Merge mem_reducer.py in the mainline
 Improve the sorting in TaskGen.post()
 Remove ut_exec, ut_cmd from waf_unit_test.py
 Better logging?

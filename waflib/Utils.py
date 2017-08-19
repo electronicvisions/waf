@@ -422,15 +422,6 @@ def num2ver(ver):
 		return ret
 	return ver
 
-def ex_stack():
-	"""
-	Extracts the stack to display exceptions. Deprecated: use traceback.format_exc()
-
-	:return: a string represening the last exception
-	"""
-	# TODO remove in waf 2.0
-	return traceback.format_exc()
-
 def to_list(val):
 	"""
 	Converts a string argument to a list by splitting it by spaces.

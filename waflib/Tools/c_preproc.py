@@ -951,8 +951,7 @@ class c_parser(object):
 			raise PreprocError('could not read the file %r' % node)
 		except Exception:
 			if Logs.verbose > 0:
-				Logs.error('parsing %r failed', node)
-				traceback.print_exc()
+				Logs.error('parsing %r failed %s', node, traceback.format_exc())
 		else:
 			self.lines.extend(lines)
 
@@ -1048,7 +1047,7 @@ class c_parser(object):
 						self.ban_includes.add(self.current_file)
 			except Exception as e:
 				if Logs.verbose:
-					Logs.debug('preproc: line parsing failed (%s): %s %s', e, line, Utils.ex_stack())
+					Logs.debug('preproc: line parsing failed (%s): %s %s', e, line, traceback.format_exc())
 
 	def define_name(self, line):
 		"""
