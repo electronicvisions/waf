@@ -20,7 +20,7 @@ WAFVERSION="2.0.0"
 WAFREVISION="3cee7b36f04b13bcd255ea314ad7797246c8725b"
 """Git revision when the waf version is updated"""
 
-ABI = 99
+ABI = 20
 """Version of the build data cache file format (used in :py:const:`waflib.Context.DBFILE`)"""
 
 DBFILE = '.wafpickle-%s-%d-%d' % (sys.platform, sys.hexversion, ABI)
