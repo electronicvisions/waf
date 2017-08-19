@@ -301,44 +301,53 @@ def distclean_dir(dirname):
 		pass
 
 def distclean(ctx):
-	'''removes the build directory'''
+	'''removes build folders and data'''
 
-	refDir = '.'
-	if getattr(Options.options, 'no_lock_in_top'):
-		refDir = ctx.options.out
+	def remove_and_log(k, fun):
+		try:
+			fun(k)
+		except EnvironmentError as e:
+			if e.errno != errno.ENOENT:
+				Logs.warn('Could not remove %r', k)
 
-	lst = os.listdir(refDir)
-	for f in lst:
-		fp = os.path.normpath(os.path.join(refDir, f))
-		if f == Options.lockfile:
-			try:
-				proj = ConfigSet.ConfigSet(fp)
-			except IOError:
-				Logs.warn('Could not read %r', fp)
-				continue
-
-			if proj['out_dir'] != proj['top_dir']:
-				try:
-					shutil.rmtree(proj['out_dir'])
-				except EnvironmentError as e:
-					if e.errno != errno.ENOENT:
-						Logs.warn('Could not remove %r', proj['out_dir'])
-			else:
-				distclean_dir(proj['out_dir'])
-
-			for k in (proj['out_dir'], proj['top_dir'], proj['run_dir']):
-				p = os.path.join(k, Options.lockfile)
-				try:
-					os.remove(p)
-				except OSError as e:
-					if e.errno != errno.ENOENT:
-						Logs.warn('Could not remove %r', p)
-
-		# remove local waf cache folders
-		if not Options.commands:
+	# remove waf cache folders on the top-level
+	if not Options.commands:
+		for k in os.listdir('.'):
 			for x in '.waf-2 waf-2 .waf3-2 waf3-2'.split():
-				if f.startswith(x):
-					shutil.rmtree(fp, ignore_errors=True)
+				if k.startswith(x):
+					remove_and_log(k, shutil.rmtree)
+
+	# remove a build folder, if any
+	cur = '.'
+	if ctx.options.no_lock_in_top:
+		cur = ctx.options.out
+
+	try:
+		lst = os.listdir(cur)
+	except OSError:
+		Logs.warn('Could not read %r', cur)
+		return
+
+	if Options.lockfile in lst:
+		f = os.path.join(cur, Options.lockfile)
+		try:
+			env = ConfigSet.ConfigSet(f)
+		except EnvironmentError:
+			Logs.warn('Could not read %r', f)
+			return
+
+		if not env.out_dir or not env.top_dir:
+			Logs.warn('Invalid lock file %r', f)
+			return
+
+		if env.out_dir == env.top_dir:
+			distclean_dir(env.out_dir)
+		else:
+			remove_and_log(env.out_dir, shutil.rmtree)
+
+		for k in (env.out_dir, env.top_dir, env.run_dir):
+			p = os.path.join(k, Options.lockfile)
+			remove_and_log(p, os.remove)
 
 class Dist(Context.Context):
 	'''creates an archive containing the project source code'''
