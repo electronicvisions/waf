@@ -1264,7 +1264,7 @@ def multicheck(self, *k, **kw):
 
 	bld = par()
 	bld.keep = kw.get('run_all_tests', True)
-	bld.imp_sigs = {} # TODO
+	bld.imp_sigs = {}
 	tasks = []
 
 	id_to_task = {}

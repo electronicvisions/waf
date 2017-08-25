@@ -528,7 +528,6 @@ class Parallel(object):
 		return (ready, waiting)
 
 	def debug_cycles(self, tasks, reverse):
-		# TODO display more than one cycle?
 		tmp = {}
 		for x in tasks:
 			tmp[x] = 0

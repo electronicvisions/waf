@@ -874,7 +874,7 @@ class c_parser(object):
 		"""
 		if filename.endswith('.moc'):
 			# we could let the qt4 module use a subclass, but then the function "scan" below must be duplicated
-			# in the qt4 and in the qt5 classes. So we have two lines here and it is sufficient. TODO waf 1.9
+			# in the qt4 and in the qt5 classes. So we have two lines here and it is sufficient.
 			self.names.append(filename)
 			return None
 
