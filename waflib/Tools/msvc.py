@@ -852,8 +852,7 @@ def find_msvc(conf):
 
 	# linker
 	if not v.LINK_CXX:
-		# TODO: var=LINK_CXX to let so that LINK_CXX can be overridden?
-		v.LINK_CXX = conf.find_program(linker_name, path_list=path, errmsg='%s was not found (linker)' % linker_name)
+		conf.find_program(linker_name, path_list=path, errmsg='%s was not found (linker)' % linker_name, var='LINK_CXX')
 
 	if not v.LINK_CC:
 		v.LINK_CC = v.LINK_CXX
