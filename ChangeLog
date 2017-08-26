@@ -1,12 +1,12 @@
-NEW IN WAF 2.0.0 (preview 4)
-----------------------------
+NEW IN WAF 2.0.0
+----------------
 * Provide a new priority system to improve scalability on complex builds
 * Provide TaskGroup objects to improve scalability on complex builds
 * Force new files into the build directory by default (use Node objects to bypass)
 * Provide built-in support for building over UNC paths
 * Simplify the Task class hierarchy; TaskBase is removed
 * Display commands as string with "WAF_CMD_FORMAT=string waf build -v"
-* New ant_glob(..., generator=True) now returns a Python generator
+* Have ant_glob(..., generator=True) return a Python generator
 * Accept nested lists and generators in bld(source=...)
 * Sort TaskGen methods in alphabetical order by reversing TaskGen.prec order
 
