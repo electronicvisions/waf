@@ -828,6 +828,9 @@ class c_parser(object):
 		self.ban_includes = set()
 		"""Includes that must not be read (#pragma once)"""
 
+		self.listed = set()
+		"""Include nodes/names already listed to avoid duplicates in self.nodes/self.names"""
+
 	def cached_find_resource(self, node, filename):
 		"""
 		Find a file from the input directory
@@ -888,12 +891,15 @@ class c_parser(object):
 				break
 			found = self.cached_find_resource(n, filename)
 
+		listed = self.listed
 		if found and not found in self.ban_includes:
-			# TODO duplicates do not increase the no-op build times too much, but they may be worth removing
-			self.nodes.append(found)
+			if found not in listed:
+				listed.add(found)
+				self.nodes.append(found)
 			self.addlines(found)
 		else:
-			if not filename in self.names:
+			if filename not in listed:
+				listed.add(filename)
 				self.names.append(filename)
 		return found
 
