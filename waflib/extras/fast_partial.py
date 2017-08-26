@@ -9,15 +9,13 @@ Creating a large amount of task objects up front can take some time.
 By making a few assumptions, it is possible to avoid posting creating
 task objects for targets that are already up-to-date.
 
-On a silly benchmark the gain observed for 1M tasks can be 5m->17s
+On a silly benchmark the gain observed for 1M tasks can be 5m->10s
 for a single file change.
 
 Usage::
 
 	def options(opt):
 		opt.load('fast_partial')
-	def configure(conf):
-		conf.load('fast_partial')
 
 Assuptions:
 * Mostly for C/C++/Fortran targets with link tasks (object-only targets are not handled)
@@ -27,14 +25,18 @@ Assuptions:
 * Task generator source files are not obtained from globs
 
 Implementation details:
-* The first layer obtains file timestamps (md5_tstamp); the timestamps
-  are then stored in a dedicated pickle file
-* The second layer associates each task generator with sets of files to
-  detect changes. Task generators then create tasks only when changes are
-  detected. A specific db file is created to store such data (5m -> 1m10)
-* The third layer binds build context proxies onto each task
-  generator. While loading data for the full build takes more memory
-  (4GB -> 6GB), performing a partial build is then much faster (1m10 -> 17s)
+* The first layer obtains file timestamps to recalculate file hashes only
+  when necessary (similar to md5_tstamp); the timestamps are then stored
+  in a dedicated pickle file
+* A second layer associates each task generator to a file set to help
+  detecting changes. Task generators are to create their tasks only when
+  the related files have been modified. A specific db file is created
+  to store such data (5m -> 1m10)
+* A third layer binds build context proxies onto task generators, replacing
+  the default context. While loading data for the full build uses more memory
+  (4GB -> 9GB), partial builds are then much faster (1m10 -> 13s)
+* A fourth layer enables a 2-level cache on file signatures to
+  reduce the size of the main pickle file (13s -> 10s)
 """
 
 import os
@@ -50,11 +52,7 @@ SKIPPABLE = ['cshlib', 'cxxshlib', 'cstlib', 'cxxstlib', 'cprogram', 'cxxprogram
 
 TSTAMP_DB = '.wafpickle_tstamp_db_file'
 
-def options(opt):
-	opt.load('md5_tstamp')
-
-def configure(conf):
-	conf.load('md5_tstamp')
+SAVED_ATTRS = 'root node_sigs task_sigs imp_sigs raw_deps node_deps'.split()
 
 class bld_proxy(object):
 	def __init__(self, bld):
@@ -65,8 +63,8 @@ class bld_proxy(object):
 		self.node_class.ctx = self
 
 		object.__setattr__(self, 'root', self.node_class('', None))
-		for x in Build.SAVED_ATTRS:
-			if x not in ('root', 'hashes_md5_tstamp'):
+		for x in SAVED_ATTRS:
+			if x != 'root':
 				object.__setattr__(self, x, {})
 
 		self.fix_nodes()
@@ -120,9 +118,8 @@ class bld_proxy(object):
 				except Exception as e:
 					Logs.debug('rev_use: Could not pickle the build cache %s: %r', dbfn, e)
 				else:
-					for x in Build.SAVED_ATTRS:
-						if x not in ('hashes_md5_tstamp', ):
-							object.__setattr__(self, x, data.get(x, {}))
+					for x in SAVED_ATTRS:
+						object.__setattr__(self, x, data.get(x, {}))
 			finally:
 				waflib.Node.pickle_lock.release()
 		self.fix_nodes()
@@ -130,8 +127,7 @@ class bld_proxy(object):
 	def store(self):
 		data = {}
 		for x in Build.SAVED_ATTRS:
-			if x not in ('hashes_md5_tstamp', ):
-				data[x] = getattr(self, x)
+			data[x] = getattr(self, x)
 		db = os.path.join(self.variant_dir, Context.DBFILE + self.store_key)
 
 		try:
@@ -149,11 +145,14 @@ class bld_proxy(object):
 			if not Utils.is_win32:
 				os.chown(db + '.tmp', st.st_uid, st.st_gid)
 		except (AttributeError, OSError):
-			Logs.debug('rev_use: there was an error %s', db)
 			pass
 		os.rename(db + '.tmp', db)
 
 class bld(Build.BuildContext):
+	def __init__(self, **kw):
+		super(bld, self).__init__(**kw)
+		self.hashes_md5_tstamp = {}
+
 	def __call__(self, *k, **kw):
 		# this is one way of doing it, one could use a task generator method too
 		bld = kw['bld'] = bld_proxy(self)
@@ -417,24 +416,20 @@ def is_stale(self):
 	except AttributeError:
 		cache = self.bld.cache_tstamp_rev_use = {}
 
-	def tstamp(x):
-		# compute files timestamps with some caching
-		try:
-			return cache[x]
-		except KeyError:
-			ret = cache[x] = os.stat(x).st_mtime
-			return ret
-
 	# 5. check the timestamp of each dependency files listed is unchanged
+	f_tstamps = self.bld.f_tstamps
 	for x in lst:
 		try:
-			old_ts = self.bld.f_tstamps[x]
+			old_ts = f_tstamps[x]
 		except KeyError:
 			Logs.debug('rev_use: must post %r because %r is not in cache', self.name, x)
 			return True
 
 		try:
-			ts = tstamp(x)
+			try:
+				ts = cache[x]
+			except KeyError:
+				ts = cache[x] = os.stat(x).st_mtime
 		except OSError:
 			del f_deps[(self.path.abspath(), self.idx)]
 			Logs.debug('rev_use: must post %r because %r does not exist anymore', self.name, x)
@@ -475,10 +470,49 @@ def apply_link_after(self):
 		tsk.hasrun = Task.SKIPPED
 
 def path_from(self, node):
-	# TODO
+	# handle nodes of distinct types
 	if node.ctx is not self.ctx:
 		node = self.ctx.root.make_node(node.abspath())
 	return self.default_path_from(node)
 waflib.Node.Node.default_path_from = waflib.Node.Node.path_from
 waflib.Node.Node.path_from = path_from
+
+def h_file(self):
+	# similar to md5_tstamp.py, but with 2-layer cache
+	# global_cache for the build context common for all task generators
+	# local_cache for the build context proxy (one by task generator)
+	#
+	# the global cache is not persistent
+	# the local cache is persistent and meant for partial builds
+	#
+	# assume all calls are made from a single thread
+	#
+	filename = self.abspath()
+	st = os.stat(filename)
+
+	global_cache = self.ctx.bld.hashes_md5_tstamp
+	local_cache = self.ctx.hashes_md5_tstamp
+
+	if filename in global_cache:
+		# value already calculated in this build
+		cval = global_cache[filename]
+
+		# the value in global cache is assumed to be calculated once
+		# reverifying it could cause task generators
+		# to get distinct tstamp values, thus missing rebuilds
+		local_cache[filename] = cval
+		return cval[1]
+
+	if filename in local_cache:
+		cval = local_cache[filename]
+		if cval[0] == st.st_mtime:
+			# correct value from a previous build
+			# put it in the global cache
+			global_cache[filename] = cval
+			return cval[1]
+
+	ret = Utils.h_file(filename)
+	local_cache[filename] = global_cache[filename] = (st.st_mtime, ret)
+	return ret
+waflib.Node.Node.h_file = h_file
 
