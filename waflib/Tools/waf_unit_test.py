@@ -4,7 +4,7 @@
 # Thomas Nagy, 2010-2017 (ita)
 
 """
-Unit testing system for C/C++/D providing test execution:
+Unit testing system for C/C++/D and interpreted languages providing test execution:
 
 * in parallel, by using ``waf -j``
 * partial (only the tests that have changed) or full (by using ``waf --alltests``)
@@ -52,6 +52,48 @@ status = subprocess.call(cmd, env=env, cwd=%(cwd)r, shell=isinstance(cmd, str))
 sys.exit(status)
 """
 
+@taskgen_method
+def handle_ut_cwd(self, key):
+	cwd = getattr(self, key, None)
+	if cwd:
+		if isinstance(cwd, str):
+			# we want a Node instance
+			if os.path.isabs(cwd):
+				self.ut_cwd = self.bld.root.make_node(cwd)
+			else:
+				self.ut_cwd = self.path.make_node(cwd)
+
+@feature('test_scripts')
+def make_interpreted_test(self):
+	"""Create interpreted unit tests."""
+	for x in ['test_scripts_source', 'test_scripts_template']:
+		if not hasattr(self, x):
+			Logs.warn('a test_scripts taskgen i missing %s' % x)
+			return
+
+	self.ut_run, lst = Task.compile_fun(self.test_scripts_template, shell=getattr(self, 'test_scripts_shell', False))
+
+	script_nodes = self.to_nodes(self.test_scripts_source)
+	for script_node in script_nodes:
+		tsk = self.create_task('utest', [script_node])
+		tsk.vars = lst + tsk.vars
+		tsk.env['SCRIPT'] = script_node.path_from(tsk.get_cwd())
+
+	self.handle_ut_cwd('test_scripts_cwd')
+
+	env = getattr(self, 'test_scripts_env', None)
+	if env:
+		self.ut_env = env
+	else:
+		self.ut_env = dict(os.environ)
+
+	paths = getattr(self, 'test_scripts_paths', {})
+	for (k,v) in paths.items():
+		p = self.ut_env.get(k, '').split(os.pathsep)
+		if isinstance(v, str):
+			v = v.split(os.pathsep)
+		self.ut_env[k] = os.pathsep.join(p + v)
+
 @feature('test')
 @after_method('apply_link', 'process_use')
 def make_test(self):
@@ -64,15 +106,7 @@ def make_test(self):
 		self.ut_run, lst = Task.compile_fun(self.ut_str, shell=getattr(self, 'ut_shell', False))
 		tsk.vars = lst + tsk.vars
 
-	if getattr(self, 'ut_cwd', None):
-		if isinstance(self.ut_cwd, str):
-			# we want a Node instance
-			if os.path.isabs(self.ut_cwd):
-				self.ut_cwd = self.bld.root.make_node(self.ut_cwd)
-			else:
-				self.ut_cwd = self.path.make_node(self.ut_cwd)
-	else:
-		self.ut_cwd = tsk.inputs[0].parent
+	self.handle_ut_cwd('ut_cwd')
 
 	if not hasattr(self, 'ut_paths'):
 		paths = []
@@ -98,11 +132,17 @@ def make_test(self):
 		else:
 			add_path('LD_LIBRARY_PATH')
 
+	if not hasattr(self, 'ut_cmd'):
+		self.ut_cmd = getattr(Options.options, 'testcmd', False)
+
 @taskgen_method
 def add_test_results(self, tup):
 	"""Override and return tup[1] to interrupt the build immediately if a test does not run"""
 	Logs.debug("ut: %r", tup)
-	self.utest_result = tup
+	try:
+		self.utest_results.append(tup)
+	except AttributeError:
+		self.utest_results = [tup]
 	try:
 		self.bld.utest_results.append(tup)
 	except AttributeError:
@@ -153,9 +193,9 @@ class utest(Task.Task):
 			return self.generator.ut_run(self)
 
 		self.ut_exec = getattr(self.generator, 'ut_exec', [self.inputs[0].abspath()])
-		testcmd = getattr(self.generator, 'ut_cmd', False) or getattr(Options.options, 'testcmd', False)
-		if testcmd:
-			self.ut_exec = shlex.split(testcmd % ' '.join(self.ut_exec))
+		ut_cmd = getattr(self.generator, 'ut_cmd', False)
+		if ut_cmd:
+			self.ut_exec = shlex.split(ut_cmd % ' '.join(self.ut_exec))
 
 		return self.exec_command(self.ut_exec)
 
@@ -165,7 +205,8 @@ class utest(Task.Task):
 			script_code = SCRIPT_TEMPLATE % {
 				'python': sys.executable,
 				'env': self.get_test_env(),
-				'cwd': self.get_cwd().abspath(), 'cmd': cmd
+				'cwd': self.get_cwd().abspath(),
+				'cmd': cmd
 			}
 			script_file = self.inputs[0].abspath() + '_run.py'
 			Utils.writef(script_file, script_code)
@@ -184,7 +225,7 @@ class utest(Task.Task):
 			testlock.release()
 
 	def get_cwd(self):
-		return self.generator.ut_cwd
+		return getattr(self.generator, 'ut_cwd', self.inputs[0].parent)
 
 def summary(bld):
 	"""
