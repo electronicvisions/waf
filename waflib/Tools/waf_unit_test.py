@@ -36,7 +36,7 @@ By passing --dump-test-scripts the build outputs corresponding python files
 (with extension _run.py) that are useful for debugging purposes.
 """
 
-import os, sys
+import os, shlex, sys
 from waflib.TaskGen import feature, after_method, taskgen_method
 from waflib import Utils, Task, Logs, Options
 from waflib.Tools import ccroot
@@ -152,11 +152,10 @@ class utest(Task.Task):
 		if hasattr(self.generator, 'ut_run'):
 			return self.generator.ut_run(self)
 
-		# TODO ut_exec, ut_cmd should be considered obsolete
 		self.ut_exec = getattr(self.generator, 'ut_exec', [self.inputs[0].abspath()])
 		testcmd = getattr(self.generator, 'ut_cmd', False) or getattr(Options.options, 'testcmd', False)
 		if testcmd:
-			self.ut_exec = (testcmd % ' '.join(self.ut_exec)).split(' ')
+			self.ut_exec = shlex.split(testcmd % ' '.join(self.ut_exec))
 
 		return self.exec_command(self.ut_exec)
 
@@ -243,11 +242,10 @@ def options(opt):
 	"""
 	opt.add_option('--notests', action='store_true', default=False, help='Exec no unit tests', dest='no_tests')
 	opt.add_option('--alltests', action='store_true', default=False, help='Exec all unit tests', dest='all_tests')
-	opt.add_option('--clear-failed', action='store_true', default=False, help='Force failed unit tests to run again next time', dest='clear_failed_tests')
-	opt.add_option('--testcmd', action='store', default=False,
-	 help = 'Run the unit tests using the test-cmd string'
-	 ' example "--test-cmd="valgrind --error-exitcode=1'
-	 ' %s" to run under valgrind', dest='testcmd')
+	opt.add_option('--clear-failed', action='store_true', default=False,
+		help='Force failed unit tests to run again next time', dest='clear_failed_tests')
+	opt.add_option('--testcmd', action='store', default=False, dest='testcmd',
+		help='Run the unit tests using the test-cmd string example "--testcmd="valgrind --error-exitcode=1 %s" to run under valgrind')
 	opt.add_option('--dump-test-scripts', action='store_true', default=False,
-	 help='Create python scripts to help debug tests', dest='dump_test_scripts')
+		help='Create python scripts to help debug tests', dest='dump_test_scripts')
 
