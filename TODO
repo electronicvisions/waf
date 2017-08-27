@@ -1,8 +1,4 @@
-Waf 2.0
+Waf 2.1
 -------
 
-Improve the sorting in TaskGen.post()
-Remove ut_exec, ut_cmd from waf_unit_test.py
-Better logging?
-Utils.exc_stack
-
+...
