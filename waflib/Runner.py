@@ -65,7 +65,7 @@ class Consumer(Utils.threading.Thread):
 		"""
 		try:
 			if not self.spawner.master.stop:
-				self.task.process()
+				self.spawner.master.process_task(self.task)
 		finally:
 			self.spawner.sem.release()
 			self.spawner.master.out.put(self.task)
@@ -319,6 +319,14 @@ class Parallel(object):
 		"""
 		self.ready.put(tsk)
 
+	def process_task(self, tsk):
+		"""
+		Processes a task and attempts to stop the build in case of errors
+		"""
+		tsk.process()
+		if tsk.hasrun != Task.SUCCESS:
+			self.error_handler(tsk)
+
 	def skip(self, tsk):
 		"""
 		Mark a task as skipped/up-to-date
@@ -335,20 +343,14 @@ class Parallel(object):
 
 	def error_handler(self, tsk):
 		"""
-		Called when a task cannot be executed. The flag :py:attr:`waflib.Runner.Parallel.stop` is set, unless
-		the build is executed with::
+		Called when a task cannot be executed. The flag :py:attr:`waflib.Runner.Parallel.stop` is set,
+		unless the build is executed with::
 
 			$ waf build -k
 
 		:param tsk: task instance
 		:type tsk: :py:attr:`waflib.Task.Task`
 		"""
-		if hasattr(tsk, 'scan') and hasattr(tsk, 'uid'):
-			# TODO waf 2.0 - this breaks encapsulation
-			try:
-				del self.bld.imp_sigs[tsk.uid()]
-			except KeyError:
-				pass
 		if not self.bld.keep:
 			self.stop = True
 		self.error.append(tsk)
@@ -376,9 +378,10 @@ class Parallel(object):
 					if Logs.verbose > 1:
 						self.error.append(tsk)
 				return Task.EXCEPTION
-			tsk.hasrun = Task.EXCEPTION
 
+			tsk.hasrun = Task.EXCEPTION
 			self.error_handler(tsk)
+
 			return Task.EXCEPTION
 
 	def start(self):
@@ -421,7 +424,7 @@ class Parallel(object):
 				if self.numjobs == 1:
 					tsk.log_display(tsk.generator.bld)
 					try:
-						tsk.process()
+						self.process_task(tsk)
 					finally:
 						self.out.put(tsk)
 				else:

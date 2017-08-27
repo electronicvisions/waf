@@ -293,18 +293,14 @@ class Task(evil):
 
 	def process(self):
 		"""
-		Assume that the task has had a ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
-		Execute the task and then put it back in the queue :py:attr:`waflib.Runner.Parallel.out`
-		(may be replaced by subclassing).
+		Runs the task and handles errors
 
 		:return: 0 or None if everything is fine
 		:rtype: integer
 		"""
 		# remove the task signature immediately before it is executed
-		# in case of failure the task will be executed again
-		m = self.generator.bld.producer
+		# so that the task will be executed again in case of failure
 		try:
-			# TODO another place for this?
 			del self.generator.bld.task_sigs[self.uid()]
 		except KeyError:
 			pass
@@ -314,26 +310,27 @@ class Task(evil):
 		except Exception:
 			self.err_msg = traceback.format_exc()
 			self.hasrun = EXCEPTION
-
-			# TODO cleanup
-			m.error_handler(self)
-			return
-
-		if ret:
-			self.err_code = ret
-			self.hasrun = CRASHED
 		else:
-			try:
-				self.post_run()
-			except Errors.WafError:
-				pass
-			except Exception:
-				self.err_msg = traceback.format_exc()
-				self.hasrun = EXCEPTION
+			if ret:
+				self.err_code = ret
+				self.hasrun = CRASHED
 			else:
-				self.hasrun = SUCCESS
-		if self.hasrun != SUCCESS:
-			m.error_handler(self)
+				try:
+					self.post_run()
+				except Errors.WafError:
+					pass
+				except Exception:
+					self.err_msg = traceback.format_exc()
+					self.hasrun = EXCEPTION
+				else:
+					self.hasrun = SUCCESS
+
+		if self.hasrun != SUCCESS and self.scan:
+			# rescan dependencies on next run
+			try:
+				del self.generator.bld.imp_sigs[self.uid()]
+			except KeyError:
+				pass
 
 	def log_display(self, bld):
 		"Writes the execution status on the context logger"
