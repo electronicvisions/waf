@@ -178,7 +178,7 @@ class utest(Task.Task):
 				Logs.info('Test debug file written as %r' % script_file)
 
 		proc = Utils.subprocess.Popen(cmd, cwd=self.get_cwd().abspath(), env=self.get_test_env(),
-			stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE)
+			stderr=Utils.subprocess.PIPE, stdout=Utils.subprocess.PIPE, shell=isinstance(cmd,str))
 		(stdout, stderr) = proc.communicate()
 		self.waf_unit_test_results = tup = (self.inputs[0].abspath(), proc.returncode, stdout, stderr)
 		testlock.acquire()
