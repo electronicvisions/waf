@@ -595,7 +595,7 @@ def apply_vnum(self):
 		self.create_task('vnum', node, outs)
 
 	if getattr(self, 'install_task', None):
-		self.install_task.hasrun = Task.SKIP_ME
+		self.install_task.hasrun = Task.SKIPPED
 		path = self.install_task.install_to
 		if self.env.DEST_OS == 'openbsd':
 			libname = self.link_task.outputs[0].name
