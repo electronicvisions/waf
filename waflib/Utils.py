@@ -9,7 +9,7 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
-import atexit, os, sys, errno, traceback, inspect, re, datetime, platform, base64, signal, functools, time
+import atexit, os, sys, errno, inspect, re, datetime, platform, base64, signal, functools, time
 
 try:
 	import cPickle
