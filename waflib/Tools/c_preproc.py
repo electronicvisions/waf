@@ -845,7 +845,6 @@ class c_parser(object):
 		try:
 			cache = node.ctx.preproc_cache_node
 		except AttributeError:
-			global FILE_CACHE_SIZE
 			cache = node.ctx.preproc_cache_node = Utils.lru_cache(FILE_CACHE_SIZE)
 
 		key = (node, filename)
@@ -924,7 +923,6 @@ class c_parser(object):
 		try:
 			cache = node.ctx.preproc_cache_lines
 		except AttributeError:
-			global LINE_CACHE_SIZE
 			cache = node.ctx.preproc_cache_lines = Utils.lru_cache(LINE_CACHE_SIZE)
 		try:
 			return cache[node]
@@ -1072,9 +1070,6 @@ def scan(task):
 
 	This function is bound as a task method on :py:class:`waflib.Tools.c.c` and :py:class:`waflib.Tools.cxx.cxx` for example
 	"""
-
-	global go_absolute
-
 	try:
 		incn = task.generator.includes_nodes
 	except AttributeError:

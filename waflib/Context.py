@@ -81,7 +81,6 @@ def create_context(cmd_name, *k, **kw):
 	:return: Context object
 	:rtype: :py:class:`waflib.Context.Context`
 	"""
-	global classes
 	for x in classes:
 		if x.cmd == cmd_name:
 			return x(*k, **kw)
@@ -110,7 +109,6 @@ class store_context(type):
 		if not getattr(cls, 'fun', None):
 			cls.fun = cls.cmd
 
-		global classes
 		classes.insert(0, cls)
 
 ctx = store_context('ctx', (object,), {})
@@ -150,7 +148,6 @@ class Context(ctx):
 		try:
 			rd = kw['run_dir']
 		except KeyError:
-			global run_dir
 			rd = run_dir
 
 		# binds the context to the nodes in use to avoid a context singleton
@@ -201,7 +198,6 @@ class Context(ctx):
 		Here, it calls the function name in the top-level wscript file. Most subclasses
 		redefine this method to provide additional functionality.
 		"""
-		global g_module
 		self.recurse([os.path.dirname(g_module.root_path)])
 
 	def pre_recurse(self, node):
@@ -624,7 +620,6 @@ class Context(ctx):
 		:param ban: list of exact file names to exclude
 		:type ban: list of string
 		"""
-		global waf_dir
 		if os.path.isdir(waf_dir):
 			lst = self.root.find_node(waf_dir).find_node('waflib/extras').ant_glob(var)
 			for x in lst:

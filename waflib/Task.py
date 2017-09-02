@@ -93,7 +93,6 @@ class store_task_type(type):
 		name = cls.__name__
 
 		if name != 'evil' and name != 'Task':
-			global classes
 			if getattr(cls, 'run_str', None):
 				# if a string is provided, convert it to a method
 				(f, dvars) = compile_fun(cls.run_str, cls.shell)
@@ -1219,7 +1218,6 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 		params['run'] = func
 
 	cls = type(Task)(name, (Task,), params)
-	global classes
 	classes[name] = cls
 
 	if ext_in:

@@ -240,7 +240,6 @@ class jar_create(JTask):
 			if not t.hasrun:
 				return Task.ASK_LATER
 		if not self.inputs:
-			global JAR_RE
 			try:
 				self.inputs = [x for x in self.basedir.ant_glob(JAR_RE, remove=False) if id(x) != id(self.outputs[0])]
 			except Exception:
@@ -273,7 +272,6 @@ class javac(JTask):
 				return Task.ASK_LATER
 
 		if not self.inputs:
-			global SOURCE_RE
 			self.inputs  = []
 			for x in self.srcdir:
 				self.inputs.extend(x.ant_glob(SOURCE_RE, remove=False))

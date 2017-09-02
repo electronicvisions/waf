@@ -162,7 +162,6 @@ class utest(Task.Task):
 	def exec_command(self, cmd, **kw):
 		Logs.debug('runner: %r', cmd)
 		if getattr(Options.options, 'dump_test_scripts', False):
-			global SCRIPT_TEMPLATE
 			script_code = SCRIPT_TEMPLATE % {
 				'python': sys.executable,
 				'env': self.get_test_env(),

@@ -167,7 +167,6 @@ class tex(Task.Task):
 				return
 			seen.append(node)
 			code = node.read()
-			global re_tex
 			for match in re_tex.finditer(code):
 
 				multibib = match.group('type')
