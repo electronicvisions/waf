@@ -12,11 +12,10 @@ Source files to be copied can be specified either in `buildcopy_source` attribut
 Examples::
 
 	def build(bld):
-		
 		bld(name             = 'bar',
 			features         = 'py buildcopy',
 			source           = bld.path.ant_glob('src/bar/*.py'))
-		
+
 		bld(name             = 'py baz',
 			features         = 'buildcopy',
 			buildcopy_source = bld.path.ant_glob('src/bar/*.py') + ['src/bar/resource.txt'])
@@ -50,17 +49,17 @@ def make_buildcopy(self):
 			if not os.path.isfile(node.abspath()):
 				raise Errors.WafError('buildcopy: Cannot copy directory %s (unsupported action)'%node)
 			return node
-		
+
 		node = self.bld.path.get_src().find_node(lst)
 		if node:
 			if not os.path.isfile(node.abspath()):
 				raise Errors.WafError('buildcopy: Cannot copy directory %s (unsupported action)'%node)
 			return node
 		raise Errors.WafError('buildcopy: File not found in src: %s'%os.path.join(*lst))
-	
+
 	nodes = [ to_nodes(n) for n in getattr(self, 'buildcopy_source', getattr(self, 'source', [])) ]
 	node_pairs = [(n, n.get_bld()) for n in nodes]
-	tsk = self.create_task('buildcopy', [n[0] for n in node_pairs], [n[1] for n in node_pairs], node_pairs=node_pairs)
+	self.create_task('buildcopy', [n[0] for n in node_pairs], [n[1] for n in node_pairs], node_pairs=node_pairs)
 
 
 class buildcopy(Task.Task):
@@ -68,7 +67,7 @@ class buildcopy(Task.Task):
 	Copy for each pair `n` in `node_pairs`: n[0] -> n[1].
 
 	Attribute `node_pairs` should contain a list of tuples describing source an target:
-	
+
 		node_pairs = [(in, out), ...]
 
 	"""
