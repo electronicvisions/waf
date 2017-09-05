@@ -24,19 +24,11 @@ def waf_entry_point(current_directory, version, wafdir):
 	:param wafdir: absolute path representing the directory of the waf library
 	:type wafdir: string
 	"""
-
 	Logs.init_log()
 
 	if Context.WAFVERSION != version:
 		Logs.error('Waf script %r and library %r do not match (directory %r)', version, Context.WAFVERSION, wafdir)
 		sys.exit(1)
-
-	if '--version' in sys.argv:
-		Context.run_dir = current_directory
-		ctx = Context.create_context('options')
-		ctx.curdir = current_directory
-		ctx.parse_args()
-		sys.exit(0)
 
 	# Store current directory before any chdir
 	Context.waf_dir = wafdir
@@ -54,6 +46,10 @@ def waf_entry_point(current_directory, version, wafdir):
 			current_directory = os.path.normpath(os.path.dirname(potential_wscript))
 			sys.argv.pop(1)
 
+	# Parse basic args to find out pre-configuration phase options
+	optsCtx = Context.create_context('options')
+	optsCtx.parse_basic_args()
+
 	# if 'configure' is in the commands, do not search any further
 	no_climb = os.environ.get('NOCLIMB')
 	if not no_climb:
@@ -64,14 +60,10 @@ def waf_entry_point(current_directory, version, wafdir):
 					break
 
 	# if --top is provided assume the build started in the top directory
-	for i, x in enumerate(sys.argv):
-		# WARNING: this modifies sys.argv
-		if x.startswith('--top='):
-			Context.run_dir = Context.top_dir = Utils.sane_path(x[6:])
-			sys.argv[i] = '--top=' + Context.run_dir
-		if x.startswith('--out='):
-			Context.out_dir = Utils.sane_path(x[6:])
-			sys.argv[i] = '--out=' + Context.out_dir
+	if Options.options.top:
+		Context.run_dir = Context.top_dir = Options.options.top
+	if Options.options.out:
+		Context.out_dir = Options.options.out
 
 	# try to find a lock file (if the project was configured)
 	# at the same time, store the first wscript file seen
@@ -131,13 +123,8 @@ def waf_entry_point(current_directory, version, wafdir):
 			break
 
 	if not Context.run_dir:
-		if '-h' in sys.argv or '--help' in sys.argv:
-			Logs.warn('No wscript file found: the help message may be incomplete')
-			Context.run_dir = current_directory
-			ctx = Context.create_context('options')
-			ctx.curdir = current_directory
-			ctx.parse_args()
-			sys.exit(0)
+		Logs.warn('No wscript file found: the help message may be incomplete')
+		optsCtx.parser.print_help()
 		Logs.error('Waf: Run from a directory containing a file named %r', Context.WSCRIPT_FILE)
 		sys.exit(1)
 
@@ -158,12 +145,14 @@ def waf_entry_point(current_directory, version, wafdir):
 		traceback.print_exc(file=sys.stdout)
 		sys.exit(2)
 
-	if '--profile' in sys.argv:
+	if Options.options.profile:
 		import cProfile, pstats
 		cProfile.runctx('from waflib import Scripting; Scripting.run_commands()', {}, {}, 'profi.txt')
 		p = pstats.Stats('profi.txt')
 		p.sort_stats('time').print_stats(75) # or 'cumulative'
 	else:
+		# Execute 'option' context to load custom defined commands
+		optsCtx.execute()
 		try:
 			run_commands()
 		except Errors.WafError as e:
@@ -209,35 +198,6 @@ def set_main_module(file_path):
 	if not 'options' in Context.g_module.__dict__:
 		Context.g_module.options = Utils.nada
 
-def parse_options():
-	"""
-	Parses the command-line options and initialize the logging system.
-	Called by :py:func:`waflib.Scripting.waf_entry_point` during the initialization.
-	"""
-	Context.create_context('options').execute()
-
-	for var in Options.envvars:
-		(name, value) = var.split('=', 1)
-		os.environ[name.strip()] = value
-
-	if not Options.commands:
-		Options.commands = [default_cmd]
-	Options.commands = [x for x in Options.commands if x != 'options'] # issue 1076
-
-	# process some internal Waf options
-	Logs.verbose = Options.options.verbose
-	#Logs.init_log()
-
-	if Options.options.zones:
-		Logs.zones = Options.options.zones.split(',')
-		if not Logs.verbose:
-			Logs.verbose = 1
-	elif Logs.verbose > 0:
-		Logs.zones = ['runner']
-
-	if Logs.verbose > 2:
-		Logs.zones = ['*']
-
 def run_command(cmd_name):
 	"""
 	Executes a single Waf command. Called by :py:func:`waflib.Scripting.run_commands`.
@@ -262,7 +222,6 @@ def run_commands():
 	Called by :py:func:`waflib.Scripting.waf_entry_point` during the initialization, and executed
 	after :py:func:`waflib.Scripting.parse_options`.
 	"""
-	parse_options()
 	run_command('init')
 	while Options.commands:
 		cmd_name = Options.commands.pop(0)

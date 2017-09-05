@@ -42,11 +42,29 @@ class opt_parser(optparse.OptionParser):
 	"""
 	Command-line options parser.
 	"""
-	def __init__(self, ctx):
-		optparse.OptionParser.__init__(self, conflict_handler="resolve",
+	def __init__(self, ctx, allow_unknown=False):
+		# Create a option parser without help function because we need to be able ignore '-h|--help'
+		#  at configuration phase, once the main script found, we will add the help option to make sure
+		#  we if help is needed it will containt also user defined options
+		optparse.OptionParser.__init__(self, conflict_handler="resolve", add_help_option=False,
 			version='waf %s (%s)' % (Context.WAFVERSION, Context.WAFREVISION))
 		self.formatter.width = Logs.get_term_cols()
 		self.ctx = ctx
+		# By default do not allow unknown options
+		self.allow_unknown = allow_unknown
+
+	def _process_args(self, largs, rargs, values):
+		"""
+		Custom _process_args to allow unknown options according to the allow_unknown status
+		"""
+		while rargs:
+			try:
+				optparse.OptionParser._process_args(self,largs,rargs,values)
+			except (optparse.BadOptionError, optparse.AmbiguousOptionError), err:
+				if self.allow_unknown:
+					largs.append(err.opt_str)
+				else:
+					self.error(str(err))
 
 	def print_usage(self, file=None):
 		return self.print_help(file)
@@ -243,6 +261,51 @@ class OptionsContext(Context.Context):
 					return group
 			return None
 
+	def parse_basic_args(self, _args=None):
+		"""
+		Parse basic arguments defined by this module. 
+		This can be called at the very beginning of the Waf initialitation
+		procedure to initialize pre-configuration commmand line driven options.
+		"""
+		try:
+			if self.parsed_basic_args:
+				return
+		except AttributeError:
+			self.parsed_basic_args = True
+
+		# Allow unknow argument, as at this point the command line may contain 
+		# custom-specified options the context still doesn't know.
+		self.parser.allow_unknown = True
+
+		global options
+		(options, leftover_args) = self.parser.parse_args(args=_args)
+
+		if options.destdir:
+			options.destdir = Utils.sane_path(options.destdir)
+
+		if options.top:
+			options.top = Utils.sane_path(options.top)
+
+		if options.out:
+			options.out = Utils.sane_path(options.out)
+
+		Logs.verbose = options.verbose
+		if options.verbose >= 1:
+			self.load('errcheck')
+
+		colors = {'yes' : 2, 'auto' : 1, 'no' : 0}[options.colors]
+		Logs.enable_colors(colors)
+
+		if options.zones:
+			Logs.zones = options.zones.split(',')
+		if not Logs.verbose:
+			Logs.verbose = 1
+		elif Logs.verbose > 0:
+			Logs.zones = ['runner']
+
+		if Logs.verbose > 2:
+			Logs.zones = ['*']
+
 	def parse_args(self, _args=None):
 		"""
 		Parses arguments from a list which is not necessarily the command-line.
@@ -250,23 +313,33 @@ class OptionsContext(Context.Context):
 		:param _args: arguments
 		:type _args: list of strings
 		"""
+		self.parse_basic_args()
+
+		# Make sure all specified arguments make sense
+		self.parser.allow_unknown = False
+		self.parser._add_help_option()
+
 		global options, commands, envvars
-		(options, leftover_args) = self.parser.parse_args(args=_args)
+		(custom_options, leftover_args) = self.parser.parse_args(args=_args)
+
+		# Update global options with custom ones
+		for currOptionName, currOptionValue in vars(custom_options).iteritems():
+			try:
+				getattr(options, currOptionName)
+			except AttributeError:
+				setattr(options, currOptionName, currOptionValue)
 
 		for arg in leftover_args:
 			if '=' in arg:
 				envvars.append(arg)
+				(name, value) = var.split('=', 1)
+				os.environ[name.strip()] = value
 			else:
 				commands.append(arg)
 
-		if options.destdir:
-			options.destdir = Utils.sane_path(options.destdir)
-
-		if options.verbose >= 1:
-			self.load('errcheck')
-
-		colors = {'yes' : 2, 'auto' : 1, 'no' : 0}[options.colors]
-		Logs.enable_colors(colors)
+		if not commands:
+			commands = ['build']
+		commands = [x for x in commands if x != 'options'] # issue 1076
 
 	def execute(self):
 		"""
@@ -275,4 +348,3 @@ class OptionsContext(Context.Context):
 		super(OptionsContext, self).execute()
 		self.parse_args()
 		Utils.alloc_process_pool(options.jobs)
-
