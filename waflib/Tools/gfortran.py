@@ -90,3 +90,4 @@ def configure(conf):
 	conf.fc_add_flags()
 	conf.gfortran_flags()
 	conf.gfortran_modifier_platform()
+	conf.check_gfortran_o_space()
