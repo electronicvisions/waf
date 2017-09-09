@@ -625,7 +625,8 @@ def autoconfigure(execute_method):
 			cmd = env.config_cmd or 'configure'
 			if Configure.autoconfig == 'clobber':
 				tmp = Options.options.__dict__
-				Options.options.__dict__ = env.options
+				if env.options:
+					Options.options.__dict__ = env.options
 				try:
 					run_command(cmd)
 				finally:
