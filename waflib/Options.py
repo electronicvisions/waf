@@ -56,11 +56,11 @@ class opt_parser(optparse.OptionParser):
 		while rargs:
 			try:
 				optparse.OptionParser._process_args(self,largs,rargs,values)
-			except (optparse.BadOptionError, optparse.AmbiguousOptionError), err:
+			except (optparse.BadOptionError, optparse.AmbiguousOptionError) as e:
 				if self.allow_unknown:
-					largs.append(err.opt_str)
+					largs.append(e.opt_str)
 				else:
-					self.error(str(err))
+					self.error(str(e))
 
 	def print_usage(self, file=None):
 		return self.print_help(file)
