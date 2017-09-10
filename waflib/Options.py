@@ -13,7 +13,7 @@ that reads the ``options`` wscript function.
 import os, tempfile, optparse, sys, re
 from waflib import Logs, Utils, Context, Errors
 
-options = {}
+options = optparse.Values()
 """
 A global dictionary representing user-provided command-line options::
 
@@ -43,14 +43,10 @@ class opt_parser(optparse.OptionParser):
 	Command-line options parser.
 	"""
 	def __init__(self, ctx, allow_unknown=False):
-		# Create a option parser without help function because we need to be able ignore '-h|--help'
-		#  at configuration phase, once the main script found, we will add the help option to make sure
-		#  we if help is needed it will containt also user defined options
-		optparse.OptionParser.__init__(self, conflict_handler="resolve", add_help_option=False,
+		optparse.OptionParser.__init__(self, conflict_handler='resolve', add_help_option=False,
 			version='waf %s (%s)' % (Context.WAFVERSION, Context.WAFREVISION))
 		self.formatter.width = Logs.get_term_cols()
 		self.ctx = ctx
-		# By default do not allow unknown options
 		self.allow_unknown = allow_unknown
 
 	def _process_args(self, largs, rargs, values):
@@ -136,6 +132,7 @@ class OptionsContext(Context.Context):
 		p('-v', '--verbose',  dest='verbose', default=0,     action='count', help='verbosity level -v -vv or -vvv [default: 0]')
 		p('--zones',          dest='zones',   default='',    action='store', help='debugging zones (task_gen, deps, tasks, etc)')
 		p('--profile',        dest='profile', default='',    action='store_true', help=optparse.SUPPRESS_HELP)
+		p('-h', '--help',     dest='whelp',   default=0,     action='store_true', help="show this help message and exit")
 
 		gr = self.add_option_group('Configuration options')
 		self.option_groups['configure options'] = gr
@@ -261,35 +258,50 @@ class OptionsContext(Context.Context):
 					return group
 			return None
 
-	def parse_basic_args(self, _args=None):
-		"""
-		Parse basic arguments defined by this module. 
-		This can be called at the very beginning of the Waf initialitation
-		procedure to initialize pre-configuration commmand line driven options.
-		"""
-		try:
-			if self.parsed_basic_args:
-				return
-		except AttributeError:
-			self.parsed_basic_args = True
+	def sanitize_path(self, path, cwd=None):
+		if not cwd:
+			cwd = Context.launch_dir
+		p = os.path.expanduser(path)
+		p = os.path.join(cwd, p)
+		p = os.path.normpath(p)
+		p = os.path.abspath(p)
+		return p
 
-		# Allow unknow argument, as at this point the command line may contain 
-		# custom-specified options the context still doesn't know.
-		self.parser.allow_unknown = True
-
-		global options
+	def parse_cmd_args(self, _args=None, cwd=None, allow_unknown=False):
+		"""
+		Just parse the arguments
+		"""
+		self.parser.allow_unknown = allow_unknown
 		(options, leftover_args) = self.parser.parse_args(args=_args)
+		envvars = []
+		commands = []
+		for arg in leftover_args:
+			if '=' in arg:
+				envvars.append(arg)
+			elif arg != 'options':
+				commands.append(arg)
 
-		if options.destdir:
-			options.destdir = Utils.sane_path(options.destdir)
+		for name in 'top out destdir prefix bindir libdir'.split():
+			# those paths are usually expanded from Context.launch_dir
+			if getattr(options, name, None):
+				path = self.sanitize_path(getattr(options, name), cwd)
+				setattr(options, name, path)
+		return options, commands, envvars
 
-		if options.top:
-			options.top = Utils.sane_path(options.top)
+	def init_module_vars(self, arg_options, arg_commands, arg_envvars):
+		options.__dict__.clear()
+		del commands[:]
+		del envvars[:]
 
-		if options.out:
-			options.out = Utils.sane_path(options.out)
+		options.__dict__.update(arg_options.__dict__)
+		commands.extend(arg_commands)
+		envvars.extend(arg_envvars)
 
-		Logs.verbose = options.verbose
+		for var in envvars:
+			(name, value) = var.split('=', 1)
+			os.environ[name.strip()] = value
+
+	def init_logs(self, options, commands, envvars):
 		if options.verbose >= 1:
 			self.load('errcheck')
 
@@ -298,48 +310,25 @@ class OptionsContext(Context.Context):
 
 		if options.zones:
 			Logs.zones = options.zones.split(',')
-		if not Logs.verbose:
-			Logs.verbose = 1
+			if not Logs.verbose:
+				Logs.verbose = 1
 		elif Logs.verbose > 0:
 			Logs.zones = ['runner']
-
 		if Logs.verbose > 2:
 			Logs.zones = ['*']
 
 	def parse_args(self, _args=None):
 		"""
 		Parses arguments from a list which is not necessarily the command-line.
+		Initializes the module variables options, commands and envvars
+		If help is requested, prints it and exit the application
 
 		:param _args: arguments
 		:type _args: list of strings
 		"""
-		self.parse_basic_args()
-
-		# Make sure all specified arguments make sense
-		self.parser.allow_unknown = False
-		self.parser._add_help_option()
-
-		global options, commands, envvars
-		(custom_options, leftover_args) = self.parser.parse_args(args=_args)
-
-		# Update global options with custom ones
-		for currOptionName, currOptionValue in vars(custom_options).iteritems():
-			try:
-				getattr(options, currOptionName)
-			except AttributeError:
-				setattr(options, currOptionName, currOptionValue)
-
-		for arg in leftover_args:
-			if '=' in arg:
-				envvars.append(arg)
-				(name, value) = var.split('=', 1)
-				os.environ[name.strip()] = value
-			else:
-				commands.append(arg)
-
-		if not commands:
-			commands = ['build']
-		commands = [x for x in commands if x != 'options'] # issue 1076
+		options, commands, envvars = self.parse_cmd_args()
+		self.init_logs(options, commands, envvars)
+		self.init_module_vars(options, commands, envvars)
 
 	def execute(self):
 		"""
@@ -348,3 +337,4 @@ class OptionsContext(Context.Context):
 		super(OptionsContext, self).execute()
 		self.parse_args()
 		Utils.alloc_process_pool(options.jobs)
+

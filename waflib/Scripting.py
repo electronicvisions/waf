@@ -32,42 +32,39 @@ def waf_entry_point(current_directory, version, wafdir):
 
 	# Store current directory before any chdir
 	Context.waf_dir = wafdir
-	Context.launch_dir = current_directory
+	Context.run_dir = Context.launch_dir = current_directory
+	start_dir = current_directory
+	no_climb = os.environ.get('NOCLIMB')
 
 	if len(sys.argv) > 1:
-		# os.path.join handles absolute paths in sys.argv[1] accordingly (it discards the previous ones)
+		# os.path.join handles absolute paths
 		# if sys.argv[1] is not an absolute path, then it is relative to the current working directory
 		potential_wscript = os.path.join(current_directory, sys.argv[1])
-		# maybe check if the file is executable
-		# perhaps extract 'wscript' as a constant
-		if os.path.basename(potential_wscript) == 'wscript' and os.path.isfile(potential_wscript):
+		if os.path.basename(potential_wscript) == Context.WSCRIPT_FILE and os.path.isfile(potential_wscript):
 			# need to explicitly normalize the path, as it may contain extra '/.'
-			# TODO abspath?
-			current_directory = os.path.normpath(os.path.dirname(potential_wscript))
+			path = os.path.normpath(os.path.dirname(potential_wscript))
+			start_dir = os.path.abspath(path)
+			no_climb = True
 			sys.argv.pop(1)
 
-	# Parse basic args to find out pre-configuration phase options
-	optsCtx = Context.create_context('options')
-	optsCtx.parse_basic_args()
+	ctx = Context.create_context('options')
+	(options, commands, env) = ctx.parse_cmd_args(allow_unknown=True)
+	if options.top:
+		Context.run_dir = Context.top_dir = options.top
+	if options.out:
+		Context.out_dir = options.out
 
 	# if 'configure' is in the commands, do not search any further
-	no_climb = os.environ.get('NOCLIMB')
 	if not no_climb:
 		for k in no_climb_commands:
-			for y in sys.argv:
+			for y in commands:
 				if y.startswith(k):
 					no_climb = True
 					break
 
-	# if --top is provided assume the build started in the top directory
-	if Options.options.top:
-		Context.run_dir = Context.top_dir = Options.options.top
-	if Options.options.out:
-		Context.out_dir = Options.options.out
-
 	# try to find a lock file (if the project was configured)
 	# at the same time, store the first wscript file seen
-	cur = current_directory
+	cur = start_dir
 	while cur and not Context.top_dir:
 		try:
 			lst = os.listdir(cur)
@@ -123,9 +120,11 @@ def waf_entry_point(current_directory, version, wafdir):
 			break
 
 	if not Context.run_dir:
-		Logs.warn('No wscript file found: the help message may be incomplete')
-		optsCtx.parser.print_help()
-		Logs.error('Waf: Run from a directory containing a file named %r', Context.WSCRIPT_FILE)
+		if options.whelp:
+			Logs.warn('These are the generic options (no wscript/project found)')
+			ctx.parser.print_help()
+			sys.exit(0)
+		Logs.error('Waf: Run from a folder containing a %r file (or try -h for the generic options)', Context.WSCRIPT_FILE)
 		sys.exit(1)
 
 	try:
@@ -145,14 +144,12 @@ def waf_entry_point(current_directory, version, wafdir):
 		traceback.print_exc(file=sys.stdout)
 		sys.exit(2)
 
-	if Options.options.profile:
+	if options.profile:
 		import cProfile, pstats
 		cProfile.runctx('from waflib import Scripting; Scripting.run_commands()', {}, {}, 'profi.txt')
 		p = pstats.Stats('profi.txt')
 		p.sort_stats('time').print_stats(75) # or 'cumulative'
 	else:
-		# Execute 'option' context to load custom defined commands
-		optsCtx.execute()
 		try:
 			run_commands()
 		except Errors.WafError as e:
@@ -198,6 +195,19 @@ def set_main_module(file_path):
 	if not 'options' in Context.g_module.__dict__:
 		Context.g_module.options = Utils.nada
 
+def parse_options():
+	"""
+	Parses the command-line options and initialize the logging system.
+	Called by :py:func:`waflib.Scripting.waf_entry_point` during the initialization.
+	"""
+	ctx = Context.create_context('options')
+	ctx.execute()
+	if not Options.commands:
+		Options.commands.append(default_cmd)
+	if Options.options.whelp:
+		ctx.parser.print_help()
+		sys.exit(0)
+
 def run_command(cmd_name):
 	"""
 	Executes a single Waf command. Called by :py:func:`waflib.Scripting.run_commands`.
@@ -222,6 +232,7 @@ def run_commands():
 	Called by :py:func:`waflib.Scripting.waf_entry_point` during the initialization, and executed
 	after :py:func:`waflib.Scripting.parse_options`.
 	"""
+	parse_options()
 	run_command('init')
 	while Options.commands:
 		cmd_name = Options.commands.pop(0)
@@ -494,11 +505,7 @@ def dist(ctx):
 	pass
 
 class DistCheck(Dist):
-	"""
-	Creates an archive of the project, then attempts to build the project in a temporary directory::
-
-		$ waf distcheck
-	"""
+	"""creates an archive with dist, then tries to build it"""
 	fun = 'distcheck'
 	cmd = 'distcheck'
 

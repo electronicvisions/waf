@@ -197,17 +197,17 @@ class ConfigurationContext(Context.Context):
 		"""
 		if not env.PREFIX:
 			if Options.options.prefix or Utils.is_win32:
-				env.PREFIX = Utils.sane_path(Options.options.prefix)
+				env.PREFIX = Options.options.prefix
 			else:
-				env.PREFIX = ''
+				env.PREFIX = '/'
 		if not env.BINDIR:
 			if Options.options.bindir:
-				env.BINDIR = Utils.sane_path(Options.options.bindir)
+				env.BINDIR = Options.options.bindir
 			else:
 				env.BINDIR = Utils.subst_vars('${PREFIX}/bin', env)
 		if not env.LIBDIR:
 			if Options.options.libdir:
-				env.LIBDIR = Utils.sane_path(Options.options.libdir)
+				env.LIBDIR = Options.options.libdir
 			else:
 				env.LIBDIR = Utils.subst_vars('${PREFIX}/lib%s' % Utils.lib64(), env)
 
