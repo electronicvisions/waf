@@ -53,6 +53,7 @@ def waf_entry_point(current_directory, version, wafdir):
 	(options, commands, env) = ctx.parse_cmd_args(allow_unknown=True)
 	if options.top:
 		Context.run_dir = Context.top_dir = options.top
+		no_climb = True
 	if options.out:
 		Context.out_dir = options.out
 
@@ -67,7 +68,7 @@ def waf_entry_point(current_directory, version, wafdir):
 	# try to find a lock file (if the project was configured)
 	# at the same time, store the first wscript file seen
 	cur = start_dir
-	while cur and not Context.top_dir:
+	while cur:
 		try:
 			lst = os.listdir(cur)
 		except OSError:
