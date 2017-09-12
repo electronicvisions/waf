@@ -61,6 +61,8 @@ The detection uses pkg-config on Linux by default. To force static library detec
 QT5_XCOMPILE=1 QT5_FORCE_STATIC=1 waf configure
 """
 
+from __future__ import with_statement
+
 try:
 	from xml.sax import make_parser
 	from xml.sax.handler import ContentHandler
@@ -366,11 +368,8 @@ class rcc(Task.Task):
 		parser = make_parser()
 		curHandler = XMLHandler()
 		parser.setContentHandler(curHandler)
-		fi = open(self.inputs[0].abspath(), 'r')
-		try:
-			parser.parse(fi)
-		finally:
-			fi.close()
+		with open(self.inputs[0].abspath(), 'r') as f:
+			parser.parse(f)
 
 		nodes = []
 		names = []

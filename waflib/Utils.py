@@ -9,6 +9,8 @@ The portability fixes try to provide a consistent behavior of the Waf API
 through Python versions 2.5 to 3.X and across different platforms (win32, linux, etc)
 """
 
+from __future__ import with_statement
+
 import atexit, os, sys, errno, inspect, re, datetime, platform, base64, signal, functools, time
 
 try:
@@ -209,21 +211,15 @@ def readf(fname, m='r', encoding='latin-1'):
 
 	if sys.hexversion > 0x3000000 and not 'b' in m:
 		m += 'b'
-		f = open(fname, m)
-		try:
+		with open(fname, m) as f:
 			txt = f.read()
-		finally:
-			f.close()
 		if encoding:
 			txt = txt.decode(encoding)
 		else:
 			txt = txt.decode()
 	else:
-		f = open(fname, m)
-		try:
+		with open(fname, m) as f:
 			txt = f.read()
-		finally:
-			f.close()
 	return txt
 
 def writef(fname, data, m='w', encoding='latin-1'):
@@ -248,11 +244,8 @@ def writef(fname, data, m='w', encoding='latin-1'):
 	if sys.hexversion > 0x3000000 and not 'b' in m:
 		data = data.encode(encoding)
 		m += 'b'
-	f = open(fname, m)
-	try:
+	with open(fname, m) as f:
 		f.write(data)
-	finally:
-		f.close()
 
 def h_file(fname):
 	"""
@@ -264,14 +257,11 @@ def h_file(fname):
 	:return: hash of the file contents
 	:rtype: string or bytes
 	"""
-	f = open(fname, 'rb')
 	m = md5()
-	try:
+	with open(fname, 'rb') as f:
 		while fname:
 			fname = f.read(200000)
 			m.update(fname)
-	finally:
-		f.close()
 	return m.digest()
 
 def readf_win32(f, m='r', encoding='latin-1'):
@@ -287,21 +277,15 @@ def readf_win32(f, m='r', encoding='latin-1'):
 
 	if sys.hexversion > 0x3000000 and not 'b' in m:
 		m += 'b'
-		f = os.fdopen(fd, m)
-		try:
+		with os.fdopen(fd, m) as f:
 			txt = f.read()
-		finally:
-			f.close()
 		if encoding:
 			txt = txt.decode(encoding)
 		else:
 			txt = txt.decode()
 	else:
-		f = os.fdopen(fd, m)
-		try:
+		with os.fdopen(fd, m) as f:
 			txt = f.read()
-		finally:
-			f.close()
 	return txt
 
 def writef_win32(f, data, m='w', encoding='latin-1'):
@@ -317,25 +301,19 @@ def writef_win32(f, data, m='w', encoding='latin-1'):
 		fd = os.open(f, flags)
 	except OSError:
 		raise OSError('Cannot write to %r' % f)
-	f = os.fdopen(fd, m)
-	try:
+	with os.fdopen(fd, m) as f:
 		f.write(data)
-	finally:
-		f.close()
 
 def h_file_win32(fname):
 	try:
 		fd = os.open(fname, os.O_BINARY | os.O_RDONLY | os.O_NOINHERIT)
 	except OSError:
 		raise OSError('Cannot read from %r' % fname)
-	f = os.fdopen(fd, 'rb')
 	m = md5()
-	try:
+	with os.fdopen(fd, 'rb') as f:
 		while fname:
 			fname = f.read(200000)
 			m.update(fname)
-	finally:
-		f.close()
 	return m.digest()
 
 # always save these

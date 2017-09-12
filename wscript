@@ -9,6 +9,8 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 ./waf-light  --tools=compat15,/comp/waf/aba.py --prelude=$'\tfrom waflib.extras import aba\n\taba.foo()'
 """
 
+from __future__ import with_statement
+
 VERSION="2.0.0"
 APPNAME='waf'
 REVISION=''
@@ -28,21 +30,15 @@ from waflib import Configure
 Configure.autoconfig = 1
 
 def sub_file(fname, lst):
-	f = open(fname, 'rU')
-	try:
+	with open(fname, 'rU') as f:
 		txt = f.read()
-	finally:
-		f.close()
 
 	for (key, val) in lst:
 		re_pat = re.compile(key, re.M)
 		txt = re_pat.sub(val, txt)
 
-	f = open(fname, 'w')
-	try:
+	with open(fname, 'w') as f:
 		f.write(txt)
-	finally:
-		f.close()
 
 def to_bytes(x):
 	if sys.hexversion>0x300000f:
@@ -189,25 +185,16 @@ def sfilter(path):
 	if path.endswith('.py') :
 		if Options.options.strip_comments:
 			if sys.version_info[0] >= 3:
-				f = open(path, 'rb')
-				try:
+				with open(path, 'rb') as f:
 					tk = tokenize.tokenize(f.readline)
 					next(tk) # the first one is always tokenize.ENCODING for Python 3, ignore it
 					cnt = process_tokens(tk)
-				finally:
-					f.close()
 			else:
-				f = open(path, 'r')
-				try:
+				with open(path, 'r') as f:
 					cnt = process_tokens(tokenize.generate_tokens(f.readline))
-				finally:
-					f.close()
 		else:
-			f = open(path, 'r')
-			try:
+			with open(path, 'r') as f:
 				cnt = f.read()
-			finally:
-				f.close()
 		# WARNING: since python >= 2.5 is required, decorators are not processed anymore
 		# uncomment the following to enable decorator replacement:
 		#cnt = process_decorators(cnt)
@@ -216,11 +203,8 @@ def sfilter(path):
 		cnt = '#! /usr/bin/env python\n# encoding: utf-8\n# WARNING! Do not edit! https://waf.io/book/index.html#_obtaining_the_waf_file\n\n' + cnt
 
 	else:
-		f = open(path, 'r')
-		try:
+		with open(path, 'r') as f:
 			cnt = f.read()
-		finally:
-			f.close()
 
 	if sys.hexversion > 0x030000f0:
 		return (io.BytesIO(cnt.encode('utf-8')), len(cnt.encode('utf-8')), cnt)
@@ -331,11 +315,8 @@ def create_waf(self, *k, **kw):
 	tar.close()
 	z.close()
 
-	f = open('waf-light', 'rU')
-	try:
+	with open('waf-light', 'rU') as f:
 		code1 = f.read()
-	finally:
-		f.close()
 
 	# now store the revision unique number in waf
 	code1 = code1.replace("if sys.hexversion<0x206000f:\n\traise ImportError('Python >= 2.6 is required to create the waf file')\n", '')
@@ -363,11 +344,8 @@ def create_waf(self, *k, **kw):
 	elif zipType == 'xz':
 		code1 = code1.replace('bunzip2', 'xz -d')
 
-	f = open('%s.tar.%s' % (mw, zipType), 'rb')
-	try:
+	with open('%s.tar.%s' % (mw, zipType), 'rb') as f:
 		cnt = f.read()
-	finally:
-		f.close()
 
 	# the REVISION value is the md5 sum of the compressed data (facilitate audits)
 	m = md5()
@@ -396,8 +374,7 @@ def create_waf(self, *k, **kw):
 	if getattr(Options.options, 'interpreter', None):
 		ccc = ccc.replace('#!/usr/bin/env python', Options.options.interpreter)
 
-	f = open('waf', 'wb')
-	try:
+	with open('waf', 'wb') as f:
 		f.write(ccc.encode())
 		f.write(to_bytes('#==>\n#'))
 		f.write(cnt)
@@ -419,16 +396,11 @@ def create_waf(self, *k, **kw):
 			f.write(sig)
 			f.write('\n')
 			os.remove('waf.asc')
-	finally:
-		f.close()
 
 
 	if sys.platform == 'win32' or Options.options.make_batch:
-		f = open('waf.bat', 'w')
-		try:
+		with open('waf.bat', 'w') as f:
 			f.write('@setlocal\n@set PYEXE=python\n@where %PYEXE% 1>NUL 2>NUL\n@if %ERRORLEVEL% neq 0 set PYEXE=py\n@%PYEXE% -x "%~dp0waf" %*\n@exit /b %ERRORLEVEL%\n')
-		finally:
-			f.close()
 
 	if sys.platform != 'win32':
 		os.chmod('waf', Utils.O755)

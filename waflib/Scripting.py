@@ -4,6 +4,8 @@
 
 "Module called for configuring, compiling and installing targets"
 
+from __future__ import with_statement
+
 import os, shlex, shutil, traceback, errno, sys, stat
 from waflib import Utils, Configure, Logs, Options, ConfigSet, Context, Errors, Build, Node
 
@@ -406,11 +408,8 @@ class Dist(Context.Context):
 		tinfo.gname = 'root'
 
 		if os.path.isfile(p):
-			fu = open(p, 'rb')
-			try:
-				tar.addfile(tinfo, fileobj=fu)
-			finally:
-				fu.close()
+			with open(p, 'rb') as f:
+				tar.addfile(tinfo, fileobj=f)
 		else:
 			tar.addfile(tinfo)
 
@@ -532,12 +531,9 @@ class DistCheck(Dist):
 		"""
 		import tempfile, tarfile
 
-		try:
-			t = tarfile.open(self.get_arch_name())
+		with tarfile.open(self.get_arch_name()) as t:
 			for x in t:
 				t.extract(x)
-		finally:
-			t.close()
 
 		instdir = tempfile.mkdtemp('.inst', self.get_base_name())
 		cmd = self.make_distcheck_cmd(instdir)

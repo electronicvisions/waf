@@ -2,6 +2,8 @@
 # encoding: utf-8
 # Thomas Nagy, 2010-2017 (ita)
 
+from __future__ import with_statement
+
 import os
 
 all_modifs = {}
@@ -26,19 +28,13 @@ def modif(dir, name, fun):
 		return
 
 	filename = os.path.join(dir, name)
-	f = open(filename, 'r')
-	try:
+	with open(filename, 'r') as f:
 		txt = f.read()
-	finally:
-		f.close()
 
 	txt = fun(txt)
 
-	f = open(filename, 'w')
-	try:
+	with open(filename, 'w') as f:
 		f.write(txt)
-	finally:
-		f.close()
 
 def subst(*k):
 	"""register a substitution function"""
