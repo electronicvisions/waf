@@ -52,7 +52,7 @@ def waf_entry_point(current_directory, version, wafdir):
 	ctx = Context.create_context('options')
 	(options, commands, env) = ctx.parse_cmd_args(allow_unknown=True)
 	if options.top:
-		Context.run_dir = Context.top_dir = options.top
+		start_dir = Context.run_dir = Context.top_dir = options.top
 		no_climb = True
 	if options.out:
 		Context.out_dir = options.out
