@@ -150,10 +150,8 @@ def init_vala_task(self):
 			# but this makes it explicit
 			package_obj.post()
 			package_name = package_obj.target
-			for task in package_obj.tasks:
-				if isinstance(task, Build.inst):
-					# TODO are we not expecting just valatask here?
-					continue
+			task = getattr(package_obj, 'valatask', None)
+			if task:
 				for output in task.outputs:
 					if output.name == package_name + ".vapi":
 						valatask.set_run_after(task)
