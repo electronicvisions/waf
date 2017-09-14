@@ -452,7 +452,6 @@ def find_glib_compile_schemas(conf):
 	def getstr(varname):
 		return getattr(Options.options, varname, getattr(conf.env,varname, ''))
 
-	# TODO make this dependent on the gnu_dirs tool?
 	gsettingsschemadir = getstr('GSETTINGSSCHEMADIR')
 	if not gsettingsschemadir:
 		datadir = getstr('DATADIR')

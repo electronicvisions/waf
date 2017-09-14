@@ -524,7 +524,6 @@ def reduce_tokens(lst, defs, ban=[]):
 									accu.append((p2, v2))
 									accu.extend(toks)
 							elif to_add[j+1][0] == IDENT and to_add[j+1][1] == '__VA_ARGS__':
-								# TODO not sure
 								# first collect the tokens
 								va_toks = []
 								st = len(macro_def[0])

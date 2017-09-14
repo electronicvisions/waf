@@ -568,7 +568,6 @@ def post_check(self, *k, **kw):
 		is_success = (kw['success'] == 0)
 
 	if kw.get('define_name'):
-		# TODO this is still way too complicated
 		comment = kw.get('comment', '')
 		define_name = kw['define_name']
 		if kw['execute'] and kw.get('define_ret') and isinstance(is_success, str):

@@ -35,7 +35,6 @@ class PriorityTasks(object):
 		return heapq.heappop(self.lst)
 	def extend(self, lst):
 		if self.lst:
-			# TODO no heapq.merge in Python 2.5
 			for x in lst:
 				self.append(x)
 		else:
