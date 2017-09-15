@@ -437,12 +437,12 @@ class Task(evil):
 
 		The results will be slightly different if FOO_ST is a list, for example::
 
-			env.FOO_ST = ['-a', '-b']
+			env.FOO    = ['p1', 'p2']
 			env.FOO_ST = '-I%s'
 			# ${FOO_ST:FOO} returns
 			['-Ip1', '-Ip2']
 
-			env.FOO    = ['p1', 'p2']
+			env.FOO_ST = ['-a', '-b']
 			# ${FOO_ST:FOO} returns
 			['-a', '-b', 'p1', '-a', '-b', 'p2']
 		"""
