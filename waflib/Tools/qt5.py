@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2016 (ita)
+# Thomas Nagy, 2006-2017 (ita)
 
 """
 This tool helps with finding Qt5 tools and libraries,
@@ -60,6 +60,8 @@ tool path selection, etc; please read the source for more info.
 The detection uses pkg-config on Linux by default. To force static library detection use:
 QT5_XCOMPILE=1 QT5_FORCE_STATIC=1 waf configure
 """
+
+from __future__ import with_statement
 
 try:
 	from xml.sax import make_parser
@@ -149,7 +151,7 @@ class qxx(Task.classes['cxx']):
 
 			# direct injection in the build phase (safe because called from the main thread)
 			gen = self.generator.bld.producer
-			gen.outstanding.appendleft(tsk)
+			gen.outstanding.append(tsk)
 			gen.total += 1
 
 			return tsk
@@ -314,7 +316,7 @@ def apply_qt5(self):
 
 		if getattr(self, 'update', None) and Options.options.trans_qt5:
 			cxxnodes = [a.inputs[0] for a in self.compiled_tasks] + [
-				a.inputs[0] for a in self.tasks if getattr(a, 'inputs', None) and a.inputs[0].name.endswith('.ui')]
+				a.inputs[0] for a in self.tasks if a.inputs and a.inputs[0].name.endswith('.ui')]
 			for x in qmtasks:
 				self.create_task('trans_update', cxxnodes, x.inputs)
 
@@ -366,11 +368,8 @@ class rcc(Task.Task):
 		parser = make_parser()
 		curHandler = XMLHandler()
 		parser.setContentHandler(curHandler)
-		fi = open(self.inputs[0].abspath(), 'r')
-		try:
-			parser.parse(fi)
-		finally:
-			fi.close()
+		with open(self.inputs[0].abspath(), 'r') as f:
+			parser.parse(f)
 
 		nodes = []
 		names = []
@@ -657,16 +656,14 @@ def find_qt5_libraries(self):
 					self.msg('Checking for %s' % i, False, 'YELLOW')
 				env.append_unique('INCLUDES_' + uselib, os.path.join(env.QTLIBS, frameworkName, 'Headers'))
 			else:
-				for j in ('', 'd'):
-					k = '_DEBUG' if j == 'd' else ''
-					ret = self.find_single_qt5_lib(i + j, uselib + k, env.QTLIBS, qtincludes, force_static)
-					if not force_static and not ret:
-						ret = self.find_single_qt5_lib(i + j, uselib + k, env.QTLIBS, qtincludes, True)
-					self.msg('Checking for %s' % (i + j), ret, 'GREEN' if ret else 'YELLOW')
+				ret = self.find_single_qt5_lib(i, uselib, env.QTLIBS, qtincludes, force_static)
+				if not force_static and not ret:
+					ret = self.find_single_qt5_lib(i, uselib, env.QTLIBS, qtincludes, True)
+				self.msg('Checking for %s' % i, ret, 'GREEN' if ret else 'YELLOW')
 	else:
 		path = '%s:%s:%s/pkgconfig:/usr/lib/qt5/lib/pkgconfig:/opt/qt5/lib/pkgconfig:/usr/lib/qt5/lib:/opt/qt5/lib' % (
 			self.environ.get('PKG_CONFIG_PATH', ''), env.QTLIBS, env.QTLIBS)
-		for i in self.qt5_vars_debug + self.qt5_vars:
+		for i in self.qt5_vars:
 			self.check_cfg(package=i, args='--cflags --libs', mandatory=False, force_static=force_static, pkg_config_path=path)
 
 @conf
@@ -692,7 +689,6 @@ def simplify_qt5_libs(self):
 					accu.append(lib)
 				env['LIBPATH_'+var] = accu
 	process_lib(self.qt5_vars,       'LIBPATH_QTCORE')
-	process_lib(self.qt5_vars_debug, 'LIBPATH_QTCORE_DEBUG')
 
 @conf
 def add_qt5_rpath(self):
@@ -715,7 +711,6 @@ def add_qt5_rpath(self):
 						accu.append('-Wl,--rpath='+lib)
 					env['RPATH_' + var] = accu
 		process_rpath(self.qt5_vars,       'LIBPATH_QTCORE')
-		process_rpath(self.qt5_vars_debug, 'LIBPATH_QTCORE_DEBUG')
 
 @conf
 def set_qt5_libs_to_check(self):
@@ -742,10 +737,6 @@ def set_qt5_libs_to_check(self):
 	if qtextralibs:
 		self.qt5_vars.extend(qtextralibs.split(','))
 
-	if not hasattr(self, 'qt5_vars_debug'):
-		self.qt5_vars_debug = [a + '_DEBUG' for a in self.qt5_vars]
-	self.qt5_vars_debug = Utils.to_list(self.qt5_vars_debug)
-
 @conf
 def set_qt5_defines(self):
 	if sys.platform != 'win32':
@@ -753,7 +744,6 @@ def set_qt5_defines(self):
 	for x in self.qt5_vars:
 		y=x.replace('Qt5', 'Qt')[2:].upper()
 		self.env.append_unique('DEFINES_%s' % x.upper(), 'QT_%s_LIB' % y)
-		self.env.append_unique('DEFINES_%s_DEBUG' % x.upper(), 'QT_%s_LIB' % y)
 
 def options(opt):
 	"""

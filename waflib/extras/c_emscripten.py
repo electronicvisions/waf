@@ -32,7 +32,7 @@ def get_emscripten_version(conf, cc):
 		conf.fatal('Could not determine emscripten version %r: %s' % (cmd, e))
 
 	if not isinstance(out, str):
-		out = out.decode(sys.stdout.encoding or 'iso8859-1')
+		out = out.decode(sys.stdout.encoding or 'latin-1')
 
 	k = {}
 	out = out.splitlines()

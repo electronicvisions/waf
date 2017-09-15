@@ -3,17 +3,24 @@
 top = '.'
 out = 'tmp_out'
 
-import os
-from waflib import ConfigSet, Context, Build, Configure
+import os, random, time
+from waflib import ConfigSet, Context, Build, Configure, Utils
 
 Configure.autoconfig='clobber'
 
 def options(opt):
 	opt.add_option('--based', action='store', default='foo', help='base directory', dest='based')
 	opt.add_option('--dumpf', action='store', default='foo', help='dump config to this file', dest='dumpf')
+	opt.add_option('--force-autoconfig', action='store', default=False, dest='force_autoconfig')
 
 def configure(ctx):
-	pass
+	# force autoconfig to depend on an always-changing file - once
+	if ctx.options.force_autoconfig:
+		fname = ctx.options.dumpf + '_autoconfig'
+		s = "%f%d" % (time.time(), random.randint(0, 10**9))
+		Utils.writef(fname, s)
+		ctx.files.append(fname)
+		Configure.autoconfig = False
 
 def build(ctx):
 	pass

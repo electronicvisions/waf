@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # encoding: utf-8
 # DC 2008
-# Thomas Nagy 2016 (ita)
+# Thomas Nagy 2016-2017 (ita)
 
 """
 Fortran configuration helpers
@@ -117,7 +117,7 @@ def fortran_modifier_win32(conf):
 	v.fcprogram_PATTERN = v.fcprogram_test_PATTERN  = '%s.exe'
 
 	v.fcshlib_PATTERN   = '%s.dll'
-	v.implib_PATTERN    = 'lib%s.dll.a'
+	v.implib_PATTERN    = '%s.dll.a'
 	v.IMPLIB_ST         = '-Wl,--out-implib,%s'
 
 	v.FCFLAGS_fcshlib   = []
@@ -456,7 +456,7 @@ def detect_openmp(self):
 	"""
 	Detects openmp flags and sets the OPENMP ``FCFLAGS``/``LINKFLAGS``
 	"""
-	for x in ('-qopenmp', '-fopenmp','-openmp','-mp','-xopenmp','-omp','-qsmp=omp'):
+	for x in ('-fopenmp','-openmp','-mp','-xopenmp','-omp','-qsmp=omp'):
 		try:
 			self.check_fc(
 				msg          = 'Checking for OpenMP flag %s' % x,

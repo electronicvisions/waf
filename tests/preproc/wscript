@@ -16,12 +16,6 @@ from waflib.Logs import pprint
 def configure(conf):
 	pass
 
-def trimquotes(s):
-	if not s: return ''
-	s = s.rstrip()
-	if s[0] == "'" and s[-1] == "'": return s[1:-1]
-	return s
-
 def build(bld):
 
 	bld.failure = 0
@@ -193,9 +187,9 @@ def build(bld):
 		disp(color, "%s\t\t%r" % (expected, gruik.nodes))
 
 	test_rec("", "a")
-	test_rec("FOO=1", "aca")
-	test_rec("BAR=1", "abca")
-	test_rec("FOO=1 BAR=1", "aca")
+	test_rec("FOO=1", "ac")
+	test_rec("BAR=1", "abc")
+	test_rec("FOO=1 BAR=1", "ac")
 
 	return
 	test("1?1,(0?5:9):3,4", 0) # <- invalid expression

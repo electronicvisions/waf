@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2016 (ita)
+# Thomas Nagy, 2006-2017 (ita)
 
 """
 Support for GLib2 tools:
@@ -452,7 +452,6 @@ def find_glib_compile_schemas(conf):
 	def getstr(varname):
 		return getattr(Options.options, varname, getattr(conf.env,varname, ''))
 
-	# TODO make this dependent on the gnu_dirs tool?
 	gsettingsschemadir = getstr('GSETTINGSSCHEMADIR')
 	if not gsettingsschemadir:
 		datadir = getstr('DATADIR')

@@ -95,9 +95,9 @@ def process(self):
 	except Exception, e:
 		print type(e), e
 
-Task.TaskBase.process_bound_maxjobs = Task.TaskBase.process
+Task.Task.process_bound_maxjobs = Task.Task.process
 Task.Task.process = process
-Task.TaskBase.lock_maxjob = lock_maxjob
-Task.TaskBase.release_maxjob = release_maxjob
-Task.TaskBase.wait_maxjob = wait_maxjob
+Task.Task.lock_maxjob = lock_maxjob
+Task.Task.release_maxjob = release_maxjob
+Task.Task.wait_maxjob = wait_maxjob
 

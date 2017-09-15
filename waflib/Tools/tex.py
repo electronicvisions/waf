@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2016 (ita)
+# Thomas Nagy, 2006-2017 (ita)
 
 """
 TeX/LaTeX/PDFLaTeX/XeLaTeX support
@@ -167,7 +167,6 @@ class tex(Task.Task):
 				return
 			seen.append(node)
 			code = node.read()
-			global re_tex
 			for match in re_tex.finditer(code):
 
 				multibib = match.group('type')

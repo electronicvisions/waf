@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 """
 Classes related to the build phase (build, clean, install, step, etc)
@@ -143,12 +143,6 @@ class BuildContext(Context.Context):
 			if not hasattr(self, v):
 				setattr(self, v, {})
 
-	def set_cur(self, cur):
-		self.current_group = cur
-	def get_cur(self):
-		return self.current_group
-	cur = property(get_cur, set_cur)
-
 	def get_variant_dir(self):
 		"""Getter for the variant_dir attribute"""
 		if not self.variant:
@@ -180,30 +174,6 @@ class BuildContext(Context.Context):
 		self.task_gen_cache_names = {} # reset the cache, each time
 		self.add_to_group(ret, group=kw.get('group'))
 		return ret
-
-	def rule(self, *k, **kw):
-		"""
-		Wrapper for creating a task generator using the decorator notation. The following code::
-
-			@bld.rule(target="foo")
-			def _(tsk):
-				print("bar")
-
-		is equivalent to::
-
-			def bar(tsk):
-				print("bar")
-
-			bld(
-				target = "foo",
-				rule = bar,
-			)
-		"""
-		def f(rule):
-			ret = self(*k, **kw)
-			ret.rule = rule
-			return ret
-		return f
 
 	def __copy__(self):
 		"""
@@ -374,14 +344,18 @@ class BuildContext(Context.Context):
 		try:
 			self.producer.start()
 		except KeyboardInterrupt:
-			self.store()
+			if self.is_dirty():
+				self.store()
 			raise
 		else:
-			if self.producer.dirty:
+			if self.is_dirty():
 				self.store()
 
 		if self.producer.error:
 			raise Errors.BuildError(self.producer.error)
+
+	def is_dirty(self):
+		return self.producer.dirty
 
 	def setup(self, tool, tooldir=None, funs=None):
 		"""
@@ -620,7 +594,7 @@ class BuildContext(Context.Context):
 
 	def add_to_group(self, tgen, group=None):
 		"""Adds a task or a task generator to the build; there is no attempt to remove it if it was already added."""
-		assert(isinstance(tgen, TaskGen.task_gen) or isinstance(tgen, Task.TaskBase))
+		assert(isinstance(tgen, TaskGen.task_gen) or isinstance(tgen, Task.Task))
 		tgen.bld = self
 		self.get_group(group).append(tgen)
 
@@ -721,10 +695,16 @@ class BuildContext(Context.Context):
 
 	def get_targets(self):
 		"""
-		Returns the task generator corresponding to the 'targets' list; used internally
-		by :py:meth:`waflib.Build.BuildContext.get_build_iterator` to perform partial builds::
+		This method returns a pair containing the index of the last build group to post,
+		and the list of task generator objects corresponding to the target names.
+
+		This is used internally by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
+		to perform partial builds::
 
 			$ waf --targets=myprogram,myshlib
+
+		:return: the minimum build group index, and list of task generators
+		:rtype: tuple
 		"""
 		to_post = []
 		min_grp = 0
@@ -752,23 +732,21 @@ class BuildContext(Context.Context):
 		Post task generators from the group indexed by self.current_group; used internally
 		by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
 		"""
+		def tgpost(tg):
+			try:
+				f = tg.post
+			except AttributeError:
+				pass
+			else:
+				f()
+
 		if self.targets == '*':
 			for tg in self.groups[self.current_group]:
-				try:
-					f = tg.post
-				except AttributeError:
-					pass
-				else:
-					f()
+				tgpost(tg)
 		elif self.targets:
 			if self.current_group < self._min_grp:
 				for tg in self.groups[self.current_group]:
-					try:
-						f = tg.post
-					except AttributeError:
-						pass
-					else:
-						f()
+					tgpost(tg)
 			else:
 				for tg in self._exact_tg:
 					tg.post()
@@ -781,20 +759,15 @@ class BuildContext(Context.Context):
 				Logs.warn('CWD %s is not under %s, forcing --targets=* (run distclean?)', ln.abspath(), self.srcnode.abspath())
 				ln = self.srcnode
 			for tg in self.groups[self.current_group]:
-				try:
-					f = tg.post
-				except AttributeError:
-					pass
-				else:
-					if tg.path.is_child_of(ln):
-						f()
+				if tg.path.is_child_of(ln):
+					tgpost(tg)
 
 	def get_tasks_group(self, idx):
 		"""
 		Returns all task instances for the build group at position idx,
 		used internally by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
 
-		:rtype: list of :py:class:`waflib.Task.TaskBase`
+		:rtype: list of :py:class:`waflib.Task.Task`
 		"""
 		tasks = []
 		for tg in self.groups[idx]:
@@ -809,27 +782,23 @@ class BuildContext(Context.Context):
 		Creates a Python generator object that returns lists of tasks that may be processed in parallel.
 
 		:return: tasks which can be executed immediately
-		:rtype: generator returning lists of :py:class:`waflib.Task.TaskBase`
+		:rtype: generator returning lists of :py:class:`waflib.Task.Task`
 		"""
-		self.current_group = 0
-
 		if self.targets and self.targets != '*':
 			(self._min_grp, self._exact_tg) = self.get_targets()
 
-		global lazy_post
 		if self.post_mode != POST_LAZY:
-			while self.current_group < len(self.groups):
+			for self.current_group, _ in enumerate(self.groups):
 				self.post_group()
-				self.current_group += 1
-			self.current_group = 0
 
-		while self.current_group < len(self.groups):
+		for self.current_group, _ in enumerate(self.groups):
 			# first post the task generators for the group
 			if self.post_mode != POST_AT_ONCE:
 				self.post_group()
 
 			# then extract the tasks
 			tasks = self.get_tasks_group(self.current_group)
+
 			# if the constraints are set properly (ext_in/ext_out, before/after)
 			# the call to set_file_constraints may be removed (can be a 15% penalty on no-op rebuilds)
 			# (but leave set_file_constraints for the installation step)
@@ -842,7 +811,6 @@ class BuildContext(Context.Context):
 			self.cur_tasks = tasks
 			if tasks:
 				yield tasks
-			self.current_group += 1
 
 		while 1:
 			# the build stops once there are no tasks to process
@@ -1285,22 +1253,6 @@ class UninstallContext(InstallContext):
 		super(UninstallContext, self).__init__(**kw)
 		self.is_install = UNINSTALL
 
-	def execute(self):
-		"""
-		See :py:func:`waflib.Build.BuildContext.execute`.
-		"""
-		# TODO just mark the tasks are already run with hasrun=Task.SKIPPED?
-		try:
-			# do not execute any tasks
-			def runnable_status(self):
-				return Task.SKIP_ME
-			setattr(Task.Task, 'runnable_status_back', Task.Task.runnable_status)
-			setattr(Task.Task, 'runnable_status', runnable_status)
-
-			super(UninstallContext, self).execute()
-		finally:
-			setattr(Task.Task, 'runnable_status', Task.Task.runnable_status_back)
-
 class CleanContext(BuildContext):
 	'''cleans the project'''
 	cmd = 'clean'
@@ -1433,17 +1385,17 @@ class StepContext(BuildContext):
 			for pat in self.files.split(','):
 				matcher = self.get_matcher(pat)
 				for tg in g:
-					if isinstance(tg, Task.TaskBase):
+					if isinstance(tg, Task.Task):
 						lst = [tg]
 					else:
 						lst = tg.tasks
 					for tsk in lst:
 						do_exec = False
-						for node in getattr(tsk, 'inputs', []):
+						for node in tsk.inputs:
 							if matcher(node, output=False):
 								do_exec = True
 								break
-						for node in getattr(tsk, 'outputs', []):
+						for node in tsk.outputs:
 							if matcher(node, output=True):
 								do_exec = True
 								break
@@ -1479,9 +1431,9 @@ class StepContext(BuildContext):
 			pattern = re.compile(pat)
 
 		def match(node, output):
-			if output == True and not out:
+			if output and not out:
 				return False
-			if output == False and not inn:
+			if not output and not inn:
 				return False
 
 			if anode:

@@ -9,7 +9,7 @@ this tool to be too stable either (apis, etc)
 """
 
 import re
-from waflib import Build, Context, Task, Utils, Logs, Options, Errors, Node
+from waflib import Build, Context, Errors, Logs, Node, Options, Task, Utils
 from waflib.TaskGen import extension, taskgen_method
 from waflib.Configure import conf
 
@@ -150,10 +150,8 @@ def init_vala_task(self):
 			# but this makes it explicit
 			package_obj.post()
 			package_name = package_obj.target
-			for task in package_obj.tasks:
-				if isinstance(task, Build.inst):
-					# TODO are we not expecting just valatask here?
-					continue
+			task = getattr(package_obj, 'valatask', None)
+			if task:
 				for output in task.outputs:
 					if output.name == package_name + ".vapi":
 						valatask.set_run_after(task)
@@ -274,7 +272,7 @@ def find_valac(self, valac_name, min_version):
 	valac = self.find_program(valac_name, var='VALAC')
 	try:
 		output = self.cmd_and_log(valac + ['--version'])
-	except Exception:
+	except Errors.WafError:
 		valac_version = None
 	else:
 		ver = re.search(r'\d+.\d+.\d+', output).group().split('.')

@@ -8,5 +8,5 @@ def build(bld):
 	node = bld.path.get_bld().make_node('test/bar/stuff')
 
 	bld(features='mkdir', target=node)
-	bld(rule='du ${SRC}', source=node)
+	bld(rule='du ${SRC}', source=[node])
 

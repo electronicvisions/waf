@@ -2,7 +2,7 @@
 
 def write_header(tsk):
 	tsk.outputs[0].write('int abc = 423;\n')
-bld(rule=write_header, target='b.h', ext_out=['.h'])
+bld(features='use', rule=write_header, target='b.h', ext_out=['.h'], name='XYZ')
 
 tg = bld.program(
 	features = 'aaa',
@@ -11,7 +11,7 @@ tg = bld.program(
 	#cflags   = ['-O3'], # for example
 	defines  = ['foo=bar'],
 	target   = 'myprogram',
-	use      = 'M')
+	use      = 'M XYZ')
 
 # just for fun, make main.c depend on wscript_build
 bld.add_manual_dependency('main.c', bld.path.find_resource('wscript_build'))

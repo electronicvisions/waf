@@ -360,7 +360,7 @@ def rm_blank_lines(txt):
 
 BOM = '\xef\xbb\xbf'
 try:
-	BOM = bytes(BOM, 'iso8859-1') # python 3
+	BOM = bytes(BOM, 'latin-1') # python 3
 except TypeError:
 	pass
 
@@ -638,10 +638,10 @@ class vsnode_project_view(vsnode_alias):
 		vsnode_alias.__init__(self, ctx, node, name)
 		self.tg = self.ctx() # fake one, cannot remove
 		self.exclude_files = Node.exclude_regs + '''
-waf-1.*
-waf3-1.*/**
-.waf-1.*
-.waf3-1.*/**
+waf-2*
+waf3-2*/**
+.waf-2*
+.waf3-2*/**
 **/*.sdf
 **/*.suo
 **/*.ncb

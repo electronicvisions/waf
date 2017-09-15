@@ -26,6 +26,9 @@ def configure(conf):
 	if 'dl' not in conf.env.LIB_CPPUNIT:
 		l = conf.check(lib='dl', uselib_store='CPPUNIT')
 
+	# the interpreted tests need python
+	conf.find_program('python', mandatory=False)
+
 from waflib import Logs
 def summary(bld):
 	lst = getattr(bld, 'utest_results', [])

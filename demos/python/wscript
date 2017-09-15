@@ -36,7 +36,7 @@ def build(bld):
 	# example for generated python files
 	target = bld.path.find_or_declare('abc.py')
 	bld(rule='touch ${TGT}', source='wscript', target=target)
-	bld(features='py', source=target, install_from=target.parent)
+	bld(features='py', source=[target], install_from=target.parent)
 
 	# then a c extension module
 	bld(

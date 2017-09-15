@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2016 (ita)
+# Thomas Nagy, 2006-2017 (ita)
 
 """
 C/C++ preprocessor for finding dependencies
@@ -154,22 +154,6 @@ ops = ['* / %', '+ -', '<< >>', '< <= >= >', '== !=', '& | ^', '&& ||', ',']
 for x, syms in enumerate(ops):
 	for u in syms.split():
 		prec[u] = x
-
-def trimquotes(s):
-	"""
-	Remove the single quotes around an expression::
-
-		trimquotes("'test'") == "test"
-
-	:param s: expression to transform
-	:type s: string
-	:rtype: string
-	"""
-	# TODO remove in waf 2.0
-	if not s: return ''
-	s = s.rstrip()
-	if s[0] == "'" and s[-1] == "'": return s[1:-1]
-	return s
 
 def reduce_nums(val_1, val_2, val_op):
 	"""
@@ -540,7 +524,6 @@ def reduce_tokens(lst, defs, ban=[]):
 									accu.append((p2, v2))
 									accu.extend(toks)
 							elif to_add[j+1][0] == IDENT and to_add[j+1][1] == '__VA_ARGS__':
-								# TODO not sure
 								# first collect the tokens
 								va_toks = []
 								st = len(macro_def[0])
@@ -763,17 +746,14 @@ def tokenize_private(s):
 			v = m(name)
 			if v:
 				if name == IDENT:
-					try:
-						g_optrans[v]
+					if v in g_optrans:
 						name = OP
-					except KeyError:
-						# c++ specific
-						if v.lower() == "true":
-							v = 1
-							name = NUM
-						elif v.lower() == "false":
-							v = 0
-							name = NUM
+					elif v.lower() == "true":
+						v = 1
+						name = NUM
+					elif v.lower() == "false":
+						v = 0
+						name = NUM
 				elif name == NUM:
 					if m('oct'):
 						v = int(v, 8)
@@ -847,6 +827,9 @@ class c_parser(object):
 		self.ban_includes = set()
 		"""Includes that must not be read (#pragma once)"""
 
+		self.listed = set()
+		"""Include nodes/names already listed to avoid duplicates in self.nodes/self.names"""
+
 	def cached_find_resource(self, node, filename):
 		"""
 		Find a file from the input directory
@@ -861,7 +844,6 @@ class c_parser(object):
 		try:
 			cache = node.ctx.preproc_cache_node
 		except AttributeError:
-			global FILE_CACHE_SIZE
 			cache = node.ctx.preproc_cache_node = Utils.lru_cache(FILE_CACHE_SIZE)
 
 		key = (node, filename)
@@ -893,7 +875,7 @@ class c_parser(object):
 		"""
 		if filename.endswith('.moc'):
 			# we could let the qt4 module use a subclass, but then the function "scan" below must be duplicated
-			# in the qt4 and in the qt5 classes. So we have two lines here and it is sufficient. TODO waf 1.9
+			# in the qt4 and in the qt5 classes. So we have two lines here and it is sufficient.
 			self.names.append(filename)
 			return None
 
@@ -907,12 +889,15 @@ class c_parser(object):
 				break
 			found = self.cached_find_resource(n, filename)
 
+		listed = self.listed
 		if found and not found in self.ban_includes:
-			# TODO duplicates do not increase the no-op build times too much, but they may be worth removing
-			self.nodes.append(found)
+			if found not in listed:
+				listed.add(found)
+				self.nodes.append(found)
 			self.addlines(found)
 		else:
-			if not filename in self.names:
+			if filename not in listed:
+				listed.add(filename)
 				self.names.append(filename)
 		return found
 
@@ -937,7 +922,6 @@ class c_parser(object):
 		try:
 			cache = node.ctx.preproc_cache_lines
 		except AttributeError:
-			global LINE_CACHE_SIZE
 			cache = node.ctx.preproc_cache_lines = Utils.lru_cache(LINE_CACHE_SIZE)
 		try:
 			return cache[node]
@@ -970,8 +954,7 @@ class c_parser(object):
 			raise PreprocError('could not read the file %r' % node)
 		except Exception:
 			if Logs.verbose > 0:
-				Logs.error('parsing %r failed', node)
-				traceback.print_exc()
+				Logs.error('parsing %r failed %s', node, traceback.format_exc())
 		else:
 			self.lines.extend(lines)
 
@@ -1067,7 +1050,7 @@ class c_parser(object):
 						self.ban_includes.add(self.current_file)
 			except Exception as e:
 				if Logs.verbose:
-					Logs.debug('preproc: line parsing failed (%s): %s %s', e, line, Utils.ex_stack())
+					Logs.debug('preproc: line parsing failed (%s): %s %s', e, line, traceback.format_exc())
 
 	def define_name(self, line):
 		"""
@@ -1086,9 +1069,6 @@ def scan(task):
 
 	This function is bound as a task method on :py:class:`waflib.Tools.c.c` and :py:class:`waflib.Tools.cxx.cxx` for example
 	"""
-
-	global go_absolute
-
 	try:
 		incn = task.generator.includes_nodes
 	except AttributeError:

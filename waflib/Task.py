@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 """
 Tasks represent atomic operations such as processes.
 """
 
-import os, re, sys, tempfile
+import os, re, sys, tempfile, traceback
 from waflib import Utils, Logs, Errors
 
 # task states
@@ -22,6 +22,9 @@ CRASHED = 2
 EXCEPTION = 3
 """An exception occurred in the task execution"""
 
+CANCELED = 4
+"""A dependency for the task is missing so it was cancelled"""
+
 SKIPPED = 8
 """The task did not have to be executed"""
 
@@ -36,6 +39,9 @@ SKIP_ME = -2
 
 RUN_ME = -3
 """The task must be executed"""
+
+CANCEL_ME = -4
+"""The task cannot be executed because of a dependency problem"""
 
 COMPILE_TEMPLATE_SHELL = '''
 def f(tsk):
@@ -86,8 +92,7 @@ class store_task_type(type):
 		super(store_task_type, cls).__init__(name, bases, dict)
 		name = cls.__name__
 
-		if name != 'evil' and name != 'TaskBase':
-			global classes
+		if name != 'evil' and name != 'Task':
 			if getattr(cls, 'run_str', None):
 				# if a string is provided, convert it to a method
 				(f, dvars) = compile_fun(cls.run_str, cls.shell)
@@ -108,20 +113,21 @@ class store_task_type(type):
 evil = store_task_type('evil', (object,), {})
 "Base class provided to avoid writing a metaclass, so the code can run in python 2.6 and 3.x unmodified"
 
-class TaskBase(evil):
+class Task(evil):
 	"""
-	Base class for all Waf tasks, which should be seen as an interface.
-	For illustration purposes, instances of this class will execute the attribute
-	'fun' in :py:meth:`waflib.Task.TaskBase.run`. When in doubt, create
-	subclasses of :py:class:`waflib.Task.Task` instead.
-
-	Subclasses must override these methods:
-
-	#. __str__: string to display to the user
-	#. runnable_status: ask the task if it should be run, skipped, or if we have to ask later
-	#. run: what to do to execute the task
-	#. post_run: what to do after the task has been executed
+	This class deals with the filesystem (:py:class:`waflib.Node.Node`). The method :py:class:`waflib.Task.Task.runnable_status`
+	uses a hash value (from :py:class:`waflib.Task.Task.signature`) which is persistent from build to build. When the value changes,
+	the task has to be executed. The method :py:class:`waflib.Task.Task.post_run` will assign the task signature to the output
+	nodes (if present).
 	"""
+	vars = []
+	"""ConfigSet variables that should trigger a rebuild (class attribute used for :py:meth:`waflib.Task.Task.sig_vars`)"""
+
+	always_run = False
+	"""Specify whether task instances must always be executed or not (class attribute)"""
+
+	shell = False
+	"""Execute the command with the shell (class attribute)"""
 
 	color = 'GREEN'
 	"""Color for the console display, see :py:const:`waflib.Logs.colors_lst`"""
@@ -138,7 +144,7 @@ class TaskBase(evil):
 	after = []
 	"""List of task class names to execute after instances of this class"""
 
-	hcode = ''
+	hcode = Utils.SIG_NIL
 	"""String representing an additional hash for the class representation"""
 
 	keep_last_cmd = False
@@ -146,32 +152,51 @@ class TaskBase(evil):
 	This may be useful for certain extensions but it can a lot of memory.
 	"""
 
-	__slots__ = ('hasrun', 'generator')
+	weight = 0
+	"""Optional weight to tune the priority for task instances.
+	The higher, the earlier. The weight only applies to single task objects."""
+
+	tree_weight = 0
+	"""Optional weight to tune the priority of task instances and whole subtrees.
+	The higher, the earlier."""
+
+	prio_order = 0
+	"""Priority order set by the scheduler on instances during the build phase.
+	You most likely do not need to set it.
+	"""
+
+	__slots__ = ('hasrun', 'generator', 'env', 'inputs', 'outputs', 'dep_nodes', 'run_after')
 
 	def __init__(self, *k, **kw):
-		"""
-		The base task class requires a task generator (set to *self* if missing)
-		"""
 		self.hasrun = NOT_RUN
 		try:
 			self.generator = kw['generator']
 		except KeyError:
 			self.generator = self
 
-	def __repr__(self):
-		return '\n\t{task %r: %s %s}' % (self.__class__.__name__, id(self), str(getattr(self, 'fun', '')))
+		self.env = kw['env']
+		""":py:class:`waflib.ConfigSet.ConfigSet` object (make sure to provide one)"""
 
-	def __str__(self):
-		"String to display to the user"
-		if hasattr(self, 'fun'):
-			return self.fun.__name__
-		return self.__class__.__name__
+		self.inputs  = []
+		"""List of input nodes, which represent the files used by the task instance"""
 
-	def keyword(self):
-		"Display keyword used to prettify the console outputs"
-		if hasattr(self, 'fun'):
-			return 'Function'
-		return 'Processing'
+		self.outputs = []
+		"""List of output nodes, which represent the files created by the task instance"""
+
+		self.dep_nodes = []
+		"""List of additional nodes to depend on"""
+
+		self.run_after = set()
+		"""Set of tasks that must be executed before this one"""
+
+	def __lt__(self, other):
+		return self.priority() > other.priority()
+	def __le__(self, other):
+		return self.priority() >= other.priority()
+	def __gt__(self, other):
+		return self.priority() < other.priority()
+	def __ge__(self, other):
+		return self.priority() <= other.priority()
 
 	def get_cwd(self):
 		"""
@@ -204,6 +229,15 @@ class TaskBase(evil):
 		if old != x or ' ' in x or '\t' in x or "'" in x:
 			x = '"%s"' % x
 		return x
+
+	def priority(self):
+		"""
+		Priority of execution; the higher, the earlier
+
+		:return: the priority value
+		:rtype: a tuple of numeric values
+		"""
+		return (self.weight + self.prio_order, - getattr(self.generator, 'tg_idx_count', 0))
 
 	def split_argfile(self, cmd):
 		"""
@@ -256,36 +290,16 @@ class TaskBase(evil):
 		else:
 			return self.generator.bld.exec_command(cmd, **kw)
 
-	def runnable_status(self):
-		"""
-		Returns the Task status
-
-		:return: a task state in :py:const:`waflib.Task.RUN_ME`, :py:const:`waflib.Task.SKIP_ME` or :py:const:`waflib.Task.ASK_LATER`.
-		:rtype: int
-		"""
-		return RUN_ME
-
-	def uid(self):
-		"""
-		Computes a unique identifier for the task
-
-		:rtype: string or bytes
-		"""
-		return Utils.SIG_NIL
-
 	def process(self):
 		"""
-		Assume that the task has had a ``master`` which is an instance of :py:class:`waflib.Runner.Parallel`.
-		Execute the task and then put it back in the queue :py:attr:`waflib.Runner.Parallel.out` (may be replaced by subclassing).
+		Runs the task and handles errors
 
 		:return: 0 or None if everything is fine
 		:rtype: integer
 		"""
 		# remove the task signature immediately before it is executed
-		# in case of failure the task will be executed again
-		m = self.generator.bld.producer
+		# so that the task will be executed again in case of failure
 		try:
-			# TODO another place for this?
 			del self.generator.bld.task_sigs[self.uid()]
 		except KeyError:
 			pass
@@ -293,44 +307,29 @@ class TaskBase(evil):
 		try:
 			ret = self.run()
 		except Exception:
-			self.err_msg = Utils.ex_stack()
+			self.err_msg = traceback.format_exc()
 			self.hasrun = EXCEPTION
-
-			# TODO cleanup
-			m.error_handler(self)
-			return
-
-		if ret:
-			self.err_code = ret
-			self.hasrun = CRASHED
 		else:
-			try:
-				self.post_run()
-			except Errors.WafError:
-				pass
-			except Exception:
-				self.err_msg = Utils.ex_stack()
-				self.hasrun = EXCEPTION
+			if ret:
+				self.err_code = ret
+				self.hasrun = CRASHED
 			else:
-				self.hasrun = SUCCESS
-		if self.hasrun != SUCCESS:
-			m.error_handler(self)
+				try:
+					self.post_run()
+				except Errors.WafError:
+					pass
+				except Exception:
+					self.err_msg = traceback.format_exc()
+					self.hasrun = EXCEPTION
+				else:
+					self.hasrun = SUCCESS
 
-	def run(self):
-		"""
-		Called by threads to execute the tasks. The default is empty and meant to be overridden in subclasses.
-
-		.. warning:: It is a bad idea to create nodes in this method, so avoid :py:meth:`waflib.Node.Node.ant_glob`
-
-		:rtype: int
-		"""
-		if hasattr(self, 'fun'):
-			return self.fun(self)
-		return 0
-
-	def post_run(self):
-		"Update build data after successful Task execution. Override in subclasses."
-		pass
+		if self.hasrun != SUCCESS and self.scan:
+			# rescan dependencies on next run
+			try:
+				del self.generator.bld.imp_sigs[self.uid()]
+			except KeyError:
+				pass
 
 	def log_display(self, bld):
 		"Writes the execution status on the context logger"
@@ -402,9 +401,7 @@ class TaskBase(evil):
 		:return: a hash value
 		:rtype: string
 		"""
-		cls = self.__class__
-		tup = (str(cls.before), str(cls.after), str(cls.ext_in), str(cls.ext_out), cls.__name__, cls.hcode)
-		return hash(tup)
+		return (tuple(self.before), tuple(self.after), tuple(self.ext_in), tuple(self.ext_out), self.__class__.__name__, self.hcode)
 
 	def format_error(self):
 		"""
@@ -428,6 +425,8 @@ class TaskBase(evil):
 				return ' -> task in %r failed%s' % (name, msg)
 		elif self.hasrun == MISSING:
 			return ' -> missing files in %r%s' % (name, msg)
+		elif self.hasrun == CANCELED:
+			return ' -> %r canceled because of missing dependencies' % name
 		else:
 			return 'invalid status for task in %r: %r' % (name, self.hasrun)
 
@@ -464,40 +463,6 @@ class TaskBase(evil):
 				lst.append(y)
 			return lst
 
-class Task(TaskBase):
-	"""
-	This class deals with the filesystem (:py:class:`waflib.Node.Node`). The method :py:class:`waflib.Task.Task.runnable_status`
-	uses a hash value (from :py:class:`waflib.Task.Task.signature`) which is persistent from build to build. When the value changes,
-	the task has to be executed. The method :py:class:`waflib.Task.Task.post_run` will assign the task signature to the output
-	nodes (if present).
-	"""
-	vars = []
-	"""ConfigSet variables that should trigger a rebuild (class attribute used for :py:meth:`waflib.Task.Task.sig_vars`)"""
-
-	always_run = False
-	"""Specify whether task instances must always be executed or not (class attribute)"""
-
-	shell = False
-	"""Execute the command with the shell (class attribute)"""
-
-	def __init__(self, *k, **kw):
-		TaskBase.__init__(self, *k, **kw)
-
-		self.env = kw['env']
-		""":py:class:`waflib.ConfigSet.ConfigSet` object (make sure to provide one)"""
-
-		self.inputs  = []
-		"""List of input nodes, which represent the files used by the task instance"""
-
-		self.outputs = []
-		"""List of output nodes, which represent the files created by the task instance"""
-
-		self.dep_nodes = []
-		"""List of additional nodes to depend on"""
-
-		self.run_after = set()
-		"""Set of tasks that must be executed before this one"""
-
 	def __str__(self):
 		"string to display to the user"
 		name = self.__class__.__name__
@@ -520,9 +485,7 @@ class Task(TaskBase):
 		return '%s: %s%s%s' % (self.__class__.__name__, src_str, sep, tgt_str)
 
 	def keyword(self):
-		"""
-		See :py:meth:`waflib.Task.TaskBase`
-		"""
+		"Display keyword used to prettify the console outputs"
 		name = self.__class__.__name__
 		if name.endswith(('lib', 'program')):
 			return 'Linking'
@@ -603,7 +566,7 @@ class Task(TaskBase):
 		:param task: task
 		:type task: :py:class:`waflib.Task.Task`
 		"""
-		assert isinstance(task, TaskBase)
+		assert isinstance(task, Task)
 		self.run_after.add(task)
 
 	def signature(self):
@@ -652,13 +615,22 @@ class Task(TaskBase):
 
 	def runnable_status(self):
 		"""
-		See :py:meth:`waflib.Task.TaskBase.runnable_status`
+		Returns the Task status
+
+		:return: a task state in :py:const:`waflib.Task.RUN_ME`,
+			:py:const:`waflib.Task.SKIP_ME`, :py:const:`waflib.Task.CANCEL_ME` or :py:const:`waflib.Task.ASK_LATER`.
+		:rtype: int
 		"""
-		#return 0 # benchmarking
+		bld = self.generator.bld
+		if bld.is_install < 0:
+			return SKIP_ME
 
 		for t in self.run_after:
 			if not t.hasrun:
 				return ASK_LATER
+			elif t.hasrun < SKIPPED:
+				# a dependency has an error
+				return CANCEL_ME
 
 		# first compute the signature
 		try:
@@ -667,7 +639,6 @@ class Task(TaskBase):
 			return ASK_LATER
 
 		# compare the signature to a signature computed previously
-		bld = self.generator.bld
 		key = self.uid()
 		try:
 			prev_sig = bld.task_sigs[key]
@@ -872,10 +843,10 @@ if sys.hexversion > 0x3000000:
 		try:
 			return self.uid_
 		except AttributeError:
-			m = Utils.md5(self.__class__.__name__.encode('iso8859-1', 'xmlcharrefreplace'))
+			m = Utils.md5(self.__class__.__name__.encode('latin-1', 'xmlcharrefreplace'))
 			up = m.update
 			for x in self.inputs + self.outputs:
-				up(x.abspath().encode('iso8859-1', 'xmlcharrefreplace'))
+				up(x.abspath().encode('latin-1', 'xmlcharrefreplace'))
 			self.uid_ = m.digest()
 			return self.uid_
 	uid.__doc__ = Task.uid.__doc__
@@ -892,9 +863,9 @@ def is_before(t1, t2):
 		waflib.Task.is_before(t1, t2) # True
 
 	:param t1: Task object
-	:type t1: :py:class:`waflib.Task.TaskBase`
+	:type t1: :py:class:`waflib.Task.Task`
 	:param t2: Task object
-	:type t2: :py:class:`waflib.Task.TaskBase`
+	:type t2: :py:class:`waflib.Task.Task`
 	"""
 	to_list = Utils.to_list
 	for k in to_list(t2.ext_in):
@@ -914,27 +885,50 @@ def set_file_constraints(tasks):
 	Updates the ``run_after`` attribute of all tasks based on the task inputs and outputs
 
 	:param tasks: tasks
-	:type tasks: list of :py:class:`waflib.Task.TaskBase`
+	:type tasks: list of :py:class:`waflib.Task.Task`
 	"""
 	ins = Utils.defaultdict(set)
 	outs = Utils.defaultdict(set)
 	for x in tasks:
-		for a in getattr(x, 'inputs', []) + getattr(x, 'dep_nodes', []):
-			ins[id(a)].add(x)
-		for a in getattr(x, 'outputs', []):
-			outs[id(a)].add(x)
+		for a in x.inputs:
+			ins[a].add(x)
+		for a in x.dep_nodes:
+			ins[a].add(x)
+		for a in x.outputs:
+			outs[a].add(x)
 
 	links = set(ins.keys()).intersection(outs.keys())
 	for k in links:
 		for a in ins[k]:
 			a.run_after.update(outs[k])
 
+
+class TaskGroup(object):
+	"""
+	Wrap nxm task order constraints into a single object
+	to prevent the creation of large list/set objects
+
+	This is an optimization
+	"""
+	def __init__(self, prev, next):
+		self.prev = prev
+		self.next = next
+		self.done = False
+
+	def get_hasrun(self):
+		for k in self.prev:
+			if not k.hasrun:
+				return NOT_RUN
+		return SUCCESS
+
+	hasrun = property(get_hasrun, None)
+
 def set_precedence_constraints(tasks):
 	"""
 	Updates the ``run_after`` attribute of all tasks based on the after/before/ext_out/ext_in attributes
 
 	:param tasks: tasks
-	:type tasks: list of :py:class:`waflib.Task.TaskBase`
+	:type tasks: list of :py:class:`waflib.Task.Task`
 	"""
 	cstr_groups = Utils.defaultdict(list)
 	for x in tasks:
@@ -960,9 +954,16 @@ def set_precedence_constraints(tasks):
 			else:
 				continue
 
-			aval = set(cstr_groups[keys[a]])
-			for x in cstr_groups[keys[b]]:
-				x.run_after.update(aval)
+			a = cstr_groups[keys[a]]
+			b = cstr_groups[keys[b]]
+
+			if len(a) < 2 or len(b) < 2:
+				for x in b:
+					x.run_after.update(a)
+			else:
+				group = TaskGroup(set(a), set(b))
+				for x in b:
+					x.run_after.add(group)
 
 def funex(c):
 	"""
@@ -1145,7 +1146,7 @@ def compile_fun(line, shell=False):
 	"""
 	Parses a string expression such as '${CC} ${SRC} -o ${TGT}' and returns a pair containing:
 
-	* The function created (compiled) for use as :py:meth:`waflib.Task.TaskBase.run`
+	* The function created (compiled) for use as :py:meth:`waflib.Task.Task.run`
 	* The list of variables that must cause rebuilds when *env* data is modified
 
 	for example::
@@ -1217,7 +1218,6 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 		params['run'] = func
 
 	cls = type(Task)(name, (Task,), params)
-	global classes
 	classes[name] = cls
 
 	if ext_in:
@@ -1231,22 +1231,6 @@ def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[
 
 	return cls
 
-
-def always_run(cls):
-	"""
-	Deprecated Task class decorator (to be removed in waf 2.0)
-
-	Set all task instances of this class to be executed whenever a build is started
-	The task signature is calculated, but the result of the comparison between
-	task signatures is bypassed
-	"""
-	Logs.warn('This decorator is deprecated, set always_run on the task class instead!')
-	cls.always_run = True
-	return cls
-
-def update_outputs(cls):
-	"""
-	Obsolete, to be removed in waf 2.0
-	"""
-	return cls
+TaskBase = Task
+"Provided for compatibility reasons, TaskBase should not be used"
 

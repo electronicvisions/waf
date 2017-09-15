@@ -11,8 +11,8 @@ An advanced dynamic build simulating a call to an external system.
 That external build system produces a library which is then used in the current build.
 """
 
-import os, shutil, sys, subprocess
-from waflib import Utils, Build, Logs
+import os, shutil, sys
+from waflib import Build, Errors, Logs
 
 top = '.'
 out = 'build'
@@ -79,7 +79,7 @@ def some_fun(task):
 
 	try:
 		task.generator.bld.cmd_and_log(cmd, cwd=cwd, quiet=0, output=0)
-	except Exception as e:
+	except Errors.WafError as e:
 		try:
 			print(e.stderr)
 		except AttributeError:

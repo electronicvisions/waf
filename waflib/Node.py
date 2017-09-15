@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 """
 Node: filesystem structure
@@ -122,7 +122,7 @@ class Node(object):
 		"""
 		raise Errors.WafError('nodes are not supposed to be copied')
 
-	def read(self, flags='r', encoding='ISO8859-1'):
+	def read(self, flags='r', encoding='latin-1'):
 		"""
 		Reads and returns the contents of the file represented by this node, see :py:func:`waflib.Utils.readf`::
 
@@ -138,7 +138,7 @@ class Node(object):
 		"""
 		return Utils.readf(self.abspath(), flags, encoding)
 
-	def write(self, data, flags='w', encoding='ISO8859-1'):
+	def write(self, data, flags='w', encoding='latin-1'):
 		"""
 		Writes data to the file represented by this node, see :py:func:`waflib.Utils.writef`::
 
@@ -340,6 +340,11 @@ class Node(object):
 
 		if isinstance(lst, str):
 			lst = [x for x in Utils.split_path(lst) if x and x != '.']
+
+		if lst and lst[0].startswith('\\\\') and not self.parent:
+			node = self.ctx.root.make_node(lst[0])
+			node.cache_isdir = True
+			return node.find_node(lst[1:])
 
 		cur = self
 		for x in lst:
@@ -565,9 +570,8 @@ class Node(object):
 					if isdir:
 						if dir:
 							yield node
-					else:
-						if src:
-							yield node
+					elif src:
+						yield node
 
 				if isdir:
 					node.cache_isdir = True
@@ -611,26 +615,25 @@ class Node(object):
 		:param ignorecase: ignore case while matching (False by default)
 		:type ignorecase: bool
 		:returns: The corresponding Nodes
-		:rtype: list of :py:class:`waflib.Node.Node` instances
+		:type generator: bool
+		:returns: Whether to evaluate the Nodes lazily, alters the type of the returned value
+		:rtype: by default, list of :py:class:`waflib.Node.Node` instances
 		"""
-
 		src = kw.get('src', True)
-		dir = kw.get('dir', False)
+		dir = kw.get('dir')
 
 		excl = kw.get('excl', exclude_regs)
 		incl = k and k[0] or kw.get('incl', '**')
-		reflags = kw.get('ignorecase', 0) and re.I
+		reflags = kw.get('ignorecase', re.I)
 
 		def to_pat(s):
-			lst = Utils.to_list(s)
 			ret = []
-			for x in lst:
+			for x in Utils.to_list(s):
 				x = x.replace('\\', '/').replace('//', '/')
 				if x.endswith('/'):
 					x += '**'
-				lst2 = x.split('/')
 				accu = []
-				for k in lst2:
+				for k in x.split('/'):
 					if k == '**':
 						accu.append(k)
 					else:
@@ -638,9 +641,11 @@ class Node(object):
 						k = '^%s$' % k
 						try:
 							#print "pattern", k
-							accu.append(re.compile(k, flags=reflags))
+							exp = re.compile(k, flags=reflags)
 						except Exception as e:
 							raise Errors.WafError('Invalid pattern: %s' % k, e)
+						else:
+							accu.append(exp)
 				ret.append(accu)
 			return ret
 
@@ -667,16 +672,17 @@ class Node(object):
 				nacc = []
 			return [nacc, nrej]
 
-		ret = [x for x in self.ant_iter(accept=accept, pats=[to_pat(incl), to_pat(excl)], maxdepth=kw.get('maxdepth', 25), dir=dir, src=src, remove=kw.get('remove', True))]
-		if kw.get('flat', False):
-			return ' '.join([x.path_from(self) for x in ret])
+		it = self.ant_iter(accept=accept, pats=[to_pat(incl), to_pat(excl)], maxdepth=kw.get('maxdepth', 25), dir=dir, src=src, remove=kw.get('remove', True))
+		if kw.get('flat'):
+			# returns relative paths as a space-delimited string
+			# prefer Node objects whenever possible
+			return ' '.join(x.path_from(self) for x in it)
+		elif kw.get('generator'):
+			return it
+		return list(it)
 
-		return ret
-
-	# --------------------------------------------------------------------------------
-	# the following methods require the source/build folders (bld.srcnode/bld.bldnode)
-	# using a subclass is a possibility, but is that really necessary?
-	# --------------------------------------------------------------------------------
+	# ----------------------------------------------------------------------------
+	# the methods below require the source/build folders (bld.srcnode/bld.bldnode)
 
 	def is_src(self):
 		"""
@@ -781,29 +787,19 @@ class Node(object):
 
 	def find_or_declare(self, lst):
 		"""
-		Use this method in the build phase to declare output files.
+		Use this method in the build phase to declare output files which
+		are meant to be written in the build directory.
 
-		If 'self' is in build directory, it first tries to return an existing node object.
-		If no Node is found, it tries to find one in the source directory.
-		If no Node is found, a new Node object is created in the build directory, and the
-		intermediate folders are added.
+		This method creates the Node object and its parent folder
+		as needed.
 
 		:param lst: relative path
 		:type lst: string or list of string
 		"""
-		if isinstance(lst, str):
-			lst = [x for x in Utils.split_path(lst) if x and x != '.']
-
-		node = self.get_bld().search_node(lst)
-		if node:
-			if not os.path.isfile(node.abspath()):
-				node.parent.mkdir()
-			return node
-		self = self.get_src()
-		node = self.find_node(lst)
-		if node:
-			return node
-		node = self.get_bld().make_node(lst)
+		if isinstance(lst, str) and os.path.isabs(lst):
+			node = self.ctx.root.make_node(lst)
+		else:
+			node = self.get_bld().make_node(lst)
 		node.parent.mkdir()
 		return node
 
@@ -919,19 +915,6 @@ class Node(object):
 					return ret
 				raise
 		return ret
-
-	# --------------------------------------------
-	# TODO waf 2.0, remove the sig and cache_sig attributes
-	def get_sig(self):
-		return self.h_file()
-	def set_sig(self, val):
-		# clear the cache, so that past implementation should still work
-		try:
-			del self.get_bld_sig.__cache__[(self,)]
-		except (AttributeError, KeyError):
-			pass
-	sig = property(get_sig, set_sig)
-	cache_sig = property(get_sig, set_sig)
 
 pickle_lock = Utils.threading.Lock()
 """Lock mandatory for thread-safe node serialization"""

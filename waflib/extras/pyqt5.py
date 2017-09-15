@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Federico Pellegrin, 2016 (fedepell) adapted for Python
+# Federico Pellegrin, 2016-2017 (fedepell) adapted for Python
 
 """
 This tool helps with finding Python Qt5 tools and libraries,

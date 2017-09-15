@@ -129,7 +129,7 @@ def options(opt):
 				   default=False, dest='boost_mt',
 				   help='select multi-threaded libraries')
 	opt.add_option('--boost-abi', type='string', default='', dest='boost_abi',
-				   help='''select libraries with tags (s for static runtime, gd for debug, sgd for both),
+				   help='''select libraries with tags (gd for debug, static is automatically added),
 				   see doc Boost, Getting Started, chapter 6.1''')
 	opt.add_option('--boost-linkage_autodetect', action="store_true", dest='boost_linkage_autodetect',
 				   help="auto-detect boost linkage options (don't get used to it / might break other stuff)")
@@ -270,7 +270,9 @@ def boost_get_libs(self, *k, **kw):
 		if kw.get('mt', False):
 			t.append('-mt')
 		if kw.get('abi'):
-			t.append('-%s' % kw['abi'])
+			t.append('%s%s' % (is_static and '-s' or '-', kw['abi']))
+		elif is_static:
+			t.append('-s')
 		tags_pat = t and ''.join(t) or ''
 		ext = is_static and self.env.cxxstlib_PATTERN or self.env.cxxshlib_PATTERN
 		ext = ext.partition('%s')[2] # remove '%s' or 'lib%s' from PATTERN
@@ -283,16 +285,14 @@ def boost_get_libs(self, *k, **kw):
 				tags = '({0})?((-py{2})|(-py{1}(?=[^0-9]))|({2})|(-{1}.{3})|({1}(?=[^0-9]))|(?=[^0-9])(?!-py))'.format(tags_pat, kw['python'][0], kw['python'], kw['python'][1])
 			else:
 				tags = tags_pat
-
 			# Trying libraries, from most strict match to least one
-			prefix = (not Utils.is_win32 or is_static) and 'lib' or ''
-			for pattern in ['%sboost_%s%s%s%s%s$' % (prefix, lib, toolset_pat, tags, version, ext),
-							'%sboost_%s%s%s%s$' % (prefix, lib, tags, version, ext),
+			for pattern in ['boost_%s%s%s%s%s$' % (lib, toolset_pat, tags, version, ext),
+							'boost_%s%s%s%s$' % (lib, tags, version, ext),
 							# Give up trying to find the right version
-							'%sboost_%s%s%s%s$' % (prefix, lib, toolset_pat, tags, ext),
-							'%sboost_%s%s%s$' % (prefix, lib, tags, ext),
-							'%sboost_%s%s$' % (prefix, lib, ext),
-							'%sboost_%s' % (prefix, lib)]:
+							'boost_%s%s%s%s$' % (lib, toolset_pat, tags, ext),
+							'boost_%s%s%s$' % (lib, tags, ext),
+							'boost_%s%s$' % (lib, ext),
+							'boost_%s' % lib]:
 				self.to_log('Trying pattern %s' % pattern)
 				file = find_lib(re.compile(pattern), files)
 				if file:
@@ -367,8 +367,8 @@ def check_boost(self, *k, **kw):
 
 		def is_log_mt():
 			'''Check if found boost_log library is multithread-safe'''
-			for lib in libs + stlibs:
-				if 'boost_log' in lib:
+			for lib in libs:
+				if lib.startswith('boost_log'):
 					lib_log = lib
 					break
 			return '-mt' in lib_log

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 """
 Configuration system
@@ -12,7 +12,7 @@ A :py:class:`waflib.Configure.ConfigurationContext` instance is created when ``w
 * hold configuration routines such as ``find_program``, etc
 """
 
-import os, shlex, sys, time, re, shutil
+import os, re, shlex, shutil, sys, time, traceback
 from waflib import ConfigSet, Utils, Options, Logs, Context, Build, Errors
 
 WAF_CONFIG_LOG = 'config.log'
@@ -197,17 +197,17 @@ class ConfigurationContext(Context.Context):
 		"""
 		if not env.PREFIX:
 			if Options.options.prefix or Utils.is_win32:
-				env.PREFIX = Utils.sane_path(Options.options.prefix)
+				env.PREFIX = Options.options.prefix
 			else:
-				env.PREFIX = ''
+				env.PREFIX = '/'
 		if not env.BINDIR:
 			if Options.options.bindir:
-				env.BINDIR = Utils.sane_path(Options.options.bindir)
+				env.BINDIR = Options.options.bindir
 			else:
 				env.BINDIR = Utils.subst_vars('${PREFIX}/bin', env)
 		if not env.LIBDIR:
 			if Options.options.libdir:
-				env.LIBDIR = Utils.sane_path(Options.options.libdir)
+				env.LIBDIR = Options.options.libdir
 			else:
 				env.LIBDIR = Utils.subst_vars('${PREFIX}/lib%s' % Utils.lib64(), env)
 
@@ -258,7 +258,7 @@ class ConfigurationContext(Context.Context):
 				self.fatal('Could not load the Waf tool %r from %r\n%s' % (tool, sys.path, e))
 			except Exception as e:
 				self.to_log('imp %r (%r & %r)' % (tool, tooldir, funs))
-				self.to_log(Utils.ex_stack())
+				self.to_log(traceback.format_exc())
 				raise
 
 			if funs is not None:
@@ -428,6 +428,7 @@ def find_program(self, filename, **kw):
 	:type msg: string
 	:param interpreter: interpreter for the program
 	:type interpreter: ConfigSet variable key
+	:raises: :py:class:`waflib.Errors.ConfigurationError`
 	"""
 
 	exts = kw.get('exts', Utils.is_win32 and '.exe,.com,.bat,.cmd' or ',.sh,.pl,.py')
@@ -586,7 +587,7 @@ def run_build(self, *k, **kw):
 		try:
 			bld.compile()
 		except Errors.WafError:
-			ret = 'Test does not build: %s' % Utils.ex_stack()
+			ret = 'Test does not build: %s' % traceback.format_exc()
 			self.fatal(ret)
 		else:
 			ret = getattr(bld, 'retval', 0)

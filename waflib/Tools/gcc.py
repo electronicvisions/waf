@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2016 (ita)
+# Thomas Nagy, 2006-2017 (ita)
 # Ralf Habacker, 2006 (rh)
 # Yinon Ehrlich, 2009
 
@@ -68,7 +68,7 @@ def gcc_modifier_win32(conf):
 	v.cprogram_PATTERN    = '%s.exe'
 
 	v.cshlib_PATTERN      = '%s.dll'
-	v.implib_PATTERN      = 'lib%s.dll.a'
+	v.implib_PATTERN      = '%s.dll.a'
 	v.IMPLIB_ST           = '-Wl,--out-implib,%s'
 
 	v.CFLAGS_cshlib       = []

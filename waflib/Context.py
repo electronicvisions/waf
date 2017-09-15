@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2010-2016 (ita)
+# Thomas Nagy, 2010-2017 (ita)
 
 """
 Classes and functions enabling the command system
@@ -11,16 +11,16 @@ from waflib import Utils, Errors, Logs
 import waflib.Node
 
 # the following 3 constants are updated on each new release (do not touch)
-HEXVERSION=0x1090d00
+HEXVERSION=0x2000000
 """Constant updated on new releases"""
 
-WAFVERSION="1.9.13"
+WAFVERSION="2.0.0"
 """Constant updated on new releases"""
 
-WAFREVISION="66f1d5bc9472557082b82aced1cbf6a9d6cd1a27"
+WAFREVISION="3cee7b36f04b13bcd255ea314ad7797246c8725b"
 """Git revision when the waf version is updated"""
 
-ABI = 99
+ABI = 20
 """Version of the build data cache file format (used in :py:const:`waflib.Context.DBFILE`)"""
 
 DBFILE = '.wafpickle-%s-%d-%d' % (sys.platform, sys.hexversion, ABI)
@@ -81,7 +81,6 @@ def create_context(cmd_name, *k, **kw):
 	:return: Context object
 	:rtype: :py:class:`waflib.Context.Context`
 	"""
-	global classes
 	for x in classes:
 		if x.cmd == cmd_name:
 			return x(*k, **kw)
@@ -110,7 +109,6 @@ class store_context(type):
 		if not getattr(cls, 'fun', None):
 			cls.fun = cls.cmd
 
-		global classes
 		classes.insert(0, cls)
 
 ctx = store_context('ctx', (object,), {})
@@ -150,7 +148,6 @@ class Context(ctx):
 		try:
 			rd = kw['run_dir']
 		except KeyError:
-			global run_dir
 			rd = run_dir
 
 		# binds the context to the nodes in use to avoid a context singleton
@@ -201,7 +198,6 @@ class Context(ctx):
 		Here, it calls the function name in the top-level wscript file. Most subclasses
 		redefine this method to provide additional functionality.
 		"""
-		global g_module
 		self.recurse([os.path.dirname(g_module.root_path)])
 
 	def pre_recurse(self, node):
@@ -296,6 +292,15 @@ class Context(ctx):
 						raise Errors.WafError('Cannot read the folder %r' % d)
 					raise Errors.WafError('No wscript file in directory %s' % d)
 
+	def log_command(self, cmd, kw):
+		if Logs.verbose:
+			fmt = os.environ.get('WAF_CMD_FORMAT')
+			if fmt == 'string':
+				if not isinstance(cmd, str):
+					cmd = Utils.shell_escape(cmd)
+			Logs.debug('runner: %r', cmd)
+			Logs.debug('runner_env: kw=%s', kw)
+
 	def exec_command(self, cmd, **kw):
 		"""
 		Runs an external process and returns the exit status::
@@ -314,11 +319,12 @@ class Context(ctx):
 		:type kw: dict
 		:returns: process exit status
 		:rtype: integer
+		:raises: :py:class:`waflib.Errors.WafError` if an invalid executable is specified for a non-shell process
+		:raises: :py:class:`waflib.Errors.WafError` in case of execution failure
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r', cmd)
-		Logs.debug('runner_env: kw=%s', kw)
+		self.log_command(cmd, kw)
 
 		if self.logger:
 			self.logger.info(cmd)
@@ -355,14 +361,14 @@ class Context(ctx):
 
 		if out:
 			if not isinstance(out, str):
-				out = out.decode(sys.stdout.encoding or 'iso8859-1', errors='replace')
+				out = out.decode(sys.stdout.encoding or 'latin-1', errors='replace')
 			if self.logger:
 				self.logger.debug('out: %s', out)
 			else:
 				Logs.info(out, extra={'stream':sys.stdout, 'c1': ''})
 		if err:
 			if not isinstance(err, str):
-				err = err.decode(sys.stdout.encoding or 'iso8859-1', errors='replace')
+				err = err.decode(sys.stdout.encoding or 'latin-1', errors='replace')
 			if self.logger:
 				self.logger.error('err: %s' % err)
 			else:
@@ -374,7 +380,7 @@ class Context(ctx):
 		"""
 		Executes a process and returns stdout/stderr if the execution is successful.
 		An exception is thrown when the exit status is non-0. In that case, both stderr and stdout
-		will be bound to the WafError object::
+		will be bound to the WafError object (configuration tests)::
 
 			def configure(conf):
 				out = conf.cmd_and_log(['echo', 'hello'], output=waflib.Context.STDOUT, quiet=waflib.Context.BOTH)
@@ -382,7 +388,7 @@ class Context(ctx):
 				(out, err) = conf.cmd_and_log(cmd, input='\\n'.encode(), output=waflib.Context.STDOUT)
 				try:
 					conf.cmd_and_log(['which', 'someapp'], output=waflib.Context.BOTH)
-				except Exception as e:
+				except Errors.WafError as e:
 					print(e.stdout, e.stderr)
 
 		:param cmd: args for subprocess.Popen
@@ -396,7 +402,7 @@ class Context(ctx):
 		"""
 		subprocess = Utils.subprocess
 		kw['shell'] = isinstance(cmd, str)
-		Logs.debug('runner: %r', cmd)
+		self.log_command(cmd, kw)
 
 		if 'quiet' in kw:
 			quiet = kw['quiet']
@@ -440,9 +446,9 @@ class Context(ctx):
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
 		if not isinstance(out, str):
-			out = out.decode(sys.stdout.encoding or 'iso8859-1', errors='replace')
+			out = out.decode(sys.stdout.encoding or 'latin-1', errors='replace')
 		if not isinstance(err, str):
-			err = err.decode(sys.stdout.encoding or 'iso8859-1', errors='replace')
+			err = err.decode(sys.stdout.encoding or 'latin-1', errors='replace')
 
 		if out and quiet != STDOUT and quiet != BOTH:
 			self.to_log('out: %s' % out)
@@ -583,9 +589,9 @@ class Context(ctx):
 		result = kw.get('result') or k[0]
 
 		defcolor = 'GREEN'
-		if result == True:
+		if result is True:
 			msg = 'ok'
-		elif result == False:
+		elif not result:
 			msg = 'not found'
 			defcolor = 'YELLOW'
 		else:
@@ -614,7 +620,6 @@ class Context(ctx):
 		:param ban: list of exact file names to exclude
 		:type ban: list of string
 		"""
-		global waf_dir
 		if os.path.isdir(waf_dir):
 			lst = self.root.find_node(waf_dir).find_node('waflib/extras').ant_glob(var)
 			for x in lst:

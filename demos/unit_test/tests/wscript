@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 def build(bld):
-	bld.recurse('test0 test1')
+	bld.recurse('test0 test1 test2 test3')
 
 	obj = bld(
 			features = 'cxx cxxstlib',

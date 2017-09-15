@@ -20,34 +20,35 @@ Download the project from our page on [waf.io](https://waf.io/) or from a mirror
 ## HOW TO CREATE THE WAF SCRIPT
 
 Python >= 2.6 is required to generate the waf script, and the resulting file can then run on Python 2.5.
-Just execute:
+Just run:
 ```sh
 $ ./waf-light configure build
 ```
-Or, if you have several python versions installed:
+Or, if several python versions are installed:
 ```sh
 $ python3 ./waf-light configure build
 ```
 
 The Waf tools in waflib/extras are not added to the waf script. To add
-some of them, use the --tools switch:
+some of them, use the --tools switch. An absolute path can be passed
+if the module does not exist under the 'extras' folder:
 ```sh
-$ ./waf-light --tools=compat15,swig
+$ ./waf-light --tools=swig
 ```
 
-To add a tool that does not exist in the folder extras, pass an absolute path, and
-to customize the initialization, pass the parameter 'prelude'. Here is for example
+To customize the initialization, pass the parameter 'prelude'. Here is for example
 how to create a waf file using the compat15 module:
 ```sh
 $ ./waf-light --tools=compat15 --prelude=$'\tfrom waflib.extras import compat15\n'
 ```
 
-Any kind of initialization is possible, though one may prefer the build system kit (folder build\_system\_kit):
+Although any kind of initialization is possible, using the build system kit
+may be easier (folder build\_system\_kit):
 ```sh
 $ ./waf-light --make-waf --tools=compat15,/comp/waf/aba.py --prelude=$'\tfrom waflib.extras import compat15\n\tprint("ok")'
 ```
 
-Or, to avoid regenerating the waf file all the time, just set the `WAFDIR` environment variable to the directory containing "waflib".
+To avoid regenerating the waf file all the time, just set the `WAFDIR` environment variable to the directory containing "waflib".
 
 ## HOW TO RUN THE EXAMPLES
 

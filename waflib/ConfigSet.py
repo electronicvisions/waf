@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 """
 
@@ -88,13 +88,13 @@ class ConfigSet(object):
 
 	def __setitem__(self, key, value):
 		"""
-		Dictionary interface: set value for key
+		Dictionary interface: set value from key
 		"""
 		self.table[key] = value
 
 	def __delitem__(self, key):
 		"""
-		Dictionary interface: mark the key as missing
+		Dictionary interface: mark the value as missing
 		"""
 		self[key] = []
 

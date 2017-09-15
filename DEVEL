@@ -1,4 +1,4 @@
-Waf 1.9 is on https://github.com/waf-project/waf
+Waf 2.0 is on https://github.com/waf-project/waf
 ------------------------------------------------
 
 waflib            the core library
@@ -37,8 +37,5 @@ for modules under waflib/Tools, under tests/ for platform-independent unit tests
 or in playground/ for modules under waflib/extras.
 
 The files under waflib/Tools/ are kept API-compatible for the duration
-of a middle version (currently 1.9).
-
-The development branch is called waf-2.0:
-https://github.com/waf-project/waf/tree/waf-2.0
+of a middle version (currently 2.0).
 

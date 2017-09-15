@@ -84,6 +84,10 @@ def build(bld):
 	test_cmd([exe], proj_cwd, '  next build from top')
 	test_cmd([exe], proj_out_cwd, '  next build from out', launch_dir='tmp_out')
 	test_cmd([exe], proj_sub_cwd, '  next build from subfolder', launch_dir='sub')
+	test_cmd([exe, '--top=%s' % proj_cwd, '--out=foobar'], proj_cwd,
+		'  next build from top, verify out_dir==lock_file.out_dir')
+	test_cmd([exe, '--top=%s' % proj_cwd, '--out=foobar'], proj_sub_cwd,
+		'  next build from subfolder, verify out_dir==lock_file.out_dir', launch_dir='sub')
 	cleanup(bld)
 
 	test_cmd([exe, 'configure', '--top=%s' % proj_cwd, '--out=%s' % proj_out_cwd], up_cwd, 'configure with top/out from up cwd',
@@ -113,6 +117,20 @@ def build(bld):
 	cleanup(bld)
 
 	test_cmd([exe, '--top=%s' % proj_cwd], proj_cwd, 'autoconfig')
+	cleanup(bld)
+
+	test_cmd([wscript, 'configure', '--top=project', '--out=project/tmp_out'], up_cwd, 'wscript configure with relative top/out from up cwd',
+		launch_dir='..')
+	test_cmd([wscript], proj_cwd, '  next build from top')
+	test_cmd([wscript], proj_out_cwd, '  next build from out', launch_dir='tmp_out')
+	test_cmd([wscript], proj_sub_cwd, '  next build from subfolder', launch_dir='sub')
+	cleanup(bld)
+
+	test_cmd([exe, '--force-autoconfig', '--top=project'], up_cwd, 'autoconfig from up 1', launch_dir='..')
+	os.remove(dumpf_default + '_autoconfig')
+	test_cmd([exe, '--force-autoconfig', '--top=project'], up_cwd, 'autoconfig from up 2', launch_dir='..')
+	os.remove(dumpf_default + '_autoconfig')
+	test_cmd([exe, '--force-autoconfig', '--out=badout'], proj_cwd, 'autoconfig with clobber')
 	cleanup(bld)
 
 	if failures:

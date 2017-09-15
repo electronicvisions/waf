@@ -52,7 +52,7 @@ cmd.exe  /C  "chcp 1252 & set PYTHONUNBUFFERED=true && set && waf  configure"
 Setting PYTHONUNBUFFERED gives the unbuffered output.
 """
 
-import os, sys, re
+import os, sys, re, traceback
 from waflib import Utils, Logs, Options, Errors
 from waflib.TaskGen import after_method, feature
 
@@ -213,7 +213,7 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 	try:
 		conf.cmd_and_log(cxx + ['/help'], env=env)
 	except UnicodeError:
-		st = Utils.ex_stack()
+		st = traceback.format_exc()
 		if conf.logger:
 			conf.logger.error(st)
 		conf.fatal('msvc: Unicode error - check the code page?')
@@ -238,16 +238,16 @@ def gather_wsdk_versions(conf, versions):
 	version_pattern = re.compile('^v..?.?\...?.?')
 	try:
 		all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Microsoft\\Microsoft SDKs\\Windows')
-	except WindowsError:
+	except OSError:
 		try:
 			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Microsoft SDKs\\Windows')
-		except WindowsError:
+		except OSError:
 			return
 	index = 0
 	while 1:
 		try:
 			version = Utils.winreg.EnumKey(all_versions, index)
-		except WindowsError:
+		except OSError:
 			break
 		index += 1
 		if not version_pattern.match(version):
@@ -255,7 +255,7 @@ def gather_wsdk_versions(conf, versions):
 		try:
 			msvc_version = Utils.winreg.OpenKey(all_versions, version)
 			path,type = Utils.winreg.QueryValueEx(msvc_version,'InstallationFolder')
-		except WindowsError:
+		except OSError:
 			continue
 		if path and os.path.isfile(os.path.join(path, 'bin', 'SetEnv.cmd')):
 			targets = {}
@@ -273,10 +273,10 @@ def gather_wince_supported_platforms():
 	supported_wince_platforms = []
 	try:
 		ce_sdk = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Microsoft\\Windows CE Tools\\SDKs')
-	except WindowsError:
+	except OSError:
 		try:
 			ce_sdk = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Windows CE Tools\\SDKs')
-		except WindowsError:
+		except OSError:
 			ce_sdk = ''
 	if not ce_sdk:
 		return supported_wince_platforms
@@ -286,15 +286,15 @@ def gather_wince_supported_platforms():
 		try:
 			sdk_device = Utils.winreg.EnumKey(ce_sdk, index)
 			sdk = Utils.winreg.OpenKey(ce_sdk, sdk_device)
-		except WindowsError:
+		except OSError:
 			break
 		index += 1
 		try:
 			path,type = Utils.winreg.QueryValueEx(sdk, 'SDKRootDir')
-		except WindowsError:
+		except OSError:
 			try:
 				path,type = Utils.winreg.QueryValueEx(sdk,'SDKInformation')
-			except WindowsError:
+			except OSError:
 				continue
 			path,xml = os.path.split(path)
 		path = str(path)
@@ -317,18 +317,18 @@ def gather_msvc_detected_versions():
 		prefix = 'SOFTWARE\\Wow6432node\\Microsoft\\' + vcver
 		try:
 			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, prefix)
-		except WindowsError:
+		except OSError:
 			prefix = 'SOFTWARE\\Microsoft\\' + vcver
 			try:
 				all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, prefix)
-			except WindowsError:
+			except OSError:
 				continue
 
 		index = 0
 		while 1:
 			try:
 				version = Utils.winreg.EnumKey(all_versions, index)
-			except WindowsError:
+			except OSError:
 				break
 			index += 1
 			match = version_pattern.match(version)
@@ -477,14 +477,14 @@ def gather_msvc_versions(conf, versions):
 		try:
 			try:
 				msvc_version = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, reg + "\\Setup\\VC")
-			except WindowsError:
+			except OSError:
 				msvc_version = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, reg + "\\Setup\\Microsoft Visual C++")
 			path,type = Utils.winreg.QueryValueEx(msvc_version, 'ProductDir')
-		except WindowsError:
+		except OSError:
 			try:
 				msvc_version = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432node\\Microsoft\\VisualStudio\\SxS\\VS7")
 				path,type = Utils.winreg.QueryValueEx(msvc_version, version)
-			except WindowsError:
+			except OSError:
 				continue
 			else:
 				vc_paths.append((version, os.path.abspath(str(path))))
@@ -524,16 +524,16 @@ def gather_icl_versions(conf, versions):
 	version_pattern = re.compile('^...?.?\....?.?')
 	try:
 		all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Intel\\Compilers\\C++')
-	except WindowsError:
+	except OSError:
 		try:
 			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Intel\\Compilers\\C++')
-		except WindowsError:
+		except OSError:
 			return
 	index = 0
 	while 1:
 		try:
 			version = Utils.winreg.EnumKey(all_versions, index)
-		except WindowsError:
+		except OSError:
 			break
 		index += 1
 		if not version_pattern.match(version):
@@ -548,7 +548,7 @@ def gather_icl_versions(conf, versions):
 				Utils.winreg.OpenKey(all_versions,version+'\\'+targetDir)
 				icl_version=Utils.winreg.OpenKey(all_versions,version)
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
-			except WindowsError:
+			except OSError:
 				pass
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
@@ -558,7 +558,7 @@ def gather_icl_versions(conf, versions):
 			try:
 				icl_version = Utils.winreg.OpenKey(all_versions, version+'\\'+target)
 				path,type = Utils.winreg.QueryValueEx(icl_version,'ProductDir')
-			except WindowsError:
+			except OSError:
 				continue
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
@@ -578,16 +578,16 @@ def gather_intel_composer_versions(conf, versions):
 	version_pattern = re.compile('^...?.?\...?.?.?')
 	try:
 		all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Intel\\Suites')
-	except WindowsError:
+	except OSError:
 		try:
 			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Intel\\Suites')
-		except WindowsError:
+		except OSError:
 			return
 	index = 0
 	while 1:
 		try:
 			version = Utils.winreg.EnumKey(all_versions, index)
-		except WindowsError:
+		except OSError:
 			break
 		index += 1
 		if not version_pattern.match(version):
@@ -601,7 +601,7 @@ def gather_intel_composer_versions(conf, versions):
 			try:
 				try:
 					defaults = Utils.winreg.OpenKey(all_versions,version+'\\Defaults\\C++\\'+targetDir)
-				except WindowsError:
+				except OSError:
 					if targetDir == 'EM64T_NATIVE':
 						defaults = Utils.winreg.OpenKey(all_versions,version+'\\Defaults\\C++\\EM64T')
 					else:
@@ -610,7 +610,7 @@ def gather_intel_composer_versions(conf, versions):
 				Utils.winreg.OpenKey(all_versions,version+'\\'+uid+'\\C++\\'+targetDir)
 				icl_version=Utils.winreg.OpenKey(all_versions,version+'\\'+uid+'\\C++')
 				path,type=Utils.winreg.QueryValueEx(icl_version,'ProductDir')
-			except WindowsError:
+			except OSError:
 				pass
 			else:
 				batch_file=os.path.join(path,'bin','iclvars.bat')
@@ -709,7 +709,7 @@ def libname_msvc(self, libname, is_static=False):
 	(lt_path, lt_libname, lt_static) = self.find_lt_names_msvc(lib, is_static)
 
 	if lt_path != None and lt_libname != None:
-		if lt_static == True:
+		if lt_static:
 			# file existence check has been made by find_lt_names
 			return os.path.join(lt_path,lt_libname)
 
@@ -852,8 +852,7 @@ def find_msvc(conf):
 
 	# linker
 	if not v.LINK_CXX:
-		# TODO: var=LINK_CXX to let so that LINK_CXX can be overridden?
-		v.LINK_CXX = conf.find_program(linker_name, path_list=path, errmsg='%s was not found (linker)' % linker_name)
+		conf.find_program(linker_name, path_list=path, errmsg='%s was not found (linker)' % linker_name, var='LINK_CXX')
 
 	if not v.LINK_CC:
 		v.LINK_CC = v.LINK_CXX

@@ -19,7 +19,7 @@ Support for Python, detect the headers and libraries and provide
 """
 
 import os, sys
-from waflib import Utils, Options, Errors, Logs, Task, Node
+from waflib import Errors, Logs, Node, Options, Task, Utils
 from waflib.TaskGen import extension, before_method, after_method, feature
 from waflib.Configure import conf
 
@@ -553,7 +553,7 @@ def check_python_module(conf, module_name, condition=''):
 	conf.start_msg(msg)
 	try:
 		ret = conf.cmd_and_log(conf.env.PYTHON + ['-c', PYTHON_MODULE_TEMPLATE % module_name])
-	except Exception:
+	except Errors.WafError:
 		conf.end_msg(False)
 		conf.fatal('Could not find the python module %r' % module_name)
 

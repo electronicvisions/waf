@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2005-2016 (ita)
+# Thomas Nagy, 2005-2017 (ita)
 
 """
 logging, colors, terminal width and pretty-print
@@ -139,7 +139,6 @@ class log_filter(logging.Filter):
 
 		:param rec: log entry
 		"""
-		global verbose
 		rec.zone = rec.module
 		if rec.levelno >= logging.INFO:
 			return True
@@ -253,18 +252,15 @@ def debug(*k, **kw):
 	"""
 	Wraps logging.debug and discards messages if the verbosity level :py:attr:`waflib.Logs.verbose` ≤ 0
 	"""
-	global verbose
 	if verbose:
 		k = list(k)
 		k[0] = k[0].replace('\n', ' ')
-		global log
 		log.debug(*k, **kw)
 
 def error(*k, **kw):
 	"""
 	Wrap logging.errors, adds the stack trace when the verbosity level :py:attr:`waflib.Logs.verbose` ≥ 2
 	"""
-	global log, verbose
 	log.error(*k, **kw)
 	if verbose > 2:
 		st = traceback.extract_stack()
@@ -282,14 +278,12 @@ def warn(*k, **kw):
 	"""
 	Wraps logging.warn
 	"""
-	global log
 	log.warn(*k, **kw)
 
 def info(*k, **kw):
 	"""
 	Wraps logging.info
 	"""
-	global log
 	log.info(*k, **kw)
 
 def init_log():
@@ -381,6 +375,5 @@ def pprint(col, msg, label='', sep='\n'):
 	:param sep: a string to append at the end (line separator)
 	:type sep: string
 	"""
-	global info
 	info('%s%s%s %s', colors(col), msg, colors.NORMAL, label, extra={'terminator':sep})
 

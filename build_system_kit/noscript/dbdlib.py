@@ -35,9 +35,8 @@ def build(bld):
 	elif tp == 'objects':
 		features = 'c'
 
-	source = Options.options.source
 	app = Options.options.app
-	bld(features=features, source=source, target=app)
+	bld(features=features, source=Options.options.source, target=app)
 
 def recurse_rep(x, y):
 	f = getattr(Context.g_module, x.cmd or x.fun, Utils.nada)

@@ -155,7 +155,7 @@ class qxx(Task.classes['cxx']):
 
 			# direct injection in the build phase (safe because called from the main thread)
 			gen = self.generator.bld.producer
-			gen.outstanding.appendleft(tsk)
+			gen.outstanding.append(tsk)
 			gen.total += 1
 
 			return tsk

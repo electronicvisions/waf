@@ -47,26 +47,13 @@ def build(bld):
 	import random
 	rnd = random.randint(0, 25)
 	bld(
-		rule           = "sleep 2 && (echo 'int num%d = %d;' > ${TGT})" % (rnd, rnd),
-		target         = 'foo_%d.c' % rnd,
-       )
+		rule    = "sleep 2 && (echo 'int num%d = %d;' > ${TGT})" % (rnd, rnd),
+		target  = 'foo_%d.c' % rnd,
+	)
 
 	bld.add_group()
 
-	bld.program(source='main.c', target='app', dynamic_source='*.c')
-
-# support for the "dynamic_source" attribute follows:
-
-from waflib import Build, Utils, TaskGen
-@TaskGen.feature('c')
-@TaskGen.before('process_source', 'process_rule')
-def dynamic_post(self):
-	"""
-	bld(dynamic_source='*.c', ..) will search for source files to add to the attribute 'source'
-	we could also call "eval" or whatever expression
-	"""
-	if not getattr(self, 'dynamic_source', None):
-		return
-	self.source = Utils.to_list(self.source)
-	self.source.extend(self.path.get_bld().ant_glob(self.dynamic_source, remove=False))
+	it = bld.path.get_bld().ant_glob('*.c', remove=False, quiet=True, generator=True)
+	src = ['main.c', it]
+	bld(features='c cprogram', source=src, target='app')
 
