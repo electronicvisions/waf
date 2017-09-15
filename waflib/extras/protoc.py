@@ -109,46 +109,42 @@ def process_protoc(self, node):
 	out_nodes = []
 	protoc_flags = []
 
+	# ensure PROTOC_FLAGS is a list; a copy is used below anyway
+	self.env.PROTOC_FLAGS = self.to_list(self.env.PROTOC_FLAGS)
+
 	if 'cxx' in self.features:
 		cpp_node = node.change_ext('.pb.cc')
 		hpp_node = node.change_ext('.pb.h')
 		self.source.append(cpp_node)
 		out_nodes.append(cpp_node)
 		out_nodes.append(hpp_node)
-
-		#self.env.PROTOC_FLAGS = '--cpp_out=%s' % node.parent.get_bld().abspath() # <- this does not work
 		protoc_flags.append('--cpp_out=%s' % node.parent.get_bld().bldpath())
 
 	if 'py' in self.features:
 		py_node = node.change_ext('_pb2.py')
 		self.source.append(py_node)
 		out_nodes.append(py_node)
-
 		protoc_flags.append('--python_out=%s' % node.parent.get_bld().bldpath())
 
-	if out_nodes:
-		self.create_task('protoc', node, out_nodes)
-		if not self.env.PROTOC_FLAGS:
-			self.env.PROTOC_FLAGS = protoc_flags
-	else:
-		raise Errors.WafError('Feature %s not supported by protoc extra' % self.features)
+	if not out_nodes:
+		raise Errors.WafError('Feature %r not supported by protoc extra' % self.features)
 
+	tsk = self.create_task('protoc', node, out_nodes)
+	tsk.env.append_value('PROTOC_FLAGS', protoc_flags)
 
-	if isinstance(self.env.PROTOC_FLAGS, str):	# Backwards compatibility as run_str format changed
-		self.env.PROTOC_FLAGS = [ self.env.PROTOC_FLAGS ]
-
-	# Instruct protoc where to search for .proto included files. For C++ standard include files dirs are used,
-	# but this doesn't apply to Python / Java
+	# Instruct protoc where to search for .proto included files.
+	# For C++ standard include files dirs are used,
+	# but this doesn't apply to Python for example
 	for incpath in getattr(self, 'protoc_includes', []):
 		incdirs.append(self.bld.path.find_node(incpath).bldpath())
-	self.env.PROTOC_INCPATHS = incdirs
+	tsk.env.PROTOC_INCPATHS = incdirs
 
 	use = getattr(self, 'use', '')
 	if not 'PROTOBUF' in use:
 		self.use = self.to_list(use) + ['PROTOBUF']
 
 def configure(conf):
-	conf.check_cfg(package="protobuf", uselib_store="PROTOBUF", args=['--cflags', '--libs'])
+	conf.check_cfg(package='protobuf', uselib_store='PROTOBUF', args=['--cflags', '--libs'])
 	conf.find_program('protoc', var='PROTOC')
 	conf.env.PROTOC_ST = '-I%s'
 	conf.env.PROTOC_FL = '%s'
