@@ -3,8 +3,8 @@
 top = '.'
 out = 'build'
 
-import os, shutil, subprocess, sys
-from waflib import ConfigSet, Logs, Utils
+import os, shutil, sys
+from waflib import ConfigSet, Context, Logs
 
 def options(opt):
 	pass
@@ -70,7 +70,7 @@ def build(bld):
 		else:
 			Logs.pprint('GREEN', '- %s: ok' % test_name)
 
-	exe = sys.argv[0]
+	exe = os.path.abspath(os.path.join(Context.launch_dir, sys.argv[0]))
 
 	cleanup(bld)
 
