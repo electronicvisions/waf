@@ -624,7 +624,7 @@ class Node(object):
 
 		excl = kw.get('excl', exclude_regs)
 		incl = k and k[0] or kw.get('incl', '**')
-		reflags = kw.get('ignorecase', re.I)
+		reflags = re.I if kw.get('ignorecase', False) else 0
 
 		def to_pat(s):
 			ret = []
