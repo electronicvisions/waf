@@ -23,16 +23,18 @@ class gen_sym(Task):
 	def run(self):
 		obj = self.inputs[0]
 		kw = {}
+
+		reg = getattr(self.generator, 'export_symbols_regex', '.+?')
 		if 'msvc' in (self.env.CC_NAME, self.env.CXX_NAME):
-			re_nm = re.compile(r'External\s+\|\s+_(?P<symbol>' + self.generator.export_symbols_regex + r')\b')
+			re_nm = re.compile(r'External\s+\|\s+_(?P<symbol>%s)\b' % reg)
 			cmd = (self.env.DUMPBIN or ['dumpbin']) + ['/symbols', obj.abspath()]
 		else:
 			if self.env.DEST_BINFMT == 'pe': #gcc uses nm, and has a preceding _ on windows
-				re_nm = re.compile(r'(T|D)\s+_(?P<symbol>' + self.generator.export_symbols_regex + r')\b')
+				re_nm = re.compile(r'(T|D)\s+_(?P<symbol>%s)\b' % reg)
 			elif self.env.DEST_BINFMT=='mac-o':
-				re_nm=re.compile(r'(T|D)\s+(?P<symbol>_?'+self.generator.export_symbols_regex+r')\b')
+				re_nm=re.compile(r'(T|D)\s+(?P<symbol>_?%s)\b' % reg)
 			else:
-				re_nm = re.compile(r'(T|D)\s+(?P<symbol>' + self.generator.export_symbols_regex + r')\b')
+				re_nm = re.compile(r'(T|D)\s+(?P<symbol>%s)\b' % reg)
 			cmd = (self.env.NM or ['nm']) + ['-g', obj.abspath()]
 		syms = [m.group('symbol') for m in re_nm.finditer(self.generator.bld.cmd_and_log(cmd, quiet=STDOUT, **kw))]
 		self.outputs[0].write('%r' % syms)
@@ -56,7 +58,7 @@ class compile_sym(Task):
 			raise WafError('NotImplemented')
 
 @feature('syms')
-@after_method('process_source', 'process_use', 'apply_link', 'propagate_uselib_vars')
+@after_method('process_source', 'process_use', 'apply_link', 'process_uselib_local', 'propagate_uselib_vars')
 def do_the_symbol_stuff(self):
 	ins = [x.outputs[0] for x in self.compiled_tasks]
 	self.gen_sym_tasks = [self.create_task('gen_sym', x, x.change_ext('.%d.sym' % self.idx)) for x in ins]
