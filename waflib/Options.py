@@ -302,6 +302,7 @@ class OptionsContext(Context.Context):
 			os.environ[name.strip()] = value
 
 	def init_logs(self, options, commands, envvars):
+		Logs.verbose = options.verbose
 		if options.verbose >= 1:
 			self.load('errcheck')
 
