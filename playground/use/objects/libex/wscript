@@ -1,0 +1,22 @@
+#! /usr/bin/env python
+
+
+INCLUDES = [
+    '.',
+   # '../lib/'
+]
+
+def build(bld):
+   
+
+    bld.shlib(
+        #features='selective_install',
+        target='libex',
+        source='libex.c',
+        includes=INCLUDES,
+        export_includes=INCLUDES,
+        install_path=bld.env.LIBDIR,
+        use='lib'
+        )
+
+   
