@@ -396,7 +396,8 @@ def process_use(self):
 				self.add_objects_from_tgen(y)
 
 		if getattr(y, 'export_includes', None):
-			self.includes.extend(y.to_incnodes(y.export_includes))
+			# self.includes may come from a global variable #2035
+			self.includes += y.to_incnodes(y.export_includes)
 
 		if getattr(y, 'export_defines', None):
 			self.env.append_value('DEFINES', self.to_list(y.export_defines))
