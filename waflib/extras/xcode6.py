@@ -529,7 +529,7 @@ def process_xcode(self):
 	is_valid_file_extension = lambda file: os.path.splitext(file.path)[1] in XCODE_EXTS
 	sources = list(filter(is_valid_file_extension, sources))
 
-	buildfiles = [bld.unique_buildfile(PBXBuildFile(fileref)) for fileref in sources]
+	buildfiles = [bld.unique_buildfile(PBXBuildFile(x)) for x in sources]
 	target.add_build_phase(PBXSourcesBuildPhase(buildfiles))
 
 	# Check if any framework to link against is some other target we've made
@@ -711,7 +711,10 @@ def bind_fun(tgtype):
 		elif tgtype == 'stlib':
 			features = 'cxx cxxstlib'
 			tgtype = 'stlib'
-		kw['features'] = features
+		lst = kw['features'] = Utils.to_list(kw.get('features', []))
+		for x in features.split():
+			if not x in kw['features']:
+				lst.append(x)
 
 		kw['target_type'] = tgtype
 		return self(*k, **kw)
