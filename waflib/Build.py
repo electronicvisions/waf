@@ -759,8 +759,13 @@ class BuildContext(Context.Context):
 				Logs.warn('CWD %s is not under %s, forcing --targets=* (run distclean?)', ln.abspath(), self.srcnode.abspath())
 				ln = self.srcnode
 			for tg in self.groups[self.current_group]:
-				if tg.path.is_child_of(ln):
-					tgpost(tg)
+				try:
+					p = tg.path
+				except AttributeError:
+					pass
+				else:
+					if p.is_child_of(ln):
+						tgpost(tg)
 
 	def get_tasks_group(self, idx):
 		"""
