@@ -44,7 +44,7 @@ recursion_limit = 150
 go_absolute = False
 "Set to True to track headers on files in /usr/include, else absolute paths are ignored (but it becomes very slow)"
 
-standard_includes = ['/usr/include']
+standard_includes = ['/usr/local/include', '/usr/include']
 if Utils.is_win32:
 	standard_includes = []
 
@@ -861,7 +861,7 @@ class c_parser(object):
 			cache[key] = ret
 			return ret
 
-	def tryfind(self, filename):
+	def tryfind(self, filename, kind='"', env=None):
 		"""
 		Try to obtain a node from the filename based from the include paths. Will add
 		the node found to :py:attr:`waflib.Tools.c_preproc.c_parser.nodes` or the file name to
@@ -881,13 +881,21 @@ class c_parser(object):
 
 		self.curfile = filename
 
-		# for msvc it should be a for loop over the whole stack
-		found = self.cached_find_resource(self.currentnode_stack[-1], filename)
+		found = None
+		if kind == '"':
+			if env.MSVC_VERSION:
+				for n in reversed(self.currentnode_stack):
+					found = self.cached_find_resource(n, filename)
+					if found:
+						break
+			else:
+				found = self.cached_find_resource(self.currentnode_stack[-1], filename)
 
-		for n in self.nodepaths:
-			if found:
-				break
-			found = self.cached_find_resource(n, filename)
+		if not found:
+			for n in self.nodepaths:
+				found = self.cached_find_resource(n, filename)
+				if found:
+					break
 
 		listed = self.listed
 		if found and not found in self.ban_includes:
@@ -1020,10 +1028,9 @@ class c_parser(object):
 						state[-1] = accepted
 				elif token == 'include' or token == 'import':
 					(kind, inc) = extract_include(line, self.defs)
-					if kind == '"' or not strict_quotes:
-						self.current_file = self.tryfind(inc)
-						if token == 'import':
-							self.ban_includes.add(self.current_file)
+					self.current_file = self.tryfind(inc, kind, env)
+					if token == 'import':
+						self.ban_includes.add(self.current_file)
 				elif token == 'elif':
 					if state[-1] == accepted:
 						state[-1] = skipped
