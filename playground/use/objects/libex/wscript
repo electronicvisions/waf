@@ -7,10 +7,8 @@ INCLUDES = [
 ]
 
 def build(bld):
-   
 
     bld.shlib(
-        #features='selective_install',
         target='libex',
         source='libex.c',
         includes=INCLUDES,

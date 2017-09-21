@@ -7,7 +7,6 @@ INCLUDES = [
 def build(bld):
 
     bld.shlib(
-        #features='selective_install',
         target='lib',
         source='lib.c',
         includes=INCLUDES,
