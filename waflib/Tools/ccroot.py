@@ -397,7 +397,7 @@ def process_use(self):
 
 		if getattr(y, 'export_includes', None):
 			# self.includes may come from a global variable #2035
-			self.includes += y.to_incnodes(y.export_includes)
+			self.includes = self.includes + y.to_incnodes(y.export_includes)
 
 		if getattr(y, 'export_defines', None):
 			self.env.append_value('DEFINES', self.to_list(y.export_defines))
