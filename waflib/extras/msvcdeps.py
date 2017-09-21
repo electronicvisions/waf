@@ -16,6 +16,13 @@ The technique of gutting scan() and pushing the dependency calculation
 down to post_run() is cribbed from gccdeps.py.
 
 This affects the cxx class, so make sure to load Qt5 after this tool.
+
+Usage::
+
+	def options(opt):
+		opt.load('compiler_cxx')
+	def configure(conf):
+		conf.load('compiler_cxx msvcdeps')
 '''
 
 import os, sys, tempfile, threading
@@ -243,4 +250,7 @@ def wrap_compiled_task(classname):
 for k in ('c', 'cxx'):
 	if k in Task.classes:
 		wrap_compiled_task(k)
+
+def options(opt):
+	raise ValueError('Do not load msvcdeps options')
 
