@@ -58,7 +58,6 @@ import os
 from waflib import Task, TaskGen, Errors, Utils, Logs
 from waflib.Tools import ccroot
 
-from waflib import Node
 def _process_use_rec(self, name):
 	"""
 	Recursively process ``use`` for task generator with name ``name``..
@@ -88,19 +87,17 @@ def pytest_process_use(self):
 	"""
 	self.pytest_use_not = set()
 	self.pytest_use_seen = []
-	self.pytest_paths = []
-	self.pytest_libpaths = []
+	self.pytest_paths = [] # strings
+	self.pytest_libpaths = [] # strings
 	self.pytest_dep_nodes = []
 
 	names = self.to_list(getattr(self, 'use', []))
 	for name in names:
 		_process_use_rec(self, name)
 	
-	def extend_unique(lst, var):
+	def extend_unique(lst, varlst):
 		ext = []
-		for x in Utils.to_list(var):
-			#if isinstance(x, str):
-			#	x = x.abspath()
+		for x in varlst:
 			if x not in lst:
 				ext.append(x)
 		lst.extend(ext)
@@ -110,8 +107,8 @@ def pytest_process_use(self):
 	for name in self.pytest_use_seen:
 		tg = self.bld.get_tgen_by_name(name)
 
-		extend_unique(self.pytest_paths, getattr(tg, 'pytest_path', []))
-		extend_unique(self.pytest_libpaths, getattr(tg, 'pytest_libpath', []))
+		extend_unique(self.pytest_paths, Utils.to_list(getattr(tg, 'pytest_path', [])))
+		extend_unique(self.pytest_libpaths, Utils.to_list(getattr(tg, 'pytest_libpath', [])))
 
 		if 'py' in tg.features:
 			# Python dependencies are added to PYTHONPATH
@@ -121,9 +118,9 @@ def pytest_process_use(self):
 				# Since buildcopy is used we assume that PYTHONPATH in build should be used,
 				# not source
 				pypath = getattr(tg, 'install_from', tg.path)
-				extend_unique(self.pytest_paths, pypath.get_bld().abspath())
+				extend_unique(self.pytest_paths, [pypath.get_bld().abspath()])
 
-				# Add builcopy output nodes to dependencies
+				# Add buildcopy output nodes to dependencies
 				extend_unique(self.pytest_dep_nodes, [o for task in getattr(tg, 'tasks', []) \
 														for o in getattr(task, 'outputs', [])])
 			else:
@@ -131,7 +128,7 @@ def pytest_process_use(self):
 				extend_unique(self.pytest_dep_nodes, [s for s in tg.source if s.suffix() == '.py'])
 
 				pypath = getattr(tg, 'install_from', tg.path)
-				extend_unique(self.pytest_paths, pypath.abspath())
+				extend_unique(self.pytest_paths, [pypath.abspath()])
 
 		if getattr(tg, 'link_task', None):
 			# For tasks with a link_task (C, C++, D et.c.) include their LIBPATH and if it's
@@ -139,6 +136,7 @@ def pytest_process_use(self):
 			if not isinstance(tg.link_task, ccroot.stlink_task):
 				extend_unique(self.pytest_dep_nodes, tg.link_task.outputs)
 				extend_unique(self.pytest_libpaths, tg.link_task.env.LIBPATH)
+				extend_unique(self.pytest_libpaths, [tg.link_task.outputs[0].get_bld().parent.abspath()])
 
 				if 'pyext' in tg.features:
 					# If the taskgen is extending Python we also want to add it o the PYTHONPATH.

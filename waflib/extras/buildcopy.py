@@ -30,7 +30,7 @@ def make_buildcopy(self):
 	"""
 	Creates the buildcopy task.
 	"""
-	def to_nodes(lst):
+	def to_src_nodes(lst):
 		"""Find file nodes only in src, TaskGen.to_nodes will not work for this since it gives
 		preference to nodes in build.
 		"""
@@ -57,7 +57,7 @@ def make_buildcopy(self):
 			return node
 		raise Errors.WafError('buildcopy: File not found in src: %s'%os.path.join(*lst))
 
-	nodes = [ to_nodes(n) for n in getattr(self, 'buildcopy_source', getattr(self, 'source', [])) ]
+	nodes = [ to_src_nodes(n) for n in getattr(self, 'buildcopy_source', getattr(self, 'source', [])) ]
 	node_pairs = [(n, n.get_bld()) for n in nodes]
 	self.create_task('buildcopy', [n[0] for n in node_pairs], [n[1] for n in node_pairs], node_pairs=node_pairs)
 
