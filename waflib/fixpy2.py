@@ -10,7 +10,6 @@ all_modifs = {}
 
 def fixdir(dir):
 	"""Call all substitution functions on Waf folders"""
-	global all_modifs
 	for k in all_modifs:
 		for v in all_modifs[k]:
 			modif(os.path.join(dir, 'waflib'), k, v)
@@ -39,7 +38,6 @@ def modif(dir, name, fun):
 def subst(*k):
 	"""register a substitution function"""
 	def do_subst(fun):
-		global all_modifs
 		for x in k:
 			try:
 				all_modifs[x].append(fun)
