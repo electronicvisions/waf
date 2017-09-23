@@ -51,8 +51,8 @@ if Utils.is_win32:
 use_trigraphs = 0
 """Apply trigraph rules (False by default)"""
 
+# obsolete, do not use
 strict_quotes = 0
-"""Reserve the "#include <>" quotes for system includes (do not search for those includes). False by default."""
 
 g_optrans = {
 'not':'!',

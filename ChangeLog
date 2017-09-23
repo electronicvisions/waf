@@ -1,3 +1,12 @@
+NEW IN WAF 2.0.1
+----------------
+* Improve the default preprocessor behaviour for gcc/msvc
+* Accept task objects in Build.add_to_group for compatibility reasons
+* Prevent xcode generator from overwriting existing features #2038
+* Fix self.includes data scope #2035
+* Fix Node.ant_glob case sensitivity regression #2034
+* Fix Logs.verbose options regression #2033
+
 NEW IN WAF 2.0.0
 ----------------
 * Provide a new priority system to improve scalability on complex builds
