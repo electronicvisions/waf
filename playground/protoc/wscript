@@ -4,11 +4,13 @@ top = '.'
 out = 'build'
 
 def options(opt):
-	opt.load('compiler_cxx python')
+	opt.load('compiler_cxx python java')
 
 def configure(conf):
-	conf.load('compiler_cxx python protoc')
+	conf.load('compiler_cxx python java protoc')
 	conf.check_python_version(minver=(2, 5, 0))
+	# Here you have to point to your protobuf-java JAR
+	conf.env.CLASSPATH_PROTOBUF = ['/tmp/cp/protobuf-java-2.5.0.jar']
 
 def build(bld):
 	bld(
@@ -30,3 +32,10 @@ def build(bld):
 		source   = ['incboth/messageboth_inc.proto', 'incboth/messageboth.proto'],
 		protoc_includes = ['incboth']) # either protoc_includes or includes would work in this case
 
+	bld(
+		features = 'javac protoc',
+		name = 'pbjava',
+		srcdir = 'inc/',
+		source   = ['inc/message_inc.proto', 'inc/message.proto'],
+		use = 'PROTOBUF',
+		protoc_includes = ['inc'])

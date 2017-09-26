@@ -92,6 +92,7 @@ def apply_java(self):
 			if not y:
 				self.bld.fatal('Could not find the folder %s from %s' % (x, self.path))
 		tmp.append(y)
+
 	tsk.srcdir = tmp
 
 	if getattr(self, 'compat', None):
@@ -274,7 +275,8 @@ class javac(JTask):
 		if not self.inputs:
 			self.inputs  = []
 			for x in self.srcdir:
-				self.inputs.extend(x.ant_glob(SOURCE_RE, remove=False))
+				if x.exists():
+					self.inputs.extend(x.ant_glob(SOURCE_RE, remove=False))
 		return super(javac, self).runnable_status()
 
 	def post_run(self):
