@@ -133,6 +133,7 @@ class OptionsContext(Context.Context):
 		p('--zones',          dest='zones',   default='',    action='store', help='debugging zones (task_gen, deps, tasks, etc)')
 		p('--profile',        dest='profile', default='',    action='store_true', help=optparse.SUPPRESS_HELP)
 		p('-h', '--help',     dest='whelp',   default=0,     action='store_true', help="show this help message and exit")
+		p('--pdb',            dest='pdb',     default=0,     action='store_true', help="start pdb on exception")
 
 		gr = self.add_option_group('Configuration options')
 		self.option_groups['configure options'] = gr

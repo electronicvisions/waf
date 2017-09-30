@@ -154,7 +154,16 @@ def waf_entry_point(current_directory, version, wafdir):
 		p.sort_stats('time').print_stats(75) # or 'cumulative'
 	else:
 		try:
-			run_commands()
+			try:
+				run_commands()
+			except:
+				if options.pdb:
+					import pdb
+					type, value, tb = sys.exc_info()
+					traceback.print_exc()
+					pdb.post_mortem(tb)
+				else:
+					raise
 		except Errors.WafError as e:
 			if Logs.verbose > 1:
 				Logs.pprint('RED', e.verbose_msg)
