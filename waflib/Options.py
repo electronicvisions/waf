@@ -131,9 +131,9 @@ class OptionsContext(Context.Context):
 		p('-k', '--keep',     dest='keep',    default=0,     action='count', help='continue despite errors (-kk to try harder)')
 		p('-v', '--verbose',  dest='verbose', default=0,     action='count', help='verbosity level -v -vv or -vvv [default: 0]')
 		p('--zones',          dest='zones',   default='',    action='store', help='debugging zones (task_gen, deps, tasks, etc)')
-		p('--profile',        dest='profile', default='',    action='store_true', help=optparse.SUPPRESS_HELP)
+		p('--profile',        dest='profile', default=0,     action='store_true', help=optparse.SUPPRESS_HELP)
+		p('--pdb',            dest='pdb',     default=0,     action='store_true', help=optparse.SUPPRESS_HELP)
 		p('-h', '--help',     dest='whelp',   default=0,     action='store_true', help="show this help message and exit")
-		p('--pdb',            dest='pdb',     default=0,     action='store_true', help="start pdb on exception")
 
 		gr = self.add_option_group('Configuration options')
 		self.option_groups['configure options'] = gr
