@@ -147,7 +147,7 @@ class BuildContext(Context.Context):
 		"""Getter for the variant_dir attribute"""
 		if not self.variant:
 			return self.out_dir
-		return os.path.join(self.out_dir, self.variant)
+		return os.path.join(self.out_dir, os.path.normpath(self.variant))
 	variant_dir = property(get_variant_dir, None)
 
 	def __call__(self, *k, **kw):
