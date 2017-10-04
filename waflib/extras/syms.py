@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 """
-this tool supports the export_symbols_regex to export the symbols in a shared library.
+This tool supports the export_symbols_regex to export the symbols in a shared library.
 by default, all symbols are exported by gcc, and nothing by msvc.
 to use the tool, do something like:
 
@@ -12,7 +12,6 @@ def build(ctx):
 only the symbols starting with 'mylib_' will be exported.
 """
 
-import os
 import re
 from waflib.Context import STDOUT
 from waflib.Task import Task
@@ -60,22 +59,26 @@ class compile_sym(Task):
 @feature('syms')
 @after_method('process_source', 'process_use', 'apply_link', 'process_uselib_local', 'propagate_uselib_vars')
 def do_the_symbol_stuff(self):
-	ins = [x.outputs[0] for x in self.compiled_tasks]
-	self.gen_sym_tasks = [self.create_task('gen_sym', x, x.change_ext('.%d.sym' % self.idx)) for x in ins]
+	def_node = self.path.find_or_declare(getattr(self, 'sym_file', self.target + '.def'))
+	compiled_tasks = getattr(self, 'compiled_tasks', None)
+	if compiled_tasks:
+		ins = [x.outputs[0] for x in compiled_tasks]
+		self.gen_sym_tasks = [self.create_task('gen_sym', x, x.change_ext('.%d.sym' % self.idx)) for x in ins]
+		self.create_task('compile_sym', [x.outputs[0] for x in self.gen_sym_tasks], def_node)
 
-	tsk = self.create_task('compile_sym',
-			       [x.outputs[0] for x in self.gen_sym_tasks],
-			       self.path.find_or_declare(getattr(self, 'sym_filename', self.target + '.def')))
-	self.link_task.set_run_after(tsk)
-	self.link_task.dep_nodes.append(tsk.outputs[0])
-	if 'msvc' in (self.env.CC_NAME, self.env.CXX_NAME):
-		self.link_task.env.append_value('LINKFLAGS', ['/def:' + tsk.outputs[0].bldpath()])
-	elif self.env.DEST_BINFMT == 'pe': #gcc on windows takes *.def as an additional input
-		self.link_task.inputs.append(tsk.outputs[0])
-	elif self.env.DEST_BINFMT == 'elf':
-		self.link_task.env.append_value('LINKFLAGS', ['-Wl,-version-script', '-Wl,' + tsk.outputs[0].bldpath()])
-	elif self.env.DEST_BINFMT=='mac-o':
-		self.link_task.env.append_value('LINKFLAGS',['-Wl,-exported_symbols_list,'+tsk.outputs[0].bldpath()])
-	else:
-		raise WafError('NotImplemented')
+	link_task = getattr(self, 'link_task', None)
+	if link_task:
+		self.link_task.dep_nodes.append(def_node)
+
+		if 'msvc' in (self.env.CC_NAME, self.env.CXX_NAME):
+			self.link_task.env.append_value('LINKFLAGS', ['/def:' + def_node.bldpath()])
+		elif self.env.DEST_BINFMT == 'pe':
+			# gcc on windows takes *.def as an additional input
+			self.link_task.inputs.append(def_node)
+		elif self.env.DEST_BINFMT == 'elf':
+			self.link_task.env.append_value('LINKFLAGS', ['-Wl,-version-script', '-Wl,' + def_node.bldpath()])
+		elif self.env.DEST_BINFMT=='mac-o':
+			self.link_task.env.append_value('LINKFLAGS',['-Wl,-exported_symbols_list,' + def_node.bldpath()])
+		else:
+			raise WafError('NotImplemented')
 
