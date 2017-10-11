@@ -372,11 +372,11 @@ def cmd_to_list(self, cmd):
 	return cmd
 
 @conf
-def check_waf_version(self, mini='1.8.99', maxi='2.0.0', **kw):
+def check_waf_version(self, mini='1.9.99', maxi='2.1.0', **kw):
 	"""
 	Raise a Configuration error if the Waf version does not strictly match the given bounds::
 
-		conf.check_waf_version(mini='1.8.99', maxi='2.0.0')
+		conf.check_waf_version(mini='1.9.99', maxi='2.1.0')
 
 	:type  mini: number, tuple or string
 	:param mini: Minimum required version
