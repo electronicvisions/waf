@@ -395,8 +395,8 @@ class Context(ctx):
 		:type cmd: list or string
 		:param kw: keyword arguments for subprocess.Popen. The parameters input/timeout will be passed to wait/communicate.
 		:type kw: dict
-		:returns: process exit status
-		:rtype: integer
+		:returns: a tuple containing the contents of stdout and stderr
+		:rtype: string
 		:raises: :py:class:`waflib.Errors.WafError` if an invalid executable is specified for a non-shell process
 		:raises: :py:class:`waflib.Errors.WafError` in case of execution failure; stdout/stderr/returncode are bound to the exception object
 		"""
