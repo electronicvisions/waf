@@ -76,7 +76,7 @@ def configure(conf):
 	Detects the Intel Fortran compilers
 	"""
 	if Utils.is_win32:
-		compiler, version, path, includes, libdirs, arch = conf.detect_ifort(True)
+		compiler, version, path, includes, libdirs, arch = conf.detect_ifort()
 		v = conf.env
 		v.DEST_CPU = arch
 		v.PATH = path
