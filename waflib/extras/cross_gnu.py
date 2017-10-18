@@ -6,9 +6,8 @@ __author__ = __maintainer__ = "Jérôme Carretero <cJ-waf@zougloub.eu>"
 __copyright__ = "Jérôme Carretero, 2014"
 
 """
-
-This tool allows to use environment variables to define cross-compilation things,
-mostly used when you use build variants.
+This tool allows to use environment variables to define cross-compilation
+variables intended for build variants.
 
 The variables are obtained from the environment in 3 ways:
 
@@ -38,14 +37,14 @@ Usage:
 	CFLAGS=... CHOST=arm-hardfloat-linux-gnueabi HOST_CFLAGS=-g waf configure
 	HOST_CC="clang -..." waf configure
 
-This example ``wscript`` compiles to Microchip PIC (xc16-gcc,.. must be in PATH):
+This example ``wscript`` compiles to Microchip PIC (xc16-gcc-xyz must be in PATH):
 
 .. code:: python
 
 		from waflib import Configure
 
 		#from https://gist.github.com/rpuntaie/2bddfb5d7b77db26415ee14371289971
-		import waf_variants 
+		import waf_variants
 
 		variants='pc fw/variant1 fw/variant2'.split()
 
@@ -74,8 +73,8 @@ This example ``wscript`` compiles to Microchip PIC (xc16-gcc,.. must be in PATH)
 
 		def build(bld):
 				if 'fw' in bld.variant: #firmware
-						bld.program(source='maintst.c',target='maintst');
-						bld(source='maintst.elf',target='maintst.hex',rule="xc16-bin2hex ${SRC} -a -omf=elf")
+						bld.program(source='maintst.c', target='maintst');
+						bld(source='maintst.elf', target='maintst.hex', rule="xc16-bin2hex ${SRC} -a -omf=elf")
 				else: #build for pc SW
 						...
 
@@ -83,7 +82,7 @@ This example ``wscript`` compiles to Microchip PIC (xc16-gcc,.. must be in PATH)
 
 import os
 from waflib import Utils, Configure
-from waflib.Tools import ccroot,gcc
+from waflib.Tools import ccroot, gcc
 
 try:
 	from shlex import quote
@@ -106,23 +105,22 @@ def get_chost_stuff(conf):
 def xcheck_var(conf, name, wafname=None, cross=False):
 	wafname = wafname or name
 
-	if wafname not in conf.env:
+	if wafname in conf.env:
+		value = conf.env[wafname]
+		if isinstance(value, str):
+			value = [value]
+	else:
 		envar = os.environ.get(name)
 		if not envar:
 			return
 		value = Utils.to_list(envar) if envar != '' else [envar]
-	else:
-		value = conf.env[wafname]
-		if isinstance(value,str):
-			value = [value]
 
 	conf.env[wafname] = value
 	if cross:
 		pretty = 'cross-compilation %s' % wafname
 	else:
 		pretty = wafname
-	conf.msg('Will use %s' % pretty,
-	 " ".join(quote(x) for x in value))
+	conf.msg('Will use %s' % pretty, " ".join(quote(x) for x in value))
 
 @Configure.conf
 def xcheck_host_prog(conf, name, tool, wafname=None):
@@ -137,8 +135,7 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 	if specific:
 		value = Utils.to_list(specific)
 		conf.env[wafname] += value
-		conf.msg('Will use cross-compilation %s from %s_%s' \
-		 % (name, chost_envar, name),
+		conf.msg('Will use cross-compilation %s from %s_%s' % (name, chost_envar, name),
 		 " ".join(quote(x) for x in value))
 		return
 	else:
@@ -146,8 +143,7 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 		if envar is not None:
 			value = Utils.to_list(envar)
 			conf.env[wafname] = value
-			conf.msg('Will use cross-compilation %s from HOST_%s' \
-			 % (name, name),
+			conf.msg('Will use cross-compilation %s from HOST_%s' % (name, name),
 			 " ".join(quote(x) for x in value))
 			return
 
@@ -160,8 +156,7 @@ def xcheck_host_prog(conf, name, tool, wafname=None):
 
 	if value:
 		conf.env[wafname] = value
-		conf.msg('Will use cross-compilation %s from CHOST' \
-		 % wafname, value)
+		conf.msg('Will use cross-compilation %s from CHOST' % wafname, value)
 
 @Configure.conf
 def xcheck_host_envar(conf, name, wafname=None):
@@ -189,8 +184,7 @@ def xcheck_host_envar(conf, name, wafname=None):
 	value = Utils.to_list(envar) if envar != '' else [envar]
 
 	conf.env[wafname] = value
-	conf.msg('Will use cross-compilation %s from HOST_%s' \
-	 % (name, name),
+	conf.msg('Will use cross-compilation %s from HOST_%s' % (name, name),
 	 " ".join(quote(x) for x in value))
 
 
@@ -223,7 +217,7 @@ def xcheck_host(conf):
 
 def configure(conf):
 	"""
-	Configuration for cross_gnu
+	Configuration example for gcc, it will not work for g++/clang/clang++
 	"""
 	conf.xcheck_host()
 	conf.gcc_common_flags()
