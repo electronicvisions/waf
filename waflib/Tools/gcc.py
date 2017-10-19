@@ -12,7 +12,7 @@ import os, sys
 from waflib import Configure, Options, Utils
 from waflib.Tools import ccroot, ar
 from waflib.Configure import conf
-from waflib.extras import visionflags
+from waflib.extras import gccdeps, visionflags
 
 @conf
 def find_gcc(conf):
