@@ -66,7 +66,7 @@ class buildcopy(Task.Task):
 	"""
 	Copy for each pair `n` in `node_pairs`: n[0] -> n[1].
 
-	Attribute `node_pairs` should contain a list of tuples describing source an target:
+	Attribute `node_pairs` should contain a list of tuples describing source and target:
 
 		node_pairs = [(in, out), ...]
 

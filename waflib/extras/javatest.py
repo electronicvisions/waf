@@ -8,7 +8,7 @@ task via the **javatest** feature.
 
 This gives the possibility to run unit test and have them integrated into the
 standard waf unit test environment. It has been tested with TestNG and JUnit
-but should be easily expandable to other framework given the flexibility of
+but should be easily expandable to other frameworks given the flexibility of
 ut_str provided by the standard waf unit test environment.
 
 Example usage:

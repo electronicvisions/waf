@@ -433,7 +433,7 @@ class Parallel(object):
 				self.skip(tsk)
 				self.add_more_tasks(tsk)
 			elif st == Task.CANCEL_ME:
-				# A dependency problem has occured, and the
+				# A dependency problem has occurred, and the
 				# build is most likely run with `waf -k`
 				if Logs.verbose > 1:
 					self.error.append(tsk)
