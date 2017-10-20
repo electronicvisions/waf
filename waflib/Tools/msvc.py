@@ -227,42 +227,6 @@ echo LIB=%%LIB%%;%%LIBPATH%%
 
 	return (MSVC_PATH, MSVC_INCDIR, MSVC_LIBDIR)
 
-@conf
-def gather_wsdk_versions(conf, versions):
-	"""
-	Use winreg to add the msvc versions to the input list
-
-	:param versions: list to modify
-	:type versions: list
-	"""
-	version_pattern = re.compile('^v..?.?\...?.?')
-	try:
-		all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Microsoft\\Microsoft SDKs\\Windows')
-	except OSError:
-		try:
-			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Microsoft SDKs\\Windows')
-		except OSError:
-			return
-	index = 0
-	while 1:
-		try:
-			version = Utils.winreg.EnumKey(all_versions, index)
-		except OSError:
-			break
-		index += 1
-		if not version_pattern.match(version):
-			continue
-		try:
-			msvc_version = Utils.winreg.OpenKey(all_versions, version)
-			path,type = Utils.winreg.QueryValueEx(msvc_version,'InstallationFolder')
-		except OSError:
-			continue
-		if path and os.path.isfile(os.path.join(path, 'bin', 'SetEnv.cmd')):
-			targets = {}
-			for target,arch in all_msvc_platforms:
-				targets[target] = target_compiler(conf, 'wsdk', arch, version, '/'+target, os.path.join(path, 'bin', 'SetEnv.cmd'))
-			versions['wsdk ' + version[1:]] = targets
-
 def gather_wince_supported_platforms():
 	"""
 	Checks SmartPhones SDKs
@@ -356,7 +320,6 @@ class target_compiler(object):
 		:param version: compiler version number
 		:param bat_target: ?
 		:param bat: path to the batch file to run
-		:param callback: optional function to take the realized environment variables tup and map it (e.g. to combine other constant paths)
 		"""
 		self.conf = ctx
 		self.name = None
@@ -391,6 +354,42 @@ class target_compiler(object):
 		return repr((self.compiler, self.cpu, self.version, self.bat_target, self.bat))
 
 @conf
+def gather_wsdk_versions(conf, versions):
+	"""
+	Use winreg to add the msvc versions to the input list
+
+	:param versions: list to modify
+	:type versions: list
+	"""
+	version_pattern = re.compile('^v..?.?\...?.?')
+	try:
+		all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Wow6432node\\Microsoft\\Microsoft SDKs\\Windows')
+	except OSError:
+		try:
+			all_versions = Utils.winreg.OpenKey(Utils.winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Microsoft SDKs\\Windows')
+		except OSError:
+			return
+	index = 0
+	while 1:
+		try:
+			version = Utils.winreg.EnumKey(all_versions, index)
+		except OSError:
+			break
+		index += 1
+		if not version_pattern.match(version):
+			continue
+		try:
+			msvc_version = Utils.winreg.OpenKey(all_versions, version)
+			path,type = Utils.winreg.QueryValueEx(msvc_version,'InstallationFolder')
+		except OSError:
+			continue
+		if path and os.path.isfile(os.path.join(path, 'bin', 'SetEnv.cmd')):
+			targets = {}
+			for target,arch in all_msvc_platforms:
+				targets[target] = target_compiler(conf, 'wsdk', arch, version, '/'+target, os.path.join(path, 'bin', 'SetEnv.cmd'))
+			versions['wsdk ' + version[1:]] = targets
+
+@conf
 def gather_msvc_targets(conf, versions, version, vc_path):
 	#Looking for normal MSVC compilers!
 	targets = {}
@@ -423,6 +422,7 @@ def gather_wince_targets(conf, versions, version, vc_path, vsvars, supported_pla
 				incdirs = [os.path.join(winCEpath, 'include'), os.path.join(winCEpath, 'atlmfc', 'include'), include]
 				libdirs = [os.path.join(winCEpath, 'lib', platform), os.path.join(winCEpath, 'atlmfc', 'lib', platform), lib]
 				def combine_common(obj, compiler_env):
+					# TODO this is likely broken, remove in waf 2.1
 					(common_bindirs,_1,_2) = compiler_env
 					return (bindirs + common_bindirs, incdirs, libdirs)
 				targets[platform] = target_compiler(conf, 'msvc', platform, version, 'x86', vsvars, combine_common)
