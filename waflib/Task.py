@@ -362,10 +362,7 @@ class Task(evil):
 
 		def cur():
 			# the current task position, computed as late as possible
-			tmp = -1
-			if hasattr(master, 'ready'):
-				tmp -= master.ready.qsize()
-			return master.processed + tmp
+			return master.processed - master.ready.qsize()
 
 		if self.generator.bld.progress_bar == 1:
 			return self.generator.bld.progress_line(cur(), master.total, col1, col2)
