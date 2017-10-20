@@ -107,7 +107,7 @@ class ConfigSet(object):
 				conf.env['value']
 		"""
 		if name in self.__slots__:
-			return object.__getattr__(self, name)
+			return object.__getattribute__(self, name)
 		else:
 			return self[name]
 
