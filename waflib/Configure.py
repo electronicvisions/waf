@@ -223,12 +223,12 @@ class ConfigurationContext(Context.Context):
 			tmpenv = self.all_envs[key]
 			tmpenv.store(os.path.join(self.cachedir.abspath(), key + Build.CACHE_SUFFIX))
 
-	def load(self, input, tooldir=None, funs=None, with_sys_path=True, cache=False):
+	def load(self, tool_list, tooldir=None, funs=None, with_sys_path=True, cache=False):
 		"""
 		Load Waf tools, which will be imported whenever a build is started.
 
-		:param input: waf tools to import
-		:type input: list of string
+		:param tool_list: waf tools to import
+		:type tool_list: list of string
 		:param tooldir: paths for the imports
 		:type tooldir: list of string
 		:param funs: functions to execute from the waf tools
@@ -237,7 +237,7 @@ class ConfigurationContext(Context.Context):
 		:type cache: bool
 		"""
 
-		tools = Utils.to_list(input)
+		tools = Utils.to_list(tool_list)
 		if tooldir:
 			tooldir = Utils.to_list(tooldir)
 		for tool in tools:
