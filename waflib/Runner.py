@@ -13,7 +13,7 @@ except ImportError:
 	from Queue import Queue
 from waflib import Utils, Task, Errors, Logs
 
-GAP = 20
+GAP = 5
 """
 Wait for at least ``GAP * njobs`` before trying to enqueue more tasks to run
 """
