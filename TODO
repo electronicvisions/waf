@@ -1,4 +1,8 @@
 Waf 2.1
 -------
 
-...
+- Remove Winphone/WinCE detection in msvc.py
+- Fix the circular imports ccroot<->c_config.py
+- Remove superfluous *k in ctx.load() and other unused parameters
+- Ensure conf.load() has the same interface as ctx.load()
+

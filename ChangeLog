@@ -1,3 +1,12 @@
+NEW IN WAF 2.0.2
+----------------
+* Improve Intel Fortran compiler detection on Windows #2063
+* Ensure that the task count starts at 1 in the build outputs
+* Add a --pdb option to start pdb on unexpected exceptions #2052
+* Add java support in protobuf (extras) #2049
+* Add a java test example (extras) #2062
+* Enable symbol processing for empty targets (extras) #2053
+
 NEW IN WAF 2.0.1
 ----------------
 * Improve the default preprocessor behaviour for gcc/msvc
