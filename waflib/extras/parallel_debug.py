@@ -17,7 +17,7 @@ try:
 	from Queue import Queue
 except:
 	from queue import Queue
-from waflib import Runner, Options, Utils, Task, Logs, Errors
+from waflib import Runner, Options, Task, Logs, Errors
 
 #import random
 #random.seed(100)
@@ -55,6 +55,7 @@ svg.addEventListener('mouseout', function(e) {
 }, false);
 
 function showInfo(evt, txt) {
+${if project.tooltip}
 	tooltip = document.getElementById('tooltip');
 
 	var t = document.getElementById('tooltiptext');
@@ -68,6 +69,7 @@ function showInfo(evt, txt) {
 
 	var r = document.getElementById('tooltiprect');
 	r.setAttribute('width', t.getComputedTextLength() + 6);
+${endif}
 }
 
 function hideInfo(evt) {
@@ -105,10 +107,12 @@ ${for info in project.infos}
   </g>
 ${endfor}
 
+${if project.tooltip}
   <g transform="translate(0,0)" visibility="hidden" id="tooltip">
        <rect id="tooltiprect" y="-15" x="-3" width="1" height="20" style="stroke:black;fill:#edefc2;stroke-width:1"/>
        <text id="tooltiptext" style="font-family:Arial; font-size:12;fill:black;" />
   </g>
+${endif}
 
 </svg>
 """
@@ -390,6 +394,8 @@ def make_picture(producer):
 	model.width = gwidth + 4
 	model.height = gheight + 4
 
+	model.tooltip = not Options.options.dnotooltip
+
 	model.title = Options.options.dtitle
 	model.title_x = gwidth / 2
 	model.title_y = gheight + - 5
@@ -452,4 +458,5 @@ def options(opt):
 	opt.add_option('--dtime', action='store', type='float', help='recording interval in seconds', default=0.009, dest='dtime')
 	opt.add_option('--dband', action='store', type='int', help='band width', default=22, dest='dband')
 	opt.add_option('--dmaxtime', action='store', type='float', help='maximum time, for drawing fair comparisons', default=0, dest='dmaxtime')
+	opt.add_option('--dnotooltip', action='store_true', help='disable tooltips', default=False, dest='dnotooltip')
 
