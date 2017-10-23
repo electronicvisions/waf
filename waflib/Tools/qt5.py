@@ -247,7 +247,7 @@ class XMLHandler(ContentHandler):
 @extension(*EXT_RCC)
 def create_rcc_task(self, node):
 	"Creates rcc and cxx tasks for ``.qrc`` files"
-	rcnode = node.change_ext('_rc.cpp')
+	rcnode = node.change_ext('_rc.%d.cpp' % (self.idx))
 	self.create_task('rcc', node, rcnode)
 	cpptask = self.create_task('cxx', rcnode, rcnode.change_ext('.o'))
 	try:
@@ -312,7 +312,7 @@ def apply_qt5(self):
 		for x in self.to_list(self.lang):
 			if isinstance(x, str):
 				x = self.path.find_resource(x + '.ts')
-			qmtasks.append(self.create_task('ts2qm', x, x.change_ext('.qm')))
+			qmtasks.append(self.create_task('ts2qm', x, x.change_ext('.%d.qm' % (self.idx))))
 
 		if getattr(self, 'update', None) and Options.options.trans_qt5:
 			cxxnodes = [a.inputs[0] for a in self.compiled_tasks] + [
@@ -324,7 +324,7 @@ def apply_qt5(self):
 			qmnodes = [x.outputs[0] for x in qmtasks]
 			rcnode = self.langname
 			if isinstance(rcnode, str):
-				rcnode = self.path.find_or_declare(rcnode + '.qrc')
+				rcnode = self.path.find_or_declare(rcnode + ('.%d.qrc' % (self.idx)))
 			t = self.create_task('qm2rcc', qmnodes, rcnode)
 			k = create_rcc_task(self, t.outputs[0])
 			self.link_task.inputs.append(k.outputs[0])
