@@ -17,7 +17,7 @@ HEXVERSION=0x2000200
 WAFVERSION="2.0.2"
 """Constant updated on new releases"""
 
-WAFREVISION="f67d5309f185e9a52194a0f93bd0b83c2881defd"
+WAFREVISION="b1efcfa6abfe9c0108d20961769e9dbc7670e761"
 """Git revision when the waf version is updated"""
 
 ABI = 20
