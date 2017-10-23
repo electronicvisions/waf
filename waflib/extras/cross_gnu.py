@@ -192,7 +192,7 @@ def xcheck_host_envar(conf, name, wafname=None):
 def xcheck_host(conf):
 	conf.xcheck_var('CHOST', cross=True)
 	conf.env.CHOST = conf.env.CHOST or [conf.env.DEST_OS]
-	conf.env.DEST_OS = conf.env.CHOST[0]
+	conf.env.DEST_OS = conf.env.CHOST[0].replace('-','_')
 	conf.xcheck_host_prog('CC', 'gcc')
 	conf.xcheck_host_prog('CXX', 'g++')
 	conf.xcheck_host_prog('LINK_CC', 'gcc')
