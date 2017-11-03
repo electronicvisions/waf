@@ -259,8 +259,21 @@ def create_rcc_task(self, node):
 @extension(*EXT_UI)
 def create_uic_task(self, node):
 	"Create uic tasks for user interface ``.ui`` definition files"
-	uictask = self.create_task('ui5', node)
-	uictask.outputs = [node.parent.find_or_declare(self.env.ui_PATTERN % node.name[:-3])]
+
+	"""
+	If UIC file is used in more than one bld, we would have a conflict in parallel execution
+	It is not possible to change the file names (like .self.idx. as for objects) as they have 
+	to be referenced by the source file, but we can assume that the transformation will be identical 
+	and the tasks can be shared in a global cache.
+	"""
+	try:
+		uic_cache = self.bld.uic_cache
+	except AttributeError:
+		uic_cache = self.bld.uic_cache = {}
+
+	if node not in uic_cache:
+		uictask = uic_cache[node] = self.create_task('ui5', node)
+		uictask.outputs = [node.parent.find_or_declare(self.env.ui_PATTERN % node.name[:-3])]
 
 @extension('.ts')
 def add_lang(self, node):
