@@ -378,7 +378,7 @@ class BuildContext(Context.Context):
 				self.setup(i, tooldir)
 			return
 
-		module = Context.load_tool(tool, tooldir)
+		module = Context.load_tool(tool, tooldir, self)
 		if hasattr(module, "setup"):
 			module.setup(self)
 
