@@ -254,6 +254,8 @@ class ConfigurationContext(Context.Context):
 			module = None
 			try:
 				module = Context.load_tool(tool, tooldir, ctx=self, with_sys_path=with_sys_path)
+			except ImportError as e:
+				self.fatal('Could not load the Waf tool %r from %r\n%s' % (tool, sys.path, e))
 			except Exception as e:
 				self.to_log('imp %r (%r & %r)' % (tool, tooldir, funs))
 				self.to_log(traceback.format_exc())

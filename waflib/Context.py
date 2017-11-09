@@ -188,7 +188,7 @@ class Context(ctx):
 		with_sys_path = kw.get('with_sys_path', True)
 
 		for t in tools:
-			module = load_tool(t, path, self, with_sys_path=with_sys_path)
+			module = load_tool(t, path, with_sys_path=with_sys_path)
 			fun = getattr(module, kw.get('name', self.fun), None)
 			if fun:
 				fun(self)
@@ -624,7 +624,7 @@ class Context(ctx):
 			lst = self.root.find_node(waf_dir).find_node('waflib/extras').ant_glob(var)
 			for x in lst:
 				if not x.name in ban:
-					load_tool(x.name.replace('.py', ''), ctx=self)
+					load_tool(x.name.replace('.py', ''))
 		else:
 			from zipfile import PyZipFile
 			waflibs = PyZipFile(waf_dir)
@@ -640,7 +640,7 @@ class Context(ctx):
 						doban = True
 				if not doban:
 					f = f.replace('.py', '')
-					load_tool(f, ctx=self)
+					load_tool(f)
 
 cache_modules = {}
 """
@@ -703,8 +703,6 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 			sys.path = tooldir + sys.path
 			try:
 				__import__(tool)
-			except ImportError as e:
-				ctx.fatal('Could not load the Waf tool %r from %r\n%s' % (tool, sys.path, e))
 			finally:
 				for d in tooldir:
 					sys.path.remove(d)
@@ -723,8 +721,6 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 						x = None
 				else: # raise an exception
 					__import__(tool)
-			except ImportError as e:
-				ctx.fatal('Could not load the Waf tool %r from %r\n%s' % (tool, sys.path, e))
 			finally:
 				if not with_sys_path:
 					sys.path.remove(waf_dir)
