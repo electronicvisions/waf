@@ -703,6 +703,9 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 			sys.path = tooldir + sys.path
 			try:
 				__import__(tool)
+			except ImportError as e:
+				e.waf_sys_path = list(sys.path)
+				raise
 			finally:
 				for d in tooldir:
 					sys.path.remove(d)
@@ -721,6 +724,9 @@ def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 						x = None
 				else: # raise an exception
 					__import__(tool)
+			except ImportError as e:
+				e.waf_sys_path = list(sys.path)
+				raise
 			finally:
 				if not with_sys_path:
 					sys.path.remove(waf_dir)
