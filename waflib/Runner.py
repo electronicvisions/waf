@@ -213,15 +213,13 @@ class Parallel(object):
 					pass
 				else:
 					if cond:
-						msg = 'check the build order for the tasks'
-						for tsk in self.postponed:
-							if not tsk.run_after:
-								msg = 'check the methods runnable_status'
-								break
 						lst = []
 						for tsk in self.postponed:
-							lst.append('%s\t-> %r' % (repr(tsk), [id(x) for x in tsk.run_after]))
-						raise Errors.WafError('Deadlock detected: %s%s' % (msg, ''.join(lst)))
+							deps = [id(x) for x in tsk.run_after if not x.hasrun]
+							lst.append('%s\t-> %r' % (repr(tsk), deps))
+							if not deps:
+								lst.append('\n  task %r dependencies are done, check its *runnable_status*?' % id(tsk))
+						raise Errors.WafError('Deadlock detected: check the task build order%s' % ''.join(lst))
 				self.deadlock = self.processed
 
 			if self.postponed:
