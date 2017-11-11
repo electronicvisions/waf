@@ -243,15 +243,15 @@ def summary(bld):
 		total = len(lst)
 		tfail = len([x for x in lst if x[1]])
 
-		Logs.pprint('CYAN', '  tests that pass %d/%d' % (total-tfail, total))
+		Logs.pprint('GREEN', '  tests that pass %d/%d' % (total-tfail, total))
 		for (f, code, out, err) in lst:
 			if not code:
-				Logs.pprint('CYAN', '    %s' % f)
+				Logs.pprint('GREEN', '    %s' % f)
 
-		Logs.pprint('CYAN', '  tests that fail %d/%d' % (tfail, total))
+		Logs.pprint('GREEN' if tfail == 0 else 'RED', '  tests that fail %d/%d' % (tfail, total))
 		for (f, code, out, err) in lst:
 			if code:
-				Logs.pprint('CYAN', '    %s' % f)
+				Logs.pprint('RED', '    %s' % f)
 
 def set_exit_code(bld):
 	"""
