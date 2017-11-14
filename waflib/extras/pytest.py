@@ -6,51 +6,81 @@
 Provides Python unit test support using :py:class:`waflib.Tools.waf_unit_test.utest`
 task via the **pytest** feature.
 
-The "use" dependencies are used for both update calculation and to populate
-the following environment variables:
-
-1. ``sys.path`` via the ``PYTHONPATH`` environment variable of any dependent taskgen that 
-   has the feature ``py`` (i.e pure Python dependencies) or ``pyext`` (i.e. Python extensions).
-
-2. Dynamic linker search path variable (e.g. ``LD_LIBRARY_PATH`' of any dependent taskgen with 
-   non-static link_task.
-
 To use pytest the following is needed:
 
-1. Load ``pytest`` and the dependency ``waf_unit_test`` in configure.
-2. Create a task generator with feature ``pytest`` (not ``test``) and customize behaviour with the
-   following attributes:
+1. Load `pytest` and the dependency `waf_unit_test` tools.
+2. Create a task generator with feature `pytest` (not `test`) and customize behaviour with
+   the following attributes:
 
-   * ``pytest_source``: Test input files.
-   * ``ut_str``: Test runner command, e.g. ``${PYTHON} -B -m unittest discover`` or
-                 if nose is used: ``${NOSETESTS} --no-byte-compile ${SRC}``.
-   * ``ut_shell``: Determines if ``ut_str`` is executed in a shell. Default: False.
-   * ``ut_cwd``: Working directory for test runner. Defaults to directory of
-                 first ``pytest_source`` file.
+   - `pytest_source`: Test input files.
+   - `ut_str`: Test runner command, e.g. ``${PYTHON} -B -m unittest discover`` or
+               if nose is used: ``${NOSETESTS} --no-byte-compile ${SRC}``.
+   - `ut_shell`: Determines if ``ut_str`` is executed in a shell. Default: False.
+   - `ut_cwd`: Working directory for test runner. Defaults to directory of
+               first ``pytest_source`` file.
+
+   Additionally the following `pytest` specific attributes are used in dependent taskgens:
+
+   - `pytest_path`: Node or string list of additional Python paths.
+   - `pytest_libpath`: Node or string list of additional library paths.
+
+The `use` dependencies are used for both update calculation and to populate
+the following environment variables for the `pytest` test runner:
+
+1. `PYTHONPATH` (`sys.path`) of any dependent taskgen that has the feature `py`:
+
+   - `install_from` attribute is used to determine where the root of the Python sources
+      are located. If `install_from` is not specified the default is to use the taskgen path
+      as the root.
+
+   - `pytest_path` attribute is used to manually specify additional Python paths.
+
+2. Dynamic linker search path variable (e.g. `LD_LIBRARY_PATH`) of any dependent taskgen with
+   non-static link_task.
+
+   - `pytest_libpath` attribute is used to manually specify additional linker paths.
+
+Note: `pytest` cannot automatically determine the correct `PYTHONPATH` for `pyext` taskgens
+      because the extension might be part of a Python package or used standalone:
+
+      - When used as part of another `py` package, the `PYTHONPATH` is provided by
+      that taskgen so no additional action is required.
+
+      - When used as a standalone module, the user needs to specify the `PYTHONPATH` explicitly
+      via the `pytest_path` attribute on the `pyext` taskgen.
+
+      For details c.f. the pytest playground examples.
+
 
 For example::
-	
-	# A python C extension that demonstrates unit test environment population
-	# of PYTHONPATH and LD_LIBRARY_PATH/PATH/DYLD_LIBRARY_PATH.
-	bld(name         = 'foo_ext',
-		features     = 'c cshlib pyext',
-		source       = 'src/foo_ext.c',
-		target       = 'foo_ext')
-	
-	# Python package under test
-	bld(name         = 'foo',
-		features     = 'py',
-		use          = 'foo_ext',
-		source       = bld.path.ant_glob('src/foo/*.py'),
-		install_from = 'src')
 
-	# Unit test example using the built in module unittest and let that discover
-	# any test cases.
-	bld(name          = 'foo_test',
-		features      = 'pytest',
-		use           = 'foo',
-		pytest_source = bld.path.ant_glob('test/*.py'),
-		ut_str        = '${PYTHON} -B -m unittest discover')
+    # A standalone Python C extension that demonstrates unit test environment population
+    # of PYTHONPATH and LD_LIBRARY_PATH/PATH/DYLD_LIBRARY_PATH.
+    #
+    # Note: `pytest_path` is provided here because pytest cannot automatically determine
+    # if the extension is part of another Python package or is used standalone.
+    bld(name         = 'foo_ext',
+        features     = 'c cshlib pyext',
+        source       = 'src/foo_ext.c',
+        target       = 'foo_ext',
+        pytest_path  = [ bld.path.get_bld() ])
+
+    # Python package under test that also depend on the Python module `foo_ext`
+    #
+    # Note: `install_from` is added automatically to `PYTHONPATH`.
+    bld(name         = 'foo',
+        features     = 'py',
+        use          = 'foo_ext',
+        source       = bld.path.ant_glob('src/foo/*.py'),
+        install_from = 'src')
+
+    # Unit test example using the built in module unittest and let that discover
+    # any test cases.
+    bld(name          = 'foo_test',
+        features      = 'pytest',
+        use           = 'foo',
+        pytest_source = bld.path.ant_glob('test/*.py'),
+        ut_str        = '${PYTHON} -B -m unittest discover')
 
 """
 
@@ -87,8 +117,8 @@ def pytest_process_use(self):
 	"""
 	self.pytest_use_not = set()
 	self.pytest_use_seen = []
-	self.pytest_paths = [] # strings
-	self.pytest_libpaths = [] # strings
+	self.pytest_paths = [] # strings or Nodes
+	self.pytest_libpaths = [] # strings or Nodes
 	self.pytest_dep_nodes = []
 
 	names = self.to_list(getattr(self, 'use', []))
@@ -112,12 +142,11 @@ def pytest_process_use(self):
 
 		if 'py' in tg.features:
 			# Python dependencies are added to PYTHONPATH
-			# Use only py-files in multi language sources
+			pypath = getattr(tg, 'install_from', tg.path)
 
 			if 'buildcopy' in tg.features:
 				# Since buildcopy is used we assume that PYTHONPATH in build should be used,
 				# not source
-				pypath = getattr(tg, 'install_from', tg.path)
 				extend_unique(self.pytest_paths, [pypath.get_bld().abspath()])
 
 				# Add buildcopy output nodes to dependencies
@@ -125,22 +154,21 @@ def pytest_process_use(self):
 														for o in getattr(task, 'outputs', [])])
 			else:
 				# If buildcopy is not used, depend on sources instead
-				extend_unique(self.pytest_dep_nodes, [s for s in tg.source if s.suffix() == '.py'])
-
-				pypath = getattr(tg, 'install_from', tg.path)
+				extend_unique(self.pytest_dep_nodes, tg.source)
 				extend_unique(self.pytest_paths, [pypath.abspath()])
 
 		if getattr(tg, 'link_task', None):
-			# For tasks with a link_task (C, C++, D et.c.) include their LIBPATH and if it's
-			# a Python extension, also add to PYTHONPATH.
+			# For tasks with a link_task (C, C++, D et.c.) include their library paths:
 			if not isinstance(tg.link_task, ccroot.stlink_task):
 				extend_unique(self.pytest_dep_nodes, tg.link_task.outputs)
 				extend_unique(self.pytest_libpaths, tg.link_task.env.LIBPATH)
-				extend_unique(self.pytest_libpaths, [tg.link_task.outputs[0].get_bld().parent.abspath()])
 
 				if 'pyext' in tg.features:
-					# If the taskgen is extending Python we also want to add it o the PYTHONPATH.
+					# If the taskgen is extending Python we also want to add the interpreter libpath.
 					extend_unique(self.pytest_libpaths, tg.link_task.env.LIBPATH_PYEXT)
+				else:
+					# Only add to libpath if the link task is not a Python extension
+					extend_unique(self.pytest_libpaths, [tg.link_task.outputs[0].parent.abspath()])
 
 
 @TaskGen.feature('pytest')
