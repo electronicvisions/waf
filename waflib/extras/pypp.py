@@ -206,6 +206,8 @@ class pyplusplus(Task.Task):
                 continue
             tsk = self.generator.create_compiled_task('cxx', node)
             tsk.env.append_value('INCPATHS', [node.parent.abspath()])
+            tsk.env.append_value('CXXFLAGS', ['-Wno-unused-parameter'])
+            tsk.env.append_value('CXXFLAGS', ['-Wunused-local-typedefs'])
             self.more_tasks.append(tsk)
 
             self.pyext_task.set_run_after(tsk)
