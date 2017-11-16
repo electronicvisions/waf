@@ -271,6 +271,18 @@ def python_cross_compile(self, features='pyembed pyext'):
 			fragment=FRAG, errmsg='Could not build a python embedded interpreter', features='%s %sprogram pyembed' % (xx, xx))
 	return True
 
+
+def remove_ndebug_from_env(env):
+	"""
+	remove NDEBUG defines so that in dependent task e.g. assert remains
+	"""
+	for module in [ 'PYEMBED', 'PYEXT' ]:
+		try:
+			defines_module = 'DEFINES_%s' % module
+			env[defines_module] = filter(lambda a: a != 'NDEBUG', env[defines_module])
+		except:
+			pass
+
 @conf
 def check_python_headers(conf, features='pyembed pyext'):
 	"""
@@ -342,6 +354,9 @@ def check_python_headers(conf, features='pyembed pyext'):
 				features='%s %sshlib pyext' % (xx, xx), fragment=FRAG, errmsg='Could not build python extensions')
 
 		conf.define('HAVE_PYTHON_H', 1)
+
+		remove_ndebug_from_env(env)
+
 		return
 
 	# No python-config, do something else on windows systems
