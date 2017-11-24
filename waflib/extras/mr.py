@@ -21,6 +21,7 @@ import urlparse
 import subprocess
 from ConfigParser import RawConfigParser
 from StringIO import StringIO
+from symwaf2ic_misc import parse_gerrit_changes
 
 # will be set from symwaf2ic
 get_repo_tool = lambda: None
@@ -555,12 +556,14 @@ class MR(object):
         env["PATH"] = os.pathsep.join(path)
         return env # KHS: jihaa function was a noop (return statement was missing)
 
-    def resolve_gerrit_changes(self, ctx, gerrit_queries):
+    def resolve_gerrit_changes(self, ctx, gerrit_queries, ignored_cs=None):
         """
         Perform queries on gerrit to find the all changesets.
         Returns a dictionary containing the changesets sorted indexed by
         project names and containing the ordered set of changesets (same order
         as the queries).
+        :param ignored_cs: List of changeset numbers to be ignored
+        :type ignored_cs: set of int or list of int
         """
         assert self.gerrit_url.scheme == 'ssh'
         ssh = "ssh {H}".format(H=self.gerrit_url.hostname)
@@ -570,7 +573,7 @@ class MR(object):
             ssh += ' -p {P}'.format(P=self.gerrit_url.port)
         query_options = '--current-patch-set --dependencies --format=json'
 
-        seen = set()
+        seen = set() if ignored_cs is None else set(ignored_cs)
         # changesets are storted as per-project-list inside a dict
         # => per-project order is preserved!
         changesets = dict()
@@ -600,15 +603,41 @@ class MR(object):
 
             self.mr_print("Resolved query \"{Q}\":".format(Q=gerrit_query))
             for result in data:
-                if result['id'] in seen:
+                if result['number'] in seen:
                     continue
-                seen.add(result['id'])
+                seen.add(result['number'])
+
                 changesets.setdefault(result['project'], []).append(result)
                 rev = result['currentPatchSet']['number']
                 msg = result['commitMessage'].splitlines()[0][:70]
                 self.mr_print("\tChangeset {project}:{number}/{rev} \"{msg}\"".format(
                     rev=rev, msg=msg, **result))
                 self.mr_print("\t    {url}".format(**result))
+
+        # --- Cross-project dependencies of all changesets --- #
+        cross_queries = list()
+        for cs in sum(changesets.values(), list()):
+            commit_msg = cs['commitMessage']
+
+            # Get changeset query strings
+            for line in commit_msg.splitlines():
+                if line.startswith('Depends-On:'):
+                    queries_raw = line[len('Depends-On:'):].strip()
+                    cross_queries += parse_gerrit_changes(queries_raw)
+
+        # Recursion termination: continue only if there are unseen changes left
+        if cross_queries:
+            # Resolve query strings, ignore those already seen
+            cross_cs = self.resolve_gerrit_changes(ctx, cross_queries,
+                                                   ignored_cs=seen)
+
+            # Add all cross-repo changesets to the seen changes and the
+            # results list
+            for project, cross_cs in cross_cs.iteritems():
+                for changeset in cross_cs:
+                    seen.add(changeset['number'])
+                    changesets.setdefault(project, []).append(changeset)
+
         return changesets
 
     def checkout_project(self, ctx, project, parent_path, branch=None,

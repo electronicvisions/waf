@@ -10,14 +10,12 @@ import argparse
 import shutil
 
 import json
-import re
 from collections import defaultdict, deque
-from urlparse import urlparse
 
 from waflib import Build, Context, Errors, Logs, Utils, Options
 from waflib.extras import mr
 
-import symwaf2ic_misc as misc
+from symwaf2ic_misc import parse_gerrit_changes, validate_gerrit_url
 
 
 #############
@@ -129,29 +127,6 @@ class Project(object):
 def options(opt):
     is_symwaf2ic = isinstance(opt, OptionParserContext)
 
-    def parse_gerrit_changes(arg):
-        ret = []
-        # we convert integers and things that look like a changeset id to
-        # explicit "change" queries
-        for item in arg.split(','):
-            check = re.compile(r'|'.join([
-                r'^\d+$',       # numerical changeset number
-                r'^I[0-9a-f]+$' # changeset id
-            ]))
-            if check.match(item):
-                ret.append('change:{}'.format(item))
-            else:
-                ret.append(item)
-        return ret
-
-    def validate_gerrit_url(arg):
-        url = urlparse(arg)
-        if url.scheme != 'ssh' or url.netloc == '':
-            raise argparse.ArgumentTypeError(
-                "Please enter a valid ssh URL")
-        return arg
-
-
     gr = opt.add_option_group("Symwaf2ic options")
     gr.add_option(
             "--project", dest="projects", action="append", default=[],
@@ -187,7 +162,21 @@ def options(opt):
                  "The resuling changesets are applied to the sources. If "
                  "multiple changeset are found for one repo, the repo is "
                  "resetted to the first and all others will be cherrypicked.\n"
-                 "To remove gerrit changsets --update-branches can be used.")
+                 "To remove gerrit changsets --update-branches can be used."
+                 "Dependent changesets (listed as \"Depends-On:\" in the "
+                 "commit message) will be collected and resolved after the "
+                 "explicitely stated ones (breadth-first). Use "
+                 "--gerrit-changes-ignored to exclude specific changesets "
+                 "from this automatic resolution.")
+    gr.add_option(
+            "--gerrit-changes-ignored", default=[], action="store",
+            type=(lambda x: [int(cs) for cs in x.split(",")]) if is_symwaf2ic else str,
+            help="Comma-separated list of gerrit changeset numbers to be "
+                 "excluded from being picked. Note that only integer "
+                 "changeset numbers are allowed parameters. Use this option "
+                 "to exclude changesets from being picked during the "
+                 "automatic dependency resolution based on \"Depends-On:\" "
+                 "keywords in commit messages.")
     gr.add_option(
             "--gerrit-url", action="store",
             type=validate_gerrit_url if is_symwaf2ic else str,
@@ -519,7 +508,8 @@ class DependencyContext(Symwaf2icContext):
         self.gerrit_changes = {}
         if (SETUP_CMD in sys.argv) and storage.setup_options["gerrit_changes"]:
                 self.gerrit_changes = storage.repo_tool.resolve_gerrit_changes(
-                    self, storage.setup_options["gerrit_changes"])
+                    self, storage.setup_options["gerrit_changes"],
+                    ignored_cs=storage.setup_options["gerrit_changes_ignored"])
         self.write_dot_file = storage.current_options["write_dot_file"]
         self.clone_depth = storage.setup_options["clone_depth"]
         # Dependency graph

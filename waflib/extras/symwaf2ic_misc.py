@@ -1,4 +1,7 @@
 import argparse, os
+import re
+from urlparse import urlparse
+
 from waflib import Logs, Options
 
 class WithOrWithoutAction(argparse.Action):
@@ -136,3 +139,28 @@ def bool_or_string(string):
     if string.lower() == "true": return True
     if string.lower() == "false": return False
     return string
+
+
+# --- Gerrit helper functions --- #
+def parse_gerrit_changes(arg):
+    ret = []
+    # we convert integers and things that look like a changeset id to
+    # explicit "change" queries
+    for item in arg.split(','):
+        check = re.compile(r'|'.join([
+            r'^\d+$',       # numerical changeset number
+            r'^I[0-9a-f]+$' # changeset id
+        ]))
+        if check.match(item):
+            ret.append('change:{}'.format(item))
+        else:
+            ret.append(item)
+    return ret
+
+
+def validate_gerrit_url(arg):
+    url = urlparse(arg)
+    if url.scheme != 'ssh' or url.netloc == '':
+        raise argparse.ArgumentTypeError(
+            "Please enter a valid ssh URL")
+    return arg
