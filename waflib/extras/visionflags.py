@@ -191,3 +191,15 @@ def configure(conf):
 	conf.env.append_value(*sandwich('DEFINES', compiler.get_defines(build_profile)))
 	conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
 	conf.env.append_value(*sandwich('LINKFLAGS', compiler.get_linkflags(build_profile)))
+
+	# Inject include and library paths (e.g. by module environment) into calls to compiler
+	def format_compiler_option(option, envvar):
+		paths = os.environ.get(envvar, '').split(':')
+		return ['{}{}'.format(option, x) for x in paths]
+
+	if os.environ.has_key('C_INCLUDE_PATH'):
+		conf.env.append_value('CFLAGS', format_compiler_option('-I', 'C_INCLUDE_PATH'))
+	if os.environ.has_key('CPLUS_INCLUDE_PATH'):
+		conf.env.append_value('CXXFLAGS', format_compiler_option('-I', 'CPLUS_INCLUDE_PATH'))
+	if os.environ.has_key('LIBRARY_PATH'):
+		conf.env.append_value('LINKFLAGS', format_compiler_option('-L', 'LIBRARY_PATH'))
