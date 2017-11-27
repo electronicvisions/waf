@@ -50,7 +50,7 @@ import sys, py_compile
 py_compile.compile(sys.argv[1], sys.argv[2], sys.argv[3], True)
 '''
 """
-Piece of Python code used in :py:func:`waflib.Tools.python.pytask` for byte-compiling python files
+Piece of Python code used in :py:class:`waflib.Tools.python.pyo` and :py:class:`waflib.Tools.python.pyc` for byte-compiling python files
 """
 
 DISTUTILS_IMP = ['from distutils.sysconfig import get_config_var, get_python_lib']
