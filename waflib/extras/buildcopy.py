@@ -78,4 +78,5 @@ class buildcopy(Task.Task):
 
 	def run(self):
 		for f,t in self.node_pairs:
+			t.parent.mkdir()
 			shutil.copy2(f.abspath(), t.abspath())
