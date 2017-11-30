@@ -16,8 +16,10 @@ class CompilerTraits(object):
 		'coverage',              # coverage
 		'gerrit',                # gerrit, build fast, warn a lot
 		'debug',                 # optimized for debugging
+		'sanitize',              # like debug plus sanitizers
 		'release',               # performance-optimized
-		'release_with_debug',    # performance-optimied with debugging support
+		'release_with_debug',    # performance-optimized with debugging support
+		'release_with_sanitize',  # performance-optimized with sanitizer support
 	)
 
 	def get_cflags(self, level):
@@ -39,11 +41,15 @@ class CommonTraits(CompilerTraits):
 		'coverage':           '-O0 --coverage'.split(),
 		'gerrit':             '-O0'.split(),
 		'debug':              '-Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
+		'sanitize':           '-Og -ggdb -g3 -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak'.split(),
 		'release_with_debug': '-O2 -g -fno-omit-frame-pointer -fno-strict-aliasing'.split(),
+		'release_with_sanitize': '-O2 -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=address -fsanitize=leak'.split(),
 		'release':            '-O2 -fno-strict-aliasing'.split(),
 	}
 	ldflags = {
 		'coverage':           '--coverage'.split(),
+		'sanitize':           '-fsanitize=address -fsanitize=leak'.split(),
+		'release_with_sanitize': '-fsanitize=address -fsanitize=leak'.split()
 	}
 
 	def __init__(self, version, linker=None):
