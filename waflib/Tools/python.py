@@ -79,7 +79,7 @@ def process_py(self, node):
 	"""
 	Add signature of .py file, so it will be byte-compiled when necessary
 	"""
-	assert(getattr(self, 'install_path')), 'add features="py"'
+	assert(hasattr(self, 'install_path')), 'add features="py"'
 
 	# where to install the python file
 	if self.install_path:
