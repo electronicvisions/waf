@@ -18,6 +18,7 @@ typos = {
 'importpath':'includes',
 'installpath':'install_path',
 'iscopy':'is_copy',
+'uses':'use',
 }
 
 meths_typos = ['__call__', 'program', 'shlib', 'stlib', 'objects']
