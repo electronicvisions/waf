@@ -50,7 +50,7 @@ def summary(bld):
 def build(bld):
 	bld.recurse('src tests')
 
-	# unittestw.summary is a pretty ugly function for displaying a report (feel free to improve!)
+	# waf_unit_test.summary is a pretty ugly function for displaying a report (feel free to improve!)
 	# results -> bld.utest_results [(filename, returncode, stdout, stderr), (..., ), ...]
 	#bld.add_post_fun(waf_unit_test.summary)
 	bld.add_post_fun(summary)
