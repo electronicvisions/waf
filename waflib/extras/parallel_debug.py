@@ -35,12 +35,13 @@ SVG_TEMPLATE = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 var svg  = document.getElementsByTagName('svg')[0];
 
 svg.addEventListener('mouseover', function(e) {
+        
 	var g = e.target.parentNode;
 	var x = document.getElementById('r_' + g.id);
 	if (x) {
 		g.setAttribute('class', g.getAttribute('class') + ' over');
 		x.setAttribute('class', x.getAttribute('class') + ' over');
-		showInfo(e, g.id);
+                showInfo(e, g.id, e.target.attributes.tooltip.value);
 	}
 }, false);
 
@@ -54,12 +55,12 @@ svg.addEventListener('mouseout', function(e) {
 		}
 }, false);
 
-function showInfo(evt, txt) {
+function showInfo(evt, txt, details) {
 ${if project.tooltip}
 	tooltip = document.getElementById('tooltip');
 
 	var t = document.getElementById('tooltiptext');
-	t.firstChild.data = txt;
+        t.firstChild.data = txt+" "+ details;
 
 	var x = evt.clientX + 9;
 	if (x > 250) { x -= t.getComputedTextLength() + 16; }
@@ -81,8 +82,7 @@ function hideInfo(evt) {
 <!-- inkscape requires a big rectangle or it will not export the pictures properly -->
 <rect
    x='${project.x}' y='${project.y}' width='${project.width}' height='${project.height}'
-   style="font-size:10;fill:#ffffff;fill-opacity:0.01;fill-rule:evenodd;stroke:#ffffff;"
-   />
+   style="font-size:10;fill:#ffffff;fill-opacity:0.01;fill-rule:evenodd;stroke:#ffffff;"></rect>
 
 ${if project.title}
   <text x="${project.title_x}" y="${project.title_y}"
@@ -93,7 +93,7 @@ ${endif}
 ${for cls in project.groups}
   <g id='${cls.classname}'>
     ${for rect in cls.rects}
-    <rect x='${rect.x}' y='${rect.y}' width='${rect.width}' height='${rect.height}' style="font-size:10;fill:${rect.color};fill-rule:evenodd;stroke:#000000;stroke-width:0.4;" />
+    <rect x='${rect.x}' y='${rect.y}' width='${rect.width}' height='${rect.height}' tooltip='${rect.name}' style="font-size:10;fill:${rect.color};fill-rule:evenodd;stroke:#000000;stroke-width:0.4;" />
     ${endfor}
   </g>
 ${endfor}
@@ -110,7 +110,7 @@ ${endfor}
 ${if project.tooltip}
   <g transform="translate(0,0)" visibility="hidden" id="tooltip">
        <rect id="tooltiprect" y="-15" x="-3" width="1" height="20" style="stroke:black;fill:#edefc2;stroke-width:1"/>
-       <text id="tooltiptext" style="font-family:Arial; font-size:12;fill:black;" />
+       <text id="tooltiptext" style="font-family:Arial; font-size:12;fill:black;"> </text>
   </g>
 ${endif}
 
@@ -286,7 +286,7 @@ def set_running(self, by, tsk):
 			i = cache[tsk]
 			del cache[tsk]
 
-		self.taskinfo.put( (i, id(tsk), time.time(), tsk.__class__.__name__, self.processed, self.count, by)  )
+		self.taskinfo.put( (i, id(tsk), time.time(), tsk.__class__.__name__, self.processed, self.count, by, ",".join(map(str, tsk.outputs)))  )
 Runner.Parallel.set_running = set_running
 
 def name2class(name):
@@ -326,7 +326,7 @@ def make_picture(producer):
 	acc = []
 	for x in tmp:
 		thread_count += x[6]
-		acc.append("%d %d %f %r %d %d %d" % (x[0], x[1], x[2] - ini, x[3], x[4], x[5], thread_count))
+		acc.append("%d %d %f %r %d %d %d %s" % (x[0], x[1], x[2] - ini, x[3], x[4], x[5], thread_count, x[7]))
 
 	data_node = producer.bld.path.make_node('pdebug.dat')
 	data_node.write('\n'.join(acc))
@@ -367,7 +367,7 @@ def make_picture(producer):
 				end = line[2]
 				#print id, thread_id, begin, end
 				#acc.append(  ( 10*thread_id, 10*(thread_id+1), 10*begin, 10*end ) )
-				acc.append( (BAND * begin, BAND*thread_id, BAND*end - BAND*begin, BAND, line[3]) )
+				acc.append( (BAND * begin, BAND*thread_id, BAND*end - BAND*begin, BAND, line[3], line[7]) )
 				break
 
 	if Options.options.dmaxtime < 0.1:
@@ -401,11 +401,11 @@ def make_picture(producer):
 	model.title_y = gheight + - 5
 
 	groups = {}
-	for (x, y, w, h, clsname) in acc:
+	for (x, y, w, h, clsname, name) in acc:
 		try:
-			groups[clsname].append((x, y, w, h))
+			groups[clsname].append((x, y, w, h, name))
 		except:
-			groups[clsname] = [(x, y, w, h)]
+			groups[clsname] = [(x, y, w, h, name)]
 
 	# groups of rectangles (else js highlighting is slow)
 	model.groups = []
@@ -414,13 +414,14 @@ def make_picture(producer):
 		model.groups.append(g)
 		g.classname = name2class(cls)
 		g.rects = []
-		for (x, y, w, h) in groups[cls]:
+		for (x, y, w, h, name) in groups[cls]:
 			r = tobject()
 			g.rects.append(r)
 			r.x = 2 + x * ratio
 			r.y = 2 + y
 			r.width = w * ratio
 			r.height = h
+			r.name = name
 			r.color = map_to_color(cls)
 
 	cnt = THREAD_AMOUNT
