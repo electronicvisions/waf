@@ -67,7 +67,7 @@ class CommonTraits(CompilerTraits):
 		return self.get_cpp_language_standard_flags() + self.get_cflags(build_profile)
 
 	def get_defines(self, build_profile):
-		if 'debug' not in build_profile:
+		if 'debug' not in build_profile and 'sanitize' not in build_profile:
 			return ['NDEBUG']
 		return []
 
