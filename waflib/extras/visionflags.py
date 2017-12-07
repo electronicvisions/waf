@@ -14,7 +14,6 @@ from waflib import Logs, Options, Errors
 class CompilerTraits(object):
 	profiles = (
 		'coverage',              # coverage
-		'gerrit',                # gerrit, build fast, warn a lot
 		'debug',                 # optimized for debugging
 		'sanitize',              # like debug plus sanitizers
 		'release',               # performance-optimized
@@ -39,7 +38,6 @@ class CommonTraits(CompilerTraits):
 	warning_flags = '-Wall -Wextra -pedantic'.split()
 	cflags = {
 		'coverage':           '-O0 --coverage'.split(),
-		'gerrit':             '-O0'.split(),
 		'debug':              '-Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
 		'sanitize':           '-Og -ggdb -g3 -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak'.split(),
 		'release_with_debug': '-O2 -g -fno-omit-frame-pointer -fno-strict-aliasing'.split(),
