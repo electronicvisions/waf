@@ -54,6 +54,10 @@ sys.exit(status)
 
 @taskgen_method
 def handle_ut_cwd(self, key):
+	"""
+	Task generator method, used internally to limit code duplication.
+	This method may disappear anytime.
+	"""
 	cwd = getattr(self, key, None)
 	if cwd:
 		if isinstance(cwd, str):
