@@ -95,7 +95,9 @@ def build(bld):
 		always=True, source='wscript', shell=1, name='Shell')
 	if not Utils.is_win32:
 		bld(rule='echo ${ST:FOO} ${ST:SRC} ${A}${B} ${ST:SRCA} ${ST:SRC[0].abspath()}',
-		always=True, source='wscript', shell=0, cls_keyword=lambda x:'Trying again', name='NoShell')
+			always=True, source='wscript', shell=0,
+			stdout=None, stderr=None,  # disable synchronized outputs on this rule
+			cls_keyword=lambda x:'Trying again', name='NoShell')
 
 	# illustrate how to add a command 'foo' and to execute things in it
 	if bld.cmd == 'foo':

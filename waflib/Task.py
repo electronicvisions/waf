@@ -259,6 +259,13 @@ class Task(evil):
 		:type cmd: list of string (best) or string (process will use a shell)
 		:return: the return code
 		:rtype: int
+
+		Optional parameters:
+
+		#. cwd: current working directory (Node or string)
+		#. stdout: set to None to prevent waf from capturing the process standard output
+		#. stderr: set to None to prevent waf from capturing the process standard error
+		#. timeout: timeout value (Python 3)
 		"""
 		if not 'cwd' in kw:
 			kw['cwd'] = self.get_cwd()
@@ -269,6 +276,11 @@ class Task(evil):
 		if self.env.PATH:
 			env = kw['env'] = dict(kw.get('env') or self.env.env or os.environ)
 			env['PATH'] = self.env.PATH if isinstance(self.env.PATH, str) else os.pathsep.join(self.env.PATH)
+
+		if hasattr(self, 'stdout'):
+			kw['stdout'] = self.stdout
+		if hasattr(self, 'stderr'):
+			kw['stderr'] = self.stderr
 
 		# workaround for command line length limit:
 		# http://support.microsoft.com/kb/830473

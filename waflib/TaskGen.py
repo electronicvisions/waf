@@ -553,6 +553,24 @@ def process_rule(self):
 
 		def build(bld):
 			bld(rule='cp ${SRC} ${TGT}', source='wscript', target='bar.txt')
+
+	Main attributes processed:
+
+	* rule: command to execute, it can be a tuple of strings for multiple commands
+	* chmod: permissions for the resulting files (integer value such as Utils.O755)
+	* shell: set to False to execute the command directly (default is True to use a shell)
+	* scan: scanner function
+	* vars: list of variables to trigger rebuilts, such as CFLAGS
+	* cls_str: string to display when executing the task
+	* cls_keyword: label to display when executing the task
+	* cache_rule: by default, try to re-use similar classes, set to False to disable
+	* source: list of Node or string objects representing the source files required by this task
+	* target: list of Node or string objects representing the files that this task creates
+	* cwd: current working directory (Node or string)
+	* stdout: standard output, set to None to prevent waf from capturing the text
+	* stderr: standard error, set to None to prevent waf from capturing the text
+	* timeout: timeout for command execution (Python 3)
+	* always: whether to always run the command (False by default)
 	"""
 	if not getattr(self, 'rule', None):
 		return
@@ -630,6 +648,12 @@ def process_rule(self):
 	for x in ('after', 'before', 'ext_in', 'ext_out'):
 		setattr(tsk, x, getattr(self, x, []))
 
+	if hasattr(self, 'stdout'):
+		tsk.stdout = self.stdout
+
+	if hasattr(self, 'stderr'):
+		tsk.stderr = self.stderr
+
 	if getattr(self, 'timeout', None):
 		tsk.timeout = self.timeout
 
@@ -664,7 +688,6 @@ def process_rule(self):
 		# behave like static methods and do not transform into bound
 		# methods during instance attribute look-up."
 		tsk.run = functools.partial(tsk.run, tsk)
-
 
 @feature('seq')
 def sequence_order(self):
