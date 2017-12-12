@@ -322,7 +322,7 @@ def isTestExecutionEnabled(self):
     run_none = getattr(Options.options, 'test_run_none', False)
     # Is this specific test requested by the --test-exec <testname> option?
     run_this = runByName(self.name)
-    return not (skip_run or (run_none and not run_this))
+    return not ((skip_run and not run_this) or (run_none and not run_this))
 
 class TestBase(Task.Task):
     """
