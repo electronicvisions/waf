@@ -365,7 +365,8 @@ def check_boost(self, *k, **kw):
 	Logs.debug('boost: static libs : %s' % stlibs)
 
 	# check for mpi depenencies if boost mpi is requested
-	if 'mpi' in params['lib']:
+	if (params['lib'] and 'mpi' in params['lib']) or \
+	    params['stlib'] and 'mpi' in params['stlib']:
 		self.check_cfg(path = 'mpicxx', args = '--showme:compile',
 		               package = '', uselib_store = var)
 		self.check_cfg(path = 'mpicxx', args = '--showme:link',
