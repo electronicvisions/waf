@@ -19,9 +19,6 @@ except:
 	from queue import Queue
 from waflib import Runner, Options, Task, Logs, Errors
 
-#import random
-#random.seed(100)
-
 SVG_TEMPLATE = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0"
@@ -35,13 +32,12 @@ SVG_TEMPLATE = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 var svg  = document.getElementsByTagName('svg')[0];
 
 svg.addEventListener('mouseover', function(e) {
-        
 	var g = e.target.parentNode;
 	var x = document.getElementById('r_' + g.id);
 	if (x) {
 		g.setAttribute('class', g.getAttribute('class') + ' over');
 		x.setAttribute('class', x.getAttribute('class') + ' over');
-                showInfo(e, g.id, e.target.attributes.tooltip.value);
+		showInfo(e, g.id, e.target.attributes.tooltip.value);
 	}
 }, false);
 
@@ -60,7 +56,7 @@ ${if project.tooltip}
 	tooltip = document.getElementById('tooltip');
 
 	var t = document.getElementById('tooltiptext');
-        t.firstChild.data = txt+" "+ details;
+	t.firstChild.data = txt + " " + details;
 
 	var x = evt.clientX + 9;
 	if (x > 250) { x -= t.getComputedTextLength() + 16; }
