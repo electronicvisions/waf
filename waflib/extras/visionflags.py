@@ -39,15 +39,15 @@ class CommonTraits(CompilerTraits):
 	cflags = {
 		'coverage':           '-O0 --coverage'.split(),
 		'debug':              '-Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
-		'sanitize':           '-Og -ggdb -g3 -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak'.split(),
+		'sanitize':           '-Og -ggdb -g3 -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
 		'release_with_debug': '-O2 -g -fno-omit-frame-pointer -fno-strict-aliasing'.split(),
-		'release_with_sanitize': '-O2 -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=address -fsanitize=leak'.split(),
+		'release_with_sanitize': '-O2 -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
 		'release':            '-O2 -fno-strict-aliasing'.split(),
 	}
 	ldflags = {
 		'coverage':           '--coverage'.split(),
-		'sanitize':           '-fsanitize=address -fsanitize=leak'.split(),
-		'release_with_sanitize': '-fsanitize=address -fsanitize=leak'.split()
+		'sanitize':           '-fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
+		'release_with_sanitize': '-fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split()
 	}
 
 	def __init__(self, version, linker=None):
