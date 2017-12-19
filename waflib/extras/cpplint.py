@@ -185,8 +185,8 @@ class cpplint(Task.Task):
         global critical_errors
         with cpplint_wrapper(get_cpplint_logger(self.env.CPPLINT_OUTPUT), self.env.CPPLINT_BREAK, self.env.CPPLINT_OUTPUT):
             if self.env.CPPLINT_OUTPUT != 'waf':
-                cpplint_tool._cpplint_state.output_format = self.env.CPPLINT_OUTPUT
-            cpplint_tool._cpplint_state.SetFilters(self.env.CPPLINT_FILTERS)
+                cpplint_tool._SetOutputFormat(self.env.CPPLINT_OUTPUT)
+            cpplint_tool._SetFilters(self.env.CPPLINT_FILTERS)
             cpplint_tool._line_length = self.env.CPPLINT_LINE_LENGTH
             cpplint_tool._root = self.env.CPPLINT_ROOT
             cpplint_tool.ProcessFile(self.inputs[0].abspath(), self.env.CPPLINT_LEVEL)
