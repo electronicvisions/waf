@@ -202,7 +202,7 @@ def post_cpplint(self):
     if not self.env.CPPLINT_INITIALIZED:
         for key, value in Options.options.__dict__.items():
             if not key.startswith('CPPLINT_') or self.env[key]:
-               continue
+                continue
             self.env[key] = value
         self.env.CPPLINT_INITIALIZED = True
 
@@ -220,4 +220,3 @@ def post_cpplint(self):
         if not node:
             self.bld.fatal('Could not find %r' % src)
         self.create_task('cpplint', node)
-
