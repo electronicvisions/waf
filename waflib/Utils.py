@@ -849,7 +849,7 @@ def run_prefork_process(cmd, kwargs, cargs):
 		kwargs['env'] = dict(os.environ)
 	try:
 		obj = base64.b64encode(cPickle.dumps([cmd, kwargs, cargs]))
-	except TypeError:
+	except (TypeError, AttributeError):
 		return run_regular_process(cmd, kwargs, cargs)
 
 	proc = get_process()
