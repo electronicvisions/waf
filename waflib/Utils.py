@@ -983,7 +983,7 @@ def atexit_pool():
 if (sys.hexversion<0x207000f and not is_win32) or sys.hexversion>=0x306000f:
 	atexit.register(atexit_pool)
 
-if sys.platform == 'cli' or not sys.executable:
+if os.environ.get('WAF_NO_PREFORK') or sys.platform == 'cli' or not sys.executable:
 	run_process = run_regular_process
 	get_process = alloc_process_pool = nada
 
