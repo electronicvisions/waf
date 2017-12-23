@@ -37,7 +37,7 @@ We will also use a Waf binary file, for example waf-2.0.0, which we will copy in
 
 To execute the project, we will simply call the command as an argument to ``waf``::
 
-	$ ./waf-2.0.0 configure build
+	$ python ./waf-2.0.0 configure build
 	configure!
 	build!
 
