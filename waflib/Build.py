@@ -1276,10 +1276,23 @@ class CleanContext(BuildContext):
 			self.store()
 
 	def clean(self):
-		"""Remove files from the build directory if possible, and reset the caches"""
+		"""
+		Remove most files from the build directory, and reset all caches.
+
+		Custom lists of files to clean can be declared as `bld.clean_files`.
+		For example, exclude `build/program/myprogram` from getting removed::
+
+			def build(bld):
+				bld.clean_files = bld.bldnode.ant_glob('**',
+					excl='.lock* config.log c4che/* config.h program/myprogram',
+					quiet=True, generator=True)
+		"""
 		Logs.debug('build: clean called')
 
-		if self.bldnode != self.srcnode:
+		if hasattr(self, 'clean_files'):
+			for n in self.clean_files:
+				n.delete()
+		elif self.bldnode != self.srcnode:
 			# would lead to a disaster if top == out
 			lst = []
 			for env in self.all_envs.values():
