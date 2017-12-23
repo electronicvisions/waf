@@ -61,6 +61,52 @@ Ant patterns for files and folders to exclude while doing the
 recursive traversal in :py:meth:`waflib.Node.Node.ant_glob`
 """
 
+def ant_matcher(s, ignorecase):
+	reflags = re.I if ignorecase else 0
+	ret = []
+	for x in Utils.to_list(s):
+		x = x.replace('\\', '/').replace('//', '/')
+		if x.endswith('/'):
+			x += '**'
+		accu = []
+		for k in x.split('/'):
+			if k == '**':
+				accu.append(k)
+			else:
+				k = k.replace('.', '[.]').replace('*','.*').replace('?', '.').replace('+', '\\+')
+				k = '^%s$' % k
+				try:
+					exp = re.compile(k, flags=reflags)
+				except Exception as e:
+					raise Errors.WafError('Invalid pattern: %s' % k, e)
+				else:
+					accu.append(exp)
+		ret.append(accu)
+	return ret
+
+def ant_sub_filter(name, nn):
+	ret = []
+	for lst in nn:
+		if not lst:
+			pass
+		elif lst[0] == '**':
+			ret.append(lst)
+			if len(lst) > 1:
+				if lst[1].match(name):
+					ret.append(lst[2:])
+			else:
+				ret.append([])
+		elif lst[0].match(name):
+			ret.append(lst[1:])
+	return ret
+
+def ant_sub_matcher(name, pats):
+	nacc = ant_sub_filter(name, pats[0])
+	nrej = ant_sub_filter(name, pats[1])
+	if [] in nrej:
+		nacc = []
+	return [nacc, nrej]
+
 class Node(object):
 	"""
 	This class is organized in two parts:
@@ -621,64 +667,21 @@ class Node(object):
 		"""
 		src = kw.get('src', True)
 		dir = kw.get('dir')
-
 		excl = kw.get('excl', exclude_regs)
 		incl = k and k[0] or kw.get('incl', '**')
-		reflags = re.I if kw.get('ignorecase', False) else 0
+		remove = kw.get('remove', True)
+		maxdepth = kw.get('maxdepth', 25)
+		ignorecase = kw.get('ignorecase', False)
+		pats = (ant_matcher(incl, ignorecase), ant_matcher(excl, ignorecase))
 
-		def to_pat(s):
-			ret = []
-			for x in Utils.to_list(s):
-				x = x.replace('\\', '/').replace('//', '/')
-				if x.endswith('/'):
-					x += '**'
-				accu = []
-				for k in x.split('/'):
-					if k == '**':
-						accu.append(k)
-					else:
-						k = k.replace('.', '[.]').replace('*','.*').replace('?', '.').replace('+', '\\+')
-						k = '^%s$' % k
-						try:
-							#print "pattern", k
-							exp = re.compile(k, flags=reflags)
-						except Exception as e:
-							raise Errors.WafError('Invalid pattern: %s' % k, e)
-						else:
-							accu.append(exp)
-				ret.append(accu)
-			return ret
+		if kw.get('generator'):
+			return Utils.lazy_generator(self.ant_iter, (ant_sub_matcher, maxdepth, pats, dir, src, remove))
 
-		def filtre(name, nn):
-			ret = []
-			for lst in nn:
-				if not lst:
-					pass
-				elif lst[0] == '**':
-					ret.append(lst)
-					if len(lst) > 1:
-						if lst[1].match(name):
-							ret.append(lst[2:])
-					else:
-						ret.append([])
-				elif lst[0].match(name):
-					ret.append(lst[1:])
-			return ret
-
-		def accept(name, pats):
-			nacc = filtre(name, pats[0])
-			nrej = filtre(name, pats[1])
-			if [] in nrej:
-				nacc = []
-			return [nacc, nrej]
-
-		it = self.ant_iter(accept=accept, pats=[to_pat(incl), to_pat(excl)], maxdepth=kw.get('maxdepth', 25), dir=dir, src=src, remove=kw.get('remove', True))
+		it = self.ant_iter(ant_sub_matcher, maxdepth, pats, dir, src, remove)
 		if kw.get('flat'):
 			# returns relative paths as a space-delimited string
 			# prefer Node objects whenever possible
 			return ' '.join(x.path_from(self) for x in it)
-		elif kw.get('generator'):
-			return it
 		return list(it)
 
 	# ----------------------------------------------------------------------------

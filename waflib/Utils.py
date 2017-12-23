@@ -185,6 +185,21 @@ class lru_cache(object):
 			node.val = val
 			self.table[key] = node
 
+class lazy_generator(object):
+	def __init__(self, fun, params):
+		self.fun = fun
+		self.params = params
+
+	def __iter__(self):
+		return self
+
+	def __next__(self):
+		try:
+			it = self.it
+		except AttributeError:
+			it = self.it = self.fun(*self.params)
+		return next(it)
+
 is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 """
 Whether this system is a Windows series
