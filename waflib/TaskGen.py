@@ -492,10 +492,6 @@ def extension(*k):
 		return func
 	return deco
 
-# ---------------------------------------------------------------
-# The following methods are task generator methods commonly used
-# they are almost examples, the rest of waf core does not depend on them
-
 @taskgen_method
 def to_nodes(self, lst, path=None):
 	"""

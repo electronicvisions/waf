@@ -573,7 +573,7 @@ class Node(object):
 			p = p.parent
 		return p is node
 
-	def ant_iter(self, accept=None, maxdepth=25, pats=[], dir=False, src=True, remove=True):
+	def ant_iter(self, accept=None, maxdepth=25, pats=[], dir=False, src=True, remove=True, quiet=False):
 		"""
 		Recursive method used by :py:meth:`waflib.Node.ant_glob`.
 
@@ -589,6 +589,8 @@ class Node(object):
 		:type src: bool
 		:param remove: remove files/folders that do not exist (True by default)
 		:type remove: bool
+		:param quiet: disable build directory traversal warnings (verbose mode)
+		:type quiet: bool
 		:returns: A generator object to iterate from
 		:rtype: iterator
 		"""
@@ -622,7 +624,7 @@ class Node(object):
 				if isdir:
 					node.cache_isdir = True
 					if maxdepth:
-						for k in node.ant_iter(accept=accept, maxdepth=maxdepth - 1, pats=npats, dir=dir, src=src, remove=remove):
+						for k in node.ant_iter(accept=accept, maxdepth=maxdepth - 1, pats=npats, dir=dir, src=src, remove=remove, quiet=quiet):
 							yield k
 		raise StopIteration
 
@@ -654,14 +656,16 @@ class Node(object):
 		:type dir: bool
 		:param src: return files (True by default)
 		:type src: bool
-		:param remove: remove files/folders that do not exist (True by default)
-		:type remove: bool
 		:param maxdepth: maximum depth of recursion
 		:type maxdepth: int
 		:param ignorecase: ignore case while matching (False by default)
 		:type ignorecase: bool
 		:returns: The corresponding Nodes
 		:type generator: bool
+		:param remove: remove files/folders that do not exist (True by default)
+		:type remove: bool
+		:param quiet: disable build directory traversal warnings (verbose mode)
+		:type quiet: bool
 		:returns: Whether to evaluate the Nodes lazily, alters the type of the returned value
 		:rtype: by default, list of :py:class:`waflib.Node.Node` instances
 		"""
@@ -672,12 +676,13 @@ class Node(object):
 		remove = kw.get('remove', True)
 		maxdepth = kw.get('maxdepth', 25)
 		ignorecase = kw.get('ignorecase', False)
+		quiet = kw.get('quiet', False)
 		pats = (ant_matcher(incl, ignorecase), ant_matcher(excl, ignorecase))
 
 		if kw.get('generator'):
-			return Utils.lazy_generator(self.ant_iter, (ant_sub_matcher, maxdepth, pats, dir, src, remove))
+			return Utils.lazy_generator(self.ant_iter, (ant_sub_matcher, maxdepth, pats, dir, src, remove, quiet))
 
-		it = self.ant_iter(ant_sub_matcher, maxdepth, pats, dir, src, remove)
+		it = self.ant_iter(ant_sub_matcher, maxdepth, pats, dir, src, remove, quiet)
 		if kw.get('flat'):
 			# returns relative paths as a space-delimited string
 			# prefer Node objects whenever possible
