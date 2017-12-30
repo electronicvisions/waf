@@ -1,3 +1,13 @@
+NEW IN WAF 2.0.4
+----------------
+* Enable more advanced warnings of ant_glob on build folders in verbose mode
+* Defer node.ant_glob(..., generator=True) evaluation
+* Enable 'waf clean' to get the list of files to remove from bld.clean_files
+* Define the environment variable WAF_NO_PREFORK to skip pre-forking
+* Fix Can't pickle local object '_createenviron.<locals>.encode' exceptions (Python 3.6)
+* Improve the Erlang module #2095
+* Add task target to parallel_debug outputs #2091
+
 NEW IN WAF 2.0.3
 ----------------
 * Enable install_path=None for Python targets #2087
