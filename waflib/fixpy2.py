@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2010-2017 (ita)
+# Thomas Nagy, 2010-2018 (ita)
 
 from __future__ import with_statement
 

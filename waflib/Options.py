@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # Scott Newton, 2005 (scottn)
-# Thomas Nagy, 2006-2017 (ita)
+# Thomas Nagy, 2006-2018 (ita)
 
 """
 Support for waf command-line options

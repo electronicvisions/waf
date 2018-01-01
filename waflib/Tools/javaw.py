@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2017 (ita)
+# Thomas Nagy, 2006-2018 (ita)
 
 """
 Java support

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Calle Rosenquist, 2016-2017 (xbreak)
+# Calle Rosenquist, 2016-2018 (xbreak)
 
 """
 Provides Python unit test support using :py:class:`waflib.Tools.waf_unit_test.utest`

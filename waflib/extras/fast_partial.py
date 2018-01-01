@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2017 (ita)
+# Thomas Nagy, 2017-2018 (ita)
 
 """
 A system for fast partial rebuilds

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # John O'Meara, 2006
-# Thomas Nagy, 2006-2017 (ita)
+# Thomas Nagy, 2006-2018 (ita)
 
 """
 The **flex** program is a code generator which creates C or C++ files.

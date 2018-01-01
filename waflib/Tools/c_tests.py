@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2016-2017 (ita)
+# Thomas Nagy, 2016-2018 (ita)
 
 """
 Various configuration tests.
