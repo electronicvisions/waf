@@ -14,7 +14,7 @@ $ waf configure eclipse
 """
 
 import sys, os
-from waflib import Utils, Logs, Context, Build, TaskGen, Scripting, Errors
+from waflib import Utils, Logs, Context, Build, TaskGen, Scripting, Errors, Node
 from xml.dom.minidom import Document
 
 STANDARD_INCLUDES = [ '/usr/local/include', '/usr/include' ]
@@ -90,11 +90,18 @@ class eclipse(Build.BuildContext):
 					java_src = tg.path.relpath()
 					java_srcdir = getattr(tg, 'srcdir', None)
 					if java_srcdir:
-						if java_src == '.':
-							java_src = java_srcdir
-						else:
-							java_src += os.sep + java_srcdir
-					javasrcpath.append(java_src)
+						if isinstance(java_srcdir, Node.Node):
+							java_srcdir = [java_srcdir]
+						for x in Utils.to_list(java_srcdir):
+							if isinstance(x, Node.Node):
+								x = x.name
+							if java_src == '.':
+								this_src = x
+							else:
+								this_src = java_src + os.sep + x
+							javasrcpath.append(this_src)
+					else:
+						javasrcpath.append(java_src)
 					hasjava = True
 
 				tg.post()
