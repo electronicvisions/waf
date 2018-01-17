@@ -578,8 +578,8 @@ def run_build(self, *k, **kw):
 	except OSError:
 		self.fatal('cannot use the configuration test folder %r' % dir)
 
-	cachemode = getattr(Options.options, 'confcache', None)
-	if cachemode == 1:
+	cachemode = getattr(Options.options, 'confcache', False)
+	if cachemode:
 		try:
 			proj = ConfigSet.ConfigSet(os.path.join(dir, 'cache_run_build'))
 		except OSError:

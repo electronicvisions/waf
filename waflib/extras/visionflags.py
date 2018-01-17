@@ -151,7 +151,12 @@ def options(opt):
 		default=False, dest='check_profile', action="store_true")
 	opt.add_option('--linker', type=str, default=None,
 	               help='Specify the linker to use, e.g. --linker=gold.')
-
+	# ECM (2018-01-19): optparse does not support bool-type (and monkey-patching
+	# a custom optparse.Option into waf seems too much)
+	opt.add_option('--disable-confcache', dest='confcache',
+				action='store_false', help='Disable config cache mechanism')
+	opt.add_option('--enable-confcache', dest='confcache', default=True,
+				action='store_true', help='Enabling config cache mechanism (default)')
 
 def configure(conf):
 	conf.load("gccdeps")  # not necessary for visionflags functionality
