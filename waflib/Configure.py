@@ -559,7 +559,10 @@ def run_build(self, *k, **kw):
 
 	"""
 
-	lst = [str(v) for (p, v) in kw.items() if p != 'env']
+	lst = [str(v) for (p, v) in kw.items() if p not in ('env', 'build_fun')]
+	if 'build_fun' in kw:
+		# CK (2018-01-17): previously the function instance was hashed
+		lst.append(kw['build_fun'].__name__)
 	h = Utils.h_list(lst)
 	dir = self.bldnode.abspath() + os.sep + (not Utils.is_win32 and '.' or '') + 'conf_check_' + Utils.to_hex(h)
 
