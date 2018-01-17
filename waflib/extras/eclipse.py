@@ -343,7 +343,7 @@ class eclipse(Build.BuildContext):
 					{'kind': 'src', 'path': i})
 
 		self.add(doc, javaproject, 'classpathentry', {'kind': 'con', 'path': 'org.eclipse.jdt.launching.JRE_CONTAINER'})
-		self.add(doc, javaproject, 'classpathentry', {'kind': 'output', 'path': Context.g_module.out})
+		self.add(doc, javaproject, 'classpathentry', {'kind': 'output', 'path': self.bldnode.name })
 		doc.appendChild(javaproject)
 		return doc
 
