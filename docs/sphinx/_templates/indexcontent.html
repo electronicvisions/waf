@@ -1,7 +1,11 @@
-{% extends "defindex.html" %}
-{% block tables %}
+{% extends "layout.html" %}
+{%- block htmltitle -%}
+<title>{{ shorttitle }}</title>
+{%- endblock -%}
+{% block body %}
+  <h1>{{ docstitle|e }}</h1>
+  <p><strong>{% trans %}Parts of the documentation:{% endtrans %}</strong></p>
 
-  <p><strong>Parts of the documentation:</strong></p>
   <table class="contentstable" align="center"><tr>
     <td width="50%" style="vertical-align:top;">
       <p class="biglink"><a class="biglink" href="{{ pathto("tutorial") }}">Tutorial</a><br/>

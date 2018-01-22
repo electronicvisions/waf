@@ -77,6 +77,14 @@ Configuration methods
 
 * check_fortran_verbose_flag_
 
+.. _check_gcc_o_space: tools/c_config.html#waflib.Tools.c_config.check_gcc_o_space
+
+* check_gcc_o_space_
+
+.. _check_gfortran_o_space: tools/fc_config.html#waflib.Tools.fc_config.check_gfortran_o_space
+
+* check_gfortran_o_space_
+
 .. _check_inline: tools/c_tests.html#waflib.Tools.c_tests.check_inline
 
 * check_inline_
@@ -405,6 +413,10 @@ Configuration methods
 
 * gather_msvc_versions_
 
+.. _gather_vswhere_versions: tools/msvc.html#waflib.Tools.msvc.gather_vswhere_versions
+
+* gather_vswhere_versions_
+
 .. _gather_wince_targets: tools/msvc.html#waflib.Tools.msvc.gather_wince_targets
 
 * gather_wince_targets_
@@ -664,6 +676,10 @@ Configuration methods
 .. _set_qt5_defines: tools/qt5.html#waflib.Tools.qt5.set_qt5_defines
 
 * set_qt5_defines_
+
+.. _set_qt5_libs_dir: tools/qt5.html#waflib.Tools.qt5.set_qt5_libs_dir
+
+* set_qt5_libs_dir_
 
 .. _set_qt5_libs_to_check: tools/qt5.html#waflib.Tools.qt5.set_qt5_libs_to_check
 
