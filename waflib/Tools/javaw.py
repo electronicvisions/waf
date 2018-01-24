@@ -171,6 +171,8 @@ def jar_files(self):
 			node = self.path.find_resource(manifest)
 		else:
 			node = manifest
+		if not node:
+			self.bld.fatal('invalid manifest file %r for %r' % (manifest, self))
 		tsk.dep_nodes.append(node)
 		jaropts.insert(0, node.abspath())
 	else:
