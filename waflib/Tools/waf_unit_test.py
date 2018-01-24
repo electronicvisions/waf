@@ -231,6 +231,11 @@ class utest(Task.Task):
 	def get_cwd(self):
 		return getattr(self.generator, 'ut_cwd', self.inputs[0].parent)
 
+	def sig_explicit_deps(self):
+		lst = [os.stat(node.abspath()).st_mtime for node in self.inputs]
+		self.m.update(str(lst))
+		return super(utest, self).sig_explicit_deps()
+
 def summary(bld):
 	"""
 	Display an execution summary::
