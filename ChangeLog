@@ -1,3 +1,9 @@
+NEW IN WAF 2.0.5
+----------------
+* Force unit tests to depend on the executable creation time besides file contents
+* Enhance the Eclipse project generator
+* Update the cuda examples
+
 NEW IN WAF 2.0.4
 ----------------
 * Enable more advanced warnings of ant_glob on build folders in verbose mode
