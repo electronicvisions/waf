@@ -233,7 +233,7 @@ class utest(Task.Task):
 
 	def sig_explicit_deps(self):
 		lst = [os.stat(node.abspath()).st_mtime for node in self.inputs]
-		self.m.update(str(lst))
+		self.m.update(Utils.h_list(lst))
 		return super(utest, self).sig_explicit_deps()
 
 def summary(bld):
