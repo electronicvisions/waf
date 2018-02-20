@@ -517,20 +517,22 @@ class DependencyContext(Symwaf2icContext):
         # Queue for breadth-first search
         self.to_recurse = deque()
 
-    def __call__(self, project, subfolder="", branch=None):
-        self.call_impl(project, subfolder, branch,
-                       self.cur_script.parent.path_from(self.toplevel))
+    def __call__(self, project, subfolder="", branch=None, ref=None):
+        self.call_impl(project, subfolder=subfolder, branch=branch, ref=ref,
+                       predecessor=self.cur_script.parent.path_from(self.toplevel))
 
-    def call_impl(self, project, subfolder="", branch=None, predecessor=None):
+    def call_impl(self, project, subfolder="", branch=None, ref=None, predecessor=None):
         required_from = "project option" if predecessor is None else predecessor
         Logs.debug("dependency: Required by {script}: {project}{branch}{subfolder}".format(
                     project=project,
                     subfolder="" if len(subfolder) == 0 else " ({0})".format(subfolder),
                     branch="" if branch is None else "@{0}".format(branch),
+                    ref="" if ref is None else "@ref:{0}".format(ref),
                     script=required_from,
                 ))
         path = storage.repo_tool.checkout_project(
-            self, project, required_from, branch, self.update_branches,
+            self, project, required_from, branch=branch, ref=ref,
+            update_branch=self.update_branches,
             gerrit_changes=self.gerrit_changes)
 
         if len(subfolder) > 0:

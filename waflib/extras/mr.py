@@ -104,11 +104,12 @@ class BranchError(Exception):
 
 
 class Project(object):
-    def __init__(self, name, path, branch = None, clone_depth = None):
+    def __init__(self, name, path, branch = None, ref = None, clone_depth = None):
         assert isinstance(name, basestring)
         assert os.path.isabs(path)
         self._name = name
         self._path = path
+        self.ref = ref
         self._branch = branch
         self._real_branch = None
         self._mr_registered = False
@@ -270,6 +271,8 @@ class GitProject(Project):
         cmds = list()
         if init:
             cmds.append(init)
+        if self.ref:
+            cmds.append('git reset --hard {}'.format(self.ref))
         if gerrit_url:
             cmds += self.gerrit_changes_cmds(gerrit_url)
         if not cmds:
@@ -640,7 +643,7 @@ class MR(object):
 
         return changesets
 
-    def checkout_project(self, ctx, project, parent_path, branch=None,
+    def checkout_project(self, ctx, project, parent_path, branch=None, ref=None,
                          update_branch=False, gerrit_changes=None):
         p = self._get_or_create_project(project)
         p.required = True
@@ -649,6 +652,8 @@ class MR(object):
         except BranchError:
             self.mr_print('Project "%s" is already required on branch "%s", but "%s" requires branch "%s"'\
                     % ( project, p.required_branch, parent_path, branch), 'YELLOW')
+
+        p.ref = ref
 
         required_gerrit_changes = []
         if gerrit_changes:
