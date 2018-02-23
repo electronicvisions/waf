@@ -204,7 +204,7 @@ def configure(conf):
 	# Inject include and library paths (e.g. by module environment) into calls to compiler
 	def format_compiler_option(option, envvar):
 		paths = os.environ.get(envvar, '').split(':')
-		return ['{}{}'.format(option, x) for x in paths]
+		return ['{}{}'.format(option, x) for x in paths if x]
 
 	if os.environ.has_key('C_INCLUDE_PATH'):
 		conf.env.append_value('CFLAGS', format_compiler_option('-I', 'C_INCLUDE_PATH'))
