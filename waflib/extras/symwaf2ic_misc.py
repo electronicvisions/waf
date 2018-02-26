@@ -164,3 +164,21 @@ def validate_gerrit_url(arg):
         raise argparse.ArgumentTypeError(
             "Please enter a valid ssh URL")
     return arg
+
+
+def add_username_to_gerrit_url(url, username):
+    url = urlparse(url)
+    # we assume that the url is valid and was validated already
+    netloc = url.netloc
+
+    # if the url already contains a username, eliminate it from the netloc
+    if url.username is not None:
+        netloc = netloc[len(url.username) + 1:]
+
+    netloc_with_username = "{username}@{netloc}".format(
+        username=username, netloc=netloc)
+
+    new_url = url._replace(netloc=netloc_with_username)
+    assert new_url.username == username
+
+    return new_url.geturl()

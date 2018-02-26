@@ -15,7 +15,9 @@ from collections import defaultdict, deque
 from waflib import Build, Context, Errors, Logs, Utils, Options
 from waflib.extras import mr
 
-from symwaf2ic_misc import parse_gerrit_changes, validate_gerrit_url
+from symwaf2ic_misc import add_username_to_gerrit_url
+from symwaf2ic_misc import parse_gerrit_changes
+from symwaf2ic_misc import validate_gerrit_url
 
 
 #############
@@ -184,6 +186,11 @@ def options(opt):
                 "ssh://brainscales-r.kip.uni-heidelberg.de:29418"),
             help="URL for gerrit")
     gr.add_option(
+            "--gerrit-username", action="store",
+            type=str,
+            default=os.environ["USER"],
+            help="Username for gerrit")
+    gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
             help="URL for the repository containing the database with information about all other repositories.",
             default="git@gitviz.kip.uni-heidelberg.de:projects.git"
@@ -282,6 +289,7 @@ class MainContext(Symwaf2icContext):
         self.repo_db_type = cmdopts.repo_db_type
         self.clone_depth= cmdopts.clone_depth
         self.gerrit_url = cmdopts.gerrit_url
+        self.gerrit_username = cmdopts.gerrit_username
 
     def init_toplevel(self):
         Logs.debug("symwaf2ic: Setting up symwaf2ic toplevel.")
@@ -316,14 +324,15 @@ class MainContext(Symwaf2icContext):
 
         Logs.info("Toplevel set to: {0}".format(storage.toplevel))
 
-
     def setup_repo_tool(self):
         Logs.debug("symwaf2ic: Setup repo tool (mr)")
         repoconf = storage.config_node.make_node( "mr_conf" )
         repoconf.mkdir()
         storage.repo_tool = mr.MR(
             self, self.repo_db_url, self.repo_db_type, top=self.toplevel,
-            cfg=repoconf, clear_log=True, clone_depth=self.clone_depth, gerrit_url=self.gerrit_url)
+            cfg=repoconf, clear_log=True, clone_depth=self.clone_depth,
+            gerrit_url=add_username_to_gerrit_url(
+                self.gerrit_url, self.gerrit_username))
 
 
 class OptionParserContext(Symwaf2icContext):
