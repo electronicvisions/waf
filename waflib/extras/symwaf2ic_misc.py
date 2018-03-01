@@ -168,12 +168,18 @@ def validate_gerrit_url(arg):
 
 def add_username_to_gerrit_url(url, username):
     url = urlparse(url)
+
+    # skip if no username was provided
+    if not username:
+        return url
+
     # we assume that the url is valid and was validated already
     netloc = url.netloc
 
-    # if the url already contains a username, eliminate it from the netloc
+    # if the url already contains a username, raise error
     if url.username is not None:
-        netloc = netloc[len(url.username) + 1:]
+        raise argparse.ArgumentTypeError(
+            "Please do provide only one username")
 
     netloc_with_username = "{username}@{netloc}".format(
         username=username, netloc=netloc)

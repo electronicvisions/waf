@@ -188,7 +188,7 @@ def options(opt):
     gr.add_option(
             "--gerrit-username", action="store",
             type=str,
-            default=os.environ["USER"],
+            default="",
             help="Username for gerrit")
     gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
