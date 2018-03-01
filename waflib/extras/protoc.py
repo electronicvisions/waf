@@ -219,6 +219,11 @@ def process_protoc(self, node):
 		incdirs.append(self.bld.path.find_node(incpath).bldpath())
 	tsk.env.PROTOC_INCPATHS = incdirs
 
+	# PR2115: protoc generates output of .proto files in nested
+	# directories  by canonicalizing paths. To avoid this we have to pass
+	# as first include the full directory file of the .proto file
+	tsk.env.prepend_value('INCPATHS', node.parent.bldpath())
+
 	use = getattr(self, 'use', '')
 	if not 'PROTOBUF' in use:
 		self.use = self.to_list(use) + ['PROTOBUF']

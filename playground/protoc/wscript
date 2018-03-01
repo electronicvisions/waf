@@ -19,6 +19,12 @@ def build(bld):
 		target   = 'somelib',
 		includes = ['inc'])
 
+	bld(
+		features = 'cxx cxxshlib',
+		source   = ['incdeep/a/b/test.proto'],
+		target   = 'somedeeplib',
+		includes = ['incdeep'])
+
 
 	bld(
 		features = 'py',
