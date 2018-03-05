@@ -22,7 +22,7 @@ namespace waflauncher
 
 		public static int Main (string[] args)
 		{
-			//I run waf and if not succesful we try on-the-fly install of python
+			//I run waf and if not successful we try on-the-fly install of python
 			if(!runWaf(args)){
 				//but first we ask the user if it's okay to install software on their computer
 				if(mayInstall()){

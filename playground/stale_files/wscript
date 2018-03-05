@@ -4,7 +4,7 @@
 
 """
 See waflib/extras/stale.py for more information.
-Do not forget to reconfigure the proect after changing "configure" below
+Do not forget to reconfigure the project after changing "configure" below
 """
 
 VERSION='0.0.1'
