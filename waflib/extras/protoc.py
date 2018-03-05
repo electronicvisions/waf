@@ -216,7 +216,7 @@ def process_protoc(self, node):
 	# For C++ standard include files dirs are used,
 	# but this doesn't apply to Python for example
 	for incpath in getattr(self, 'protoc_includes', []):
-		incdirs.append(self.bld.path.find_node(incpath).bldpath())
+		incdirs.append(self.path.find_node(incpath).bldpath())
 	tsk.env.PROTOC_INCPATHS = incdirs
 
 	# PR2115: protoc generates output of .proto files in nested
