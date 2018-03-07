@@ -125,7 +125,7 @@ def configure(self):
 	# Some build settings are required to be present by XCode. We will supply default values
 	# if user hasn't defined any.
 	defaults_required = [('PRODUCT_NAME', '$(TARGET_NAME)')]
-	for cfgname,settings in self.env.PROJ_CONFIGURATION.iteritems():
+	for cfgname,settings in self.env.PROJ_CONFIGURATION.items():
 		for default_var, default_val in defaults_required:
 			if default_var not in settings:
 				settings[default_var] = default_val
