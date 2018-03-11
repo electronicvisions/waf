@@ -200,6 +200,8 @@ class lazy_generator(object):
 			it = self.it = self.fun(*self.params)
 		return next(it)
 
+	next = __next__
+
 is_win32 = os.sep == '\\' or sys.platform == 'win32' # msys2
 """
 Whether this system is a Windows series
