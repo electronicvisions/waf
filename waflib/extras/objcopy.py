@@ -15,7 +15,7 @@ objcopy_flags		  Additional flags passed to objcopy.
 """
 
 from waflib.Utils import def_attrs
-from waflib import Task
+from waflib import Task, Options
 from waflib.TaskGen import feature, after_method
 
 class objcopy(Task.Task):
@@ -50,5 +50,9 @@ def objcopy(self):
 							   env=task.env.derive())
 
 def configure(ctx):
-	objcopy = ctx.find_program('objcopy', var='OBJCOPY', mandatory=True)
+	program_name = 'objcopy'
+	prefix = getattr(Options.options, 'cross_prefix', None)
+	if prefix:
+		program_name = '{}-{}'.format(prefix, program_name)
+	objcopy = ctx.find_program(program_name, var='OBJCOPY', mandatory=True)
 
