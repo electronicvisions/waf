@@ -124,6 +124,9 @@ class protoc(Task):
 							names.append(dep)
 
 		parse_node(node)
+		# Add also dependencies path to INCPATHS so protoc will find the included file
+		for deppath in nodes:
+			self.env.append_value('INCPATHS', deppath.parent.bldpath())
 		return (nodes, names)
 
 @extension('.proto')
