@@ -111,12 +111,10 @@ def swig_c(self):
 		c_tsk = self.generator.c_hook(out_node)
 
 	c_tsk.set_run_after(self)
-	# FIXME
-	c_tsk.prio_order = self.prio_order
-
-	ge = self.generator.bld.producer
-	ge.outstanding.append(c_tsk)
-	ge.total += 1
+	try:
+		self.more_tasks.append(c_tsk)
+	except AttributeError:
+		self.more_tasks = [c_tsk]
 
 	try:
 		ltask = self.generator.link_task
@@ -127,8 +125,8 @@ def swig_c(self):
 		# setting input nodes does not declare the build order
 		# because the build already started
 		ltask.inputs.append(c_tsk.outputs[0])
-		# set the build order after the build started:
-		ge.revdeps[c_tsk].add(ltask)
+		# enable priorities so that swig targets do not run last
+		self.generator.bld.producer.revdeps[c_tsk].add(ltask)
 
 	self.outputs.append(out_node)
 
