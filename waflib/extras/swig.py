@@ -111,6 +111,8 @@ def swig_c(self):
 		c_tsk = self.generator.c_hook(out_node)
 
 	c_tsk.set_run_after(self)
+	# FIXME
+	c_tsk.prio_order = self.prio_order
 
 	ge = self.generator.bld.producer
 	ge.outstanding.append(c_tsk)
