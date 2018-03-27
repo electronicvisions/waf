@@ -123,10 +123,9 @@ def swig_c(self):
 	else:
 		ltask.set_run_after(c_tsk)
 		# setting input nodes does not declare the build order
-		# because the build already started
+		# because the build already started, but it sets
+		# the dependency to enable rebuilds
 		ltask.inputs.append(c_tsk.outputs[0])
-		# enable priorities so that swig targets do not run last
-		self.generator.bld.producer.revdeps[c_tsk].add(ltask)
 
 	self.outputs.append(out_node)
 

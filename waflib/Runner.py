@@ -257,7 +257,26 @@ class Parallel(object):
 		:type tsk: :py:attr:`waflib.Task.Task`
 		"""
 		if getattr(tsk, 'more_tasks', None):
-			# TODO recompute priorities globally?
+			more = set(tsk.more_tasks)
+			groups_done = set()
+			def iteri(a, b):
+				for x in a:
+					yield x
+				for x in b:
+					yield x
+
+			# Update the dependency tree
+			# this assumes that task.run_after values were updated
+			for x in iteri(self.outstanding, self.incomplete):
+				for k in x.run_after:
+					if isinstance(k, Task.TaskGroup):
+						if k not in groups_done:
+							groups_done.add(k)
+							for j in k.prev & more:
+								self.revdeps[j].add(k)
+					elif k in more:
+						self.revdeps[k].add(x)
+
 			ready, waiting = self.prio_and_split(tsk.more_tasks)
 			self.outstanding.extend(ready)
 			self.incomplete.update(waiting)
@@ -476,13 +495,12 @@ class Parallel(object):
 
 		reverse = self.revdeps
 
+		groups_done = set()
 		for x in tasks:
 			for k in x.run_after:
 				if isinstance(k, Task.TaskGroup):
-					if k.done:
-						pass
-					else:
-						k.done = True
+					if k not in groups_done:
+						groups_done.add(k)
 						for j in k.prev:
 							reverse[j].add(k)
 				else:
