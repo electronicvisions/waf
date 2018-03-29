@@ -111,6 +111,13 @@ def swig_c(self):
 		c_tsk = self.generator.c_hook(out_node)
 
 	c_tsk.set_run_after(self)
+
+	# transfer weights from swig task to c task
+	if getattr(self, 'weight', None):
+		c_tsk.weight = self.weight
+	if getattr(self, 'tree_weight', None):
+		c_tsk.tree_weight = self.tree_weight
+
 	try:
 		self.more_tasks.append(c_tsk)
 	except AttributeError:
