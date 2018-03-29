@@ -1,3 +1,14 @@
+NEW IN WAF 2.0.7
+----------------
+* Apply priorities to dynamically-generated tasks #2137
+* Fix upcoming Python 3.7 incompatibilities #2126
+* Fix Python3 support in extras/xcode6.py #2121
+* Improve priority support in extras/swig.py #2137
+* Improve support extras/protoc.py #2135
+* Improve argument handling in extras/clang_compilation_database.py #2127
+* Add glib DBus bindings in extras/gdbus.py #2134
+* Avoid name collisions for precompiled headers and libraries with similar names in extras/pch.py #2122
+
 NEW IN WAF 2.0.6
 ----------------
 * Add Task.deep_inputs to enable further dependencies on input file tasks
