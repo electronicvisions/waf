@@ -16,6 +16,7 @@ except ImportError:
 	except ImportError:
 		class PriorityQueue(Queue):
 			def _init(self, maxsize):
+				self.maxsize = maxsize
 				self.queue = []
 			def _put(self, item):
 				heapq.heappush(self.queue, item)
