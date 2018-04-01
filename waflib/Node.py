@@ -659,13 +659,13 @@ class Node(object):
 		:type maxdepth: int
 		:param ignorecase: ignore case while matching (False by default)
 		:type ignorecase: bool
-		:returns: The corresponding Nodes
+		:param generator: Whether to evaluate the Nodes lazily
 		:type generator: bool
 		:param remove: remove files/folders that do not exist (True by default)
 		:type remove: bool
 		:param quiet: disable build directory traversal warnings (verbose mode)
 		:type quiet: bool
-		:returns: Whether to evaluate the Nodes lazily, alters the type of the returned value
+		:returns: The corresponding Node objects as a list or as a generator object (generator=True)
 		:rtype: by default, list of :py:class:`waflib.Node.Node` instances
 		"""
 		src = kw.get('src', True)
