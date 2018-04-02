@@ -422,8 +422,8 @@ def find_program(self, filename, **kw):
 	:type var: string
 	:param value: obtain the program from the value passed exclusively
 	:type value: list or string (list is preferred)
-	:param ext: list of extensions for the binary (do not add an extension for portability)
-	:type ext: list of string
+	:param exts: list of extensions for the binary (do not add an extension for portability)
+	:type exts: list of string
 	:param msg: name to display in the log, by default filename is used
 	:type msg: string
 	:param interpreter: interpreter for the program
