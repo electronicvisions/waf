@@ -78,9 +78,9 @@ def patch_build_context():
 
     old_create_task = TaskGen.task_gen.create_task
 
-    def create_task(self, name, src=None, tgt=None):
+    def create_task(self, name, src=None, tgt=None, **kw):
         """New create task"""
-        task = old_create_task(self, name, src, tgt)
+        task = old_create_task(self, name, src, tgt, **kw)
         task_list = self.to_list(getattr(self, "run_after", []))
         for task_name in task_list:
             for t in self.bld.get_tgen_by_name(task_name).tasks:
