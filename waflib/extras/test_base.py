@@ -68,7 +68,6 @@ def options(opt):
                    help='Maximal runtime in seconds per test executable')
 
 
-@Utils.run_once
 def configure(ctx):
     ctx.env.TEST_DISABLED = bool(getattr(Options.options, 'test_disabled', False))
     if ctx.tests_disabled():
