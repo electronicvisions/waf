@@ -39,7 +39,7 @@ def build(bld):
 		compat     = '1.6', # java compatibility version number
 		sourcepath = ['src', 'sup'],
 		classpath  = ['.', '..'],
-		#jaropts = '-C default/src/ .', # can be used to give files
+		#jaropts = ['-C', 'default/src/', '.'], # can be used to give files
 		basedir    = 'src', # folder containing the classes and other files to package (must match outdir)
 		destfile   = 'foo.jar', # do not put the destfile in the folder of the java classes!
 		use        = 'NNN',
