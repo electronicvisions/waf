@@ -405,12 +405,7 @@ def check_boost(self, *k, **kw):
 
 	self.find_program('dpkg-architecture', var='DPKG_ARCHITECTURE', mandatory=False)
 	if self.env.DPKG_ARCHITECTURE:
-		self.cmd_and_log([self.env.DPKG_ARCHITECTURE[0], '-qDEB_HOST_MULTIARCH'])
-		if sys.version_info[0] >=3 and sys.version_info[1] >= 6:
-			deb_host_multiarch_proc = Utils.subprocess.Popen("%s -qDEB_HOST_MULTIARCH" % self.env.DPKG_ARCHITECTURE[0], shell=True, stdout=Utils.subprocess.PIPE, encoding="ascii")
-		else:
-			deb_host_multiarch_proc = Utils.subprocess.Popen("%s -qDEB_HOST_MULTIARCH" % self.env.DPKG_ARCHITECTURE[0], shell=True, stdout=Utils.subprocess.PIPE)
-		deb_host_multiarch, error = deb_host_multiarch_proc.communicate()
+		deb_host_multiarch = self.cmd_and_log([self.env.DPKG_ARCHITECTURE[0], '-qDEB_HOST_MULTIARCH'])
 		BOOST_LIBS.insert(0, '/usr/lib/%s' % deb_host_multiarch.strip())
 
 	self.start_msg('Checking boost includes')
