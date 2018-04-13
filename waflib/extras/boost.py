@@ -345,7 +345,15 @@ def check_boost(self, *k, **kw):
 	self.start_msg('Checking boost includes')
 	self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
 	self.env.BOOST_VERSION = self.boost_get_version(inc)
-	self.end_msg(self.env.BOOST_VERSION)
+	self.end_msg(self.env.BOOST_VERSION.strip('\n'))
+
+	cpp_standard = kw.get('cpp_standard', None)
+	if cpp_standard:
+		if self.env['CXX_NAME'] == 'gcc':
+			self.env.append_value('CXXFLAGS_%s' % var, ['-std=%s' % cpp_standard])
+		else:
+			self.fatal('Cannot set cpp_standard to %s for compiler %s' % (cpp_standard, self.env['CXX_NAME']))
+
 	Logs.debug("boost: path -> %s" % self.env['INCLUDES_%s' % var])
 
 	if not params['lib'] and not params['stlib']:
