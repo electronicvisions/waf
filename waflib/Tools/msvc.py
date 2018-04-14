@@ -936,6 +936,8 @@ def msvc_common_flags(conf):
 
 	v.cprogram_PATTERN  = v.cxxprogram_PATTERN = '%s.exe'
 
+	v.def_PATTERN       = '/def:%s'
+
 
 #######################################################################################################
 ##### conf above, build below
