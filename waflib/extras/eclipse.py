@@ -80,6 +80,8 @@ class eclipse(Build.BuildContext):
 					pypath = tg.path.relpath()
 					py_installfrom = getattr(tg, 'install_from', None)
 					if py_installfrom:
+						if isinstance(py_installfrom, Node.Node):
+							py_installfrom = py_installfrom.path_from(tg.path)
 						pypath += os.sep + py_installfrom
 					pythonpath.append(pypath)
 					haspython = True
