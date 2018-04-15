@@ -86,7 +86,7 @@ class eclipse(Build.BuildContext):
 
 
 				# Add Java source directories so object resolving works in IDE
-				if 'java' in tg.features:
+				if 'javac' in tg.features:
 					java_src = tg.path.relpath()
 					java_srcdir = getattr(tg, 'srcdir', None)
 					if java_srcdir:
