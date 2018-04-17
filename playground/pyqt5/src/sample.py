@@ -1,5 +1,9 @@
 import sys
+# If pyqt5 bindings are used uncomment the following line:
 from PyQt5 import QtCore, QtGui, QtWidgets
+# If pyside2 bindings are used uncomment the following line:
+#from PySide2 import QtCore, QtGui, QtWidgets
+
 from firstgui import Ui_myfirstgui
 
 class MyFirstGuiProgram(Ui_myfirstgui):
