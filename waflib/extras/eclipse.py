@@ -75,38 +75,36 @@ class eclipse(Build.BuildContext):
 				if not isinstance(tg, TaskGen.task_gen):
 					continue
 
+				tg.post()
+
 				# Add local Python modules paths to configuration so object resolving will work in IDE
+				# This may also contain generated files (ie. pyqt5 or protoc) that get picked from build
 				if 'py' in tg.features:
 					pypath = tg.path.relpath()
 					py_installfrom = getattr(tg, 'install_from', None)
-					if py_installfrom:
-						if isinstance(py_installfrom, Node.Node):
-							py_installfrom = py_installfrom.path_from(tg.path)
-						pypath += os.sep + py_installfrom
-					pythonpath.append(pypath)
+					if isinstance(py_installfrom, Node.Node):
+						pypath = py_installfrom.path_from(self.root.make_node(self.top_dir))
+					if pypath not in pythonpath:
+						pythonpath.append(pypath)
 					haspython = True
 
-
 				# Add Java source directories so object resolving works in IDE
+				# This may also contain generated files (ie. protoc) that get picked from build
 				if 'javac' in tg.features:
 					java_src = tg.path.relpath()
-					java_srcdir = getattr(tg, 'srcdir', None)
+					java_srcdir = getattr(tg.javac_task, 'srcdir', None)
 					if java_srcdir:
 						if isinstance(java_srcdir, Node.Node):
 							java_srcdir = [java_srcdir]
 						for x in Utils.to_list(java_srcdir):
-							if isinstance(x, Node.Node):
-								x = x.name
-							if java_src == '.':
-								this_src = x
-							else:
-								this_src = java_src + os.sep + x
-							javasrcpath.append(this_src)
+							x = x.path_from(self.root.make_node(self.top_dir))
+							if x not in javasrcpath:
+								javasrcpath.append(x)
 					else:
-						javasrcpath.append(java_src)
+						if java_src not in javasrcpath:
+							javasrcpath.append(java_src)
 					hasjava = True
 
-				tg.post()
 				if not getattr(tg, 'link_task', None):
 					continue
 

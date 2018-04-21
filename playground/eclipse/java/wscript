@@ -21,7 +21,7 @@ def options(opt):
 		pass
 
 def configure(conf):
-	conf.load('java')
+	conf.load('java protoc')
 
 	try:
 		ret = conf.load('junit', tooldir='.')
@@ -33,6 +33,7 @@ def configure(conf):
 	conf.check_java_class('FakeClass')
 
 	conf.env.CLASSPATH_NNN = ['aaaa.jar', 'bbbb.jar']
+	conf.env.CLASSPATH_PROTOBUF = ['/tmp/cp/protobuf-java-2.5.0.jar']
 
 def build(bld):
 
@@ -53,4 +54,13 @@ def build(bld):
 	)
 
 	bld.recurse('animals cats')
+
+
+	bld(
+		features = 'javac protoc',
+		name = 'pbjava',
+		srcdir = 'protoc/',
+		source   = ['protoc/message.proto'],
+		use = 'PROTOBUF',
+		protoc_includes = ['protoc'])
 
