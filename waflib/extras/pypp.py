@@ -206,8 +206,6 @@ class pyplusplus(Task.Task):
                 continue
             tsk = self.generator.create_compiled_task('cxx', node)
             tsk.env.append_value('INCPATHS', [node.parent.abspath()])
-            # gccxml is pre-variadic template era...
-            tsk.env.append_value('DEFINES', ['BOOST_NO_CXX11_VARIADIC_TEMPLATES'])
             tsk.env.append_value('CXXFLAGS', ['-Wno-unused-parameter'])
             tsk.env.append_value('CXXFLAGS', ['-Wno-unused-local-typedefs'])
             self.more_tasks.append(tsk)
