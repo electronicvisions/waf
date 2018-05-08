@@ -52,7 +52,7 @@ cmd.exe  /C  "chcp 1252 & set PYTHONUNBUFFERED=true && set && waf  configure"
 Setting PYTHONUNBUFFERED gives the unbuffered output.
 """
 
-import os, sys, re, traceback
+import os, sys, re, traceback, ctypes
 from waflib import Utils, Logs, Options, Errors
 from waflib.TaskGen import after_method, feature
 
@@ -96,6 +96,36 @@ def options(opt):
 	opt.add_option('--msvc_version', type='string', help = 'msvc version, eg: "msvc 10.0,msvc 9.0"', default='')
 	opt.add_option('--msvc_targets', type='string', help = 'msvc targets, eg: "x64,arm"', default='')
 	opt.add_option('--no-msvc-lazy', action='store_false', help = 'lazily check msvc target environments', default=True, dest='msvc_lazy')
+
+
+def detect_encoding_of_the_output_of_the_current_console():
+	"""
+	Return the code page of the stdout/stderr corresponding with the current console.
+	
+	Note that None of following method is useless, be careful especially
+	under DBCS/MBCS code page environments:
+	
+	- locale.getpreferredencoding() or ctypes.windll.kernel32.GetACP()
+
+		- These olways return user's code page, not each consoles.
+	    - These ignore `chcp 65001`.
+
+	- sys.stdout.encoding
+	
+		- This olways returns 'utf-8', not user's code page.
+	
+	For stdin, we should use GetConsoleCP() instead of GetConsoleOutputCP().
+	But we don't implement until it needs.
+	
+	:return: the string which represents the code page
+	:rtype: str
+	"""
+	codepage = ctypes.windll.kernel32.GetConsoleOutputCP()
+	if not codepage:
+		# When called from IDLE interpreter, the codepage may be zero.
+		return sys.stdout.encoding or 'latin-1'
+	return 'cp%d' % codepage
+
 
 @conf
 def setup_msvc(conf, versiondict):
@@ -451,7 +481,7 @@ def gather_vswhere_versions(conf, versions):
 	vswhere = os.path.join(prg_path, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
 	args = [vswhere, '-products', '*', '-legacy', '-format', 'json']
 	try:
-		txt = conf.cmd_and_log(args)
+		txt = conf.cmd_and_log(args, encoding=detect_encoding_of_the_output_of_the_current_console())
 	except Errors.WafError as e:
 		Logs.debug('msvc: vswhere.exe failed %s', e)
 		return

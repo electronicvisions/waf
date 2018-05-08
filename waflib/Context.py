@@ -354,6 +354,11 @@ class Context(ctx):
 			if not isinstance(kw['cwd'], str):
 				kw['cwd'] = kw['cwd'].abspath()
 
+		encoding = kw.get('encoding', None)
+		if 'encoding' in kw:
+			del kw['encoding']
+		encoding = encoding or sys.stdout.encoding or 'latin-1'
+
 		try:
 			ret, out, err = Utils.run_process(cmd, kw, cargs)
 		except Exception as e:
@@ -361,14 +366,14 @@ class Context(ctx):
 
 		if out:
 			if not isinstance(out, str):
-				out = out.decode(sys.stdout.encoding or 'latin-1', errors='replace')
+				out = out.decode(encoding, errors='replace')
 			if self.logger:
 				self.logger.debug('out: %s', out)
 			else:
 				Logs.info(out, extra={'stream':sys.stdout, 'c1': ''})
 		if err:
 			if not isinstance(err, str):
-				err = err.decode(sys.stdout.encoding or 'latin-1', errors='replace')
+				err = err.decode(encoding, errors='replace')
 			if self.logger:
 				self.logger.error('err: %s' % err)
 			else:
@@ -439,6 +444,11 @@ class Context(ctx):
 		if 'cwd' in kw:
 			if not isinstance(kw['cwd'], str):
 				kw['cwd'] = kw['cwd'].abspath()
+				
+		encoding = kw.get('encoding', None)
+		if 'encoding' in kw:
+			del kw['encoding']
+		encoding = encoding or sys.stdout.encoding or 'latin-1'
 
 		try:
 			ret, out, err = Utils.run_process(cmd, kw, cargs)
@@ -446,9 +456,9 @@ class Context(ctx):
 			raise Errors.WafError('Execution failure: %s' % str(e), ex=e)
 
 		if not isinstance(out, str):
-			out = out.decode(sys.stdout.encoding or 'latin-1', errors='replace')
+			out = out.decode(encoding, errors='replace')
 		if not isinstance(err, str):
-			err = err.decode(sys.stdout.encoding or 'latin-1', errors='replace')
+			err = err.decode(encoding, errors='replace')
 
 		if out and quiet != STDOUT and quiet != BOTH:
 			self.to_log('out: %s' % out)
