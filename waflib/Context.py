@@ -354,10 +354,11 @@ class Context(ctx):
 			if not isinstance(kw['cwd'], str):
 				kw['cwd'] = kw['cwd'].abspath()
 
-		encoding = kw.get('encoding', None)
-		if 'encoding' in kw:
-			del kw['encoding']
-		encoding = encoding or sys.stdout.encoding or 'latin-1'
+		if 'decode_as' in kw:
+			encoding = kw['decode_as']
+			del kw['decode_as']
+		else:
+			encoding = sys.stdout.encoding or 'latin-1'
 
 		try:
 			ret, out, err = Utils.run_process(cmd, kw, cargs)
@@ -444,11 +445,12 @@ class Context(ctx):
 		if 'cwd' in kw:
 			if not isinstance(kw['cwd'], str):
 				kw['cwd'] = kw['cwd'].abspath()
-				
-		encoding = kw.get('encoding', None)
-		if 'encoding' in kw:
-			del kw['encoding']
-		encoding = encoding or sys.stdout.encoding or 'latin-1'
+
+		if 'decode_as' in kw:
+			encoding = kw['decode_as']
+			del kw['decode_as']
+		else:
+			encoding = sys.stdout.encoding or 'latin-1'
 
 		try:
 			ret, out, err = Utils.run_process(cmd, kw, cargs)
