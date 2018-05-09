@@ -11,6 +11,7 @@ Microsoft Visual C++/Intel C++ compiler support
 If you get detection problems, first try any of the following::
 
 	chcp 65001
+	set PYTHONIOENCODING=...
 	set PYTHONLEGACYWINDOWSSTDIO=1
 
 Usage::
