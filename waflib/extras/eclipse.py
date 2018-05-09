@@ -53,6 +53,7 @@ class eclipse(Build.BuildContext):
 		source_dirs = []
 		cpppath = self.env['CPPPATH']
 		javasrcpath = []
+		javalibpath = []
 		includes = STANDARD_INCLUDES
 		if sys.platform != 'win32':
 			cc = self.env.CC or self.env.CXX
@@ -105,6 +106,13 @@ class eclipse(Build.BuildContext):
 							javasrcpath.append(java_src)
 					hasjava = True
 
+					# Check if there are external dependencies and add them as external jar so they will be resolved by Eclipse
+					usedlibs=getattr(tg, 'use', [])
+					for x in Utils.to_list(usedlibs):
+						for cl in Utils.to_list(tg.env['CLASSPATH_'+x]):
+							if cl not in javalibpath:
+								javalibpath.append(cl)
+
 				if not getattr(tg, 'link_task', None):
 					continue
 
@@ -139,7 +147,7 @@ class eclipse(Build.BuildContext):
 			self.srcnode.make_node('.pydevproject').write(project.toprettyxml())
 
 		if hasjava:
-			project = self.impl_create_javaproject(javasrcpath)
+			project = self.impl_create_javaproject(javasrcpath, javalibpath)
 			self.srcnode.make_node('.classpath').write(project.toprettyxml())
 
 	def impl_create_project(self, executable, appname, hasc, hasjava, haspython):
@@ -333,7 +341,7 @@ class eclipse(Build.BuildContext):
 		doc.appendChild(pydevproject)
 		return doc
 
-	def impl_create_javaproject(self, javasrcpath):
+	def impl_create_javaproject(self, javasrcpath, javalibpath):
 		# create a .classpath file for java usage
 		doc = Document()
 		javaproject = doc.createElement('classpath')
@@ -341,6 +349,11 @@ class eclipse(Build.BuildContext):
 			for i in javasrcpath:
 				self.add(doc, javaproject, 'classpathentry',
 					{'kind': 'src', 'path': i})
+
+		if javalibpath:
+			for i in javalibpath:
+				self.add(doc, javaproject, 'classpathentry',
+					{'kind': 'lib', 'path': i})
 
 		self.add(doc, javaproject, 'classpathentry', {'kind': 'con', 'path': 'org.eclipse.jdt.launching.JRE_CONTAINER'})
 		self.add(doc, javaproject, 'classpathentry', {'kind': 'output', 'path': self.bldnode.name })
