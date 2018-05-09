@@ -106,21 +106,18 @@ def options(opt):
 def cmd_encoding():
 	"""
 	Return the code page of the stdout/stderr corresponding with the current console.
-
 	Note that None of following method is useless, be careful especially
 	under DBCS/MBCS code page environments:
 
 	- locale.getpreferredencoding() or ctypes.windll.kernel32.GetACP()
-
-		- These olways return user's code page, not each consoles.
-	    - These ignore `chcp 65001`.
+		- Return user's code page, not each consoles.
+		- both ignore `chcp 65001`.
 
 	- sys.stdout.encoding
+		- olways returns 'utf-8' in Python 3, not user's code page.
 
-		- This olways returns 'utf-8', not user's code page.
-
-	For stdin, we should use GetConsoleCP() instead of GetConsoleOutputCP().
-	But we don't implement until it needs.
+	This is only meant for stdout/stderr, for stdin GetConsoleCP() should be used
+	instead of GetConsoleOutputCP().
 
 	:return: the string which represents the code page
 	:rtype: str
