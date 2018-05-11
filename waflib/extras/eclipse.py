@@ -136,12 +136,12 @@ class eclipse(Build.BuildContext):
 
 					hasc = True
 
-		waf = os.path.abspath(sys.argv[0])
-		project = self.impl_create_project(sys.executable, appname, hasc, hasjava, haspython, waf)
+		waf_executable = os.path.abspath(sys.argv[0])
+		project = self.impl_create_project(sys.executable, appname, hasc, hasjava, haspython, waf_executable)
 		self.srcnode.make_node('.project').write(project.toprettyxml())
 
 		if hasc:
-			project = self.impl_create_cproject(sys.executable, waf, appname, workspace_includes, cpppath, source_dirs)
+			project = self.impl_create_cproject(sys.executable, waf_executable, appname, workspace_includes, cpppath, source_dirs)
 			self.srcnode.make_node('.cproject').write(project.toprettyxml())
 
 		if haspython:
@@ -152,7 +152,7 @@ class eclipse(Build.BuildContext):
 			project = self.impl_create_javaproject(javasrcpath, javalibpath)
 			self.srcnode.make_node('.classpath').write(project.toprettyxml())
 
-	def impl_create_project(self, executable, appname, hasc, hasjava, haspython, waf):
+	def impl_create_project(self, executable, appname, hasc, hasjava, haspython, waf_executable):
 		doc = Document()
 		projectDescription = doc.createElement('projectDescription')
 		self.add(doc, projectDescription, 'name', appname)
@@ -192,7 +192,7 @@ class eclipse(Build.BuildContext):
 			launchConfiguration.setAttribute('type', 'org.eclipse.ui.externaltools.ProgramBuilderLaunchConfigurationType')
 			self.add(doc, launchConfiguration, 'booleanAttribute', {'key': 'org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND', 'value': 'false'})
 			self.add(doc, launchConfiguration, 'booleanAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED', 'value': 'true'})
-			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_LOCATION', 'value': waf})
+			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_LOCATION', 'value': waf_executable})
 			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS', 'value': 'full,incremental,'})
 			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS', 'value': 'build'})
 			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY', 'value': '${project_loc}'})
@@ -223,7 +223,7 @@ class eclipse(Build.BuildContext):
 		doc.appendChild(projectDescription)
 		return doc
 
-	def impl_create_cproject(self, executable, waf, appname, workspace_includes, cpppath, source_dirs=[]):
+	def impl_create_cproject(self, executable, waf_executable, appname, workspace_includes, cpppath, source_dirs=[]):
 		doc = Document()
 		doc.appendChild(doc.createProcessingInstruction('fileVersion', '4.0.0'))
 		cconf_id = cdt_core + '.default.config.1'
@@ -270,8 +270,8 @@ class eclipse(Build.BuildContext):
 
 		self.add(doc, toolChain, 'targetPlatform', {'binaryParser': 'org.eclipse.cdt.core.ELF', 'id': cdt_bld + '.prefbase.toolchain.1', 'name': ''})
 
-		waf_build = '"%s" %s'%(waf, eclipse.fun)
-		waf_clean = '"%s" clean'%(waf)
+		waf_build = '"%s" %s'%(waf_executable, eclipse.fun)
+		waf_clean = '"%s" clean'%(waf_executable)
 		self.add(doc, toolChain, 'builder',
 					{'autoBuildTarget': waf_build,
 					 'command': executable,
@@ -331,7 +331,7 @@ class eclipse(Build.BuildContext):
 		buildTargets = self.add(doc, storageModule, 'buildTargets')
 		def addTargetWrap(name, runAll):
 			return self.addTarget(doc, buildTargets, executable, name,
-								'"%s" %s'%(waf, name), runAll)
+								'"%s" %s'%(waf_executable, name), runAll)
 		addTargetWrap('configure', True)
 		addTargetWrap('dist', False)
 		addTargetWrap('install', False)
