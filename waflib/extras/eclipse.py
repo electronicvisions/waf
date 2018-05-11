@@ -42,6 +42,10 @@ class eclipse(Build.BuildContext):
 		appname = getattr(Context.g_module, Context.APPNAME, os.path.basename(self.srcnode.abspath()))
 		self.create_cproject(appname, pythonpath=self.env['ECLIPSE_PYTHON_PATH'])
 
+	# Helper to dump the XML document content to XML with UTF-8 encoding
+	def write_conf_to_xml(self, filename, document):
+		self.srcnode.make_node(filename).write(document.toprettyxml(encoding='UTF-8'), flags='wb')
+
 	def create_cproject(self, appname, workspace_includes=[], pythonpath=[]):
 		"""
 		Create the Eclipse CDT .project and .cproject files
@@ -138,19 +142,19 @@ class eclipse(Build.BuildContext):
 
 		waf_executable = os.path.abspath(sys.argv[0])
 		project = self.impl_create_project(sys.executable, appname, hasc, hasjava, haspython, waf_executable)
-		self.srcnode.make_node('.project').write(project.toprettyxml())
+		self.write_conf_to_xml('.project', project)
 
 		if hasc:
 			project = self.impl_create_cproject(sys.executable, waf_executable, appname, workspace_includes, cpppath, source_dirs)
-			self.srcnode.make_node('.cproject').write(project.toprettyxml())
+			self.write_conf_to_xml('.cproject', project)
 
 		if haspython:
 			project = self.impl_create_pydevproject(sys.path, pythonpath)
-			self.srcnode.make_node('.pydevproject').write(project.toprettyxml())
+			self.write_conf_to_xml('.pydevproject', project)
 
 		if hasjava:
 			project = self.impl_create_javaproject(javasrcpath, javalibpath)
-			self.srcnode.make_node('.classpath').write(project.toprettyxml())
+			self.write_conf_to_xml('.classpath', project)
 
 	def impl_create_project(self, executable, appname, hasc, hasjava, haspython, waf_executable):
 		doc = Document()
@@ -198,7 +202,8 @@ class eclipse(Build.BuildContext):
 			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY', 'value': '${project_loc}'})
 			builder.appendChild(launchConfiguration)
 			# And write the XML to the file references before
-			self.srcnode.make_node('%s%s%s'%(extbuilder_dir, os.path.sep, extbuilder_name)).write(builder.toprettyxml())
+			self.write_conf_to_xml('%s%s%s'%(extbuilder_dir, os.path.sep, extbuilder_name), builder)
+
 
 		for k, v in dictionaries.items():
 			self.addDictionary(doc, arguments, k, v)
