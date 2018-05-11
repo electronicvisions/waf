@@ -23,6 +23,8 @@ oe_cdt = 'org.eclipse.cdt'
 cdt_mk = oe_cdt + '.make.core'
 cdt_core = oe_cdt + '.core'
 cdt_bld = oe_cdt + '.build.core'
+extbuilder_dir = '.externalToolBuilders'
+extbuilder_name = 'Waf_Builder.launch'
 
 class eclipse(Build.BuildContext):
 	cmd = 'eclipse'
@@ -134,11 +136,11 @@ class eclipse(Build.BuildContext):
 
 					hasc = True
 
-		project = self.impl_create_project(sys.executable, appname, hasc, hasjava, haspython)
+		waf = os.path.abspath(sys.argv[0])
+		project = self.impl_create_project(sys.executable, appname, hasc, hasjava, haspython, waf)
 		self.srcnode.make_node('.project').write(project.toprettyxml())
 
 		if hasc:
-			waf = os.path.abspath(sys.argv[0])
 			project = self.impl_create_cproject(sys.executable, waf, appname, workspace_includes, cpppath, source_dirs)
 			self.srcnode.make_node('.cproject').write(project.toprettyxml())
 
@@ -150,7 +152,7 @@ class eclipse(Build.BuildContext):
 			project = self.impl_create_javaproject(javasrcpath, javalibpath)
 			self.srcnode.make_node('.classpath').write(project.toprettyxml())
 
-	def impl_create_project(self, executable, appname, hasc, hasjava, haspython):
+	def impl_create_project(self, executable, appname, hasc, hasjava, haspython, waf):
 		doc = Document()
 		projectDescription = doc.createElement('projectDescription')
 		self.add(doc, projectDescription, 'name', appname)
@@ -158,16 +160,46 @@ class eclipse(Build.BuildContext):
 		self.add(doc, projectDescription, 'projects')
 		buildSpec = self.add(doc, projectDescription, 'buildSpec')
 		buildCommand = self.add(doc, buildSpec, 'buildCommand')
-		self.add(doc, buildCommand, 'name', oe_cdt + '.managedbuilder.core.genmakebuilder')
 		self.add(doc, buildCommand, 'triggers', 'clean,full,incremental,')
 		arguments = self.add(doc, buildCommand, 'arguments')
-		# the default make-style targets are overwritten by the .cproject values
-		dictionaries = {
-				cdt_mk + '.contents': cdt_mk + '.activeConfigSettings',
-				cdt_mk + '.enableAutoBuild': 'false',
-				cdt_mk + '.enableCleanBuild': 'true',
-				cdt_mk + '.enableFullBuild': 'true',
-				}
+		dictionaries = {}
+
+		# If CDT is present, instruct this one to call waf as it is more flexible (separate build/clean ...)
+		if hasc:
+			self.add(doc, buildCommand, 'name', oe_cdt + '.managedbuilder.core.genmakebuilder')
+			# the default make-style targets are overwritten by the .cproject values
+			dictionaries = {
+					cdt_mk + '.contents': cdt_mk + '.activeConfigSettings',
+					cdt_mk + '.enableAutoBuild': 'false',
+					cdt_mk + '.enableCleanBuild': 'true',
+					cdt_mk + '.enableFullBuild': 'true',
+					}
+		else:
+			# Otherwise for Java/Python an external builder tool is created that will call waf build
+			self.add(doc, buildCommand, 'name', 'org.eclipse.ui.externaltools.ExternalToolBuilder')
+			dictionaries = {
+					'LaunchConfigHandle': '<project>/%s/%s'%(extbuilder_dir, extbuilder_name),
+					}
+			# The definition is in a separate directory XML file
+			try:
+				os.mkdir(extbuilder_dir)
+			except OSError:
+				pass	# Ignore error if already exists
+
+			# Populate here the external builder XML calling waf
+			builder = Document()
+			launchConfiguration = doc.createElement('launchConfiguration')
+			launchConfiguration.setAttribute('type', 'org.eclipse.ui.externaltools.ProgramBuilderLaunchConfigurationType')
+			self.add(doc, launchConfiguration, 'booleanAttribute', {'key': 'org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND', 'value': 'false'})
+			self.add(doc, launchConfiguration, 'booleanAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED', 'value': 'true'})
+			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_LOCATION', 'value': waf})
+			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS', 'value': 'full,incremental,'})
+			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS', 'value': 'build'})
+			self.add(doc, launchConfiguration, 'stringAttribute', {'key': 'org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY', 'value': '${project_loc}'})
+			builder.appendChild(launchConfiguration)
+			# And write the XML to the file references before
+			self.srcnode.make_node('%s%s%s'%(extbuilder_dir, os.path.sep, extbuilder_name)).write(builder.toprettyxml())
+
 		for k, v in dictionaries.items():
 			self.addDictionary(doc, arguments, k, v)
 
