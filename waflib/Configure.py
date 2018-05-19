@@ -311,11 +311,7 @@ def conf(f):
 	:type f: function
 	"""
 	def fun(*k, **kw):
-		mandatory = True
-		if 'mandatory' in kw:
-			mandatory = kw['mandatory']
-			del kw['mandatory']
-
+		mandatory = kw.pop('mandatory', True)
 		try:
 			return f(*k, **kw)
 		except Errors.ConfigurationError:

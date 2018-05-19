@@ -409,17 +409,8 @@ class Context(ctx):
 		kw['shell'] = isinstance(cmd, str)
 		self.log_command(cmd, kw)
 
-		if 'quiet' in kw:
-			quiet = kw['quiet']
-			del kw['quiet']
-		else:
-			quiet = None
-
-		if 'output' in kw:
-			to_ret = kw['output']
-			del kw['output']
-		else:
-			to_ret = STDOUT
+		quiet = kw.pop('quiet', None)
+		to_ret = kw.pop('output', STDOUT)
 
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
 			raise Errors.WafError('Program %r not found!' % cmd[0])
