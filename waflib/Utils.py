@@ -434,6 +434,21 @@ def to_list(val):
 	else:
 		return val
 
+def console_encoding():
+	try:
+		import ctypes
+	except ImportError:
+		pass
+	else:
+		try:
+			codepage = ctypes.windll.kernel32.GetConsoleCP()
+		except AttributeError:
+			pass
+		else:
+			if codepage:
+				return 'cp%d' % codepage
+	return sys.stdout.encoding or ('cp1252' if is_win32 else 'latin-1')
+
 def split_path_unix(path):
 	return path.split('/')
 

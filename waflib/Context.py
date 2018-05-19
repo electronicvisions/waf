@@ -52,6 +52,9 @@ out_dir = ''
 waf_dir = ''
 """Directory containing the waf modules"""
 
+default_encoding = Utils.console_encoding()
+"""Encoding to use when reading outputs from other processes"""
+
 g_module = None
 """
 Module representing the top-level wscript file (see :py:const:`waflib.Context.run_dir`)
@@ -354,11 +357,7 @@ class Context(ctx):
 			if not isinstance(kw['cwd'], str):
 				kw['cwd'] = kw['cwd'].abspath()
 
-		if 'decode_as' in kw:
-			encoding = kw['decode_as']
-			del kw['decode_as']
-		else:
-			encoding = sys.stdout.encoding or 'latin-1'
+		encoding = kw.pop('decode_as', default_encoding)
 
 		try:
 			ret, out, err = Utils.run_process(cmd, kw, cargs)
@@ -446,11 +445,7 @@ class Context(ctx):
 			if not isinstance(kw['cwd'], str):
 				kw['cwd'] = kw['cwd'].abspath()
 
-		if 'decode_as' in kw:
-			encoding = kw['decode_as']
-			del kw['decode_as']
-		else:
-			encoding = sys.stdout.encoding or 'latin-1'
+		encoding = kw.pop('decode_as', default_encoding)
 
 		try:
 			ret, out, err = Utils.run_process(cmd, kw, cargs)

@@ -103,34 +103,6 @@ def options(opt):
 	opt.add_option('--msvc_targets', type='string', help = 'msvc targets, eg: "x64,arm"', default='')
 	opt.add_option('--no-msvc-lazy', action='store_false', help = 'lazily check msvc target environments', default=True, dest='msvc_lazy')
 
-def cmd_encoding():
-	"""
-	Return the code page of the stdout/stderr corresponding with the current console.
-	Note that None of following method is useless, be careful especially
-	under DBCS/MBCS code page environments:
-
-	- locale.getpreferredencoding() or ctypes.windll.kernel32.GetACP()
-		- Return user's code page, not each consoles.
-		- both ignore `chcp 65001`.
-
-	- sys.stdout.encoding
-		- olways returns 'utf-8' in Python 3, not user's code page.
-
-	This is only meant for stdout/stderr, for stdin GetConsoleCP() should be used
-	instead of GetConsoleOutputCP().
-
-	:return: the string which represents the code page
-	:rtype: str
-	"""
-	try:
-		import ctypes
-		codepage = ctypes.windll.kernel32.GetConsoleOutputCP()
-		if codepage:
-			return 'cp%d' % codepage
-	except ImportError:
-		pass
-	return sys.stdout.encoding or 'cp1252'
-
 @conf
 def setup_msvc(conf, versiondict):
 	"""
@@ -485,13 +457,13 @@ def gather_vswhere_versions(conf, versions):
 	vswhere = os.path.join(prg_path, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
 	args = [vswhere, '-products', '*', '-legacy', '-format', 'json']
 	try:
-		txt = conf.cmd_and_log(args, decode_as=cmd_encoding())
+		txt = conf.cmd_and_log(args)
 	except Errors.WafError as e:
 		Logs.debug('msvc: vswhere.exe failed %s', e)
 		return
 
 	if sys.version_info[0] < 3:
-		txt = txt.decode(cmd_encoding())
+		txt = txt.decode(Utils.console_encoding())
 
 	arr = json.loads(txt)
 	arr.sort(key=lambda x: x['installationVersion'])
