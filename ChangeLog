@@ -1,3 +1,11 @@
+NEW IN WAF 2.0.8
+----------------
+* Improve Windows console encoding outputs on Python 3.6 and Japanese code page #2163
+* Improve msvc detection on Python 3.6 and Japanese code page #2155
+* Improve moc/rcc flag parsing with msvc #2169
+* Improve Eclipse project generation #2166 #2165 #2164 #2149 #2145
+* Improve Boost project detection on dpkg-based systems #2146
+
 NEW IN WAF 2.0.7
 ----------------
 * Apply priorities to dynamically-generated tasks #2137
