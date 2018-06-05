@@ -196,7 +196,7 @@ def process_doxy(self):
 	if not isinstance(node, Node.Node):
 		node = self.path.find_resource(node)
 	if not node:
-		raise ValueError('doxygen file not found')
+		self.bld.fatal('doxygen file %s not found' % self.doxyfile)
 
 	# the task instance
 	dsk = self.create_task('doxygen', node)
