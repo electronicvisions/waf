@@ -190,7 +190,7 @@ class tar(Task.Task):
 @feature('doxygen')
 def process_doxy(self):
 	if not getattr(self, 'doxyfile', None):
-		self.generator.bld.fatal('no doxyfile??')
+		self.bld.fatal('no doxyfile variable specified??')
 
 	node = self.doxyfile
 	if not isinstance(node, Node.Node):
