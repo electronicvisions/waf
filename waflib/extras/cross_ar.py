@@ -17,7 +17,7 @@ def find_cross_ar(conf):
 
 def configure(conf):
 	"""Find the ar program and set the default flags in ``conf.env.ARFLAGS``"""
-	conf.find_program('%s-ar' % conf.env.CROSS_PLATFORM, var='AR')
+	conf.find_program('%s-gcc-ar' % conf.env.CROSS_PLATFORM, var='AR')
 	if not conf.env.ARFLAGS:
 		conf.env.ARFLAGS = ['rcs']
 
