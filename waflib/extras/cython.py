@@ -141,6 +141,6 @@ def configure(ctx):
 	if not ctx.env.PYTHON:
 		ctx.fatal('Load the python tool first!')
 	ctx.find_program('cython', var='CYTHON')
-	if ctx.options.cython_flags:
+	if hasattr(ctx.options, 'cython_flags'):
 		ctx.env.CYTHONFLAGS = ctx.options.cython_flags
 
