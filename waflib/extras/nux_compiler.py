@@ -39,6 +39,6 @@ def configure(conf):
 	conf.env.LINKFLAGS += [
 		'-nostdlib',
 		'-T%s' % conf.path.find_node('libnux/elf32nux.x').abspath(),
-		'--gc-sections',
+		'-Wl,--gc-sections',
 	]
 	conf.env.STLIB += ['gcc']
