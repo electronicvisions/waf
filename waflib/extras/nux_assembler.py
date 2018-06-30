@@ -7,7 +7,7 @@ from waflib import Options
 def options(opt):
 	opt.load('cross_as')
 	opt.add_option('--cross-prefix', type='string',
-			default='powerpc-eabi',
+			default='powerpc-ppu',
 			help='compiler command prefix')
 
 def configure(conf):
