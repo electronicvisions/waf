@@ -75,6 +75,19 @@ def f(tsk):
 	return tsk.exec_command(lst, cwd=cwdx, env=env.env or None)
 '''
 
+COMPILE_TEMPLATE_SIG_VARS = '''
+def f(tsk):
+	super(tsk.__class__, tsk).sig_vars()
+	env = tsk.env
+	gen = tsk.generator
+	bld = gen.bld
+	cwdx = tsk.get_cwd()
+	p = env.get_flat
+	buf = []
+	%s
+	tsk.m.update(repr(buf).encode())
+'''
+
 classes = {}
 """
 The metaclass :py:class:`waflib.Task.store_task_type` stores all class tasks
@@ -101,8 +114,13 @@ class store_task_type(type):
 				# change the name of run_str or it is impossible to subclass with a function
 				cls.run_str = None
 				cls.run = f
+				# process variables
 				cls.vars = list(set(cls.vars + dvars))
 				cls.vars.sort()
+				if cls.vars:
+					fun = compile_sig_vars(cls.vars)
+					if fun:
+						cls.sig_vars = fun
 			elif getattr(cls, 'run', None) and not 'hcode' in cls.__dict__:
 				# getattr(cls, 'hcode') would look in the upper classes
 				cls.hcode = Utils.h_cmd(cls.run)
@@ -751,6 +769,8 @@ class Task(evil):
 	def sig_vars(self):
 		"""
 		Used by :py:meth:`waflib.Task.Task.signature`; it hashes :py:attr:`waflib.Task.Task.env` variables/values
+		When overriding this method, and if scriptlet expressions are used, make sure to follow
+		the code in :py:meth:`waflib.Task.Task.compile_sig_vars` to enable dependencies on scriptlet results.
 		"""
 		sig = self.generator.bld.hash_env_vars(self.env, self.vars)
 		self.m.update(sig)
@@ -1033,6 +1053,9 @@ def compile_fun_shell(line):
 		return None
 	line = reg_act.sub(repl, line) or line
 	dvars = []
+	def add_dvar(x):
+		if x not in dvars:
+			dvars.append(x)
 
 	def replc(m):
 		# performs substitutions and populates dvars
@@ -1042,8 +1065,7 @@ def compile_fun_shell(line):
 			return ' or '
 		else:
 			x = m.group('var')
-			if x not in dvars:
-				dvars.append(x)
+			add_dvar(x)
 			return 'env[%r]' % x
 
 	parm = []
@@ -1061,8 +1083,7 @@ def compile_fun_shell(line):
 				app('" ".join([a.path_from(cwdx) for a in tsk.outputs])')
 		elif meth:
 			if meth.startswith(':'):
-				if var not in dvars:
-					dvars.append(var)
+				add_dvar(var)
 				m = meth[1:]
 				if m == 'SRC':
 					m = '[a.path_from(cwdx) for a in tsk.inputs]'
@@ -1072,19 +1093,21 @@ def compile_fun_shell(line):
 					m = '[tsk.inputs%s]' % m[3:]
 				elif re_novar.match(m):
 					m = '[tsk.outputs%s]' % m[3:]
-				elif m[:3] not in ('tsk', 'gen', 'bld'):
-					dvars.append(meth[1:])
-					m = '%r' % m
+				else:
+					add_dvar(m)
+					if m[:3] not in ('tsk', 'gen', 'bld'):
+						m = '%r' % m
 				app('" ".join(tsk.colon(%r, %s))' % (var, m))
 			elif meth.startswith('?'):
 				# In A?B|C output env.A if one of env.B or env.C is non-empty
 				expr = re_cond.sub(replc, meth[1:])
 				app('p(%r) if (%s) else ""' % (var, expr))
 			else:
-				app('%s%s' % (var, meth))
+				call = '%s%s' % (var, meth)
+				add_dvar(call)
+				app(call)
 		else:
-			if var not in dvars:
-				dvars.append(var)
+			add_dvar(var)
 			app("p('%s')" % var)
 	if parm:
 		parm = "%% (%s) " % (',\n\t\t'.join(parm))
@@ -1105,6 +1128,10 @@ def compile_fun_noshell(line):
 	merge = False
 	app = buf.append
 
+	def add_dvar(x):
+		if x not in dvars:
+			dvars.append(x)
+
 	def replc(m):
 		# performs substitutions and populates dvars
 		if m.group('and'):
@@ -1113,8 +1140,7 @@ def compile_fun_noshell(line):
 			return ' or '
 		else:
 			x = m.group('var')
-			if x not in dvars:
-				dvars.append(x)
+			add_dvar(x)
 			return 'env[%r]' % x
 
 	for m in reg_act_noshell.finditer(line):
@@ -1139,8 +1165,7 @@ def compile_fun_noshell(line):
 			elif code:
 				if code.startswith(':'):
 					# a composed variable ${FOO:OUT}
-					if not var in dvars:
-						dvars.append(var)
+					add_dvar(var)
 					m = code[1:]
 					if m == 'SRC':
 						m = '[a.path_from(cwdx) for a in tsk.inputs]'
@@ -1150,9 +1175,10 @@ def compile_fun_noshell(line):
 						m = '[tsk.inputs%s]' % m[3:]
 					elif re_novar.match(m):
 						m = '[tsk.outputs%s]' % m[3:]
-					elif m[:3] not in ('tsk', 'gen', 'bld'):
-						dvars.append(m)
-						m = '%r' % m
+					else:
+						add_dvar(m)
+						if m[:3] not in ('tsk', 'gen', 'bld'):
+							m = '%r' % m
 					app('tsk.colon(%r, %s)' % (var, m))
 				elif code.startswith('?'):
 					# In A?B|C output env.A if one of env.B or env.C is non-empty
@@ -1160,12 +1186,13 @@ def compile_fun_noshell(line):
 					app('to_list(env[%r] if (%s) else [])' % (var, expr))
 				else:
 					# plain code such as ${tsk.inputs[0].abspath()}
-					app('gen.to_list(%s%s)' % (var, code))
+					call = '%s%s' % (var, code)
+					add_dvar(call)
+					app('gen.to_list(%s%s)' % call)
 			else:
 				# a plain variable such as # a plain variable like ${AR}
 				app('to_list(env[%r])' % var)
-				if not var in dvars:
-					dvars.append(var)
+				add_dvar(var)
 		if merge:
 			tmp = 'merge(%s, %s)' % (buf[-2], buf[-1])
 			del buf[-1]
@@ -1221,6 +1248,36 @@ def compile_fun(line, shell=False):
 		return compile_fun_shell(line)
 	else:
 		return compile_fun_noshell(line)
+
+def compile_sig_vars(vars):
+	"""
+	This method produces a sig_vars method suitable for subclasses that provide
+	scriptlet code in their run_str code.
+	If no such method can be created, this method returns None.
+
+	The purpose of the sig_vars method returned is to ensures
+	that rebuilds occur whenever the contents of the expression changes.
+	This is the case B below::
+
+		import time
+		# case A: regular variables
+		tg = bld(rule='echo ${FOO}')
+		tg.env.FOO = '%s' % time.time()
+		# case B
+		bld(rule='echo ${gen.foo}', foo='%s' % time.time())
+
+	:param vars: env variables such as CXXFLAGS or gen.foo
+	:type vars: list of string
+	:return: A sig_vars method relevant for dependencies if adequate, else None
+	:rtype: A function, or None in most cases
+	"""
+	buf = []
+	for x in sorted(vars):
+		if x[:3] in ('tsk', 'gen', 'bld'):
+			buf.append('buf.append(%s)' % x)
+	if buf:
+		return funex(COMPILE_TEMPLATE_SIG_VARS % '\n\t'.join(buf))
+	return None
 
 def task_factory(name, func=None, vars=None, color='GREEN', ext_in=[], ext_out=[], before=[], after=[], shell=False, scan=None):
 	"""
