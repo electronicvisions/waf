@@ -1188,7 +1188,7 @@ def compile_fun_noshell(line):
 					# plain code such as ${tsk.inputs[0].abspath()}
 					call = '%s%s' % (var, code)
 					add_dvar(call)
-					app('gen.to_list(%s%s)' % call)
+					app('gen.to_list(%s)' % call)
 			else:
 				# a plain variable such as # a plain variable like ${AR}
 				app('to_list(env[%r])' % var)
