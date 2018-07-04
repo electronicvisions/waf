@@ -1,3 +1,9 @@
+NEW IN WAF 2.0.9
+----------------
+* Add dependencies on scriptlet outputs
+* Made options optional for cython waftool
+* Improve doxygen error handling
+
 NEW IN WAF 2.0.8
 ----------------
 * Improve Windows console encoding outputs on Python 3.6 and Japanese code page #2163
