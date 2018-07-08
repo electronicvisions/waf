@@ -132,7 +132,7 @@ The next tools provide support for code generators used in C and C++ projects.
 Other compilers and tools
 -------------------------
 
-.. _extras: https://github.com/waf-project/waf/tree/master/waflib/extras
+.. _extras: https://gitlab.com/ita1024/waf/tree/master/waflib/extras
 
 The following tools provide support for specific compilers or configurations. More tools are present in the extras_ folder, although they are not documented and as stable as the default tools.
 

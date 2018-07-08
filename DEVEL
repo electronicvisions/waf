@@ -1,4 +1,4 @@
-Waf 2.0 is on https://github.com/waf-project/waf
+Waf 2.0 is on https://gitlab.com/ita1024/waf
 ------------------------------------------------
 
 waflib            the core library
@@ -30,7 +30,7 @@ General coding guidelines
 Pull requests
 -------------
 
-See https://github.com/waf-project/waf
+See https://gitlab.com/ita1024/waf
 
 When implementing complex features, please add examples in the showcase folder demos/
 for modules under waflib/Tools, under tests/ for platform-independent unit tests,

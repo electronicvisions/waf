@@ -165,7 +165,7 @@ The declaration can be made more user-friendly by binding new methods to the con
 		bld.enterprise_program(source='main.c', target='app')
 
 The support code may be turned into a Waf tool by moving it to a separate file.
-To ease the deployment, the new Waf tool can even be added to the waf file (see https://github.com/waf-project/waf/blob/master/README#L10).
+To ease the deployment, the new Waf tool can even be added to the waf file (see https://gitlab.com/ita1024/waf/blob/master/README.md#L20).
 
 Conclusion
 ----------
