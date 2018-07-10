@@ -27,7 +27,6 @@ def find_cross_gcc(conf):
 def cross_gcc_common_flags(conf):
 	# Update some flags to be compatible with the separate linker, instead of
 	# using the cross compiler as the linker driver
-	conf.env['RPATH_ST']            = '-rpath,%s'
 	conf.env['SONAME_ST']           = '-h,%s'
 	conf.env['SHLIB_MARKER']        = '-Bdynamic'
 	conf.env['STLIB_MARKER']        = '-Bstatic'

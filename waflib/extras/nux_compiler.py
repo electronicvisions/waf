@@ -14,6 +14,7 @@ def configure(conf):
 	conf.load('cross_gcc')
 	conf.load('cross_gxx')
 	conf.load('cross_as')
+	conf.env.RPATH_ST = ""
 	conf.env.CFLAGS += [
 		'-ffreestanding',
 		'-mcpu=nux',
