@@ -205,6 +205,8 @@ def addSummaryMsg(results):
             color = "RED"
             total, errors, failures, skip = statistic
             fail_sum = errors + failures
+            if not fail_sum:    # Something went wrong, mark everything failed
+                fail_sum = total
             msg.append('{}/{} failed'.format(fail_sum, total))
         elif status == TestBase.TIMEOUT:
             color = "YELLOW"
@@ -216,6 +218,64 @@ def addSummaryMsg(results):
 
         result['msg'] = ' '.join(msg)
         result['color'] = color
+
+
+def write_summary_xml(results, path):
+    """
+    Create a JUnit-parseable XML file wih all test-binaries that should have
+    been run.
+    """
+
+    def remove_evil_chars(string):
+        """
+        Remove ANSI escape characters that cannot be handled by JUnit
+        """
+        escape_numbers = range(1, 32)   # all ANSI escape characters
+        escape_numbers.remove(10)       # newline is fine
+        escape_numbers.remove(13)       # carriage return is fine
+        escapes = ''.join([chr(char) for char in escape_numbers])
+        return string.translate(None, escapes)
+
+    # JUnit XML root
+    testsuites = ElementTree.Element('testsuites')
+
+    # Find all tested projects and register them in a hashmap
+    project_names = set([test_binary["project"] for test_binary in results])
+    projects = {project_name: ElementTree.SubElement(testsuites, "testsuite",
+                                                     dict(name=project_name))
+                for project_name in project_names}
+
+    for test_result in results:
+        project = remove_evil_chars(test_result["project"])
+        test_name = remove_evil_chars(test_result["file"])
+        status = remove_evil_chars(test_result["status"])
+        test_time = remove_evil_chars(str(test_result["time"]))
+        stdout_text = remove_evil_chars(test_result["stdout"])
+        stderr_text = remove_evil_chars(test_result["stderr"])
+
+        # Add test case to tree
+        testcase = ElementTree.SubElement(projects[project], "testcase",
+                                          dict(name=test_name, time=test_time))
+
+        stdout = ElementTree.SubElement(testcase, "system-out")
+        stdout.text = stdout_text
+        stderr = ElementTree.SubElement(testcase, "system-err")
+        stderr.text = stderr_text
+
+        if status is TestBase.PASSED:
+            pass
+        elif status is TestBase.FAILED:
+            ElementTree.SubElement(testcase, "failure")
+        else:
+            ElementTree.SubElement(testcase, "error")
+
+        # Enforce that at least one test has been run for every suite
+        if status is TestBase.PASSED and test_result["statistic"][0] < 1:
+            ElementTree.SubElement(testcase, "error")
+
+    tree = ElementTree.ElementTree(testsuites)
+    tree.write(path)
+
 
 def addTimeMsg(results):
     field = "({:.1f}s)"
@@ -277,6 +337,8 @@ def summary(ctx):
         Logs.pprint(COLOR,
             "text results are stored in {}".format(txt_result_dir.abspath()))
     if not xml_result_dir is None:
+        write_summary_xml(results, os.path.join(xml_result_dir.abspath(),
+                                              "summary.xml"))
         Logs.pprint(COLOR,
             "xml summaries are stored in {}".format(xml_result_dir.abspath()))
 
