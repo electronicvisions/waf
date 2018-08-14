@@ -572,6 +572,13 @@ class MR(object):
         ssh = "ssh {H}".format(H=self.gerrit_url.hostname)
         if self.gerrit_url.username:
             ssh += ' -l {U}'.format(U=self.gerrit_url.username)
+        else:
+            # If there's a [gitreview] username, use that one
+            git_p = subprocess.Popen(["git", "config", "gitreview.username"],
+                                     stdout=subprocess.PIPE)
+            review_user, _ = git_p.communicate()
+            if git_p.returncode == 0:
+                ssh += ' -l {U}'.format(U=review_user.strip())
         if self.gerrit_url.port:
             ssh += ' -p {P}'.format(P=self.gerrit_url.port)
         query_options = '--current-patch-set --dependencies --format=json'
