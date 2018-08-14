@@ -266,11 +266,19 @@ def write_summary_xml(results, path):
             pass
         elif status is TestBase.FAILED:
             ElementTree.SubElement(testcase, "failure")
+            continue
         else:
             ElementTree.SubElement(testcase, "error")
+            continue
+
+        # Enforce that test suites provide statistics
+        statistics = test_result["statistic"]
+        if statistics is None:
+            ElementTree.SubElement(testcase, "error")
+            continue
 
         # Enforce that at least one test has been run for every suite
-        if status is TestBase.PASSED and test_result["statistic"][0] < 1:
+        if status is TestBase.PASSED and statistics[0] < 1:
             ElementTree.SubElement(testcase, "error")
 
     tree = ElementTree.ElementTree(testsuites)
