@@ -11,14 +11,19 @@ def configure(conf):
 	conf.load('compiler_c')
 	conf.load('compiler_fc')
 	conf.check_fortran()
-	conf.check_fortran_verbose_flag()
-	conf.check_fortran_clib()
+	# configuration tests that may be totally irrelevant
+	conf.check_fortran_dummy_main()
+	if not conf.env.IFORT_WIN32:
+		conf.check_fortran_verbose_flag()
+		conf.check_fortran_clib()
+		conf.check_fortran_mangling()
 
 def build(bld):
 
 	bld(
 		features = 'fc typemap fcshlib',
 		source = 'fsrc.f90 basetypes.f90',
+		defs   = 'fsrc.def',
 		target = 'foo',
 		)
 
@@ -28,9 +33,9 @@ from waflib import Logs, Build, Utils
 from waflib import TaskGen, Task
 from waflib.ConfigSet import ConfigSet
 
-#@TaskGen.feature('typemap') <- python >= 2.4
-#@TaskGen.after('process_source')
-#@TaskGen.before('apply_link')
+@TaskGen.feature('typemap')
+@TaskGen.after('process_source')
+@TaskGen.before('apply_link')
 def process_typemaps(self):
 	"""
 	modmap: *.f90 + foo.in -> foo.h + foo.f90
@@ -53,11 +58,6 @@ def process_typemaps(self):
 
 	tsk = self.create_compiled_task('fc', f90out)
 	tsk.nomod = True # the fortran files won't compile unless all the .mod files are set, ick
-
-# for python 2.3
-TaskGen.feature('typemap')(process_typemaps)
-TaskGen.after('process_source')(process_typemaps)
-TaskGen.before('apply_link')(process_typemaps)
 
 class modmap(Task.Task):
 	"""
@@ -166,25 +166,26 @@ end subroutine outer
 	return res
 
 def write_type_map(bld, ctps, fort_file, c_header):
-	fort_file.write('''\
+	buf = ['''\
 module type_maps
 use, intrinsic :: iso_c_binding
 implicit none
-''', flags='w')
+''']
 	for ctp in ctps:
-		fort_file.write('integer, parameter :: %s = %s\n' % (ctp.name, ctp.fc_type),
-				flags='a')
-	fort_file.write('end module type_maps\n', flags='a')
+		buf.append('integer, parameter :: %s = %s' % (ctp.name, ctp.fc_type))
+	buf.append('end module type_maps\n')
+	fort_file.write('\n'.join(buf))
 
 	cap_name = '%s__' % c_header.name.upper().replace('.', '_')
-	c_header.write('''\
+	buf = ['''\
 #ifndef %s
 #define %s
-''' % (cap_name, cap_name), flags='w')
+''' % (cap_name, cap_name)]
 	for ctp in ctps:
 		# This is just an example, so this would be customized. The 'long long'
 		# would correspond to the actual C type...
-		c_header.write('typedef long long %s\n' % ctp.name, flags='a')
-	c_header.write('#endif\n', flags='a')
+		buf.append('typedef long long %s\n' % ctp.name)
+	buf.append('#endif\n')
+	c_header.write('\n'.join(buf))
 
 # vim:ft=python:noet

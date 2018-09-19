@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2010 (ita)
+# Thomas Nagy, 2006-2018 (ita)
 
 """
 Support for translation tools such as msgfmt and intltool
@@ -27,8 +27,10 @@ Usage::
 Usage of the :py:mod:`waflib.Tools.gnu_dirs` is recommended, but not obligatory.
 """
 
+from __future__ import with_statement
+
 import os, re
-from waflib import Configure, Context, TaskGen, Task, Utils, Runner, Options, Build, Logs
+from waflib import Context, Task, Utils, Logs
 import waflib.Tools.ccroot
 from waflib.TaskGen import feature, before_method, taskgen_method
 from waflib.Logs import error
@@ -47,6 +49,9 @@ _style_flags = {
 
 @taskgen_method
 def ensure_localedir(self):
+	"""
+	Expands LOCALEDIR from DATAROOTDIR/locale if possible, or falls back to PREFIX/share/locale
+	"""
 	# use the tool gnu_dirs to provide options to define this
 	if not self.env.LOCALEDIR:
 		if self.env.DATAROOTDIR:
@@ -58,7 +63,7 @@ def ensure_localedir(self):
 @feature('intltool_in')
 def apply_intltool_in_f(self):
 	"""
-	Create tasks to translate files by intltool-merge::
+	Creates tasks to translate files by intltool-merge::
 
 		def build(bld):
 			bld(
@@ -75,16 +80,18 @@ def apply_intltool_in_f(self):
 	:param source: source files to process
 	:type source: list of string
 	:param style: the intltool-merge mode of operation, can be one of the following values:
-	``ba``, ``desktop``, ``keys``, ``quoted``, ``quotedxml``, ``rfc822deb``, ``schemas`` and ``xml``.
-	See the ``intltool-merge`` man page for more information about supported modes of operation.
+	  ``ba``, ``desktop``, ``keys``, ``quoted``, ``quotedxml``, ``rfc822deb``, ``schemas`` and ``xml``.
+	  See the ``intltool-merge`` man page for more information about supported modes of operation.
 	:type style: string
 	:param flags: compilation flags ("-quc" by default)
 	:type flags: list of string
 	:param install_path: installation path
 	:type install_path: string
 	"""
-	try: self.meths.remove('process_source')
-	except ValueError: pass
+	try:
+		self.meths.remove('process_source')
+	except ValueError:
+		pass
 
 	self.ensure_localedir()
 
@@ -117,12 +124,12 @@ def apply_intltool_in_f(self):
 		task = self.create_task('intltool', node, node.change_ext(''))
 		inst = getattr(self, 'install_path', None)
 		if inst:
-			self.bld.install_files(inst, task.outputs)
+			self.add_install_files(install_to=inst, install_from=task.outputs)
 
 @feature('intltool_po')
 def apply_intltool_po(self):
 	"""
-	Create tasks to process po files::
+	Creates tasks to process po files::
 
 		def build(bld):
 			bld(features='intltool_po', appname='myapp', podir='po', install_path="${LOCALEDIR}")
@@ -138,8 +145,10 @@ def apply_intltool_po(self):
 
 	The file LINGUAS must be present in the directory pointed by *podir* and list the translation files to process.
 	"""
-	try: self.meths.remove('process_source')
-	except ValueError: pass
+	try:
+		self.meths.remove('process_source')
+	except ValueError:
+		pass
 
 	self.ensure_localedir()
 
@@ -150,13 +159,12 @@ def apply_intltool_po(self):
 	linguas = self.path.find_node(os.path.join(podir, 'LINGUAS'))
 	if linguas:
 		# scan LINGUAS file for locales to process
-		file = open(linguas.abspath())
-		langs = []
-		for line in file.readlines():
-			# ignore lines containing comments
-			if not line.startswith('#'):
-				langs += line.split()
-		file.close()
+		with open(linguas.abspath()) as f:
+			langs = []
+			for line in f.readlines():
+				# ignore lines containing comments
+				if not line.startswith('#'):
+					langs += line.split()
 		re_linguas = re.compile('[-a-zA-Z_@.]+')
 		for lang in langs:
 			# Make sure that we only process lines which contain locales
@@ -168,31 +176,38 @@ def apply_intltool_po(self):
 					filename = task.outputs[0].name
 					(langname, ext) = os.path.splitext(filename)
 					inst_file = inst + os.sep + langname + os.sep + 'LC_MESSAGES' + os.sep + appname + '.mo'
-					self.bld.install_as(inst_file, task.outputs[0], chmod=getattr(self, 'chmod', Utils.O644), env=task.env)
+					self.add_install_as(install_to=inst_file, install_from=task.outputs[0],
+						chmod=getattr(self, 'chmod', Utils.O644))
 
 	else:
 		Logs.pprint('RED', "Error no LINGUAS file found in po directory")
 
 class po(Task.Task):
 	"""
-	Compile .po files into .gmo files
+	Compiles .po files into .gmo files
 	"""
 	run_str = '${MSGFMT} -o ${TGT} ${SRC}'
 	color   = 'BLUE'
 
 class intltool(Task.Task):
 	"""
-	Let intltool-merge translate an input file
+	Calls intltool-merge to update translation files
 	"""
 	run_str = '${INTLTOOL} ${INTLFLAGS} ${INTLCACHE_ST:INTLCACHE} ${INTLPODIR} ${SRC} ${TGT}'
 	color   = 'BLUE'
 
 @conf
 def find_msgfmt(conf):
+	"""
+	Detects msgfmt and sets the ``MSGFMT`` variable
+	"""
 	conf.find_program('msgfmt', var='MSGFMT')
 
 @conf
 def find_intltool_merge(conf):
+	"""
+	Detects intltool-merge
+	"""
 	if not conf.env.PERL:
 		conf.find_program('perl', var='PERL')
 	conf.env.INTLCACHE_ST = '--cache=%s'
@@ -201,8 +216,8 @@ def find_intltool_merge(conf):
 
 def configure(conf):
 	"""
-	Detect the program *msgfmt* and set *conf.env.MSGFMT*.
-	Detect the program *intltool-merge* and set *conf.env.INTLTOOL*.
+	Detects the program *msgfmt* and set *conf.env.MSGFMT*.
+	Detects the program *intltool-merge* and set *conf.env.INTLTOOL*.
 	It is possible to set INTLTOOL in the environment, but it must not have spaces in it::
 
 		$ INTLTOOL="/path/to/the program/intltool" waf configure
@@ -211,7 +226,6 @@ def configure(conf):
 	"""
 	conf.find_msgfmt()
 	conf.find_intltool_merge()
-
 	if conf.env.CC or conf.env.CXX:
 		conf.check(header_name='locale.h')
 

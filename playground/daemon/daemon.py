@@ -107,7 +107,6 @@ class DirWatch(object):
 					yield k
 		except AttributeError:
 			pass
-		raise StopIteration
 
 	def wait_pyinotify(self, bld):
 

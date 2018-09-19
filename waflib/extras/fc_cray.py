@@ -3,7 +3,6 @@
 # harald at klimachs.de
 
 import re
-from waflib import Utils
 from waflib.Tools import fc, fc_config, fc_scan
 from waflib.Configure import conf
 
@@ -21,7 +20,7 @@ def find_crayftn(conf):
 @conf
 def crayftn_flags(conf):
 	v = conf.env
-	v['_FCMODOUTFLAGS']  = ['-em', '-J.'] # enable module files and put them in the current directoy
+	v['_FCMODOUTFLAGS']  = ['-em', '-J.'] # enable module files and put them in the current directory
 	v['FCFLAGS_DEBUG'] = ['-m1'] # more verbose compiler warnings
 	v['FCFLAGS_fcshlib']   = ['-h pic']
 	v['LINKFLAGS_fcshlib'] = ['-h shared']
@@ -34,8 +33,10 @@ def get_crayftn_version(conf, fc):
 		version_re = re.compile(r"Cray Fortran\s*:\s*Version\s*(?P<major>\d*)\.(?P<minor>\d*)", re.I).search
 		cmd = fc + ['-V']
 		out,err = fc_config.getoutput(conf, cmd, stdin=False)
-		if out: match = version_re(out)
-		else: match = version_re(err)
+		if out:
+			match = version_re(out)
+		else:
+			match = version_re(err)
 		if not match:
 				conf.fatal('Could not determine the Cray Fortran compiler version.')
 		k = match.groupdict()

@@ -8,9 +8,8 @@ Scala support
 scalac outputs files a bit where it wants to
 """
 
-import os, re
-from waflib.Configure import conf
-from waflib import TaskGen, Task, Utils, Options, Build, Errors, Node
+import os
+from waflib import Task, Utils, Node
 from waflib.TaskGen import feature, before_method, after_method
 
 from waflib.Tools import ccroot
@@ -25,8 +24,6 @@ def apply_scalac(self):
 	Utils.def_attrs(self, jarname='', classpath='',
 		sourcepath='.', srcdir='.',
 		jar_mf_attributes={}, jar_mf_classpath=[])
-
-	nodes_lst = []
 
 	outdir = getattr(self, 'outdir', None)
 	if outdir:
@@ -90,7 +87,8 @@ class scalac(javaw.javac):
 		bld = gen.bld
 		wd = bld.bldnode.abspath()
 		def to_list(xx):
-			if isinstance(xx, str): return [xx]
+			if isinstance(xx, str):
+				return [xx]
 			return xx
 		self.last_cmd = lst = []
 		lst.extend(to_list(env['SCALAC']))
@@ -125,5 +123,6 @@ def configure(self):
 		v['CLASSPATH'] = self.environ['CLASSPATH']
 
 	v.SCALACFLAGS = ['-verbose']
-	if not v['SCALAC']: self.fatal('scalac is required for compiling scala classes')
+	if not v['SCALAC']:
+		self.fatal('scalac is required for compiling scala classes')
 

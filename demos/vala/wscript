@@ -15,10 +15,11 @@ def options(opt):
 	opt.load('vala')
 
 def configure(conf):
+	conf.env.VALA_MINVER = (0, 25, 0)
 	conf.load('compiler_c vala')
 	conf.check_cfg(package='glib-2.0', uselib_store='GLIB', atleast_version='2.10.0', mandatory=1, args='--cflags --libs')
-	conf.check_cfg(package='gtk+-2.0', uselib_store='GTK', atleast_version='2.10.0', mandatory=1, args='--cflags --libs')
+	conf.recurse('resources')
 
 def build(bld):
-	bld.recurse('src shlib multi-file stlib')
+	bld.recurse('shlib multi-file stlib resources')
 

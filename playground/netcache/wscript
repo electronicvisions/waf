@@ -1,24 +1,40 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# Thomas Nagy, 2006-2012 (ita)
+# Thomas Nagy, 2006-2016 (ita)
+#
+# The Waf network cache consists of a client
+# (waflib/extras/netcache_client.py) and a simple
+# tcp server that provides a way to share build
+# files over a a network.
+#
+# There are no restrictions to the use of the cache
+# at this point, so use with a firewall!
+#
+#
+# The Java server can be run in the current folder using:
+#    rm -rf /tmp/wafcache/; javac Netcache.java && java Netcache
+#
+# Then run the example and compare the outputs:
+#    waf configure clean build --zones=netcache
+#    waf configure clean build --zones=netcache
+#
 
-# A test script for the network cache
-
-APPNAME='cc_test'
+APPNAME='netcache_test'
 
 top = '.'
 out = 'build'
 
 def options(opt):
-	#opt.tool_options('compiler_c')
+	#opt.load('compiler_c')
 	pass
 
 def configure(conf):
-	#conf.check_tool('compiler_c')
-	conf.check_tool('gcc')
-	conf.check_tool('netcache_client')
+	#conf.load('compiler_c')
+	conf.load('gcc')
+	#conf.load('netcache_client')
 
 def build(bld):
+	bld.load('netcache_client')
 	bld(
 		features = 'c cprogram',
 		source = 'main.c',

@@ -6,6 +6,10 @@ when linked, object files should bring the libraries (uselib) they refer to
 
 bld.env.LIB_Z = ['z']
 
+bld.recurse('lib')
+
+bld.recurse('libex')
+
 bld.objects(
 	 source   = 'a.c',
 	 target   = 'A',
@@ -16,7 +20,7 @@ bld.objects(
 bld.program(
 	 source  = 'a-test.c',
 	 target  = 'a-test',
-	 use     = 'A',
+	 use     = 'A libex',
 	)
 
 """

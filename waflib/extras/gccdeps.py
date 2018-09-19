@@ -4,7 +4,15 @@
 
 """
 Execute the tasks with gcc -MD, read the dependencies from the .d file
-and prepare the dependency calculation for the next run
+and prepare the dependency calculation for the next run.
+This affects the cxx class, so make sure to load Qt5 after this tool.
+
+Usage::
+
+	def options(opt):
+		opt.load('compiler_cxx')
+	def configure(conf):
+		conf.load('compiler_cxx gccdeps')
 """
 
 import os, re, threading
@@ -14,28 +22,16 @@ from waflib.TaskGen import before_method, feature
 
 lock = threading.Lock()
 
-preprocessor_flag = '-MD'
+gccdeps_flags = ['-MD']
+if not c_preproc.go_absolute:
+	gccdeps_flags = ['-MMD']
 
 # Third-party tools are allowed to add extra names in here with append()
 supported_compilers = ['gcc', 'icc', 'clang']
 
-@feature('c')
-@before_method('process_source')
-def add_mmd_cc(self):
-	if self.env.CC_NAME in supported_compilers and self.env.get_flat('CFLAGS').find(preprocessor_flag) < 0:
-		self.env.append_value('CFLAGS', [preprocessor_flag])
-		self.env.HAS_GCCDEPS = 1
-
-@feature('cxx')
-@before_method('process_source')
-def add_mmd_cxx(self):
-	if self.env.CXX_NAME in supported_compilers and self.env.get_flat('CXXFLAGS').find(preprocessor_flag) < 0:
-		self.env.append_value('CXXFLAGS', [preprocessor_flag])
-		self.env.HAS_GCCDEPS = 1
-
 def scan(self):
-	if not self.env.HAS_GCCDEPS:
-		return self.no_gccdeps_scan()
+	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
+		return super(self.derived_gccdeps, self).scan()
 	nodes = self.generator.bld.node_deps.get(self.uid(), [])
 	names = []
 	return (nodes, names)
@@ -76,17 +72,16 @@ def path_to_node(base_node, path, cached_nodes):
 	return node
 
 def post_run(self):
-	# The following code is executed by threads, it is not safe, so a lock is needed...
-
-	if self.env.CC_NAME not in supported_compilers:
-		return self.no_gccdeps_post_run()
-
-	if getattr(self, 'cached', None):
-		return Task.Task.post_run(self)
+	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
+		return super(self.derived_gccdeps, self).post_run()
 
 	name = self.outputs[0].abspath()
 	name = re_o.sub('.d', name)
-	txt = Utils.readf(name)
+	try:
+		txt = Utils.readf(name)
+	except EnvironmentError:
+		Logs.error('Could not find a .d dependency file, are cflags/cxxflags overwritten?')
+		raise
 	#os.remove(name)
 
 	# Compilers have the choice to either output the file's dependencies
@@ -113,7 +108,6 @@ def post_run(self):
 	txt = txt.replace('\\\n', '')
 
 	val = txt.strip()
-	lst = val.split(':')
 	val = [x.replace('\\ ', ' ') for x in re_splitter.split(val) if x]
 
 	nodes = []
@@ -130,62 +124,91 @@ def post_run(self):
 		node = None
 		if os.path.isabs(x):
 			node = path_to_node(bld.root, x, cached_nodes)
-
 		else:
-			path = bld.bldnode
-			# when calling find_resource, make sure the path does not begin by '..'
+			# TODO waf 1.9 - single cwd value
+			path = getattr(bld, 'cwdx', bld.bldnode)
+			# when calling find_resource, make sure the path does not contain '..'
 			x = [k for k in Utils.split_path(x) if k and k != '.']
-			while lst and x[0] == '..':
-				x = x[1:]
-				path = path.parent
+			while '..' in x:
+				idx = x.index('..')
+				if idx == 0:
+					x = x[1:]
+					path = path.parent
+				else:
+					del x[idx]
+					del x[idx-1]
 
 			node = path_to_node(path, x, cached_nodes)
 
 		if not node:
 			raise ValueError('could not find %r for %r' % (x, self))
-		else:
-			if not c_preproc.go_absolute:
-				if not (node.is_child_of(bld.srcnode) or node.is_child_of(bld.bldnode)):
-					continue
+		if id(node) == id(self.inputs[0]):
+			# ignore the source file, it is already in the dependencies
+			# this way, successful config tests may be retrieved from the cache
+			continue
+		nodes.append(node)
 
-			if id(node) == id(self.inputs[0]):
-				# ignore the source file, it is already in the dependencies
-				# this way, successful config tests may be retrieved from the cache
-				continue
-
-			nodes.append(node)
-
-	Logs.debug('deps: real scanner for %s returned %s' % (str(self), str(nodes)))
+	Logs.debug('deps: gccdeps for %s returned %s', self, nodes)
 
 	bld.node_deps[self.uid()] = nodes
 	bld.raw_deps[self.uid()] = []
 
 	try:
 		del self.cache_sig
-	except:
+	except AttributeError:
 		pass
 
 	Task.Task.post_run(self)
 
 def sig_implicit_deps(self):
-	if self.env.CC_NAME not in supported_compilers:
-		return self.no_gccdeps_sig_implicit_deps()
+	if not self.__class__.__name__ in self.env.ENABLE_GCCDEPS:
+		return super(self.derived_gccdeps, self).sig_implicit_deps()
 	try:
 		return Task.Task.sig_implicit_deps(self)
 	except Errors.WafError:
 		return Utils.SIG_NIL
 
-for name in 'c cxx'.split():
-	try:
-		cls = Task.classes[name]
-	except KeyError:
-		pass
-	else:
-		cls.no_gccdeps_post_run = cls.post_run
-		cls.no_gccdeps_scan = cls.scan
-		cls.no_gccdeps_sig_implicit_deps = cls.sig_implicit_deps
+def wrap_compiled_task(classname):
+	derived_class = type(classname, (Task.classes[classname],), {})
+	derived_class.derived_gccdeps = derived_class
+	derived_class.post_run = post_run
+	derived_class.scan = scan
+	derived_class.sig_implicit_deps = sig_implicit_deps
 
-		cls.post_run = post_run
-		cls.scan = scan
-		cls.sig_implicit_deps = sig_implicit_deps
+for k in ('c', 'cxx'):
+	if k in Task.classes:
+		wrap_compiled_task(k)
+
+@before_method('process_source')
+@feature('force_gccdeps')
+def force_gccdeps(self):
+	self.env.ENABLE_GCCDEPS = ['c', 'cxx']
+
+def configure(conf):
+	# in case someone provides a --enable-gccdeps command-line option
+	if not getattr(conf.options, 'enable_gccdeps', True):
+		return
+
+	global gccdeps_flags
+	flags = conf.env.GCCDEPS_FLAGS or gccdeps_flags
+	if conf.env.CC_NAME in supported_compilers:
+		try:
+			conf.check(fragment='int main() { return 0; }', features='c force_gccdeps', cflags=flags, msg='Checking for c flags %r' % ''.join(flags))
+		except Errors.ConfigurationError:
+			pass
+		else:
+			conf.env.append_value('CFLAGS', gccdeps_flags)
+			conf.env.append_unique('ENABLE_GCCDEPS', 'c')
+
+	if conf.env.CXX_NAME in supported_compilers:
+		try:
+			conf.check(fragment='int main() { return 0; }', features='cxx force_gccdeps', cxxflags=flags, msg='Checking for cxx flags %r' % ''.join(flags))
+		except Errors.ConfigurationError:
+			pass
+		else:
+			conf.env.append_value('CXXFLAGS', gccdeps_flags)
+			conf.env.append_unique('ENABLE_GCCDEPS', 'cxx')
+
+def options(opt):
+	raise ValueError('Do not load gccdeps options')
 

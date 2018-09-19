@@ -4,12 +4,15 @@ from waflib import Utils
 
 def build(bld):
 
-	if bld.cmd == 'install':
+	def post_update(bld):
 		try:
 			bld.exec_command(["update-mime-database", Utils.subst_vars("${DATADIR}/mime", bld.env)])
 			bld.exec_command(["update-desktop-database", Utils.subst_vars("${DATADIR}/applications", bld.env)])
-		except:
+		except Exception:
 			pass
+
+	if bld.cmd == 'install':
+		bld.add_post_fun(post_update)
 
 	bld(
 		features  = "intltool_in",

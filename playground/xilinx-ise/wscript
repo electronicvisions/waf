@@ -232,9 +232,6 @@ run
 	 source=['%s.ncd' % fn, '%s.ut' % fn],
 	)
 
-	for tgen in bld.get_all_task_gen():
-		tgen.update_outputs=True
-	
 	if bld.cmd == 'clean':
 		for tgen in bld.get_all_task_gen():
 			for tgt in waflib.Utils.to_list(tgen.target):
@@ -259,13 +256,13 @@ run
 				shutil.rmtree(x)
 			except:
 				pass
-	
+
 def distclean(ctx):
 	import os, shutil
 	from waflib import Context
 
 	for fn in os.listdir('.'):
-		if fn.startswith('.conf_check_') or fn.startswith(".lock-w") \
+		if fn.startswith(('.conf_check_', ".lock-w")) \
 		 or fn in (Context.DBFILE, 'config.log') \
 		 or fn == 'c4che':
 			if os.path.isdir(fn):

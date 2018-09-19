@@ -16,7 +16,6 @@ out = 'build'
 def options(opt):
 	opt.load('compiler_cxx')
 	opt.load('waf_unit_test')
-	opt.add_option('--onlytests', action='store_true', default=True, help='Exec unit tests only', dest='only_tests')
 
 def configure(conf):
 	conf.load('compiler_cxx')
@@ -26,6 +25,9 @@ def configure(conf):
 	conf.check_cfg(package='cppunit', args='--cflags --libs', mandatory=True)
 	if 'dl' not in conf.env.LIB_CPPUNIT:
 		l = conf.check(lib='dl', uselib_store='CPPUNIT')
+
+	# the interpreted tests need python
+	conf.find_program('python', mandatory=False)
 
 from waflib import Logs
 def summary(bld):
@@ -48,15 +50,16 @@ def summary(bld):
 def build(bld):
 	bld.recurse('src tests')
 
-	# unittestw.summary is a pretty ugly function for displaying a report (feel free to improve!)
+	# waf_unit_test.summary is a pretty ugly function for displaying a report (feel free to improve!)
 	# results -> bld.utest_results [(filename, returncode, stdout, stderr), (..., ), ...]
 	#bld.add_post_fun(waf_unit_test.summary)
 	bld.add_post_fun(summary)
 
 	# to execute all tests:
 	# $ waf --alltests
-	# to set this behaviour permanenly:
-	bld.options.all_tests = True
+	# to set this behaviour permanently:
+	#bld.options.all_tests = True
+	bld.options.clear_failed_tests = True
 
 	# debugging zone:
 	# $ waf --zones=ut

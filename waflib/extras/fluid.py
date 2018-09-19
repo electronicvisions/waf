@@ -3,7 +3,7 @@
 # Grygoriy Fuchedzhy 2009
 
 """
-Compile fluid files (fltk graphic library). Use the 'fluid' feature in conjuction with the 'cxx' feature.
+Compile fluid files (fltk graphic library). Use the 'fluid' feature in conjunction with the 'cxx' feature.
 """
 
 from waflib import Task
@@ -15,7 +15,7 @@ class fluid(Task.Task):
 	run_str = '${FLUID} -c -o ${TGT[0].abspath()} -h ${TGT[1].abspath()} ${SRC}'
 
 @extension('.fl')
-def fluid(self, node):
+def process_fluid(self, node):
 	"""add the .fl to the source list; the cxx file generated will be compiled when possible"""
 	cpp = node.change_ext('.cpp')
 	hpp = node.change_ext('.hpp')

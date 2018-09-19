@@ -35,6 +35,8 @@ be used directly, for example::
 
 .. toctree::
 
+	tools/clang
+	tools/clangxx
 	tools/compiler_c
 	tools/compiler_cxx
 	tools/ar
@@ -122,8 +124,7 @@ The next tools provide support for code generators used in C and C++ projects.
 	tools/dbus
 	tools/vala
 	tools/glib2
-	tools/qt4
-	tools/kde4
+	tools/qt5
 	tools/perl
 	tools/python
 	tools/ruby
@@ -131,7 +132,7 @@ The next tools provide support for code generators used in C and C++ projects.
 Other compilers and tools
 -------------------------
 
-.. _extras: http://code.google.com/p/waf/source/browse/trunk/waflib/extras/
+.. _extras: https://gitlab.com/ita1024/waf/tree/master/waflib/extras
 
 The following tools provide support for specific compilers or configurations. More tools are present in the extras_ folder, although they are not documented and as stable as the default tools.
 
@@ -144,4 +145,6 @@ The following tools provide support for specific compilers or configurations. Mo
 	tools/gnu_dirs
 	tools/intltool
 	tools/lua
+	tools/md5_tstamp
+	tools/nobuild
 

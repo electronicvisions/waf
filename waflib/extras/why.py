@@ -17,11 +17,13 @@ from waflib import Task, Utils, Logs, Errors
 
 def signature(self):
 	# compute the result one time, and suppose the scan_signature will give the good result
-	try: return self.cache_sig
-	except AttributeError: pass
+	try:
+		return self.cache_sig
+	except AttributeError:
+		pass
 
 	self.m = Utils.md5()
-	self.m.update(self.hcode.encode())
+	self.m.update(self.hcode)
 	id_sig = self.m.digest()
 
 	# explicit deps
@@ -62,7 +64,7 @@ def runnable_status(self):
 			def v(x):
 				return Utils.to_hex(x)
 
-			Logs.debug("Task %r" % self)
+			Logs.debug('Task %r', self)
 			msgs = ['* Implicit or scanner dependency', '* Task code', '* Source file, explicit or manual dependency', '* Configuration data variable']
 			tmp = 'task: -> %s: %s %s'
 			for x in range(len(msgs)):
@@ -70,7 +72,7 @@ def runnable_status(self):
 				a = new_sigs[x*l : (x+1)*l]
 				b = old_sigs[x*l : (x+1)*l]
 				if (a != b):
-					Logs.debug(tmp % (msgs[x].ljust(35), v(a), v(b)))
+					Logs.debug(tmp, msgs[x].ljust(35), v(a), v(b))
 	return ret
 Task.Task.runnable_status = runnable_status
 

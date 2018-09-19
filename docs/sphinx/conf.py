@@ -11,13 +11,15 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys, os, re
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath(os.path.join('..', "..")))
 sys.path.append(os.path.abspath('.'))
+
+graphviz_output_format = 'svg'
 
 # monkey patch a few waf classes for documentation purposes!
 #-----------------------------------------------------------
@@ -96,8 +98,7 @@ def before(*k):
 		exclude_taskgen.append(func.__name__)
 		setattr(task_gen, func.__name__, func)
 		for fun_name in k:
-			if not func.__name__ in task_gen.prec[fun_name]:
-				task_gen.prec[fun_name].append(func.__name__)
+			task_gen.prec[func.__name__].add(fun_name)
 		fix_fun_doc(func)
 		append_doc(func, 'before', k)
 		return func
@@ -110,8 +111,7 @@ def after(*k):
 		exclude_taskgen.append(func.__name__)
 		setattr(task_gen, func.__name__, func)
 		for fun_name in k:
-			if not fun_name in task_gen.prec[func.__name__]:
-				task_gen.prec[func.__name__].append(fun_name)
+			task_gen.prec[fun_name].add(func.__name__)
 		fix_fun_doc(func)
 		append_doc(func, 'after', k)
 		return func
@@ -134,7 +134,7 @@ from waflib.Task import Task
 Task.__dict__['post_run'].__doc__ = "Update the cache files (executed by threads). Override in subclasses."
 
 
-from waflib import Configure, Build
+from waflib import Configure, Build, Errors
 confmeths = []
 def conf(f):
 	def fun(*k, **kw):
@@ -199,7 +199,7 @@ for x in lst:
 	for func_name in funcs:
 		thefunc = getattr(TaskGen.task_gen, func_name, None)
 		if getattr(thefunc, "__name__", None) is None: continue
-		for feat in TaskGen.feats.keys():
+		for feat in TaskGen.feats:
 			funcs = list(TaskGen.feats[feat])
 			if func_name in funcs:
 				if x not in tool_to_features:
@@ -229,36 +229,42 @@ for z in lst:
 	links = []
 
 	allmeths = set(TaskGen.feats[z])
-	for x in meths:
-		for y in TaskGen.task_gen.prec.get(x, []):
-			links.append((x, y))
-			allmeths.add(x)
-			allmeths.add(y)
+	for x, lst in TaskGen.task_gen.prec.items():
+		if x in meths:
+			for y in lst:
+				links.append((x, y))
+				allmeths.add(y)
+		else:
+			for y in lst:
+				if y in meths:
+					links.append((x, y))
+					allmeths.add(x)
 
 	color = ',fillcolor="#fffea6",style=filled'
 	ms = []
 	for x in allmeths:
 		try:
 			m = TaskGen.task_gen.__dict__[x]
-		except:
+		except KeyError:
 			raise ValueError("undefined method %r" % x)
 
 		k = "%s.html#%s.%s" % (m.__module__.split('.')[-1], m.__module__, m.__name__)
 		if str(m.__module__).find('.Tools') > 0:
 			k = 'tools/' + k
+		k = '../' + k
 
-		ms.append('\t"%s" [style="setlinewidth(0.5)",URL="%s",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape=box,fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
+		ms.append('\t\t"%s" [style="setlinewidth(0.5)",URL="%s",target="_top",fontname="Vera Sans, DejaVu Sans, Liberation Sans, Arial, Helvetica, sans",height=0.25,shape="rectangle",fontsize=10%s];' % (x, k, x in TaskGen.feats[z] and color or ''))
 
 	for x, y in links:
-		ms.append('\t"%s" -> "%s" [arrowsize=0.5,style="setlinewidth(0.5)"];' % (x, y))
+		ms.append('\t\t"%s" -> "%s" [arrowsize=0.5,style="setlinewidth(0.5)"];' % (x, y))
 
-	rs = '\tdigraph feature_%s {\n\tsize="8.0, 12.0";\n\t%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
+	rs = '\tdigraph feature_%s {\n\t\tsize="8.0, 12.0";\n%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
 	title = "Feature %s" % (z == '*' and '\\*' or z)
 	title += "\n" + len(title) * '='
 
 	accu.append("%s\n\n.. graphviz::\n\n%s\n\n" % (title, rs))
 
-f = open('tmpmap', 'w')
+f = open('featuremap.rst', 'w')
 f.write(""".. _featuremap:
 
 Feature reference
@@ -303,7 +309,7 @@ for x in confmeths:
 	accu.append('.. _%s: %s#waflib.%s.%s\n' % (x, d, modname, x))
 	accu.append('* %s_\n' % x)
 
-f = open('tmpconf', 'w')
+f = open('confmap.rst', 'w')
 f.write(""".. _confmap:
 
 Configuration methods
@@ -325,7 +331,7 @@ f.close()
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.pngmath', 'sphinx.ext.inheritance_diagram', 'sphinx.ext.graphviz', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.imgmath', 'sphinx.ext.inheritance_diagram', 'sphinx.ext.graphviz', 'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -341,16 +347,21 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Waf'
-copyright = u'2010, Thomas Nagy'
+copyright = u'2005-2018, Thomas Nagy'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '1.7.11'
+#version = '1.8.10'
 # The full version, including alpha/beta/rc tags.
-release = '1.7.11'
+#release = version
+#
+with open('../../waflib/Context.py', 'r') as f:
+	txt = f.read()
+	m = re.compile('WAFVERSION=[\'"]([^\'"]+)', re.M).search(txt)
+	version = release = m.group(1)
 
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
@@ -391,7 +402,14 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+try:
+	from sphinx import version_info
+except ImportError:
+	version_info = None
+if version_info and (1, 3) <= version_info:
+	html_theme = 'classic'
+else:
+	html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -402,7 +420,7 @@ html_theme = 'default'
 #html_theme_path = []
 
 # The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
+# "<project> v<release> API documentation".
 #html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
@@ -469,11 +487,9 @@ htmlhelp_basename = 'wafdoc'
 
 # -- Options for LaTeX output --------------------------------------------------
 
-# The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
-
-# The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
+latex_elements = {
+   'papersize':'a4paper',
+}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
@@ -523,12 +539,10 @@ def maybe_skip_member(app, what, name, obj, skip, options):
 
 	# from http://sphinx.pocoo.org/ext/autodoc.html#event-autodoc-skip-member
 	# param name: the fully qualified name of the object <- it is not, the name does not contain the module path
-	if name == 'Nod3':
+	if name in ('__doc__', '__module__', 'Nod3', '__weakref__'):
 		return True
 	global exclude_taskgen
 	if what == 'class' and name in exclude_taskgen:
-		return True
-	if name == '__weakref__':
 		return True
 	if obj.__doc__:
 		return False

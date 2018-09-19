@@ -5,8 +5,13 @@ def options(opt):
 
 def configure(conf):
 	conf.load('compiler_c')
+
+	# choose wisely
 	conf.load('strip', tooldir='.')
+	#conf.load('strip_hack', tooldir='.')
+	#conf.load('strip_on_install', tooldir='.')
 
 def build(bld):
-	bld.program(features='strip', source='main.c', target='app')
+	bld.shlib(source='a.c', target='lib1')
+	bld.program(source='main.c', target='app', use='lib1')
 

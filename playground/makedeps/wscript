@@ -22,7 +22,6 @@ def build(bld):
 
 	def xxx(**kw):
 		# this is just an alias, but aliases are convenient, use them!
-		kw['update_outputs'] = True
 		if not 'rule' in kw:
 			kw['rule'] = 'cp ${SRC} ${TGT}'
 		return bld(**kw)

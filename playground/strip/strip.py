@@ -1,49 +1,38 @@
 #! /usr/bin/env python
 
 """
-Strip a program/library after it is created. Use this tool as an example.
+Strip a program/library after it is created.
 
-Usage::
+Since creating the file and modifying it occurs in the same
+task, there will be no race condition with other tasks dependent
+on the output.
 
-	bld.program(features='strip', source='main.c', target='foo')
-
-By using::
-
-	@TaskGen.feature('cprogram', 'cxxprogram', 'fcprogram')
-
-
-If stripping at installation time is preferred, use the following::
-
-	import shutil, os
-	from waflib import Build
-	from waflib.Tools import ccroot
-	def copy_fun(self, src, tgt, **kw):
-		shutil.copy2(src, tgt)
-		os.chmod(tgt, kw.get('chmod', Utils.O644))
-		try:
-			tsk = kw['tsk']
-		except KeyError:
-			pass
-		else:
-			if isinstance(tsk.task, ccroot.link_task):
-				self.cmd_and_log('strip %s' % tgt)
-	Build.InstallContext.copy_fun = copy_fun
+For other implementation possibilities, see strip_hack.py and strip_on_install.py
 """
+
+from waflib import Task
 
 def configure(conf):
 	conf.find_program('strip')
 
-from waflib import Task, TaskGen
-class strip(Task.Task):
-	run_str = '${STRIP} ${SRC}'
-	color   = 'BLUE'
-	after   = ['cprogram', 'cxxprogram', 'cshlib', 'cxxshlib', 'fcprogram', 'fcshlib']
+def wrap_compiled_task(classname):
+	# override the class to add a new 'run' method
+	# such an implementation guarantees that the absence of race conditions
+	#
+	cls1 = Task.classes[classname]
+	cls2 = type(classname, (cls1,), {'run_str': '${STRIP} ${TGT[0].abspath()}'})
+	cls3 = type(classname, (cls2,), {})
 
-@TaskGen.feature('strip')
-@TaskGen.after('apply_link')
-def add_strip_task(self):
-	try:
-		link_task = self.link_task
-	except AttributeError:
-		return
-	self.create_task('strip', link_task.outputs[0])
+	def run_all(self):
+		if self.env.NO_STRIPPING:
+			return cls1.run(self)
+		ret = cls1.run(self)
+		if ret:
+			return ret
+		return cls2.run(self)
+	cls3.run = run_all
+
+for k in 'cprogram cshlib cxxprogram cxxshlib fcprogram fcshlib dprogram dshlib'.split():
+	if k in Task.classes:
+		wrap_compiled_task(k)
+

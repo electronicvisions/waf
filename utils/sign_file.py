@@ -112,4 +112,4 @@ if __name__ == '__main__':
             sign_original_file(filename, encoding)
         else:
             create_signed_file(filename, encoding)
-                        
+

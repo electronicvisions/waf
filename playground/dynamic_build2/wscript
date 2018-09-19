@@ -21,14 +21,16 @@ def configure(conf):
 def read_files(task):
 	# the real build files must be excluded, else they will get rebuilt
 	for x in task.generator.bld.bldnode.ant_glob('**', excl='**/*.o app', remove=False):
-		x.sig = Utils.h_file(x.abspath())
+		pass
 
 def build(bld):
 	bld.post_mode = Build.POST_LAZY
 
 	bld(rule='tar xvf ${SRC[0].abspath()}', source='foo.tar')
-	bld.add_group()
+	bld.add_group('foo')
 	bld(rule=read_files, always=True, name='read_files')
-	bld.add_group()
+	bld.add_group('bar')
 	bld.program(source='aa/main.c', target='app')
 
+
+	print bld.get_group('bar')

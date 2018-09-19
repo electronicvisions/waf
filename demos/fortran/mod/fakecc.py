@@ -53,7 +53,7 @@ class fakecc(Task.Task):
 		bnodes = self.outputs
 		m = usemodule(self.inputs[0])
 		if m:
-			print "%s requires module %s" % (self.inputs[0].abspath(), m[0])
+			print("%s requires module %s" % (self.inputs[0].abspath(), m[0]))
 			#bnodes.append(self.generator.bld.bldnode.exclusive_build_node(m[0]))
 
 		compile(self)

@@ -26,7 +26,7 @@ class Popen(object):
 			if Popen.verbose:
 				sys.stdout.write("Popen created: %r, kw=%r..." % (prog, kw))
 
-			do_delegate = kw.get('stdout', None) == -1 and kw.get('stderr', None) == -1
+			do_delegate = kw.get('stdout') == -1 and kw.get('stderr') == -1
 			if do_delegate:
 				if Popen.verbose:
 					print("Delegating to real Popen")
@@ -43,9 +43,7 @@ class Popen(object):
 		if Popen.verbose:
 			sys.stdout.write("Getattr: %s..." % name)
 		if name in Popen.__slots__:
-			if Popen.verbose:
-				print("In slots!")
-			return object.__getattr__(self, name)
+			return object.__getattribute__(self, name)
 		else:
 			if self.popen is not None:
 				if Popen.verbose:

@@ -61,7 +61,7 @@ checkWAF()
 	# neither waf nor miniwaf could be found
 	if [ ! -x "$WAF" ] ; then
 	    printf "$RED""not found""$NORMAL""\n"
-	    echo "Go to http://code.google.com/p/waf/"
+	    echo "Go to https://waf.io/"
 	    echo "and download a waf version"
 	    exit $EXIT_FAILURE
 	else

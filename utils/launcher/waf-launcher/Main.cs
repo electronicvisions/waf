@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace waflauncher
@@ -21,7 +22,7 @@ namespace waflauncher
 
 		public static int Main (string[] args)
 		{
-			//I run waf and if not succesful we try on-the-fly install of python
+			//I run waf and if not successful we try on-the-fly install of python
 			if(!runWaf(args)){
 				//but first we ask the user if it's okay to install software on their computer
 				if(mayInstall()){
@@ -90,7 +91,7 @@ namespace waflauncher
 			Console.WriteLine ("python2.7 downloaded to " + filename);
 
 			Console.WriteLine ("Installing python");
-			//filename must be qouted or else msiexec will fail
+			//filename must be quoted or else msiexec will fail
 			exec("msiexec","/qn","/i","\"" +filename + "\"");
 			Console.WriteLine ("Python is now installed");
 		}

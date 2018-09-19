@@ -3,7 +3,6 @@
 # harald at klimachs.de
 
 import re
-from waflib import Utils
 from waflib.Tools import fc, fc_config, fc_scan
 from waflib.Configure import conf
 
@@ -31,8 +30,10 @@ def get_pgfortran_version(conf,fc):
 		version_re = re.compile(r"The Portland Group", re.I).search
 		cmd = fc + ['-V']
 		out,err = fc_config.getoutput(conf, cmd, stdin=False)
-		if out: match = version_re(out)
-		else: match = version_re(err)
+		if out:
+			match = version_re(out)
+		else:
+			match = version_re(err)
 		if not match:
 				conf.fatal('Could not verify PGI signature')
 		cmd = fc + ['-help=variable']
@@ -41,15 +42,17 @@ def get_pgfortran_version(conf,fc):
 				conf.fatal('Could not determine the compiler type')
 		k = {}
 		prevk = ''
-		out = out.split('\n')
+		out = out.splitlines()
 		for line in out:
 				lst = line.partition('=')
 				if lst[1] == '=':
 						key = lst[0].rstrip()
-						if key == '': key = prevk
+						if key == '':
+							key = prevk
 						val = lst[2].rstrip()
 						k[key] = val
-				else: prevk = line.partition(' ')[0]
+				else:
+					prevk = line.partition(' ')[0]
 		def isD(var):
 				return var in k
 		def isT(var):

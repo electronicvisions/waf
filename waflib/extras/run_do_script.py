@@ -69,7 +69,6 @@ Else:\n
 	ctx.env.STATAFLAGS = STATAFLAGS
 	ctx.env.STATAENCODING = STATAENCODING
 
-@Task.update_outputs
 class run_do_script_base(Task.Task):
 	"""Run a Stata do-script from the bldnode directory."""
 	run_str = '"${STATACMD}" ${STATAFLAGS} "${SRC[0].abspath()}" "${DOFILETRUNK}"'
@@ -84,8 +83,8 @@ class run_do_script(run_do_script_base):
 		run_do_script_base.run(self)
 		ret, log_tail  = self.check_erase_log_file()
 		if ret:
-			Logs.error("""Running Stata on %s failed with code %r.\n\nCheck the log file %s, last 10 lines\n\n%s\n\n\n""" % (
-				self.inputs[0].abspath(), ret, self.env.LOGFILEPATH, log_tail))
+			Logs.error("""Running Stata on %r failed with code %r.\n\nCheck the log file %s, last 10 lines\n\n%s\n\n\n""",
+				self.inputs[0], ret, self.env.LOGFILEPATH, log_tail)
 		return ret
 
 	def check_erase_log_file(self):
@@ -133,7 +132,7 @@ def apply_run_do_script(tg):
 		if not node:
 			tg.bld.fatal('Could not find dependency %r for running %r' % (x, src_node.abspath()))
 		tsk.dep_nodes.append(node)
-	Logs.debug('deps: found dependencies %r for running %r' % (tsk.dep_nodes, src_node.abspath()))
+	Logs.debug('deps: found dependencies %r for running %r', tsk.dep_nodes, src_node.abspath())
 
 	# Bypass the execution of process_source by setting the source to an empty list
 	tg.source = []

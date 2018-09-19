@@ -1,7 +1,11 @@
 
 #if A
+const char* c = "foo /*";
   #if B
+const char* d = " bar */";
+// /*
     #if C
+// */
       #include "a.h"
     #else
       #include "b.h"

@@ -5,12 +5,12 @@
 """
 Tool Description
 ================
-This module provides a waf wrapper (i.e. waftool) around the C/C++ source code 
+This module provides a waf wrapper (i.e. waftool) around the C/C++ source code
 checking tool 'cppcheck'.
 
 See http://cppcheck.sourceforge.net/ for more information on the cppcheck tool
-itself. 
-Note that many linux distributions already provide a ready to install version 
+itself.
+Note that many linux distributions already provide a ready to install version
 of cppcheck. On fedora, for instance, it can be installed using yum:
 
 	'sudo yum install cppcheck'
@@ -18,7 +18,7 @@ of cppcheck. On fedora, for instance, it can be installed using yum:
 
 Usage
 =====
-In order to use this waftool simply add it to the 'options' and 'configure' 
+In order to use this waftool simply add it to the 'options' and 'configure'
 functions of your main waf script as shown in the example below:
 
 	def options(opt):
@@ -26,12 +26,12 @@ functions of your main waf script as shown in the example below:
 
 	def configure(conf):
 		conf.load('cppcheck')
-		
-Note that example shown above assumes that the cppcheck waftool is located in 
+
+Note that example shown above assumes that the cppcheck waftool is located in
 the sub directory named 'waftools'.
 
-When configured as shown in the example above, cppcheck will automatically 
-perform a source code analysis on all C/C++ build tasks that have been 
+When configured as shown in the example above, cppcheck will automatically
+perform a source code analysis on all C/C++ build tasks that have been
 defined in your waf build system.
 
 The example shown below for a C program will be used as input for cppcheck when
@@ -40,16 +40,21 @@ building the task.
 	def build(bld):
 		bld.program(name='foo', src='foobar.c')
 
-The result of the source code analysis will be stored both as xml and html 
-files in the build location for the task. Should any error be detected by 
+The result of the source code analysis will be stored both as xml and html
+files in the build location for the task. Should any error be detected by
 cppcheck the build will be aborted and a link to the html report will be shown.
+By default, one index.html file is created for each task generator. A global
+index.html file can be obtained by setting the following variable
+in the configuration section:
 
-When needed source code checking by cppcheck can be disabled per task, per 
-detected error or warning for a particular task. It can be also be disabled for 
+	conf.env.CPPCHECK_SINGLE_HTML = False
+
+When needed source code checking by cppcheck can be disabled per task, per
+detected error or warning for a particular task. It can be also be disabled for
 all tasks.
 
 In order to exclude a task from source code checking add the skip option to the
-task as shown below:	
+task as shown below:
 
 	def build(bld):
 		bld.program(
@@ -58,8 +63,8 @@ task as shown below:
 				cppcheck_skip=True
 		)
 
-When needed problems detected by cppcheck may be suppressed using a file 
-containing a list of suppression rules. The relative or absolute path to this 
+When needed problems detected by cppcheck may be suppressed using a file
+containing a list of suppression rules. The relative or absolute path to this
 file can be added to the build task as shown in the example below:
 
 		bld.program(
@@ -68,27 +73,27 @@ file can be added to the build task as shown in the example below:
 				cppcheck_suppress='bar.suppress'
 		)
 
-A cppcheck suppress file should contain one suppress rule per line. Each of 
+A cppcheck suppress file should contain one suppress rule per line. Each of
 these rules will be passed as an '--suppress=<rule>' argument to cppcheck.
 
 Dependencies
 ================
-This waftool depends on the python pygments module, it is used for source code 
-syntax highlighting when creating the html reports. see http://pygments.org/ for 
+This waftool depends on the python pygments module, it is used for source code
+syntax highlighting when creating the html reports. see http://pygments.org/ for
 more information on this package.
 
 Remarks
 ================
-The generation of the html report is originally based on the cppcheck-htmlreport.py 
+The generation of the html report is originally based on the cppcheck-htmlreport.py
 script that comes shipped with the cppcheck tool.
 """
 
-import os, sys
+import sys
 import xml.etree.ElementTree as ElementTree
-from waflib import Task, TaskGen, Logs, Context
+from waflib import Task, TaskGen, Logs, Context, Options
 
 PYGMENTS_EXC_MSG= '''
-The required module 'pygments' could not be found. Please install it using your 
+The required module 'pygments' could not be found. Please install it using your
 platform package manager (e.g. apt-get or yum), using 'pip' or 'easy_install',
 see 'http://pygments.org/download/' for installation instructions.
 '''
@@ -98,42 +103,45 @@ try:
 	from pygments import formatters, lexers
 except ImportError as e:
 	Logs.warn(PYGMENTS_EXC_MSG)
- 	raise e
+	raise e
 
 
 def options(opt):
-	opt.add_option('--cppcheck-skip', dest='cppcheck_skip', 
-		default=False, action='store_true', 
+	opt.add_option('--cppcheck-skip', dest='cppcheck_skip',
+		default=False, action='store_true',
 		help='do not check C/C++ sources (default=False)')
 
-	opt.add_option('--cppcheck-err-resume', dest='cppcheck_err_resume', 
-		default=False, action='store_true', 
+	opt.add_option('--cppcheck-err-resume', dest='cppcheck_err_resume',
+		default=False, action='store_true',
 		help='continue in case of errors (default=False)')
 
-	opt.add_option('--cppcheck-bin-enable', dest='cppcheck_bin_enable', 
+	opt.add_option('--cppcheck-bin-enable', dest='cppcheck_bin_enable',
 		default='warning,performance,portability,style,unusedFunction', action='store',
 		help="cppcheck option '--enable=' for binaries (default=warning,performance,portability,style,unusedFunction)")
 
-	opt.add_option('--cppcheck-lib-enable', dest='cppcheck_lib_enable', 
-		default='warning,performance,portability,style', action='store', 
+	opt.add_option('--cppcheck-lib-enable', dest='cppcheck_lib_enable',
+		default='warning,performance,portability,style', action='store',
 		help="cppcheck option '--enable=' for libraries (default=warning,performance,portability,style)")
 
 	opt.add_option('--cppcheck-std-c', dest='cppcheck_std_c',
-		default='c99', action='store', 
+		default='c99', action='store',
 		help='cppcheck standard to use when checking C (default=c99)')
 
 	opt.add_option('--cppcheck-std-cxx', dest='cppcheck_std_cxx',
-		default='c++03', action='store', 
+		default='c++03', action='store',
 		help='cppcheck standard to use when checking C++ (default=c++03)')
 
-	opt.add_option('--cppcheck-check-config', dest='cppcheck_check_config', 
-		default=False, action='store_true', 
+	opt.add_option('--cppcheck-check-config', dest='cppcheck_check_config',
+		default=False, action='store_true',
 		help='forced check for missing buildin include files, e.g. stdio.h (default=False)')
 
 	opt.add_option('--cppcheck-max-configs', dest='cppcheck_max_configs',
-		default='20', action='store', 
+		default='20', action='store',
 		help='maximum preprocessor (--max-configs) define iterations (default=20)')
 
+	opt.add_option('--cppcheck-jobs', dest='cppcheck_jobs',
+		default='1', action='store',
+		help='number of jobs (-j) to do the checking work (default=1)')
 
 def configure(conf):
 	if conf.options.cppcheck_skip:
@@ -143,20 +151,27 @@ def configure(conf):
 	conf.env.CPPCHECK_MAX_CONFIGS = conf.options.cppcheck_max_configs
 	conf.env.CPPCHECK_BIN_ENABLE = conf.options.cppcheck_bin_enable
 	conf.env.CPPCHECK_LIB_ENABLE = conf.options.cppcheck_lib_enable
+	conf.env.CPPCHECK_JOBS = conf.options.cppcheck_jobs
+	if conf.options.cppcheck_jobs != '1' and ('unusedFunction' in conf.options.cppcheck_bin_enable or 'unusedFunction' in conf.options.cppcheck_lib_enable or 'all' in conf.options.cppcheck_bin_enable or 'all' in conf.options.cppcheck_lib_enable):
+		Logs.warn('cppcheck: unusedFunction cannot be used with multiple threads, cppcheck will disable it automatically')
 	conf.find_program('cppcheck', var='CPPCHECK')
 
+	# set to True to get a single index.html file
+	conf.env.CPPCHECK_SINGLE_HTML = False
 
 @TaskGen.feature('c')
 @TaskGen.feature('cxx')
 def cppcheck_execute(self):
-	if len(self.env.CPPCHECK_SKIP) or self.bld.options.cppcheck_skip:
+	if hasattr(self.bld, 'conf'):
+		return
+	if len(self.env.CPPCHECK_SKIP) or Options.options.cppcheck_skip:
 		return
 	if getattr(self, 'cppcheck_skip', False):
 		return
 	task = self.create_task('cppcheck')
 	task.cmd = _tgen_create_cmd(self)
 	task.fatal = []
-	if not self.bld.options.cppcheck_err_resume:
+	if not Options.options.cppcheck_err_resume:
 		task.fatal.append('error')
 
 
@@ -167,10 +182,12 @@ def _tgen_create_cmd(self):
 	max_configs = self.env.CPPCHECK_MAX_CONFIGS
 	bin_enable = self.env.CPPCHECK_BIN_ENABLE
 	lib_enable = self.env.CPPCHECK_LIB_ENABLE
+	jobs = self.env.CPPCHECK_JOBS
 
-	cmd  = '%s' % self.env.CPPCHECK
+	cmd  = self.env.CPPCHECK
 	args = ['--inconclusive','--report-progress','--verbose','--xml','--xml-version=2']
 	args.append('--max-configs=%s' % max_configs)
+	args.append('-j %s' % jobs)
 
 	if 'cxx' in features:
 		args.append('--language=c++')
@@ -179,7 +196,7 @@ def _tgen_create_cmd(self):
 		args.append('--language=c')
 		args.append('--std=%s' % std_c)
 
-	if self.bld.options.cppcheck_check_config:
+	if Options.options.cppcheck_check_config:
 		args.append('--check-config')
 
 	if set(['cprogram','cxxprogram']) & set(features):
@@ -188,12 +205,18 @@ def _tgen_create_cmd(self):
 		args.append('--enable=%s' % lib_enable)
 
 	for src in self.to_list(getattr(self, 'source', [])):
-		args.append('%r' % src)
+		if not isinstance(src, str):
+			src = repr(src)
+		args.append(src)
 	for inc in self.to_incnodes(self.to_list(getattr(self, 'includes', []))):
-		args.append('-I%r' % inc)
+		if not isinstance(inc, str):
+			inc = repr(inc)
+		args.append('-I%s' % inc)
 	for inc in self.to_incnodes(self.to_list(self.env.INCLUDES)):
-		args.append('-I%r' % inc)
-	return '%s %s' % (cmd, ' '.join(args))
+		if not isinstance(inc, str):
+			inc = repr(inc)
+		args.append('-I%s' % inc)
+	return cmd + args
 
 
 class cppcheck(Task.Task):
@@ -211,12 +234,15 @@ class cppcheck(Task.Task):
 		'''use cppcheck xml result string, add the command string used to invoke cppcheck
 		and save as xml file.
 		'''
-		header = '%s\n' % s.split('\n')[0]
+		header = '%s\n' % s.splitlines()[0]
 		root = ElementTree.fromstring(s)
 		cmd = ElementTree.SubElement(root.find('cppcheck'), 'cmd')
 		cmd.text = str(self.cmd)
-		body = ElementTree.tostring(root)
-		node = self.generator.path.get_bld().find_or_declare('cppcheck.xml')
+		body = ElementTree.tostring(root).decode('us-ascii')
+		body_html_name = 'cppcheck-%s.xml' % self.generator.get_name()
+		if self.env.CPPCHECK_SINGLE_HTML:
+			body_html_name = 'cppcheck.xml'
+		node = self.generator.path.get_bld().find_or_declare(body_html_name)
 		node.write(header + body)
 
 	def _get_defects(self, xml_string):
@@ -244,21 +270,24 @@ class cppcheck(Task.Task):
 
 	def _create_html_files(self, defects):
 		sources = {}
-		defects = [defect for defect in defects if defect.has_key('file')]
+		defects = [defect for defect in defects if 'file' in defect]
 		for defect in defects:
 			name = defect['file']
-			if not sources.has_key(name):
+			if not name in sources:
 				sources[name] = [defect]
 			else:
 				sources[name].append(defect)
-		
+
 		files = {}
 		css_style_defs = None
 		bpath = self.generator.path.get_bld().abspath()
-		names = sources.keys()
+		names = list(sources.keys())
 		for i in range(0,len(names)):
 			name = names[i]
-			htmlfile = 'cppcheck/%i.html' % (i)
+			if self.env.CPPCHECK_SINGLE_HTML:
+				htmlfile = 'cppcheck/%i.html' % (i)
+			else:
+				htmlfile = 'cppcheck/%s%i.html' % (self.generator.get_name(),i)
 			errors = sources[name]
 			files[name] = { 'htmlfile': '%s/%s' % (bpath, htmlfile), 'errors': errors }
 			css_style_defs = self._create_html_file(name, htmlfile, errors)
@@ -279,19 +308,25 @@ class cppcheck(Task.Task):
 			if div.get('id') == 'header':
 				h1 = div.find('h1')
 				h1.text = 'cppcheck report - %s' % name
+			if div.get('id') == 'menu':
+				indexlink = div.find('a')
+				if self.env.CPPCHECK_SINGLE_HTML:
+					indexlink.attrib['href'] = 'index.html'
+				else:
+					indexlink.attrib['href'] = 'index-%s.html' % name
 			if div.get('id') == 'content':
 				content = div
 				srcnode = self.generator.bld.root.find_node(sourcefile)
-				hl_lines = [e['line'] for e in errors if e.has_key('line')]
+				hl_lines = [e['line'] for e in errors if 'line' in e]
 				formatter = CppcheckHtmlFormatter(linenos=True, style='colorful', hl_lines=hl_lines, lineanchors='line')
-				formatter.errors = [e for e in errors if e.has_key('line')]
+				formatter.errors = [e for e in errors if 'line' in e]
 				css_style_defs = formatter.get_style_defs('.highlight')
 				lexer = pygments.lexers.guess_lexer_for_filename(sourcefile, "")
 				s = pygments.highlight(srcnode.read(), lexer, formatter)
 				table = ElementTree.fromstring(s)
 				content.append(table)
 
-		s = ElementTree.tostring(root, method='html')
+		s = ElementTree.tostring(root, method='html').decode('us-ascii')
 		s = CCPCHECK_HTML_TYPE + s
 		node = self.generator.path.get_bld().find_or_declare(htmlfile)
 		node.write(s)
@@ -315,10 +350,19 @@ class cppcheck(Task.Task):
 			if div.get('id') == 'content':
 				content = div
 				self._create_html_table(content, files)
+			if div.get('id') == 'menu':
+				indexlink = div.find('a')
+				if self.env.CPPCHECK_SINGLE_HTML:
+					indexlink.attrib['href'] = 'index.html'
+				else:
+					indexlink.attrib['href'] = 'index-%s.html' % name
 
-		s = ElementTree.tostring(root, method='html')
+		s = ElementTree.tostring(root, method='html').decode('us-ascii')
 		s = CCPCHECK_HTML_TYPE + s
-		node = self.generator.path.get_bld().find_or_declare('cppcheck/index.html')
+		index_html_name = 'cppcheck/index-%s.html' % name
+		if self.env.CPPCHECK_SINGLE_HTML:
+			index_html_name = 'cppcheck/index.html'
+		node = self.generator.path.get_bld().find_or_declare(index_html_name)
 		node.write(s)
 		return node
 
@@ -330,9 +374,9 @@ class cppcheck(Task.Task):
 			row = ElementTree.fromstring(s)
 			table.append(row)
 
-			errors = sorted(val['errors'], key=lambda e: int(e['line']) if e.has_key('line') else sys.maxint)
+			errors = sorted(val['errors'], key=lambda e: int(e['line']) if 'line' in e else sys.maxint)
 			for e in errors:
-				if not e.has_key('line'):
+				if not 'line' in e:
 					s = '<tr><td></td><td>%s</td><td>%s</td><td>%s</td></tr>\n' % (e['id'], e['severity'], e['msg'])
 				else:
 					attr = ''
@@ -352,7 +396,7 @@ class cppcheck(Task.Task):
 		node.write(css)
 
 	def _errors_evaluate(self, errors, http_index):
-		name = self.generator.get_name()			
+		name = self.generator.get_name()
 		fatal = self.fatal
 		severity = [err['severity'] for err in errors]
 		problems = [err for err in errors if err['severity'] != 'information']
@@ -382,7 +426,7 @@ class CppcheckHtmlFormatter(pygments.formatters.HtmlFormatter):
 				for error in self.errors:
 					if int(error['line']) == line_no:
 						t = t.replace('\n', CPPCHECK_HTML_ERROR % error['msg'])
-				line_no = line_no + 1
+				line_no += 1
 			yield i, t
 
 
@@ -418,7 +462,7 @@ CPPCHECK_HTML_FILE = """
 				</div>
 				&nbsp;
 			</div>
-      		&nbsp;
+		&nbsp;
 		</div>
 		<div id="page-footer">&nbsp;</div>
 	</body>

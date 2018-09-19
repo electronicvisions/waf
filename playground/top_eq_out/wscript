@@ -52,7 +52,7 @@ def distclean(ctx):
 	from waflib import Context
 
 	for fn in os.listdir('.'):
-		if fn.startswith('.conf_check_') or fn.startswith(".lock-w") \
+		if fn.startswith(('.conf_check_', ".lock-w")) \
 		 or fn in (Context.DBFILE, 'config.log') \
 		 or fn == 'c4che':
 			if os.path.isdir(fn):

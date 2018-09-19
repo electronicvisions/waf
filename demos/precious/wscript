@@ -23,8 +23,7 @@ def build(bld):
 		#rule = '''echo -e "#include <stdio.h>\\nint main(){ printf(\\"%%d\\", $$RANDOM); return 0;}" > ${TGT}''',
 		rule = fun,
 		target = node,
-		always = True,
-		update_outputs = True)
+		always = True)
 
 	bld.program(
 		source = 'precious.c',

@@ -19,6 +19,8 @@ def configure(conf):
 
 def build(bld):
 	bld.shlib(source='a.cpp', target='mylib', vnum='9.8.7')
+	bld.shlib(source='a.cpp', target='mylib2', vnum='9.8.7', cnum='9.8')
+	bld.shlib(source='a.cpp', target='mylib3')
 	bld.program(source='main.cpp', target='app', use='mylib')
 	bld.stlib(target='foo', source='b.cpp')
 

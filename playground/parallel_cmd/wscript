@@ -65,7 +65,7 @@ def build_all_at_once(ctx):
 			f(self)
 			sem.release()
 		return f2
-	Task.TaskBase.process = with_sem(Task.TaskBase.process)
+	Task.Task.process = with_sem(Task.Task.process)
 
 	threads = []
 	for var in ctx.all_envs:

@@ -14,14 +14,14 @@ def build(bld):
 	for x in bld.path.ant_glob('*.svg'):
 		bld(
 		 rule='${CONVERT} -density 600 ${SRC} ${TGT}',
-		 source=x,
+		 source=[x],
 		 target=x.change_ext('.png'),
 		)
 	
 	for x in bld.path.ant_glob('*.dia'):
 		bld(
 		 rule='${DIA} -t png ${SRC} -e ${TGT}',
-		 source=x,
+		 source=[x],
 		 target=x.change_ext('.png'),
 		)
 

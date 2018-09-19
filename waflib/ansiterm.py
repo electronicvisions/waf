@@ -12,9 +12,9 @@ console commands.
 """
 
 import os, re, sys
-from waflib.Utils import threading
+from waflib import Utils
 
-wlock = threading.Lock()
+wlock = Utils.threading.Lock()
 
 try:
 	from ctypes import Structure, windll, c_short, c_ushort, c_ulong, c_int, byref, c_wchar, POINTER, c_long
@@ -120,7 +120,7 @@ else:
 		def clear_line(self, param):
 			mode = param and int(param) or 0
 			sbinfo = self.screen_buffer_info()
-			if mode == 1: # Clear from begining of line to cursor position
+			if mode == 1: # Clear from beginning of line to cursor position
 				line_start = COORD(0, sbinfo.CursorPosition.Y)
 				line_length = sbinfo.Size.X
 			elif mode == 2: # Clear entire line
@@ -136,7 +136,7 @@ else:
 		def clear_screen(self, param):
 			mode = to_int(param, 0)
 			sbinfo = self.screen_buffer_info()
-			if mode == 1: # Clear from begining of screen to cursor position
+			if mode == 1: # Clear from beginning of screen to cursor position
 				clear_start = COORD(0, 0)
 				clear_length = sbinfo.CursorPosition.X * sbinfo.CursorPosition.Y
 			elif mode == 2: # Clear entire screen and return cursor to home
@@ -284,7 +284,7 @@ else:
 				wlock.release()
 
 		def writeconsole(self, txt):
-			chars_written = c_int()
+			chars_written = c_ulong()
 			writeconsole = windll.kernel32.WriteConsoleA
 			if isinstance(txt, _type):
 				writeconsole = windll.kernel32.WriteConsoleW
@@ -320,7 +320,7 @@ else:
 		sbinfo = CONSOLE_SCREEN_BUFFER_INFO()
 		def get_term_cols():
 			windll.kernel32.GetConsoleScreenBufferInfo(console, byref(sbinfo))
-			# TODO Issue 1401
+			# Issue 1401 - the progress bar cannot reach the last character
 			return sbinfo.Size.X - 1
 
 # just try and see

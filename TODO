@@ -1,30 +1,12 @@
-Waf 1.9
+Waf 2.1
 -------
 
-* Reduce the key size in bld.task_sigs
-* Provide a more efficient ConfigSet implementation
-* Remove the split functions from Utils
-* Ensure _cache.py are valid python files
-* Include the tool 'nobuild' by default
-* Support for linkflags/cflags at the end of commands
-
-Waf 1.8.x
----------
-
-* Update the docs
-
-Can be useful:
-
-def bld_command(*k):
-	fun = k[0]
-	name = fun.__name__
-	from waflib.Build import BuildContext
-	class tmp(BuildContext):
-		cmd = name
-		fun = name
-	return fun
-
-@bld_command
-def foo(ctx):
-	print ctx.env
-
+- Remove Winphone/WinCE detection in msvc.py
+- Fix the circular imports ccroot<->c_config.py
+- Remove superfluous *k in ctx.load() and other unused parameters
+  Ensure conf.load() has the same interface as ctx.load()
+- Remove waflib.Runner.PriorityTasks.appendleft
+- Remove waflib.Task.TaskBase
+- Remove the upper class of waflib.Task.Task (metaclasses)
+- Ordered_iter_dict in python 3.7
+- Change _add_task to add_task in Runner.py

@@ -14,14 +14,17 @@ def configure(conf):
 	conf.load('compiler_c gnu_dirs')
 
 def build(bld):
-	
+
 	bld(
 	 features='c',
 	 source='test_shlib.c',
-	 use='cshlib',
+	 # it is -uselib' in this case to avoid propagation of '-shared'
+	 # to the program below. A more explicit alternative is to set
+	 # cflags=bld.env.CFLAGS_cshlib
+	 uselib='cshlib',
 	 target='objects-for-shlib',
 	)
-	
+
 	bld(
 	 features='c',
 	 source='test_shlib.c',
@@ -47,7 +50,7 @@ def build(bld):
 	 source='main.c',
 	 use='something-shared',
 	)
-	
+
 	bld(
 	 features='c cprogram',
 	 target='exe-static',

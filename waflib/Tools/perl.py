@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # andersg at 0x63.nu 2007
-# Thomas Nagy 2010 (ita)
+# Thomas Nagy 2016-2018 (ita)
 
 """
 Support for Perl extensions. A C/C++ compiler is required::
@@ -24,7 +24,7 @@ Support for Perl extensions. A C/C++ compiler is required::
 """
 
 import os
-from waflib import Task, Options, Utils
+from waflib import Task, Options, Utils, Errors
 from waflib.Configure import conf
 from waflib.TaskGen import extension, feature, before_method
 
@@ -36,8 +36,9 @@ def init_perlext(self):
 	*lib* prefix from library names.
 	"""
 	self.uselib = self.to_list(getattr(self, 'uselib', []))
-	if not 'PERLEXT' in self.uselib: self.uselib.append('PERLEXT')
-	self.env['cshlib_PATTERN'] = self.env['cxxshlib_PATTERN'] = self.env['perlext_PATTERN']
+	if not 'PERLEXT' in self.uselib:
+		self.uselib.append('PERLEXT')
+	self.env.cshlib_PATTERN = self.env.cxxshlib_PATTERN = self.env.perlext_PATTERN
 
 @extension('.xs')
 def xsubpp_file(self, node):
@@ -63,7 +64,6 @@ def check_perl_version(self, minver=None):
 	minver is supposed to be a tuple
 	"""
 	res = True
-	
 	if minver:
 		cver = '.'.join(map(str,minver))
 	else:
@@ -71,18 +71,8 @@ def check_perl_version(self, minver=None):
 
 	self.start_msg('Checking for minimum perl version %s' % cver)
 
-	perl = getattr(Options.options, 'perlbinary', None)
-
-	if not perl:
-		perl = self.find_program('perl', var='PERL')
-	
-	if not perl:
-		self.end_msg("Perl not found", color="YELLOW")
-		return False
-	
-	self.env['PERL'] = perl
-
-	version = self.cmd_and_log(self.env.PERL + ["-e", 'printf \"%vd\", $^V'])
+	perl = self.find_program('perl', var='PERL', value=getattr(Options.options, 'perlbinary', None))
+	version = self.cmd_and_log(perl + ["-e", 'printf \"%vd\", $^V'])
 	if not version:
 		res = False
 		version = "Unknown"
@@ -91,7 +81,7 @@ def check_perl_version(self, minver=None):
 		if ver < minver:
 			res = False
 
-	self.end_msg(version, color=res and "GREEN" or "YELLOW")
+	self.end_msg(version, color=res and 'GREEN' or 'YELLOW')
 	return res
 
 @conf
@@ -109,7 +99,7 @@ def check_perl_module(self, module):
 	self.start_msg('perl module %s' % module)
 	try:
 		r = self.cmd_and_log(cmd)
-	except Exception:
+	except Errors.WafError:
 		self.end_msg(False)
 		return None
 	self.end_msg(r or True)
@@ -137,19 +127,25 @@ def check_perl_ext_devel(self):
 		return self.cmd_and_log(cmd_perl_config(cfg))
 	def cfg_lst(cfg):
 		return Utils.to_list(cfg_str(cfg))
+	def find_xsubpp():
+		for var in ('privlib', 'vendorlib'):
+			xsubpp = cfg_lst('$Config{%s}/ExtUtils/xsubpp$Config{exe_ext}' % var)
+			if xsubpp and os.path.isfile(xsubpp[0]):
+				return xsubpp
+		return self.find_program('xsubpp')
 
-	env['LINKFLAGS_PERLEXT'] = cfg_lst('$Config{lddlflags}')
-	env['INCLUDES_PERLEXT'] = cfg_lst('$Config{archlib}/CORE')
-	env['CFLAGS_PERLEXT'] = cfg_lst('$Config{ccflags} $Config{cccdlflags}')
-	env['XSUBPP'] = cfg_lst('$Config{privlib}/ExtUtils/xsubpp$Config{exe_ext}')
-	env['EXTUTILS_TYPEMAP'] = cfg_lst('$Config{privlib}/ExtUtils/typemap')
+	env.LINKFLAGS_PERLEXT = cfg_lst('$Config{lddlflags}')
+	env.INCLUDES_PERLEXT = cfg_lst('$Config{archlib}/CORE')
+	env.CFLAGS_PERLEXT = cfg_lst('$Config{ccflags} $Config{cccdlflags}')
+	env.EXTUTILS_TYPEMAP = cfg_lst('$Config{privlib}/ExtUtils/typemap')
+	env.XSUBPP = find_xsubpp()
 
 	if not getattr(Options.options, 'perlarchdir', None):
-		env['ARCHDIR_PERL'] = cfg_str('$Config{sitearch}')
+		env.ARCHDIR_PERL = cfg_str('$Config{sitearch}')
 	else:
-		env['ARCHDIR_PERL'] = getattr(Options.options, 'perlarchdir')
+		env.ARCHDIR_PERL = getattr(Options.options, 'perlarchdir')
 
-	env['perlext_PATTERN'] = '%s.' + cfg_str('$Config{dlext}')
+	env.perlext_PATTERN = '%s.' + cfg_str('$Config{dlext}')
 
 def options(opt):
 	"""

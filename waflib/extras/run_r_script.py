@@ -6,12 +6,12 @@
 Run a R script in the directory specified by **ctx.bldnode**.
 
 For error-catching purposes, keep an own log-file that is destroyed if the
-task finished without error. If not, it will show up as rscript_[index].log 
+task finished without error. If not, it will show up as rscript_[index].log
 in the bldnode directory.
 
 Usage::
 
-    ctx(features='run_r_script', 
+    ctx(features='run_r_script',
         source='some_script.r',
         target=['some_table.tex', 'some_figure.eps'],
         deps='some_data.csv')
@@ -34,7 +34,6 @@ Else:\n
 	Do not load the 'run_r_script' tool in the main wscript.\n\n"""  % R_COMMANDS)
 	ctx.env.RFLAGS = 'CMD BATCH --slave'
 
-@Task.update_outputs
 class run_r_script_base(Task.Task):
 	"""Run a R script."""
 	run_str = '"${RCMD}" ${RFLAGS} "${SRC[0].abspath()}" "${LOGFILEPATH}"'
@@ -53,8 +52,8 @@ class run_r_script(run_r_script_base):
 				mode = 'rb'
 			with open(logfile, mode=mode) as f:
 				tail = f.readlines()[-10:]
-			Logs.error("""Running R on %s returned the error %r\n\nCheck the log file %s, last 10 lines\n\n%s\n\n\n""" % (
-				self.inputs[0].abspath(), ret, logfile, '\n'.join(tail)))
+			Logs.error("""Running R on %r returned the error %r\n\nCheck the log file %s, last 10 lines\n\n%s\n\n\n""",
+				self.inputs[0], ret, logfile, '\n'.join(tail))
 		else:
 			os.remove(logfile)
 		return ret
@@ -80,7 +79,7 @@ def apply_run_r_script(tg):
 		if not node:
 			tg.bld.fatal('Could not find dependency %r for running %r' % (x, src_node.abspath()))
 		tsk.dep_nodes.append(node)
-	Logs.debug('deps: found dependencies %r for running %r' % (tsk.dep_nodes, src_node.abspath()))
+	Logs.debug('deps: found dependencies %r for running %r', tsk.dep_nodes, src_node.abspath())
 
 	# Bypass the execution of process_source by setting the source to an empty list
 	tg.source = []

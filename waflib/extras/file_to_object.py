@@ -26,20 +26,20 @@ Usage::
 
 Known issues:
 
-- Currently only handles elf files with GNU ld.
-
 - Destination is named like source, with extension renamed to .o
   eg. some.file -> some.o
 
 """
 
-import os, binascii
+import os
+from waflib import Task, TaskGen, Errors
 
-from waflib import Task, Utils, TaskGen, Errors
+def filename_c_escape(x):
+	return x.replace("\\", "\\\\")
 
 class file_to_object_s(Task.Task):
 	color = 'CYAN'
-	dep_vars = ('DEST_CPU', 'DEST_BINFMT')
+	vars = ['DEST_CPU', 'DEST_BINFMT']
 
 	def run(self):
 		name = []
@@ -59,6 +59,7 @@ class file_to_object_s(Task.Task):
 		else:
 			raise Errors.WafError("Unsupported DEST_CPU, please report bug!")
 
+		file = filename_c_escape(file)
 		name = "_binary_" + "".join(name)
 		rodata = ".section .rodata"
 		if self.env.DEST_BINFMT == "mac-o":
@@ -94,52 +95,43 @@ class file_to_object_c(Task.Task):
 
 		name = "_binary_" + "".join(name)
 
-		data = []
-		data = self.inputs[0].read()
-		data = binascii.hexlify(data)
-		data = [ ("0x%s" % (data[i:i+2])) for i in range(0, len(data), 2) ]
-		data = ",\n ".join(data)
+		data = self.inputs[0].read('rb')
+		lines, line = [], []
+		for idx_byte, byte in enumerate(data):
+			line.append(byte)
+			if len(line) > 15 or idx_byte == size-1:
+				lines.append(", ".join(("0x%02x" % ord(x)) for x in line))
+				line = []
+		data = ",\n ".join(lines)
 
-		with open(self.outputs[0].abspath(), 'w') as f:
-			f.write(\
-"""
-char const %(name)s[] = {
- %(data)s
-};
-unsigned long %(name)s_size = %(size)dL;
-char const * %(name)s_start = %(name)s;
-char const * %(name)s_end = &%(name)s[%(size)d];
-""" % locals())
-		with open(self.outputs[0].abspath(), 'w') as f:
-			f.write(\
+		self.outputs[0].write(\
 """
 unsigned long %(name)s_size = %(size)dL;
 char const %(name)s_start[] = {
  %(data)s
 };
-char const %(name)s_end[] = {
-};
+char const %(name)s_end[] = {};
 """ % locals())
 
 @TaskGen.feature('file_to_object')
 @TaskGen.before_method('process_source')
 def tg_file_to_object(self):
 	bld = self.bld
-	src = self.to_nodes(self.source)
-	assert len(src) == 1
-	src = src[0]
-	if bld.env.F2O_METHOD == ["asm"]:
-		tgt = src.parent.find_or_declare(src.name + '.f2o.s')
-		task = self.create_task('file_to_object_s',
-		 src, tgt, cwd=src.parent.abspath())
-		self.source = [tgt]
-	else:
-		tgt = src.parent.find_or_declare(src.name + '.f2o.c')
-		task = self.create_task('file_to_object_c',
-		 src, tgt, cwd=src.parent.abspath())
-		self.source = [tgt]
+	sources = self.to_nodes(self.source)
+	targets = []
+	for src in sources:
+		if bld.env.F2O_METHOD == ["asm"]:
+			tgt = src.parent.find_or_declare(src.name + '.f2o.s')
+			tsk = self.create_task('file_to_object_s', src, tgt)
+			tsk.cwd = src.parent.abspath() # verify
+		else:
+			tgt = src.parent.find_or_declare(src.name + '.f2o.c')
+			tsk = self.create_task('file_to_object_c', src, tgt)
+			tsk.cwd = src.parent.abspath() # verify
+		targets.append(tgt)
+	self.source = targets
 
 def configure(conf):
 	conf.load('gas')
-	conf.env.F2O_METHOD = ["asm"]
+	conf.env.F2O_METHOD = ["c"]
 

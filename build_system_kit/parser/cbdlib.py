@@ -20,7 +20,7 @@ def build(bld):
 	for x in txt.splitlines():
 		if not x:
 			continue
-		elif x.startswith('\t') or x.startswith(' '):
+		elif x.startswith(('\t', ' ')):
 			tg.rule = x.lstrip()
 		else:
 			line = x.split(':')

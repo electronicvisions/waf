@@ -50,6 +50,21 @@ import sys
 import os.path as osp
 import os
 
+local_repo = ''
+"""Local repository containing additional Waf tools (plugins)"""
+remote_repo = 'https://gitlab.com/ita1024/waf/raw/master/'
+"""
+Remote directory containing downloadable waf tools. The missing tools can be downloaded by using::
+
+	$ waf configure --download
+"""
+
+remote_locs = ['waflib/extras', 'waflib/Tools']
+"""
+Remote directories for use with :py:const:`waflib.extras.use_config.remote_repo`
+"""
+
+
 try:
 	from urllib import request
 except ImportError:
@@ -58,7 +73,7 @@ else:
 	urlopen = request.urlopen
 
 
-from waflib import Errors, Context, Logs, Utils, Options
+from waflib import Errors, Context, Logs, Utils, Options, Configure
 
 try:
 	from urllib.parse import urlparse
@@ -94,12 +109,12 @@ def download_check(node):
 
 def download_tool(tool, force=False, ctx=None):
 	"""
-	Download a Waf tool from the remote repository defined in :py:const:`waflib.Context.remote_repo`::
+	Download a Waf tool from the remote repository defined in :py:const:`waflib.extras.use_config.remote_repo`::
 
 		$ waf configure --download
 	"""
-	for x in Utils.to_list(Context.remote_repo):
-		for sub in Utils.to_list(Context.remote_locs):
+	for x in Utils.to_list(remote_repo):
+		for sub in Utils.to_list(remote_locs):
 			url = '/'.join((x, sub, tool + '.py'))
 			try:
 				web = urlopen(url)
@@ -115,12 +130,12 @@ def download_tool(tool, force=False, ctx=None):
 			else:
 				tmp = ctx.root.make_node(os.sep.join((Context.waf_dir, 'waflib', 'extras', tool + '.py')))
 				tmp.write(web.read(), 'wb')
-				Logs.warn('Downloaded %s from %s' % (tool, url))
+				Logs.warn('Downloaded %s from %s', tool, url)
 				download_check(tmp)
 				try:
 					module = Context.load_tool(tool)
 				except Exception:
-					Logs.warn('The tool %s from %s is unusable' % (tool, url))
+					Logs.warn('The tool %s from %s is unusable', tool, url)
 					try:
 						tmp.delete()
 					except Exception:
@@ -130,10 +145,13 @@ def download_tool(tool, force=False, ctx=None):
 
 	raise Errors.WafError('Could not load the Waf tool')
 
-def load_tool(tool, tooldir=None, ctx=None):
+def load_tool(tool, tooldir=None, ctx=None, with_sys_path=True):
 	try:
-		module = Context.load_tool_default(tool, tooldir)
+		module = Context.load_tool_default(tool, tooldir, ctx, with_sys_path)
 	except ImportError as e:
+		if not ctx or not hasattr(Options.options, 'download'):
+			Logs.error('Could not load %r during options phase (download unavailable at this point)' % tool)
+			raise
 		if Options.options.download:
 			module = download_tool(tool, ctx=ctx)
 			if not module:
@@ -144,7 +162,7 @@ def load_tool(tool, tooldir=None, ctx=None):
 
 Context.load_tool_default = Context.load_tool
 Context.load_tool = load_tool
-
+Configure.download_tool = download_tool
 
 def configure(self):
 	opts = self.options

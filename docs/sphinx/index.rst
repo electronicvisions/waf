@@ -8,6 +8,7 @@ Waf documentation
 	tutorial.rst
 	about.rst
 	copyright.rst
+	confmap.rst
 	featuremap.rst
 
 	Build.rst

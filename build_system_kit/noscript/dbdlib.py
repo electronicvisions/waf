@@ -35,9 +35,8 @@ def build(bld):
 	elif tp == 'objects':
 		features = 'c'
 
-	source = Options.options.source
 	app = Options.options.app
-	bld(features=features, source=source, target=app)
+	bld(features=features, source=Options.options.source, target=app)
 
 def recurse_rep(x, y):
 	f = getattr(Context.g_module, x.cmd or x.fun, Utils.nada)
@@ -125,10 +124,4 @@ class c2(waflib.Tools.c.c):
 def c_hook(self, node):
 	# re-bind the extension to this new class
 	return self.create_compiled_task('c2', node)
-
-# modify the existing class to output the targets in the same directory as the original files
-Task.update_outputs(c2)
-Task.update_outputs(waflib.Tools.c.cprogram)
-Task.update_outputs(waflib.Tools.c.cshlib)
-Task.update_outputs(waflib.Tools.c.cstlib)
 

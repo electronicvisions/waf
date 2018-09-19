@@ -11,8 +11,8 @@ An advanced dynamic build simulating a call to an external system.
 That external build system produces a library which is then used in the current build.
 """
 
-import os, shutil, sys, subprocess
-from waflib import Utils, Build, Logs
+import os, shutil, sys
+from waflib import Build, Errors, Logs
 
 top = '.'
 out = 'build'
@@ -31,8 +31,7 @@ def build(bld):
 	tmp_dir = bld.bldnode.make_node('external_lib')
 
 	# build the external library through an external process
-	# the "update_outputs" is unnecessary unless an external folder is given, for example   tmp_dir = bld.root.make_node('/tmp/aaa')
-	bld(rule=some_fun, target=tmp_dir.make_node('flag.lock'), update_outputs=True)
+	bld(rule=some_fun, target=tmp_dir.make_node('flag.lock'))
 
 	# once it is done create a second build group
 	bld.add_group()
@@ -80,7 +79,7 @@ def some_fun(task):
 
 	try:
 		task.generator.bld.cmd_and_log(cmd, cwd=cwd, quiet=0, output=0)
-	except Exception as e:
+	except Errors.WafError as e:
 		try:
 			print(e.stderr)
 		except AttributeError:
