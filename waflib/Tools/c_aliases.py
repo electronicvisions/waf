@@ -4,7 +4,7 @@
 
 "base for all c/c++ programs and libraries"
 
-from waflib import Utils, Errors
+from waflib import Utils, Errors, Logs
 from waflib.Configure import conf
 
 def get_extensions(lst):
@@ -70,7 +70,8 @@ def sniff_features(**kw):
 				feats.append(x + typ)
 				will_link = True
 		if not will_link and not kw.get('features', []):
-			raise Errors.WafError('Cannot link from %r, try passing eg: features="c cprogram"?' % kw)
+			# Some Visionary wscripts have targets with empty features
+			Logs.warn('Deprecated feature: empty "features" list')
 	return feats
 
 def set_features(kw, typ):

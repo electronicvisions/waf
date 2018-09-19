@@ -8,9 +8,11 @@ import os
 import sys
 import argparse
 import shutil
+import subprocess
 
 import json
 from collections import defaultdict, deque
+from urlparse import urlparse
 
 from waflib import Build, Context, Errors, Logs, Utils, Options
 from waflib.extras import mr
@@ -291,6 +293,14 @@ class MainContext(Symwaf2icContext):
         self.gerrit_url = cmdopts.gerrit_url
         self.gerrit_username = cmdopts.gerrit_username
 
+        if not self.gerrit_username and not urlparse(self.gerrit_url).username:
+            # If there's a [gitreview] username, use that one
+            git_p = subprocess.Popen(["git", "config", "gitreview.username"],
+                                     stdout=subprocess.PIPE)
+            review_user, _ = git_p.communicate()
+            if git_p.returncode == 0:
+                self.gerrit_username = review_user.strip()
+
     def init_toplevel(self):
         Logs.debug("symwaf2ic: Setting up symwaf2ic toplevel.")
 
@@ -348,7 +358,7 @@ class OptionParserContext(Symwaf2icContext):
         self.parse_cnt = 0
         Logs.debug("symwaf2ic_options: initializing options parser: %s" % self.parsername)
 
-        self.parser = argparse.ArgumentParser()
+        self.parser = argparse.ArgumentParser(add_help=False)
         self._add_waf_options()
         self._first_recursion = False # disable symwaf2ic recursion
         self.loaded = set()

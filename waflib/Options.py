@@ -278,28 +278,10 @@ class OptionsContext(Context.Context):
 		"""
 		Just parse the arguments
 		"""
-		global options, commands, envvars, rargs
-
 		self.parser.allow_unknown = allow_unknown
-
-		# KHS: we call parse_args mutliple times, so we must reset (XXX: there should be a better fix)
-		envvars=[]
-		commands=[]
-		rargs=[]
-
-		# The new envvars-feature kills our sometimes used
-		# rargs=Options.commands; Options.commands=[] snip to pass positional
-		# args to subcommands. Now we need "--" to separate command-specific
-		# positional args from waf options/commands/envvars.
-		assert _args == None # KHS other cases not handled jet - probably just replace sys.argv with _args.
-		try:
-			idx = sys.argv.index('--')
-			_args = sys.argv[1:idx]
-			rargs = sys.argv[idx+1:]
-		except:
-			pass
-
 		(options, leftover_args) = self.parser.parse_args(args=_args)
+		envvars = []
+		commands = []
 		for arg in leftover_args:
 			if '=' in arg:
 				envvars.append(arg)
@@ -330,12 +312,6 @@ class OptionsContext(Context.Context):
 		Logs.verbose = options.verbose
 		if options.verbose >= 1:
 			self.load('errcheck')
-
-		# cannot use --zones/-v here -> it has not been set jet
-		#Logs.info("options: o->" + str(options))
-		#Logs.info("options: c->" + str(commands))
-		#Logs.info("options: e->" + str(envvars))
-		#Logs.info("options: r->" + str(rargs))
 
 		colors = {'yes' : 2, 'auto' : 1, 'no' : 0}[options.colors]
 		Logs.enable_colors(colors)

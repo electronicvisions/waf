@@ -37,7 +37,7 @@ def patch_parse_args(class_=Options.OptionsContext, funcname="parse_args"):
 def patch_build_context():
     def post_group(self):
         """
-        Post the task generators from the group indexed by self.cur, used
+        Post the task generators from the group indexed by self.current_group, used
         by :py:meth:`waflib.Build.BuildContext.get_build_iterator`
         """
         def post_tg(tg):
@@ -52,7 +52,7 @@ def patch_build_context():
         ln = self.launch_node()
         if self.targets == '*':
             pass
-        elif self.targets and self.cur >= self._min_grp:
+        elif self.targets and self.current_group >= self._min_grp:
             for tg in self._exact_tg:
                 post_tg(tg)
             return
@@ -72,7 +72,7 @@ def patch_build_context():
                 paths = [ln]
             tg_filter = lambda tg: any(tg.path.is_child_of(p) for p in paths)
 
-        for tg in self.groups[self.cur]:
+        for tg in self.groups[self.current_group]:
             if tg_filter(tg):
                 post_tg(tg)
 

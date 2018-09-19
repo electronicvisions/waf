@@ -107,6 +107,14 @@ def ant_sub_matcher(name, pats):
 		nacc = []
 	return [nacc, nrej]
 
+def split_path(path):
+	"""
+	Visionary compatibility wrapper:
+	This function has been moved to Utils.py, we do however have old wscripts
+	that call it from here.
+	"""
+	return Utils.split_path(path)
+
 class Node(object):
 	"""
 	This class is organized in two parts:

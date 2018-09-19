@@ -133,8 +133,6 @@ COMPILER_MAPPING = {
 }
 
 def options(opt):
-	opt.load("gccdeps")  # not necessary for visionflags functionality
-
 	profiles = CompilerTraits.profiles
 
 	assert DEFAULT_PROFILE in profiles
