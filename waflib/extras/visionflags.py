@@ -159,6 +159,9 @@ def options(opt):
 				action='store_true', help='Enabling config cache mechanism (default)')
 
 def configure(conf):
+	if conf.env.LOADED_VISIONFLAGS:
+		return
+	conf.env.LOADED_VISIONFLAGS = True
 	conf.load("gccdeps")  # not necessary for visionflags functionality
 
 	cc = conf.env['COMPILER_CC'] or (conf.env['CC_NAME'] or None)
