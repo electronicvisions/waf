@@ -543,7 +543,7 @@ def run_build(self, *k, **kw):
 		# CK (2018-01-17): previously the function instance was hashed
 		lst.append(kw['build_fun'].__name__)
 	# ECM (2018-01-17): add environment variables to confcache's hash
-	lst.append(Utils.h_list(kw['env']))
+	lst.append(str(kw['env']))
 	h = Utils.h_list(lst)
 	dir = self.bldnode.abspath() + os.sep + (not Utils.is_win32 and '.' or '') + 'conf_check_' + Utils.to_hex(h)
 
