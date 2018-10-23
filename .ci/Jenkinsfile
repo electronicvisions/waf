@@ -1,0 +1,49 @@
+@Library("jenlib") _
+
+/**
+ * waf@symwaf2ic is mostly tested by triggering multiple projects to be built with the version under test.
+ * Within this pipeline, waf is deployed under the condition that a gerrit changeset has been merged.
+ */
+try {
+
+	/**
+	 * The build has been triggered by a 'merge' event from gerrit.
+	 */
+	MERGE_BUILD = (env.GERRIT_EVENT_TYPE == "change-merged")
+
+	runOnSlave(label: "frontend") {
+		stage("Cleanup") {
+			cleanWs()
+		}
+
+		stage("Build") {
+			checkout scm
+			sish("make")
+			sish("./waf --help > /dev/null")
+		}
+
+		stage("Deployment") {
+			if (MERGE_BUILD) {
+				sish("mkdir waf_module")
+				sish("mkdir waf_module/bin")
+				sish("cp waf waf_module/bin")
+
+				// Unpack waf
+				sish("cd \$(mktemp -d) && $WORKSPACE/waf_module/bin/waf --help > /dev/null")
+
+				inSingularity() {
+					deployModule([name: "waf", source: "waf_module"])
+				}
+			} else {
+				echo "Deployment skipped: Build was not triggered by a merge event."
+			}
+		}
+	}
+} catch (Throwable t) {
+	notifyFailure(mattermostChannel: "#softies")
+	throw t
+}
+
+if (currentBuild.currentResult != "SUCCESS") {
+	notifyFailure(mattermostChannel: "#softies")
+}
