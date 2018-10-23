@@ -98,7 +98,7 @@ def force_run():
 # 10.4.2. A compiler producing source files with names unknown in advance
 class pyplusplus(Task.Task):
     vars  = ['PYTHON']
-    quiet = True
+    quiet = False
     color = 'PINK'
     ext_out = ['.hpp', '.cpp']
 
@@ -131,9 +131,9 @@ class pyplusplus(Task.Task):
         Logs.debug("pypp: " + stdout)
         Logs.debug("pypp: " + stderr)
 
-        self.set_outputs(self.find_output_nodes())
+        self.outputs.extend(self.find_output_nodes())
         self.generator.bld.raw_deps[self.uid()] = [self.signature()] + self.outputs
-        self.add_cxx_tasks()
+        self.add_cxx_tasks(self.outputs)
 
     def __str__(self):
         "string to display to the user"
@@ -199,21 +199,24 @@ class pyplusplus(Task.Task):
         return nodes, names
 
 
-    def add_cxx_tasks(self):
-        self.more_tasks = getattr(self, "more_tasks", [])
-        for node in self.outputs:
+    def add_cxx_tasks(self, lst):
+        # ECM (2018-10-23) did we support more_tasks?
+        assert getattr(self, "more_tasks", None) is None
+        self.more_tasks = []
+        for node in lst:
             if not node.name.endswith('.cpp'):
                 continue
             tsk = self.generator.create_compiled_task('cxx', node)
+            self.more_tasks.append(tsk)
+
             tsk.env.append_value('INCPATHS', [node.parent.abspath()])
             tsk.env.append_value('CXXFLAGS', ['-Wno-unused-parameter'])
             tsk.env.append_value('CXXFLAGS', ['-Wno-unused-local-typedefs'])
-            self.more_tasks.append(tsk)
 
-            self.pyext_task.set_run_after(tsk)
-            self.pyext_task.inputs.extend(tsk.outputs)
-
-            bld = self.generator.bld
+            if getattr(self.generator, 'link_task', None):
+                self.generator.link_task.set_run_after(tsk)
+                self.generator.link_task.inputs.append(tsk.outputs[0])
+            self.generator.link_task.inputs.sort(key=lambda x: x.abspath())
 
     def runnable_status(self):
         ret = super(pyplusplus, self).runnable_status()
@@ -234,7 +237,7 @@ class pyplusplus(Task.Task):
 
             nodes = lst[1:]
             self.set_outputs(nodes)
-            self.add_cxx_tasks()
+            self.add_cxx_tasks(nodes)
         return ret
 
 @feature('pypp')
@@ -249,7 +252,7 @@ def create_pyplusplus(self):
 
     # Fetch link task
     try:
-        link_task = self.pyext_task = self.link_task
+        self.pyext_task = self.link_task
     except AttributeError:
         self.bld.fatal('You have to use pypp with cxxshlib feature in %s' % str(self))
 
@@ -269,21 +272,21 @@ def create_pyplusplus(self):
     dep_nodes = self.to_nodes(getattr(self, 'depends_on_files', []))
 
     # create task
-    t = self.pypp_task = self.create_task('pyplusplus', inputs, outputs)
-    t.env.OUTPUT_DIR = out_dir.abspath()
-    t.env.DEF_ST = ["-D"]
-    t.env.INC_ST = ["-I"]
-    t.env.DECL_DB_ST = ["--decl_db"]
-    t.env.DEP_MODULE_ST = ["--dep_module"]
-    t.env.DEP_MODULES = []
-    t.env.DECL_DBS = []
-    t.module = module
-    t.output_dir = out_dir
-    t.dep_nodes.extend(get_manual_module_dependencies(self.bld))
-    t.dep_nodes.extend(dep_nodes)
-    t.pyext_task = link_task
+    self.pypp_task = self.create_task('pyplusplus', inputs, outputs)
+    self.pypp_task.env.OUTPUT_DIR = out_dir.abspath()
+    self.pypp_task.env.DEF_ST = ["-D"]
+    self.pypp_task.env.INC_ST = ["-I"]
+    self.pypp_task.env.DECL_DB_ST = ["--decl_db"]
+    self.pypp_task.env.DEP_MODULE_ST = ["--dep_module"]
+    self.pypp_task.env.DEP_MODULES = []
+    self.pypp_task.env.DECL_DBS = []
+    self.pypp_task.module = module
+    self.pypp_task.output_dir = out_dir
+    self.pypp_task.dep_nodes.extend(get_manual_module_dependencies(self.bld))
+    self.pypp_task.dep_nodes.extend(dep_nodes)
+    self.pypp_task.pyext_task = self.pyext_task
 
-    link_task.set_run_after(self.pypp_task)
+    self.pypp_task.pyext_task.set_run_after(self.pypp_task)
 
 @feature('pypp')
 @after_method('process_use')
