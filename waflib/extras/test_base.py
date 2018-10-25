@@ -494,6 +494,10 @@ class TestBase(Task.Task):
         pathes = set()
         for use in self.generator.tmp_use_seen:
             tg = self.generator.bld.get_tgen_by_name(use)
+            if 'py' in tg.features:
+                # py thingy, lets add the paths to the build folder
+                for sf in tg.source:
+                    pathes.add(sf.parent.abspath())
             if hasattr(tg, 'link_task'):
                 pathes.add(tg.link_task.outputs[0].parent.abspath())
 

@@ -203,6 +203,7 @@ def configure(conf):
 	conf.env.append_value(*sandwich('DEFINES', compiler.get_defines(build_profile)))
 	conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
 	conf.env.append_value(*sandwich('LINKFLAGS', compiler.get_linkflags(build_profile)))
+	conf.env.append_unique('PYTHONDIR', "lib")
 
 	# Inject include and library paths (e.g. by module environment) into calls to compiler
 	def format_compiler_option(option, envvar):
