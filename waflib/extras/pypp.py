@@ -114,8 +114,6 @@ class pyplusplus(Task.Task):
         args += self.colon('DECL_DB_ST', 'DECL_DBS')
         args += [ x.abspath() for x in self.inputs[1:] ]
 
-        old_nodes = self.output_dir.ant_glob('*.cpp', quiet=True)
-
         env = get_environ(bld)
 
         try:
@@ -223,21 +221,23 @@ class pyplusplus(Task.Task):
         if ret == Task.SKIP_ME and force_run():
             return Task.RUN_ME
         elif ret == Task.SKIP_ME:
-
-            lst = self.generator.bld.raw_deps[self.uid()]
-            if lst[0] != self.signature():
-                return Task.RUN_ME
-
-            nodes = lst[1:]
+            # Tasks.runnable_status() does not know about the generated files, so lets check
+            # for existance here; it checks for previous vs signature though -> first element
+            # checking can be skipped
+            nodes = self.generator.bld.raw_deps[self.uid()][1:]
             for x in nodes:
                 try:
+                    # user might have changed something in the build folder...
                     os.stat(x.abspath())
                 except:
+                    Logs.warn("Expected generated file {} missing; " +
+                              "deleted manually? RUN_ME!".format(x.abspath()))
                     return Task.RUN_ME
 
-            nodes = lst[1:]
-            self.set_outputs(nodes)
+            # Generator does not need to run (SKIP_ME), but we have to fixup some attributes
+            self.outputs = list(nodes)
             self.add_cxx_tasks(nodes)
+
         return ret
 
 @feature('pypp')
