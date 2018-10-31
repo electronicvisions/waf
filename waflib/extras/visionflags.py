@@ -121,7 +121,7 @@ class ClangTraits(CommonTraits):
 	def get_cpp_language_standard_flags(self):
 		if self.version < (3, 5):
 			return  ['-std=c++11']
-		return  ['-std=c++14']
+		return  ['-std=c++1z']
 
 
 COMPILER_MAPPING = {
