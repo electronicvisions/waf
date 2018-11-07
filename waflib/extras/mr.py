@@ -183,6 +183,16 @@ class Project(object):
             self._real_branch =  stdout.strip()
         return self._real_branch
 
+    @property
+    def clone_depth(self):
+        if self.ref:
+            Logs.warn("\nProject {project} is to be checked out at reference "
+                      "{ref}. Shallow clone omitted.".format(project=self.name,
+                                                             ref=self.ref))
+            return -1
+
+        return self._clone_depth
+
     def update_branch(self, force=False):
         cmd = self.reset_branch_cmd() if force else self.set_branch_cmd()
         ret, stdout, stderr = self.exec_cmd(cmd)
@@ -260,7 +270,7 @@ class GitProject(Project):
 
     def mr_checkout_cmd(self, base_node, url):
         path = self.path_from(base_node)
-        depth = self._clone_depth
+        depth = self.clone_depth
         depth = '--depth {}'.format(depth) if depth >= 0 else ''
         cmd = ["git clone --branch '{branch}' {depth} '{url}' '{target}'".format(
             branch=self.required_branch, depth=depth,
