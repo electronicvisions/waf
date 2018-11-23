@@ -4,7 +4,7 @@
 # http://code.nsnam.org/ns-3-dev/file/fd8c9ed96d3d/waf-tools/cflags.py
 
 # Support for --build-profile=
-DEFAULT_PROFILE = 'debug'
+DEFAULT_PROFILE = 'release_with_debug'
 
 import os
 import shlex
