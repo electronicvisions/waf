@@ -369,7 +369,7 @@ def configure(conf):
     if conf.environ.get('CXX_PYPP', None) is None:
         old_CC_VERSION = conf.env.CC_VERSION
         conf.env.stash()
-        cc = conf.cmd_to_list(conf.find_program('g++'))
+        cc = conf.cmd_to_list(conf.find_program('g++', var='CXX'))
         conf.get_cc_version(cc, gcc=True)
         if old_CC_VERSION != conf.env.CC_VERSION:
             msg = "System compiler (%s) doesn't match CXX (%s)." % ('.'.join(conf.env.CC_VERSION), '.'.join(old_CC_VERSION))
