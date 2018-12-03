@@ -84,8 +84,11 @@ def pytest_create_task(self):
             t.dep_nodes.extend(tg.pyext_task.outputs)
 
 def options(opt):
+    opt.load('python')
     test_base.options(opt)
 
 def configure(ctx):
     test_base.configure(ctx)
+    ctx.load('python')
+    ctx.check_python_version()
     ctx.find_program('nosetests', mandatory=True, var='PYNOSETESTS')
