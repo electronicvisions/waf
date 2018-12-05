@@ -211,6 +211,12 @@ class pyplusplus(Task.Task):
             tsk.env.append_value('CXXFLAGS', ['-Wno-unused-parameter'])
             tsk.env.append_value('CXXFLAGS', ['-Wno-unused-local-typedefs'])
 
+            # ignore some more warnings introduced with g++ 8.x
+            if tsk.env['COMPILER_CXX'] == 'g++' and tsk.env['CC_VERSION'][0] > 7:
+                tsk.env.append_value('CXXFLAGS', ['-Wno-catch-value'])
+                tsk.env.append_value('CXXFLAGS', ['-Wno-ignored-qualifiers'])
+                tsk.env.append_value('CXXFLAGS', ['-Wno-maybe-uninitialized'])
+
             if getattr(self.generator, 'link_task', None):
                 self.generator.link_task.set_run_after(tsk)
                 self.generator.link_task.inputs.append(tsk.outputs[0])
