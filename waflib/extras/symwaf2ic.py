@@ -593,7 +593,7 @@ class DependencyContext(Symwaf2icContext):
 
         # KHS: get top directories/repos of dependencies to add them to
         # .git/info/exclude in case toplevel is under version control
-        gitnode = self.toplevel.find_node('.git')
+        gitnode = self.toplevel.find_dir('.git')
         if gitnode:
             self.writeDotGitInfoExclude(gitnode, self.toplevel.abspath(), storage.paths)
 
