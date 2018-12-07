@@ -319,7 +319,7 @@ def boost_get_libs(self, *k, **kw):
 		ext = ext.partition('%s')[2] # remove '%s' or 'lib%s' from PATTERN
 
 		for lib in lib_names:
-			if lib == 'python':
+			if lib in ['python', 'numpy']:
 				# for instance, with python='27',
 				# accepts '-py27', '-py2', '27', '-2.7' and '2'
 				# but will reject '-py3', '-py26', '26' and '3'
