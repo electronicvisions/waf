@@ -40,7 +40,7 @@ STORE_CMDS = set([SETUP_CMD, "configure"])
 HELP_CMDS = "-h --help show_repos".split()
 STRIP_FROM_PARSER = HELP_CMDS
 # commands which will cause symwaf2ic to be disabled when specified
-NO_EXECUTE_CMDS = "distclean".split()
+NO_EXECUTE_CMDS = "no_symwaf2ic distclean".split()
 
 
 # configuration to be shared between commands of symwaf2ic
