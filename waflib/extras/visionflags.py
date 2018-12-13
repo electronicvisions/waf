@@ -149,8 +149,8 @@ def options(opt):
 	opt.add_option('--check-profile',
 		help=('print out current build profile'),
 		default=False, dest='check_profile', action="store_true")
-	opt.add_option('--linker', type=str, default=None,
-	               help='Specify the linker to use, e.g. --linker=gold.')
+	opt.add_option('--linker', type=str, default="gold",
+	               help='Specify the linker to use, e.g. --linker=gold or bfd.')
 	# ECM (2018-01-19): optparse does not support bool-type (and monkey-patching
 	# a custom optparse.Option into waf seems too much)
 	opt.add_option('--disable-confcache', dest='confcache',
