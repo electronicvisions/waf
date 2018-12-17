@@ -170,7 +170,13 @@ def configure(conf):
 		raise Errors.WafError("neither COMPILER_CC nor COMPILER_CXX are defined; "
 			"maybe the compiler_cc or compiler_cxx tool has not been configured yet?")
 
-	linker = Options.options.linker
+	# let's stick to bfd for nux cross compilation
+        # PS (20-12-18): this prevents from using the powerpc compiler without using libnux (#3033)
+	if 'powerpc' in conf.env.CROSS_PLATFORM and 'LIBNUX_DLS_VERSION' in x for x in conf.env.DEFINES:
+		linker = 'bfd'
+	else:
+		linker = Options.options.linker
+
 	try:
 		compiler = COMPILER_MAPPING[cc](conf.env['CC_VERSION'], linker)
 	except KeyError:
