@@ -285,7 +285,16 @@ def set_running(self, by, tsk):
 			i = cache[tsk]
 			del cache[tsk]
 
-		self.taskinfo.put( (i, id(tsk), time.time(), tsk.__class__.__name__, self.processed, self.count, by, ",".join(map(str, tsk.outputs)))  )
+		self.taskinfo.put( (i,
+		                    id(tsk),
+		                    time.time(),
+		                    tsk.__class__.__name__,
+		                    self.processed,
+		                    self.count,
+		                    by,
+		                    ",".join(map(str, tsk.outputs)),
+		                    ",".join(map(str, tsk.inputs)),
+		                    str(tsk.generator.target)) )
 Runner.Parallel.set_running = set_running
 
 def name2class(name):
@@ -325,10 +334,45 @@ def make_picture(producer):
 	acc = []
 	for x in tmp:
 		thread_count += x[6]
-		acc.append("%d %d %f %r %d %d %d %s" % (x[0], x[1], x[2] - ini, x[3], x[4], x[5], thread_count, x[7]))
+		acc.append("%d %d %f %r %d %d %d \"%s\" \"%s\" \"%s\"" % (x[0], x[1], x[2] - ini, x[3], x[4], x[5], thread_count, x[7], x[8], x[9]))
 
 	data_node = producer.bld.path.make_node('pdebug.dat')
 	data_node.write('\n'.join(acc))
+
+	# Produce chromium about:tracing-compatible output file
+	# See https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview#
+	# and https://chromium.googlesource.com/catapult/+/HEAD/tracing/README.md for documentation
+	chrome_output = []
+	seen_tids = set()
+	for raw_line in acc:
+		line = raw_line.split()
+		tid = int(line[1])
+		ts = float(line[2])
+
+		if not tid in seen_tids:
+			seen_tids.add(tid)
+			chrome_output.append({
+				"name": line[9],
+				"cat": line[3],
+				"ph": 'B',
+				"ts": int(ts * 1e6),
+				"pid": 0,
+				"tid": int(line[0]),
+				"args": {
+					"outputs": line[7],
+					"inputs": line[8]
+				}
+			})
+		else:
+			chrome_output.append({
+				"ph": 'E',
+				"ts": int(ts * 1e6),
+				"pid": 0,
+				"tid": int(line[0]),
+			})
+
+	data_chrome_node = producer.bld.path.make_node('pdebug.json')
+	data_chrome_node.write_json(chrome_output, pretty=False)
 
 	tmp = [lst[:2] + [float(lst[2]) - ini] + lst[3:] for lst in tmp]
 
