@@ -249,8 +249,14 @@ def write_summary_xml(results, path):
         test_name = remove_evil_chars(test_result["file"])
         status = remove_evil_chars(test_result["status"])
         test_time = remove_evil_chars(str(test_result["time"]))
-        stdout_text = remove_evil_chars(test_result["stdout"])
-        stderr_text = remove_evil_chars(test_result["stderr"])
+        try:
+            stdout_text = remove_evil_chars(test_result["stdout"])
+        except KeyError:
+            stdout_text = ""
+        try:
+            stderr_text = remove_evil_chars(test_result["stderr"])
+        except KeyError:
+            stderr_text = ""
 
         # Add test case to tree
         testcase = ElementTree.SubElement(projects[project], "testcase",
