@@ -130,6 +130,7 @@ COMPILER_MAPPING = {
 	'g++': GccTraits,
 	'gcc': GccTraits,
 	'powerpc-eabi-gcc': GccTraits,
+	'powerpc-ppu-gcc': GccTraits,
 }
 
 def options(opt):
