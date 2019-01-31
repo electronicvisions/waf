@@ -33,6 +33,7 @@ CFGFOLDER = ".symwaf2ic"
 LOCKFILE = FILEPREFIX + ".conf.json"
 
 SETUP_CMD = "setup"
+DOC_CMD = "doc"
 # upon which commands shall the config be written
 STORE_CMDS = set([SETUP_CMD, "configure"])
 
@@ -727,6 +728,12 @@ class DependencyContext(Symwaf2icContext):
                     t = target[prefix:]
                     outfile.write('"{}" -> "{}";\n'.format(s, t))
             outfile.write("}")
+
+
+# Add documentation command and set its context to BuildContext instead of a Context
+class DocumentationContext(Build.BuildContext):
+    cmd = DOC_CMD
+    fun = DOC_CMD
 
 # Currently only kept for posterity
 # import types
