@@ -10,6 +10,10 @@ Unit testing system for google test execution:
 * in parallel, by using ``waf -j``
 * partial (only the tests that have changed) or full (by using ``waf --test-execall``)
 * to avoid problems with infinit loop tests can have a timeout
+* If not specified otherwise, a default test runner is used that exposes
+  `argc` and `**argv` as global variables `waf_gtest_argc` and `waf_gtest_argv`.
+  Tests **have to** define sane default settings for parameters they use, since
+  waf will run all tests without additional arguments.
 
 The tests are declared by adding the **gtest** feature to programs:
 
@@ -219,9 +223,29 @@ def makeDefaultTestRunner(ctx):
     runner.write("""
 #include <gtest/gtest.h>
 
-int main(int argc, char *argv[])
+/**
+ * Number of command line arguments passed to the test runner.
+ *
+ * This global variable is used to expose the number of command
+ * line arguments passed to the test runner to the actual tests.
+ */
+int waf_gtest_argc;
+
+/**
+ * Command line arguments passed to the test runner.
+ *
+ * This global variable is used to expose all command line
+ * arguments passed to the test runner to the actual tests.
+ */
+char** waf_gtest_argv;
+
+int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);
+
+    waf_gtest_argc = argc;
+    waf_gtest_argv = argv;
+
     return RUN_ALL_TESTS();
 }
 """)
