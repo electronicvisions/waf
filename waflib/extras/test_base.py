@@ -501,8 +501,18 @@ class TestBase(Task.Task):
             tg = self.generator.bld.get_tgen_by_name(use)
             if 'py' in tg.features:
                 # py thingy, lets add the paths to the build folder
-                for sf in tg.source:
-                    pathes.add(sf.parent.abspath())
+                if hasattr(tg, 'relative_trick'):
+                    if tg.relative_trick:
+                        if tg.install_from is not None:
+                            pathes.add(tg.install_from.abspath())
+                        else:
+                            pathes.add(tg.path.get_src().abspath())
+                    else:
+                        for sf in tg.source:
+                            pathes.add(sf.parent.abspath())
+                else:
+                    for sf in tg.source:
+                        pathes.add(sf.parent.abspath())
             if hasattr(tg, 'link_task'):
                 pathes.add(tg.link_task.outputs[0].parent.abspath())
 
