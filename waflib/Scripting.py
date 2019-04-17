@@ -77,7 +77,7 @@ def waf_entry_point(current_directory, version, wafdir):
 		if Options.lockfile in lst:
 			env = ConfigSet.ConfigSet()
 			try:
-				env.load(os.path.join(cur, Options.lockfile)) # produces a log message that will never be shown
+				env.load(os.path.join(cur, Options.lockfile))
 				ino = os.stat(cur)[stat.ST_INO]
 			except EnvironmentError:
 				pass

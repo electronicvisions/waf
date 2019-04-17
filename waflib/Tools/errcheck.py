@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 # encoding: utf-8
 # Thomas Nagy, 2011 (ita)
-# vim: ts=4 noexpandtab
 
 """
 Common mistakes highlighting.

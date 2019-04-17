@@ -110,15 +110,11 @@ class Project(object):
 
     @staticmethod
     def from_project_opt(arg):
-        #if '/' in arg:
-        #    Logs.warn("The project specification 'repo/branch' is deprecated, please use 'repo@branch' instead. I.e. no more slashes!") # \nYou can now even use repo@branch@subdir") Does not work
-        #    arg=arg.replace('/','@')
         def splitprj(arg):
             r = arg.split('@') # prj, branch, dir
             if not r[0]: raise # default opt parse message
             if len(r) == 1: return r[0], None, r[0]
             if len(r) == 2: return r[0], r[1] or None , r[0]
-            #if len(r) == 3: return r[0], r[1] or None, os.path.join(r[0], r[2]) # UNTESTED: specifying project and directory in one step is not jet implemented (dir option is ignored if project is set)
             raise Symwaf2icError("Bad argument to project: '{}', use repository@branch instead.".format(arg))
 
         p, b, d = splitprj(arg)
@@ -146,12 +142,6 @@ def options(opt):
             help="Make waf to recurse into the given folders. (Can be specified several times.)"
     )
 
-    # KHS wanted behaviour: but not supported by waf optparse legacy.
-    #gr.add_option(
-    #        "--update-branches", dest="update_branches", nargs='?',
-    #        default=False, const=True, type=misc.bool_or_string, choices = [ False, True, 'force' ],
-    #        help="Activate branch tracking (e.g., when updating repositories). Set 'force' to force branch update."
-    #)
     gr.add_option(
             "--update-branches", dest="update_branches",
             default=False, type='choice', choices="soft force".split(), # false is not a choice, its the default and bool('false') is true
@@ -734,155 +724,3 @@ class DependencyContext(Symwaf2icContext):
 class DocumentationContext(Build.BuildContext):
     cmd = DOC_CMD
     fun = DOC_CMD
-
-# Currently only kept for posterity
-# import types
-# import inspect
-
-
-# TODO: Delete Me
-# # which cmds should not have their execute patched
-# NO_PATCH_CMDS = "dependeny_resolution".split()
-
-# # utils for `patch_execute`
-# def find_indent(s):
-    # i = 0
-    # while s[:(i+1)].isspace():
-        # i += 1
-    # return i
-
-
-# def remove_indent(lines):
-    # n_indent = find_indent(lines[0])
-    # indent = lines[0][:n_indent]
-    # newlines = [s[n_indent:] for s in lines]
-    # return newlines, indent
-
-# _execute_insertion="""
-# # the rest of the wscripts do not have to include the specified
-# paths = get_required_paths()
-# self.recurse(paths, mandatory = False)
-# print 'PATCHED EXECUTE'
-
-# """.split("\n")
-
-# def patch_context_meta():
-    # """Monkey patch store_context to modify the sourcecode of execute()
-    # method whenever a class is generated.
-
-    # """
-    # meta        = Context.store_context
-    # method_name = "execute"
-    # insertion   = _execute_insertion
-
-    # class new_meta(meta):
-        # def __new__(cls, name, bases, dct):
-            # perform_patching = not ("cmd" in dict and dict["cmd"] in NO_PATCH_CMDS)
-            # perform_patching = perform_patching and method_name in dict
-
-            # if perform_patching:
-                # method = dict[method_name]
-                # sourcelines = inspect.getsource(method).split("\n")
-
-                # # remove indent so that we can recompile without error
-                # sourcelines, indent = remove_indent(sourcelines)
-
-                # # NOTE: We assume the first argument to be called 'self'
-                # #       Which is reasonable
-                # #       Also we assume the header to be contained in one line,
-                # #       which for execute is also reasonable since it should
-                # #       always be invoked with no arguments
-                # header = sourcelines[0]
-                # content = sourcelines[1:]
-
-                # for i, l in enumerate(content):
-                    # if "self.recurse(" in l:
-                        # # we found the recurse statement, insert the other statements below
-                        # i += 1
-                        # for insertline in reversed(insertion):
-                            # content.insert(i, insertline)
-                        # break
-
-                # new_source = "\n".join([header] + content)
-                # exec compile(new_source, '<string>', 'exec') in globals(), locals()
-
-                # dict[method_name] = eval(method_name)
-                # dict["symwaf2ic_patched"] = True
-
-            # return super(new_meta,meta).__new__(cls, name, bases, dict)
-
-    # # # NOTE: Reimplementation of waf code (hack)
-    # # created_classes = []
-    # # while Context.classes.count() > 0:
-        # # created_classes.append(Context.classes.pop())
-
-    # # Context.ctx = new_meta('ctx', (object,), {})
-
-
-# # TODO: DELETEME
-# def patch_execute(
-        # meta=Context.store_context,
-        # meta_method="__new__",
-        # method_name="execute",
-        # insertion=_execute_insertion
-    # ):
-    # """Monkey patch store_context to modify the sourcecode of execute()
-    # method whenever a class is generated.
-
-    # """
-    # # make sure only undefined methods are overwritten
-    # if getattr(meta, meta_method) != getattr(type, meta_method):
-        # raise Symwaf2icError("FATAL: Would overwrite defined waf method with unkown consquences!")
-
-    # def new_meta(cls, cls2, name, bases, dict):
-        # perform_patching = not ("cmd" in dict and dict["cmd"] in NO_PATCH_CMDS)
-        # perform_patching = perform_patching and method_name in dict
-
-        # if perform_patching:
-            # method = dict[method_name]
-            # sourcelines = inspect.getsource(method).split("\n")
-
-            # # remove indent so that we can recompile without error
-            # sourcelines, indent = remove_indent(sourcelines)
-
-            # # NOTE: We assume the first argument to be called 'self'
-            # #       Which is reasonable
-            # #       Also we assume the header to be contained in one line,
-            # #       which for execute is also reasonable since it should
-            # #       always be invoked with no arguments
-            # header = sourcelines[0]
-            # content = sourcelines[1:]
-
-            # for i, l in enumerate(content):
-                # if "self.recurse(" in l:
-                    # # we found the recurse statement, insert the other statements below
-                    # i += 1
-                    # for insertline in reversed(insertion):
-                        # content.insert(i, insertline)
-                    # break
-
-            # new_source = "\n".join([header] + content)
-            # print new_source
-            # exec compile(new_source, '<string>', 'exec') in globals(), locals()
-
-            # dict[method_name] = eval(method_name)
-
-        # return type.__new__(cls, name, bases, dict)
-
-    # new_meta.__name__ = meta_method
-    # setattr(meta, meta_method, types.MethodType(new_meta, meta, meta.__class__))
-
-
-# def _patched_execute(self):
-    # """Patched version of Context.Context.execute() so that not only the root
-    # wscript is recursed into but all required wscripts as well.
-
-    # """
-    # # first recurse main g_module mandatorily
-    # self.recurse([os.path.dirname(Context.g_module.root_path)])
-
-    # # the rest of the wscripts do not have to include the specified
-    # paths = get_required_paths()
-    # self.recurse(paths, mandatory = False)
-
-

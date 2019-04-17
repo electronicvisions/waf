@@ -9,8 +9,7 @@ A :py:class:`waflib.Dependencies.DependenciesContext` instance is created when `
 """
 
 import os, sys
-from waflib import Utils, Logs, Context, Options, Configure, Errors, Node
-from pprint import pprint
+from waflib import Utils, Logs, Context, Options, Configure, Errors
 import json
 import tempfile
 import re
@@ -20,56 +19,10 @@ import urlparse
 
 import subprocess
 from ConfigParser import RawConfigParser
-from StringIO import StringIO
 from symwaf2ic_misc import parse_gerrit_changes
 
 # will be set from symwaf2ic
 get_repo_tool = lambda: None
-
-
-class Project_DB(object):
-    def __init__(self, filepath):
-        if isinstance(filepath, Node.Node): filepath=filepath.abspath()
-        with open(filepath, 'r') as f:
-            self.content=f.read().replace('\n', ' ') # make real linebreaks in json strings act as spaces
-        self.db = json.loads(self.content)
-
-        # Toplevel data
-        self.projects=self.db.get('projects')
-        self.email_provider=self.db.get('known_email_provider')
-        self.default_pfiles=self.db.get('default_project_files')
-        self.reposerver=self.db.get('reposerver')
-
-    # Project data
-    def getManagers(self, project):
-        "A list of project managers (or a string): 'Name <email@address>'. Addresses ending with '@UPPERCASE' expand to a known_email_provider."
-        ml = self.projects.get(project)
-        if not ml: return None # project not found
-        ml = ml['manager']
-        if not ml: return None # no managers specified
-        if not isinstance(ml,list): ml = [ml]
-
-        for i,m in enumerate(ml):
-            for k,v in self.email_provider.iteritems():
-                k='@'+k+'>'
-                if m.endswith(k):
-                    ml[i] = m.replace(k, '@'+v+'>')
-                    break
-        return ml
-
-    #"title"
-    #    : "A short title that will be used to create display names for the projects jobs. Should start uppercase. Defaults to the project name.",
-    #"description"
-    #    : "An explicit description. Might be shown in the generated jobs. Maybe html?!",
-    #"since"
-    #    : "When was this project created, i.e. the project file generated and this entry added: 'yyyy-mm-dd'.",
-
-    #"setup"
-    #    : "The waf setup command: './waf setup --project xyz', Note that '--update-branches' will be appended automaticly (if not present).",
-    #"pfile"
-    #    : "The location of the project file: 'repo@branch:path/to/somefile.prj'. This holds the __definition__ of the project (the jobs).",
-
-    #"comment"
 
 
 class Repo_DB(object):
@@ -209,10 +162,6 @@ class Project(object):
     def path_from(self, start):
         assert os.path.isabs(start)
         return os.path.relpath(self.path, start)
-
-#    def set_real_branch(self):
-#        self.exec_cmd(get_branch_cmd())
-#        return self.get_branch()
 
     def exec_cmd(self, cmd, **kw):
         defaults = {
@@ -903,36 +852,6 @@ class mr_origin_log(mr_xrun):
         return ['run', self.getMrCmdFile(), logformat]
 
 
-# [2014-07-31 21:07:45] KHS, inital draft version
-# TODO add some reasonable checks (collision)
-# TODO help with autoincreasing version number
-# TODO write tags to file instead of the git repos
-# TODO add option to autopush?
-
-class mr_tag(mr_xrun):
-    """tag all repositories with "symwaf2ic-param1", right now no collision checks are performed."""
-    cmd = "repos-tag"
-    mr_cmds = [
-            'git tag "symwaf2ic-$1"',
-    ]
-
-    def get_args(self):
-        if Options.rargs:
-            tag = Options.rargs[0]
-            Options.rargs=[]
-        else:
-            self.fatal("Usage: %s. Maybe you forgot the '--' separator?" % (self.__doc__))
-
-        print
-        Logs.info("If you have not choosen a unique tag, tagging will fail on some repos with collisions.\n" +
-                  "Performing 'git tag symwaf2ic-{}'.\n".format(tag) +
-                  "Also be aware that you need to push the tags using 'git push --tags' (./waf mr-xrun \"git push --tags\")"
-        )
-        print
-
-        return [ 'run', self.getMrCmdFile(), tag ]
-
-
 class mr_status(MRContext):
     '''check status of the repositories (using MR tool)'''
     cmd = 'repos-status'
@@ -1100,21 +1019,3 @@ class show_repos_context(Context.Context):
         print header
         for d in data:
             print line.format(**d)
-
-
-def which(program):
-    import os
-    def is_exe(fpath):
-       return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-       if is_exe(program):
-           return program
-    else:
-       for path in os.environ["PATH"].split(os.pathsep):
-           exe_file = os.path.join(path, program)
-           if is_exe(exe_file):
-               return exe_file
-
-    return None

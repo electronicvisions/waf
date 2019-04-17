@@ -117,30 +117,6 @@ Options.optparse.OptionParser._old_process_args = Options.optparse.OptionParser.
 Options.optparse.OptionParser._process_args = _process_args
 
 
-from waflib.Configure import conf
-@conf
-def fix_boost_paths(self):
-    if not getattr(self, 'orig_check_boost', None) is None:
-        return # already set
-
-    self.orig_check_boost = self.check_boost # raise if boost tool isn't loaded
-    incs = os.environ.get('BOOSTINC', None)
-    libs = os.environ.get('BOOSTLIB', None)
-
-    def my_check_boost(*k, **kw):
-        if not kw.has_key('includes') and incs:
-            kw['includes'] = incs
-        if not kw.has_key('libs') and libs:
-            kw['libs'] = libs
-        self.orig_check_boost(*k, **kw)
-    self.check_boost = my_check_boost
-
-def bool_or_string(string):
-    if string.lower() == "true": return True
-    if string.lower() == "false": return False
-    return string
-
-
 # --- Gerrit helper functions --- #
 def parse_gerrit_changes(arg):
     ret = []
