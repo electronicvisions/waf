@@ -595,7 +595,6 @@ class Node(object):
 		:rtype: iterator
 		"""
 		dircont = self.listdir()
-		dircont.sort()
 
 		try:
 			lst = set(self.children.keys())
