@@ -541,7 +541,9 @@ class TestBase(Task.Task):
             pass
         return None
 
-    def runTest(self, test, cmd):
+    def runTest(self, test, cmd, cwd=None):
+        if cwd is None: cwd = self.cwd
+
         environ = self.getEnviron()
         name = test.name
         result = {"file" : name, "statistic": None}
@@ -550,7 +552,7 @@ class TestBase(Task.Task):
                 if Logs.verbose:
                     Logs.pprint('PINK', '   spawning test:', '%s' % cmd)
                 self.proc = Popen('%s' % ' '.join(cmd),
-                             cwd=self.cwd,
+                             cwd=cwd,
                              env=environ,
                              stderr=PIPE,
                              stdout=PIPE,
