@@ -148,7 +148,7 @@ def options(opt):
             help="Activate branch tracking (e.g., when updating repositories). If specified set to soft or force (the latter deletes local changes)."
     )
     gr.add_option(
-            "--gerrit-changes", default=[], action="store",
+            "--gerrit-changes", "--gerrit-changesets", default=[], action="store",
             type=parse_gerrit_changes if is_symwaf2ic else str,
             help="Comma-seperated list of gerrit query ids. Possible values "
                  "are changeset numbers, changeset ids or complex queries like "
