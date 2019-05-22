@@ -190,23 +190,26 @@ def addSummaryMsg(results):
         if statistic is not None:
             assert None not in statistic
 
-        if status in (TestBase.PASSED, TestBase.FAILED) and statistic is None:
-            color = "RED"
-            msg.append('none executed')
-        elif status == TestBase.PASSED:
+        if status == TestBase.PASSED:
             color = "GREEN"
-            total, errors, failures, skip = statistic
-            passed = total - (errors + failures + skip)
-            msg.append('{} passed'.format(passed))
-            if skip != 0:
-                msg.append('({} skipped)'.format(skip))
+            if statistic is None:
+                msg.append('successful (no statistics)')
+            else:
+                total, errors, failures, skip = statistic
+                passed = total - (errors + failures + skip)
+                msg.append('{} passed'.format(passed))
+                if skip != 0:
+                    msg.append('({} skipped)'.format(skip))
         elif status == TestBase.FAILED:
             color = "RED"
-            total, errors, failures, skip = statistic
-            fail_sum = errors + failures
-            if not fail_sum:    # Something went wrong, mark everything failed
-                fail_sum = total
-            msg.append('{}/{} failed'.format(fail_sum, total))
+            if statistic is None:
+                msg.append('failed (no statistics)')
+            else:
+                total, errors, failures, skip = statistic
+                fail_sum = errors + failures
+                if not fail_sum:  # Something went wrong, mark everything failed
+                    fail_sum = total
+                msg.append('{}/{} failed'.format(fail_sum, total))
         elif status == TestBase.TIMEOUT:
             color = "YELLOW"
             msg.append('timeout')
@@ -268,23 +271,13 @@ def write_summary_xml(results, path):
         stderr.text = stderr_text
 
         if status is TestBase.PASSED:
-            pass
+            continue
         elif status is TestBase.FAILED:
             ElementTree.SubElement(testcase, "failure")
             continue
         else:
             ElementTree.SubElement(testcase, "error")
             continue
-
-        # Enforce that test suites provide statistics
-        statistics = test_result["statistic"]
-        if statistics is None:
-            ElementTree.SubElement(testcase, "error")
-            continue
-
-        # Enforce that at least one test has been run for every suite
-        if status is TestBase.PASSED and statistics[0] < 1:
-            ElementTree.SubElement(testcase, "error")
 
     tree = ElementTree.ElementTree(testsuites)
     tree.write(path)
