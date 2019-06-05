@@ -102,7 +102,7 @@ def to_incnodes(self, inlst):
 				lst.append(v)
 	return lst
 
-@feature('c', 'cxx', 'd', 'asm', 'fc', 'includes')
+@feature('c', 'cxx', 'd', 'asm', 'fc', 'includes', 'test_base')
 @after_method('propagate_uselib_vars', 'process_source')
 def apply_incpaths(self):
 	"""
