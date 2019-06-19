@@ -1,3 +1,57 @@
+NEW IN WAF 2.0.17
+-----------------
+* Improve build performance on FreeBSD and Python3 #2241
+* Add Python 3.8 flag detection for building embedded interpreters #2239
+* Prevent Qt5 uninstallation errors when c++ files are generated
+* Improve installation/uninstallation colors
+
+NEW IN WAF 2.0.16
+-----------------
+* Fix task semaphore errors on stateful tasks #2232
+* Fix encoding errors with UTF-8 paths on Python 2 #2230
+* Fix encoding errors in waf_unit_test #2220
+* Improve dependency between javac task and use-d generated jars nodes
+* Install pdb files with /debug:* flags #2224
+* Make javadoc detection optional #2225
+* Improve md5_tstamp documentation #2221
+* Add extras/color_msvc to colorizes MSVC outputs #2221
+* Fix symbol regex on mac-o binaries in extras/syms #2222
+* Maintain order of lines in doxyfile in extras/doxygen #2223
+* Improve extras/msvcdeps path handling
+* Add extras/clang_cross for cross-compilation using clang
+
+NEW IN WAF 2.0.15
+-----------------
+* Fix Python path detection under Git-Bash #2217
+* Provide an option to disable args files #2216
+* Improve command line length calculation for args files #2214
+* Add libs/stubs to Cuda library path #2213
+* Suppress ant_glob java warnings #2212
+* Support multiple 'default_cmd' #2211
+* Warn when buildcopy is used without any files to copy #2210
+* Protobuf examples enhancements #2208 #2209
+* Fix all DeprecationWarning: invalid escape sequence #2207
+
+NEW IN WAF 2.0.14
+-----------------
+* Support Fortran 2008 submodules #2205
+* Possible solution for Msys/Python 3.6 path issues #2217
+* Support NEC SX-Aurora TSUBASA system's Fortran compiler extras/fc_nfort.py #2206
+* Fix ignored configuration flags in gccdeps extras/gccdeps.py #2203
+* Fix included protoc search on nested wscripts extras/protoc.py #2202
+* Support extra taskgen and out of project include directories extras/protoc.py #2204
+
+NEW IN WAF 2.0.13
+-----------------
+* Fix "broken revdeps" extra error message on certain build failures
+* Avoid duplicate flags in Python configuration tests
+* Find more Swig dependencies #2206
+* Avoid spawning threads with -j1 on AIX systems
+
+NEW IN WAF 2.0.12
+-----------------
+* Fix broken inheritance task trees #2194
+
 NEW IN WAF 2.0.11
 -----------------
 * Do not raise an exception on check_cfg/mandatory=False/-vv #2193

@@ -104,7 +104,7 @@ class BuildContext(Context.Context):
 		"""Amount of jobs to run in parallel"""
 
 		self.targets = Options.options.targets
-		"""List of targets to build (default: \*)"""
+		"""List of targets to build (default: \\*)"""
 
 		self.keep = Options.options.keep
 		"""Whether the build should continue past errors"""
@@ -1062,7 +1062,7 @@ class inst(Task.Task):
 		if isinstance(self.install_to, Node.Node):
 			dest = self.install_to.abspath()
 		else:
-			dest = Utils.subst_vars(self.install_to, self.env)
+			dest = os.path.normpath(Utils.subst_vars(self.install_to, self.env))
 		if not os.path.isabs(dest):
 		    dest = os.path.join(self.env.PREFIX, dest)
 		if destdir and Options.options.destdir:
@@ -1160,11 +1160,19 @@ class inst(Task.Task):
 				# same size and identical timestamps -> make no copy
 				if st1.st_mtime + 2 >= st2.st_mtime and st1.st_size == st2.st_size:
 					if not self.generator.bld.progress_bar:
-						Logs.info('- install %s (from %s)', tgt, lbl)
+
+						c1 = Logs.colors.NORMAL
+						c2 = Logs.colors.BLUE
+
+						Logs.info('%s- install %s%s%s (from %s)', c1, c2, tgt, c1, lbl)
 					return False
 
 		if not self.generator.bld.progress_bar:
-			Logs.info('+ install %s (from %s)', tgt, lbl)
+
+			c1 = Logs.colors.NORMAL
+			c2 = Logs.colors.BLUE
+
+			Logs.info('%s+ install %s%s%s (from %s)', c1, c2, tgt, c1, lbl)
 
 		# Give best attempt at making destination overwritable,
 		# like the 'install' utility used by 'make install' does.
@@ -1221,14 +1229,18 @@ class inst(Task.Task):
 		"""
 		if os.path.islink(tgt) and os.readlink(tgt) == src:
 			if not self.generator.bld.progress_bar:
-				Logs.info('- symlink %s (to %s)', tgt, src)
+				c1 = Logs.colors.NORMAL
+				c2 = Logs.colors.BLUE
+				Logs.info('%s- symlink %s%s%s (to %s)', c1, c2, tgt, c1, src)
 		else:
 			try:
 				os.remove(tgt)
 			except OSError:
 				pass
 			if not self.generator.bld.progress_bar:
-				Logs.info('+ symlink %s (to %s)', tgt, src)
+				c1 = Logs.colors.NORMAL
+				c2 = Logs.colors.BLUE
+				Logs.info('%s+ symlink %s%s%s (to %s)', c1, c2, tgt, c1, src)
 			os.symlink(src, tgt)
 			self.fix_perms(tgt)
 
@@ -1237,7 +1249,9 @@ class inst(Task.Task):
 		See :py:meth:`waflib.Build.inst.do_install`
 		"""
 		if not self.generator.bld.progress_bar:
-			Logs.info('- remove %s', tgt)
+			c1 = Logs.colors.NORMAL
+			c2 = Logs.colors.BLUE
+			Logs.info('%s- remove %s%s%s', c1, c2, tgt, c1)
 
 		#self.uninstall.append(tgt)
 		try:
@@ -1257,7 +1271,9 @@ class inst(Task.Task):
 		"""
 		try:
 			if not self.generator.bld.progress_bar:
-				Logs.info('- remove %s', tgt)
+				c1 = Logs.colors.NORMAL
+				c2 = Logs.colors.BLUE
+				Logs.info('%s- remove %s%s%s', c1, c2, tgt, c1)
 			os.remove(tgt)
 		except OSError:
 			pass
@@ -1318,7 +1334,8 @@ class CleanContext(BuildContext):
 			lst = []
 			for env in self.all_envs.values():
 				lst.extend(self.root.find_or_declare(f) for f in env[CFG_FILES])
-			for n in self.bldnode.ant_glob('**/*', excl='.lock* *conf_check_*/** config.log c4che/*', quiet=True):
+			excluded_dirs = '.lock* *conf_check_*/** config.log %s/*' % CACHE_DIR
+			for n in self.bldnode.ant_glob('**/*', excl=excluded_dirs, quiet=True):
 				if n in lst:
 					continue
 				n.delete()

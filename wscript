@@ -11,7 +11,7 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 
 from __future__ import with_statement
 
-VERSION="2.0.11"
+VERSION="2.0.17"
 APPNAME='waf'
 REVISION=''
 
@@ -30,7 +30,7 @@ from waflib import Configure
 Configure.autoconfig = 1
 
 def sub_file(fname, lst):
-	with open(fname, 'rU') as f:
+	with open(fname, 'r') as f:
 		txt = f.read()
 
 	for (key, val) in lst:
@@ -160,7 +160,7 @@ def process_tokens(tokens):
 	body = ''.join(accu)
 	return body
 
-deco_re = re.compile('(def|class)\\s+(\w+)\\(.*')
+deco_re = re.compile('(def|class)\\s+(\\w+)\\(.*')
 def process_decorators(body):
 	lst = body.splitlines()
 	accu = []
@@ -258,20 +258,19 @@ def create_waf(self, *k, **kw):
 	for x in Options.options.coretools.split(','):
 		coretools.append(x + '.py')
 
-	for d in '. Tools extras bin'.split():
-		dd = os.path.join('waflib', d)
-		for k in os.listdir(dd):
-			if k == '__init__.py':
-				files.append(os.path.normpath(os.path.join(dd, k)))
+	up_node = self.generator.bld.path
+	for node in up_node.find_dir('waflib').ant_glob(incl=['*.py', 'Tools/*.py', 'extras/*.py', 'bin/*']):
+		relpath = node.path_from(up_node)
+		if node.name == '__init__.py':
+			files.append(relpath)
+			continue
+		if node.parent.name == 'Tools' and Options.options.coretools != 'default':
+			if node.name not in coretools:
 				continue
-			if d == 'Tools' and Options.options.coretools != 'default':
-				if not k in coretools:
-					continue
-			if d == 'extras':
-				if not k in add3rdparty:
-					continue
-			if k.endswith('.py') or d == 'bin':
-				files.append(os.path.normpath(os.path.join(dd, k)))
+		if node.parent.name == 'extras':
+			if node.name not in add3rdparty:
+				continue
+		files.append(relpath)
 
 	if Options.options.namesfrom:
 		with tarfile.open(Options.options.namesfrom) as tar:
@@ -315,7 +314,7 @@ def create_waf(self, *k, **kw):
 	tar.close()
 	z.close()
 
-	with open('waf-light', 'rU') as f:
+	with open('waf-light', 'r') as f:
 		code1 = f.read()
 
 	# now store the revision unique number in waf
