@@ -297,7 +297,7 @@ def remove_ndebug_from_env(env):
 	for module in [ 'PYEMBED', 'PYEXT' ]:
 		try:
 			defines_module = 'DEFINES_%s' % module
-			env[defines_module] = filter(lambda a: a != 'NDEBUG', env[defines_module])
+			env[defines_module] = list(filter(lambda a: a != 'NDEBUG', env[defines_module]))
 		except:
 			pass
 

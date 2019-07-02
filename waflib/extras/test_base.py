@@ -20,6 +20,7 @@ specially handled. The following pathes are added there, in the given order:
 """
 
 import os
+import sys
 import traceback
 import errno
 
@@ -143,7 +144,7 @@ def formatStatisticsBrokenTests(results):
     if count:
         msg = "   {status:.<%i}: {no:>4}" % max(len(s) for s in count.keys())
         broken = ["Broken tests:"]
-        for status, no in count.iteritems():
+        for status, no in count.items():
             broken.append(msg.format(status=status, no=no))
     else:
         broken =[]
@@ -232,11 +233,15 @@ def write_summary_xml(results, path):
         """
         Remove ANSI escape characters that cannot be handled by JUnit
         """
-        escape_numbers = range(1, 32)   # all ANSI escape characters
+        escape_numbers = list(range(1, 32))   # all ANSI escape characters
         escape_numbers.remove(10)       # newline is fine
         escape_numbers.remove(13)       # carriage return is fine
         escapes = ''.join([chr(char) for char in escape_numbers])
-        return string.translate(None, escapes)
+        try:
+            table = str.maketrans(dict.fromkeys(escapes))
+            return string.translate(table)
+        except AttributeError:  # python2 compatibility
+            return str(string).translate(None, escapes)
 
     # JUnit XML root
     testsuites = ElementTree.Element('testsuites')
@@ -558,7 +563,10 @@ class TestBase(Task.Task):
                              stdout=PIPE,
                              shell=True
                 )
-                result["stdout"], result["stderr"] = self.proc.communicate()
+                stdout, stderr = self.proc.communicate()
+                stdout = stdout.decode(sys.stdout.encoding or "utf-8")
+                stderr = stderr.decode(sys.stderr.encoding or "utf-8")
+                result["stdout"], result["stderr"] = stdout, stderr
                 if self.proc.returncode == 0:
                     result["status"] = self.PASSED
                     result["statistic"] = self.readTestResult(test)
@@ -569,7 +577,7 @@ class TestBase(Task.Task):
                 else:
                     result["status"] = self.FAILED
                     result["statistic"] = self.readTestResult(test)
-            except Exception, e:
+            except Exception as e:
                 result["stderr"] = traceback.format_exc(e)
                 result["status"] = self.INTERNAL_ERROR
                 result["error_message"] = e.message
@@ -587,7 +595,7 @@ class TestBase(Task.Task):
                     self.proc.terminate()
                     sleep(0.5) # grace period
                     self.proc.kill()
-                except OSError, e:
+                except OSError as e:
                     # ignore "process not found"
                     pass
             thread.join(0.5) # to avoid another hang...
@@ -602,7 +610,7 @@ class TestBase(Task.Task):
             result_file = txt_result_dir.find_or_declare(name + ".err")
             result_file.write(result.get("stderr", ""))
             debug_script = ['cd ' + self.cwd]
-            for var, value in environ.iteritems():
+            for var, value in environ.items():
                 debug_script.append('export {var}="{value}"'.format(
                     var=var, value=value))
             debug_script.append('%s' % ' '.join(cmd))

@@ -195,7 +195,7 @@ def configure(conf):
 	
 	# ECM: Policy => don't touch env vars if they are set! The user knows it better!
 	env_vars = 'DEFINES CFLAGS CXXFLAGS LINKFLAGS'.split()
-	user_vars = [ var for var in env_vars if os.environ.has_key(var) ]
+	user_vars = [ var for var in env_vars if var in os.environ ]
 	if user_vars:
 		Logs.warn('Visionary build flags have been disabled due to user-defined '
 		          'environment variables: %s' % ', '.join(user_vars))
@@ -217,9 +217,9 @@ def configure(conf):
 		paths = os.environ.get(envvar, '').split(':')
 		return ['{}{}'.format(option, x) for x in paths if x]
 
-	if os.environ.has_key('C_INCLUDE_PATH'):
+	if 'C_INCLUDE_PATH' in os.environ:
 		conf.env.append_value('CFLAGS', format_compiler_option('-I', 'C_INCLUDE_PATH'))
-	if os.environ.has_key('CPLUS_INCLUDE_PATH'):
+	if 'CPLUS_INCLUDE_PATH' in os.environ:
 		conf.env.append_value('CXXFLAGS', format_compiler_option('-I', 'CPLUS_INCLUDE_PATH'))
-	if os.environ.has_key('LIBRARY_PATH'):
+	if 'LIBRARY_PATH' in os.environ:
 		conf.env.append_value('LINKFLAGS', format_compiler_option('-L', 'LIBRARY_PATH'))

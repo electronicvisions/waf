@@ -15,11 +15,19 @@ import tempfile
 import re
 import shutil
 from distutils.version import LooseVersion
-import urlparse
+
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
 
 import subprocess
-from ConfigParser import RawConfigParser
-from symwaf2ic_misc import parse_gerrit_changes
+
+try:
+    from ConfigParser import RawConfigParser
+except ImportError:
+    from configparser import RawConfigParser
+from waflib.extras.symwaf2ic_misc import parse_gerrit_changes
 
 # will be set from symwaf2ic
 get_repo_tool = lambda: None
@@ -57,8 +65,8 @@ class BranchError(Exception):
 
 
 class Project(object):
-    def __init__(self, name, path, branch = None, ref = None, clone_depth = None):
-        assert isinstance(name, basestring)
+    def __init__(self, name, path, branch = None, ref = None, clone_depth = -1):
+        assert isinstance(name, str)
         assert os.path.isabs(path)
         self._name = name
         self._path = path
@@ -97,7 +105,7 @@ class Project(object):
     @property
     def required_branch(self):
         if self._branch is None:
-            raise BranchError, "required branch unknown"
+            raise BranchError("required branch unknown")
         return self._branch
 
     @required_branch.setter
@@ -107,7 +115,7 @@ class Project(object):
         elif branch is None:
             pass
         elif self._branch != branch:
-            raise BranchError, "branch already set"
+            raise BranchError("branch already set")
         else:
             pass
 
@@ -174,7 +182,9 @@ class Project(object):
             cmd=cmd, env=defaults))
         p = subprocess.Popen(cmd, **defaults)
         stdout, stderr = p.communicate()
-        return p.returncode, stdout, stderr
+        return p.returncode, \
+               stdout.decode(sys.stdout.encoding or "utf-8"), \
+               stderr.decode(sys.stderr.encoding or "utf-8")
 
     # TO IMPLEMENT
     def mr_checkout_cmd(self, *k, **kw):
@@ -292,7 +302,7 @@ class MR(object):
 
         self.clone_depth = clone_depth
 
-        if isinstance(gerrit_url, basestring):
+        if isinstance(gerrit_url, str):
             self.gerrit_url = urlparse.urlparse(gerrit_url)
         elif isinstance(gerrit_url, urlparse.ParseResult):
             self.gerrit_url = gerrit_url
@@ -375,7 +385,7 @@ class MR(object):
         self.init_default_config()
         self.load_projects()
         not_on_filesystem = []
-        for name, p in self.projects.iteritems():
+        for name, p in self.projects.items():
             if not os.path.isdir(p.path):
                 not_on_filesystem.append(name)
         if not_on_filesystem:
@@ -419,7 +429,7 @@ class MR(object):
         self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
 
         kw['cwd']    = self.base
-        kw['env']    = self.get_mr_env()
+        kw['env']    = dict(self.get_mr_env())
         return cmd, kw
 
     def getMrScript(self, *args):
@@ -436,7 +446,7 @@ class MR(object):
                 for arg in args:
                     out.write(arg)
                     out.write('\n')
-            os.chmod(fullpath, 0754)
+            os.chmod(fullpath, 0o754)
             Logs.debug("mr: script created " + fullpath)
         else:
             Logs.debug("mr: script reused " + fullpath)
@@ -536,6 +546,7 @@ class MR(object):
             git_p = subprocess.Popen(["git", "config", "gitreview.username"],
                                      stdout=subprocess.PIPE)
             review_user, _ = git_p.communicate()
+            review_user.decode(sys.stdout.encoding or "utf-8")
             if git_p.returncode == 0:
                 ssh += ' -l {U}'.format(U=review_user.strip())
         if self.gerrit_url.port:
@@ -602,7 +613,7 @@ class MR(object):
 
             # Add all cross-repo changesets to the seen changes and the
             # results list
-            for project, cross_cs in cross_cs.iteritems():
+            for project, cross_cs in cross_cs.items():
                 for changeset in cross_cs:
                     seen.add(changeset['number'])
                     changesets.setdefault(project, []).append(changeset)
@@ -707,12 +718,12 @@ class MR(object):
         self.save_config(parser)
 
     def clean_projects(self):
-        names = [ p.name for p in self.projects.itervalues() if not p.required ]
+        names = [p.name for p in self.projects.values() if not p.required]
         self.remove_projects(names)
 
     def get_wrong_branches(self):
         ret = []
-        for name, p in self.projects.iteritems():
+        for name, p in self.projects.items():
             try:
                 if p.required_branch != p.real_branch:
                     ret.append( (name, p.real_branch, p.required_branch) )
@@ -725,7 +736,7 @@ class MR(object):
 
     def pretty_projects(self):
         names = []
-        for name, p in self.projects.iteritems():
+        for name, p in self.projects.items():
             names.append(self.pretty_name(p))
         return ", ".join(names)
 
@@ -824,7 +835,7 @@ class mr_xrun(MRContext):
         if not self.mr_cmds:
             self.fatal("Usage: %s. Maybe you forgot the '--' separator?" % (self.__doc__))
 
-        import symwaf2ic
+        from waflib.extras import symwaf2ic
         script = symwaf2ic.storage.repo_tool.getMrScript(*self.mr_cmds)
         return script
 
@@ -1016,6 +1027,6 @@ class show_repos_context(Context.Context):
         else:
             header += '\n' + "-" * len(header)
 
-        print header
+        print(header)
         for d in data:
-            print line.format(**d)
+            print(line.format(**d))

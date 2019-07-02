@@ -306,7 +306,7 @@ def boost_get_libs(self, *k, **kw):
 		# ECM (2016-10-05): Switch to multi-threading libs by default
 		# Caller passes empty string for unset kwargs...
 		multi_threading = True
-		if kw.has_key('mt') and kw.get('mt') != '':
+		if 'mt' in kw and kw.get('mt') != '':
 			multi_threading = bool(kw.get('mt'))
 		if multi_threading:
 			t.append('-mt')

@@ -168,9 +168,9 @@ def assert_toplevel_wscript():
                 wf.write(_toplevel_wscript_contents)
 
         else:
-            print "ERROR: No wscript present in current directory. In order "\
-                  "to initialize the symwaf2ic toplevel (and the "\
-                  "corresponding wscript), please issue the 'setup' command."
+            print("ERROR: No wscript present in current directory. In order "
+                  "to initialize the symwaf2ic toplevel (and the "
+                  "corresponding wscript), please issue the 'setup' command.")
             sys.exit(1)
 
 

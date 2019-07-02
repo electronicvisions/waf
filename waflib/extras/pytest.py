@@ -11,7 +11,8 @@ from waflib.TaskGen import feature, after_method, before_method
 from waflib.Tools import ccroot
 from waflib import Utils
 from os.path import basename, join, splitext
-import test_base
+from waflib.extras import test_base
+
 
 class pytest(test_base.TestBase):
     in_ext = [".py"]

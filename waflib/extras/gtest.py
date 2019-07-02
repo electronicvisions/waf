@@ -69,7 +69,7 @@ from waflib import Build, Utils, Task, Logs, Options, Errors, Node
 from waflib.Tools import ccroot
 from os.path import basename, join
 from time import time
-import test_base as test
+import waflib.extras.test_base as test
 
 USE_GTEST = "GTEST"
 _gtest_bundled_src = 'gtest-all.cc'
@@ -102,12 +102,14 @@ def gtest_add_test_runner(self):
         return
 
     src = []
-    if not "GTEST_MAIN_SRC" in  self.env: raise Errors.WafError, "env broken, please rerun configure"
+    if not "GTEST_MAIN_SRC" in self.env:
+        raise Errors.WafError("env broken, please rerun configure")
     for f in self.to_list(getattr(self, "test_main", self.env.GTEST_MAIN_SRC)):
         if not f is None:
             r = self.path.find_resource(f) or self.bld.bldnode.find_resource(f)
             if r is None:
-                raise Errors.WafError, "Source file for testrunner missing: %s" % f
+                raise Errors.WafError(
+                    "Source file for testrunner missing: %s" % f)
             src.append(r)
     for f in getattr(self.env, "GTEST_GTEST_SRC", []):
         src.append(self.bld.root.find_node(f) or self.bld.bldnode.find_or_declare(f))
@@ -275,9 +277,9 @@ def gtest_src_search_pathes(env):
 def buildGTestRunner(bld, runner, target, **kwargs):
     """Build the GTestLib or uses the precompiled, if no sources are available
     """
-    raise Errors.WafError, """buildGTestRunner is gone, use instead:
+    raise Errors.WafError("""buildGTestRunner is gone, use instead:
 bld(
     feature = "gtest",
     test_main = "runner.cpp",
     ...
-)\n"""
+)\n""")

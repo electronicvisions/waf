@@ -120,8 +120,8 @@ class pyplusplus(Task.Task):
             stdout, stderr = bld.cmd_and_log(args, cwd = bld.variant_dir, env=env, output=Context.BOTH, quiet=Context.BOTH)
         except Errors.WafError as e:
             try:
-                print e.stdout
-                print e.stderr
+                print(e.stdout)
+                print(e.stderr)
                 return e.returncode
             except AttributeError:
                 raise e
@@ -361,7 +361,7 @@ def configure(conf):
         try:
             conf.cmd_and_log(conf.env['PYTHON'] + ['-c', test], env=get_environ(conf))
         except Errors.WafError as e:
-            print e.stdout, e.stderr
+            print(e.stdout, e.stderr)
             conf.fatal(not_found_msg % mod)
 
     # ECM: We would have to check if compiled boost library was compiled
@@ -382,7 +382,7 @@ def configure(conf):
             msg += "\nThis might cause problems (see gcc bugzilla #53455)."
             msg += "\nUse CXX_PYPP=g++-4.X to specify the boost library compiler."
             msg += "\nIf your boost library matches the rest of the OS, CXX_PYPP=g++ should suffice."
-            raise Errors.WafError, msg
+            raise Errors.WafError(msg)
         conf.env.revert()
 
     conf.env.CXX_PYPP = os.environ.get('CXX_PYPP', conf.env.CXX)

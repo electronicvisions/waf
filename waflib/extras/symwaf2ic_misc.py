@@ -1,6 +1,9 @@
 import argparse, os
 import re
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from waflib import Logs, Options
 
@@ -109,7 +112,7 @@ def _process_args(self, largs, rargs, values):
     while rargs:
         try:
             OptionParser._old_process_args(self, largs, rargs, values)
-        except (BadOptionError, AmbiguousOptionError), e:
+        except (BadOptionError, AmbiguousOptionError) as e:
             largs.append(e.opt_str)
 
 # monkey patch optparse to support unkown arguments (partial argument list while constructing the list => depends() needs it)

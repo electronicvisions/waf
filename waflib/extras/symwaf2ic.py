@@ -12,14 +12,18 @@ import subprocess
 
 import json
 from collections import defaultdict, deque
-from urlparse import urlparse
+
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from waflib import Build, Context, Errors, Logs, Utils, Options
 from waflib.extras import mr
 
-from symwaf2ic_misc import add_username_to_gerrit_url
-from symwaf2ic_misc import parse_gerrit_changes
-from symwaf2ic_misc import validate_gerrit_url
+from waflib.extras.symwaf2ic_misc import add_username_to_gerrit_url
+from waflib.extras.symwaf2ic_misc import parse_gerrit_changes
+from waflib.extras.symwaf2ic_misc import validate_gerrit_url
 
 
 #############
@@ -265,7 +269,7 @@ class MainContext(Symwaf2icContext):
             config = json.load(storage.lockfile)
 
         storage.save = config.keys()
-        for k, v in config.iteritems():
+        for k, v in config.items():
             setattr(storage, k, v)
 
         if not SETUP_CMD in sys.argv:
@@ -289,6 +293,7 @@ class MainContext(Symwaf2icContext):
             git_p = subprocess.Popen(["git", "config", "gitreview.username"],
                                      stdout=subprocess.PIPE)
             review_user, _ = git_p.communicate()
+            review_user = review_user.decode(sys.stdout.encoding or "utf-8")
             if git_p.returncode == 0:
                 self.gerrit_username = review_user.strip()
 
@@ -383,7 +388,7 @@ class OptionParserContext(Symwaf2icContext):
     def add_option(self, *k, **kw):
         # fixes for optparse -> argparse compatability (NOTE: Definitively not be complete)
         if "type" in kw:
-            if isinstance(kw["type"], basestring):
+            if isinstance(kw["type"], str):
                 self._parse_type(kw)
         if "callback" in kw:
             Logs.warn("Option '{}' was ignored during setup call, because it used callback keyword".format(k[0]))
@@ -600,7 +605,8 @@ class DependencyContext(Symwaf2icContext):
             storage.saved_paths = storage.paths
             self._store_config()
         elif (storage.saved_paths is not None
-                and storage.saved_paths != storage.paths
+                # Topological order is not definite, compare sets
+                and set(storage.saved_paths) != set(storage.paths)
                 and not is_help_requested()):
             raise Symwaf2icError("Dependency information changed. Please rerun "
                                  "'setup' or 'configure' before continuing!")
@@ -649,7 +655,7 @@ class DependencyContext(Symwaf2icContext):
         if data:
             Logs.info("Appending git exclude rules to '{}'".format(git_info_exclude_node.abspath()))
             data=data+'\n'
-            print data
+            print(data)
             git_info_exclude_node.write(data,'a')
 
     def pre_recurse(self, node):
@@ -712,7 +718,7 @@ class DependencyContext(Symwaf2icContext):
         prefix = len(os.path.commonprefix(self.dependencies.keys()))
         with open(filename, 'w') as outfile:
             outfile.write("digraph {\n")
-            for source, targets in self.dependencies.iteritems():
+            for source, targets in self.dependencies.items():
                 s = source[prefix:]
                 for target in targets:
                     t = target[prefix:]
