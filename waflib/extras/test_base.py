@@ -255,7 +255,7 @@ def write_summary_xml(results, path):
     for test_result in results:
         project = remove_evil_chars(test_result["project"])
         test_name = remove_evil_chars(test_result["file"])
-        status = remove_evil_chars(test_result["status"])
+        status = test_result["status"]
         test_time = remove_evil_chars(str(test_result["time"]))
         try:
             stdout_text = remove_evil_chars(test_result["stdout"])
