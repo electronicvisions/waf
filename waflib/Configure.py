@@ -528,7 +528,7 @@ def run_build(self, *k, **kw):
 	Though this function returns *0* by default, the build may set an attribute named *retval* on the
 	build context object to return a particular value. See :py:func:`waflib.Tools.c_config.test_exec_fun` for example.
 
-	This function also provides a limited cache. To use it, provide the following option::
+	This function also features a cache which can be enabled by the following option::
 
 		def options(opt):
 			opt.add_option('--confcache', dest='confcache', default=0,
@@ -539,14 +539,20 @@ def run_build(self, *k, **kw):
 		$ waf configure --confcache
 
 	"""
-	lst = [str(v) for (p, v) in kw.items() if p not in ('env', 'build_fun')]
-	if 'build_fun' in kw:
-		# CK (2018-01-17): previously the function instance was hashed
-		lst.append(kw['build_fun'].__name__)
-	# ECM (2018-01-17): add environment variables to confcache's hash
-	lst.append(str(kw['env']))
-	h = Utils.h_list(lst)
+	buf = []
+	for key in sorted(kw.keys()):
+		v = kw[key]
+		if hasattr(v, '__call__'):
+			buf.append(Utils.h_fun(v))
+		else:
+			buf.append(str(v))
+	h = Utils.h_list(buf)
 	dir = self.bldnode.abspath() + os.sep + (not Utils.is_win32 and '.' or '') + 'conf_check_' + Utils.to_hex(h)
+
+	cachemode = kw.get('confcache', getattr(Options.options, 'confcache', None))
+
+	if not cachemode and os.path.exists(dir):
+		shutil.rmtree(dir)
 
 	try:
 		os.makedirs(dir)
@@ -558,8 +564,7 @@ def run_build(self, *k, **kw):
 	except OSError:
 		self.fatal('cannot use the configuration test folder %r' % dir)
 
-	cachemode = getattr(Options.options, 'confcache', False)
-	if cachemode:
+	if cachemode == 1:
 		try:
 			proj = ConfigSet.ConfigSet(os.path.join(dir, 'cache_run_build'))
 		except EnvironmentError:
@@ -598,7 +603,7 @@ def run_build(self, *k, **kw):
 		else:
 			ret = getattr(bld, 'retval', 0)
 	finally:
-		if cachemode == 1:
+		if cachemode:
 			# cache the results each time
 			proj = ConfigSet.ConfigSet()
 			proj['cache_run_build'] = ret

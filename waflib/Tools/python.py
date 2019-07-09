@@ -456,15 +456,11 @@ def check_python_headers(conf, features='pyembed pyext'):
 
 	# Code using the Python API needs to be compiled with -fno-strict-aliasing
 	if env.CC_NAME == 'gcc':
-		if not '-fno-strict-aliasing' in env.CFLAGS_PYEMBED:
-			env.append_value('CFLAGS_PYEMBED', ['-fno-strict-aliasing'])
-		if not '-fno-strict-aliasing' in env.CFLAGS_PYEXT:
-			env.append_value('CFLAGS_PYEXT', ['-fno-strict-aliasing'])
+		env.append_unique('CFLAGS_PYEMBED', ['-fno-strict-aliasing'])
+		env.append_unique('CFLAGS_PYEXT', ['-fno-strict-aliasing'])
 	if env.CXX_NAME == 'gcc':
-		if not '-fno-strict-aliasing' in env.CXXFLAGS_PYEMBED:
-			env.append_value('CXXFLAGS_PYEMBED', ['-fno-strict-aliasing'])
-		if not '-fno-strict-aliasing' in env.CXXFLAGS_PYEXT:
-			env.append_value('CXXFLAGS_PYEXT', ['-fno-strict-aliasing'])
+		env.append_unique('CXXFLAGS_PYEMBED', ['-fno-strict-aliasing'])
+		env.append_unique('CXXFLAGS_PYEXT', ['-fno-strict-aliasing'])
 
 	if env.CC_NAME == "msvc":
 		from distutils.msvccompiler import MSVCCompiler
