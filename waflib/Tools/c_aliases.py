@@ -73,7 +73,7 @@ def sniff_features(**kw):
 				will_link = True
 		if not will_link and not kw.get('features', []):
 			# Some Visionary wscripts have targets with empty features
-			Logs.warn('Deprecated feature: empty "features" list')
+			Logs.warn('Deprecated feature: empty "features" list in target "{}"'.format(kw.get('target', 'None')))
 	return feats
 
 def set_features(kw, typ):
