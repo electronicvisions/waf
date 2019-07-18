@@ -189,8 +189,17 @@ class Project(object):
     # TO IMPLEMENT
     def mr_checkout_cmd(self, *k, **kw):
         raise AttributeError
+
     def mr_init_cmd(self, *k, **kw):
         raise AttributeError
+
+    def mr_update_cmd(self, *k, **kw):
+        """Implement custom update command if needed.
+
+        The function should return a string containing the custom update
+        command or None in which case mr will fallback to the default.
+        """
+        return None
 
 
 class GitProject(Project):
@@ -251,6 +260,11 @@ class GitProject(Project):
             name=os.path.basename(self.name))]
         ret += cmds
         return " && ".join(ret)
+
+    def mr_update_cmd(self, remote=None, branch=None, *a, **kw):
+        return "git pull --rebase {remote} {branch}".format(
+            remote=remote if remote is not None else "origin",
+            branch=branch if branch is not None else self.required_branch)
 
 
 class MR(object):
@@ -691,6 +705,11 @@ class MR(object):
         if init_cmd:
             args += [init_cmd]
         self.call_mr(ctx, *args)
+
+        update_cmd = p.mr_update_cmd()
+
+        if update_cmd is not None:
+            self.call_mr(ctx, 'config', p.name, "update={}".format(update_cmd))
 
         if do_checkout:
             try:
