@@ -55,6 +55,9 @@ class Repo_DB(object):
     def get_manager(self, name):
         return self.db[name].get("manager")
 
+    def get_default_branch(self, name):
+        return self.db[name].get("default_branch", None)
+
     def list_repos(self):
         names = self.db.keys()
         return filter(lambda x: not x.startswith("_"), names)
@@ -780,6 +783,9 @@ class MR(object):
             raise KeyError("Missing information in repository database. Missing key: '%s'" % e.message)
 
         p = self.project_types[vcs](name=name, path=os.path.join(self.base, name), clone_depth=self.clone_depth)
+        default_branch = self.db.get_default_branch(name)
+        if default_branch is not None:
+            p.default_branch = default_branch
         self.projects[name] = p
         return p
 
