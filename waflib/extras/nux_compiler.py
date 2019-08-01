@@ -27,7 +27,6 @@ def configure(conf):
 	conf.env.CXXFLAGS += [
 		'-ffreestanding',
 		'-mcpu=nux',
-		'-std=gnu++11',
 		'-fno-exceptions',
 		'-fno-rtti',
 		'-fno-non-call-exceptions',
