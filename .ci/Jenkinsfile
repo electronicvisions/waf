@@ -29,7 +29,8 @@ try {
 				sish("cp waf waf_module/bin")
 
 				// Unpack waf
-				sish("cd \$(mktemp -d) && $WORKSPACE/waf_module/bin/waf --help > /dev/null")
+				sish("cd \$(mktemp -d) && python2 $WORKSPACE/waf_module/bin/waf --help > /dev/null")
+				sish("cd \$(mktemp -d) && python3 $WORKSPACE/waf_module/bin/waf --help > /dev/null")
 
 				inSingularity() {
 					deployModule([name: "waf", source: "waf_module"])
