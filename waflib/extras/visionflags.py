@@ -217,9 +217,10 @@ def configure(conf):
 		paths = os.environ.get(envvar, '').split(':')
 		return ['{}{}'.format(option, x) for x in paths if x]
 
-	if 'C_INCLUDE_PATH' in os.environ:
-		conf.env.append_value('CFLAGS', format_compiler_option('-I', 'C_INCLUDE_PATH'))
-	if 'CPLUS_INCLUDE_PATH' in os.environ:
-		conf.env.append_value('CXXFLAGS', format_compiler_option('-I', 'CPLUS_INCLUDE_PATH'))
-	if 'LIBRARY_PATH' in os.environ:
-		conf.env.append_value('LINKFLAGS', format_compiler_option('-L', 'LIBRARY_PATH'))
+	if not conf.env.CROSS_PLATFORM:
+		if 'C_INCLUDE_PATH' in os.environ:
+			conf.env.append_value('CFLAGS', format_compiler_option('-I', 'C_INCLUDE_PATH'))
+		if 'CPLUS_INCLUDE_PATH' in os.environ:
+			conf.env.append_value('CXXFLAGS', format_compiler_option('-I', 'CPLUS_INCLUDE_PATH'))
+		if 'LIBRARY_PATH' in os.environ:
+			conf.env.append_value('LINKFLAGS', format_compiler_option('-L', 'LIBRARY_PATH'))
