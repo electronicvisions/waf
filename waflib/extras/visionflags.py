@@ -101,6 +101,8 @@ class GccTraits(CommonTraits):
 			raise Errors.ConfigurationError(msg)
 		elif self.version[0] <= 5:
 			return  ['-std=gnu++14']
+		elif self.version[0] >= 9:
+			return  ['-std=gnu++2a']
 		elif self.version[0] >= 7:
 			return  ['-std=gnu++17']
 		return []
