@@ -172,9 +172,8 @@ def configure(conf):
 			"maybe the compiler_cc or compiler_cxx tool has not been configured yet?")
 
 	# let's stick to bfd for nux cross compilation
-        # PS (20-12-18): this prevents from using the powerpc compiler without using libnux (#3033)
-	if 'powerpc' in conf.env.CROSS_PLATFORM and any(['LIBNUX_DLS_VERSION' in x
-	                                                 for x in conf.env.DEFINES]):
+	# PS (20-12-18): this prevents from using the powerpc compiler without using libnux (#3033)
+	if 'powerpc-ppu' in conf.env.CROSS_PLATFORM:
 		linker = 'bfd'
 	else:
 		linker = Options.options.linker
