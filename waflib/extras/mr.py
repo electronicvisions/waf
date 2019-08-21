@@ -481,7 +481,10 @@ class MR(object):
             # NOTE: we can be sure that register is only called if the project is not present
             # in the config file
 
-            tmpfile = tempfile.NamedTemporaryFile()
+            if sys.version_info < (3, 0):
+                tmpfile = tempfile.NamedTemporaryFile()
+            else:
+                tmpfile = tempfile.NamedTemporaryFile(mode='w+', encoding='utf-8')
             kw["_conf_file"] = tmpfile.name
 
         cmd, kw = self.format_cmd(*args, **kw)
