@@ -82,6 +82,8 @@ def process_py(self, node):
 	assert(hasattr(self, 'install_path')), 'add features="py" for target "%s" in "%s/wscript".' % (self.target, self.path.nice_path())
 	self.install_from = getattr(self, 'install_from', None)
 	relative_trick = getattr(self, 'relative_trick', True)
+	chmod = getattr(self, 'chmod', None)
+	install_kwargs = {"chmod": chmod} if chmod else {}
 	if self.install_from:
 		assert isinstance(self.install_from, Node.Node), \
 		'add features="py" for target "%s" in "%s/wscript" (%s).' % (self.target, self.path.nice_path(), type(self.install_from))
@@ -89,9 +91,9 @@ def process_py(self, node):
 	# where to install the python file
 	if self.install_path:
 		if self.install_from:
-			self.add_install_files(install_to=self.install_path, install_from=node, cwd=self.install_from, relative_trick=relative_trick)
+			self.add_install_files(install_to=self.install_path, install_from=node, cwd=self.install_from, relative_trick=relative_trick, **install_kwargs)
 		else:
-			self.add_install_files(install_to=self.install_path, install_from=node, relative_trick=relative_trick)
+			self.add_install_files(install_to=self.install_path, install_from=node, relative_trick=relative_trick, **install_kwargs)
 
 	lst = []
 	if self.env.PYC:
@@ -123,7 +125,7 @@ def process_py(self, node):
 
 		if self.install_path:
 			# `cwd=node.parent.get_bld()` changed to `cwd=pyobj.parent` (see issue #2067)
-			self.add_install_files(install_to=os.path.dirname(pyd), install_from=pyobj, cwd=pyobj.parent, relative_trick=relative_trick)
+			self.add_install_files(install_to=os.path.dirname(pyd), install_from=pyobj, cwd=pyobj.parent, relative_trick=relative_trick, **install_kwargs)
 
 class pyc(Task.Task):
 	"""
