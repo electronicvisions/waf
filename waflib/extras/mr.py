@@ -329,7 +329,7 @@ class MR(object):
         self.setup_repo_db(ctx, cfg, top, db_url, db_type)
 
         self.init_mr()
-        Logs.debug("mr: Found managed repositories: " + str(self.pretty_projects() ))
+        Logs.debug("mr: Found managed repositories: {}".format(self.pretty_projects()))
 
     def load_projects(self):
         parser = self.load_config()
@@ -406,7 +406,7 @@ class MR(object):
             if not os.path.isdir(p.path):
                 not_on_filesystem.append(name)
         if not_on_filesystem:
-            Logs.debug("mr: Projects not on file system: " + str(not_on_filesystem))
+            Logs.debug("mr: Projects not on file system: {}".format(not_on_filesystem))
             self.remove_projects(not_on_filesystem)
 
     def init_default_config(self):
@@ -443,7 +443,7 @@ class MR(object):
         cmd = ['env', 'mr', '-t', '-c', conf_file]
         cmd.extend(args)
 
-        self.mr_log('-' * 80 + '\n' + str(cmd) + ':\n')
+        self.mr_log('-' * 80 + '\n' + "{}".format(cmd) + ':\n')
 
         kw['cwd']    = self.base
         kw['env']    = dict(self.get_mr_env())
@@ -471,7 +471,7 @@ class MR(object):
         return fullpath
 
     def call_mr(self, ctx, *args, **kw):
-        self.mr_log("dispatching mr command: " + str(args) + " -- " + str(kw))
+        self.mr_log("dispatching mr command: {} -- {}".format(args, kw))
 
         tmpfile = None
         if args and args[0] == "register":
@@ -520,14 +520,14 @@ class MR(object):
             # all the 'security' shennanigans from mr)
             header_idx = 1
             path = tmpfile_lines[header_idx].strip()[1:-1]
-            Logs.debug("mr: originally registered path: " + str(path))
+            Logs.debug("mr: originally registered path: {}".format(path))
             node = ctx.root.find_node(path)
 
             # KHS: Fixing weird behaviour of mr register. If executed in a subdir of /tmp or outside
             # of $HOME -- not sure what exactly the cause is, it registers repos as
             # [toplevel/repodir] instead of [/root/path/to/repodir].
             if not node:
-                assert path.startswith(str(ctx.path))
+                assert path.startswith(ctx.path.encode('utf-8'))
                 node=ctx.path.parent.find_node(path)
                 Logs.debug('mr: wierd mr-register-behaviour-fix applied.')
                 assert node # or fix failed
@@ -763,7 +763,7 @@ class MR(object):
         names = []
         for name, p in self.projects.items():
             names.append(self.pretty_name(p))
-        return ", ".join(names)
+        return ", ".join(names).encode('utf-8')
 
     def pretty_name(self, prj):
         out = prj.name + " {on " + prj.real_branch + "}"
@@ -856,7 +856,7 @@ class mr_xrun(MRContext):
 
     def getMrCmdFile(self):
         if not self.mr_cmds:
-            Logs.debug('mr: get commands' + str(Options.rargs))
+            Logs.debug('mr: get commands {}'.format(Options.rargs))
             self.mr_cmds = Options.rargs
             Options.rargs=[]
 
