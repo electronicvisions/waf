@@ -29,6 +29,7 @@ from subprocess import Popen, PIPE
 from collections import defaultdict
 from xml.etree import ElementTree
 from time import time, sleep
+from copy import deepcopy
 
 from waflib.TaskGen import taskgen_method
 from waflib import Configure, Utils, Task, Logs, Options, Node, Errors
@@ -424,7 +425,10 @@ class TestBase(Task.Task):
         methods for derived tests
         """
         self.cwd = task_gen.path.abspath()
-        self.test_environ = getattr(task_gen, "test_environ", {})
+
+        # One task generator might be used for multiple tasks, protect others
+        # from in-place modifications made by this specific task.init().
+        self.test_environ = deepcopy(getattr(task_gen, "test_environ", {}))
 
         # Evalutate enviroment variables, see module docstring
         for var in SPECIAL_ENV_VARS:
