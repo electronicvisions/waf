@@ -25,10 +25,10 @@ def prepend_entry_point(func):
 def patch_parse_args(class_=Options.OptionsContext, funcname="parse_args"):
     func = getattr(class_, funcname)
 
-    def parse_args(self):
+    def parse_args(self, allow_unknown=False):
         symwaf2ic.options(self)
         mr.options(self)
-        func(self)
+        func(self, allow_unknown=allow_unknown)
     setattr(class_, funcname, parse_args)
 
 
@@ -175,7 +175,7 @@ def assert_toplevel_wscript():
 
 
 def setup_logging():
-    Scripting.parse_options() # will setup Logs and configure verbosity and zones.
+    Scripting.parse_options(allow_unknown=True) # will setup Logs and configure verbosity and zones.
 
 def entry_point():
     "Entry point for symwaf2ic code execution before waf workflow."

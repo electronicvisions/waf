@@ -325,7 +325,7 @@ class OptionsContext(Context.Context):
 		if Logs.verbose > 2:
 			Logs.zones = ['*']
 
-	def parse_args(self, _args=None):
+	def parse_args(self, _args=None, allow_unknown=False):
 		"""
 		Parses arguments from a list which is not necessarily the command-line.
 		Initializes the module variables options, commands and envvars
@@ -334,15 +334,15 @@ class OptionsContext(Context.Context):
 		:param _args: arguments
 		:type _args: list of strings
 		"""
-		options, commands, envvars = self.parse_cmd_args()
+		options, commands, envvars = self.parse_cmd_args(allow_unknown=allow_unknown)
 		self.init_logs(options, commands, envvars)
 		self.init_module_vars(options, commands, envvars)
 
-	def execute(self):
+	def execute(self, allow_unknown=False):
 		"""
 		See :py:func:`waflib.Context.Context.execute`
 		"""
 		super(OptionsContext, self).execute()
-		self.parse_args()
+		self.parse_args(allow_unknown=allow_unknown)
 		Utils.alloc_process_pool(options.jobs)
 

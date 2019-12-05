@@ -208,13 +208,13 @@ def set_main_module(file_path):
 	if not 'options' in Context.g_module.__dict__:
 		Context.g_module.options = Utils.nada
 
-def parse_options():
+def parse_options(allow_unknown=False):
 	"""
 	Parses the command-line options and initialize the logging system.
 	Called by :py:func:`waflib.Scripting.waf_entry_point` during the initialization.
 	"""
 	ctx = Context.create_context('options')
-	ctx.execute()
+	ctx.execute(allow_unknown=allow_unknown)
 	if not Options.commands:
 		if isinstance(default_cmd, list):
 			Options.commands.extend(default_cmd)

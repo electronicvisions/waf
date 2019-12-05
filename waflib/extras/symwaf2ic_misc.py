@@ -104,22 +104,6 @@ def _withargument(self, option, dest=None, default=None, help=None):
 argparse.ArgumentParser.add_withargument = _withargument
 
 
-from optparse import OptionParser, BadOptionError, AmbiguousOptionError
-def _process_args(self, largs, rargs, values):
-    """
-    An unknown option pass-through implementation of _process_args.
-    """
-    while rargs:
-        try:
-            OptionParser._old_process_args(self, largs, rargs, values)
-        except (BadOptionError, AmbiguousOptionError) as e:
-            largs.append(e.opt_str)
-
-# monkey patch optparse to support unkown arguments (partial argument list while constructing the list => depends() needs it)
-Options.optparse.OptionParser._old_process_args = Options.optparse.OptionParser._process_args
-Options.optparse.OptionParser._process_args = _process_args
-
-
 # --- Gerrit helper functions --- #
 def parse_gerrit_changes(arg):
     ret = []
