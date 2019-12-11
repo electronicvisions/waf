@@ -38,7 +38,6 @@ def configure(conf):
 	conf.env.DEFINES += ['SYSTEM_HICANN_DLS_MINI']
 	conf.env.LINKFLAGS += [
 		'-nostdlib',
-		'-T%s' % conf.path.find_node('libnux/elf32nux.x').abspath(),
 		'-Wl,--gc-sections',
 	]
 	conf.env.STLIB += ['gcc']

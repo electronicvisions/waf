@@ -14,6 +14,3 @@ def configure(conf):
 	conf.env.CROSS_PLATFORM = Options.options.cross_prefix
 	conf.load('cross_as')
 	conf.env.ASFLAGS += ['-mcpu=nux'] # we use gcc as assembler, compiler option here
-	conf.env.ASLINKFLAGS += [
-		'-T%s' % conf.path.find_node('libnux/elf32nux.x').abspath(),
-	]
