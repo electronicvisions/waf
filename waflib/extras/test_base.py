@@ -20,12 +20,13 @@ specially handled. The following pathes are added there, in the given order:
 """
 
 import os
+import signal
 import sys
 import traceback
 import errno
 
 from threading import Thread, Lock
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output, CalledProcessError
 from collections import defaultdict
 from xml.etree import ElementTree
 from time import time, sleep
@@ -592,18 +593,57 @@ class TestBase(Task.Task):
         thread.join(self.timeout)
         if thread.is_alive():
             # killing processes is difficult (race conditions all over the place)...
-            # first try to terminate then try to kill to be safe
-            # try/except as process could have finished in the meantime
-            if hasattr(self, 'proc'):
-                try:
-                    self.proc.terminate()
-                    sleep(0.5) # grace period
-                    self.proc.kill()
-                except OSError as e:
-                    # ignore "process not found"
-                    pass
-            thread.join(0.5) # to avoid another hang...
-            result["status"] = self.TIMEOUT
+            # for all children (recusive!) of the test process:
+            #   * first try to terminate
+            #   * then try to kill to be safe
+            #   * (try/except as processes could have finished in the meantime)
+            def kill_proc_recursively(self, thread, result):
+                if hasattr(self, 'proc'):
+                    assert isinstance(self.proc.pid, int)
+                    Logs.debug("Trying to kill_proc_recursively, pid: %d", self.proc.pid)
+
+                    # expected to be newline-separated list of self.proc.pid and
+                    # all its children
+                    try:
+                        out = check_output('pstree -pn {}'
+                                           '| grep -o "([[:digit:]]*)"'
+                                           '| grep -o "[[:digit:]]*"'.\
+                                           format(self.proc.pid), shell=True).\
+                                           decode(sys.stdout.encoding or 'utf-8')
+                        Logs.debug("pstree output: '%s'", out)
+                    except CalledProcessError as e:
+                        # non-zero exit code => process not found (possible due to race)
+                        Logs.warn("Process {} is already gone; children and the process" \
+                                  " itself won't be killed.".format(self.proc.pid))
+                        result["status"] = self.TIMEOUT
+                        return # nothing to do, return early
+                    out = out.split()
+                    pids = []
+                    for v in out:
+                        assert v.isdigit(), "String is not a number: '{}'".format(v)
+                        pids.append(int(v))
+
+                    # we'll try it two times, reversing will kill directly spawned process last
+                    pids = list(reversed(pids + pids))
+                    assert (len(pids) > 0) and pids[-1] == self.proc.pid
+
+                    Logs.debug("will kill pids: %s", pids)
+                    for pid in pids:
+                        try:
+                            Logs.debug("terminating {}".format(pid))
+                            os.kill(pid, signal.SIGTERM)
+                            sleep(0.5) # grace period
+                            Logs.debug("killing {}".format(pid))
+                            os.kill(pid, signal.SIGKILL)
+                            sleep(0.5) # grace period
+                        except OSError as e:
+                            # ignore "process not found"
+                            pass
+                thread.join(0.5) # to avoid another hang...
+                result["status"] = self.TIMEOUT
+
+            kill_proc_recursively(self, thread, result)
+
         result["time"] = time() - starttime
         self.storeResult(result)
 
