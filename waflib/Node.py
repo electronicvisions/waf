@@ -176,7 +176,7 @@ class Node(object):
 		"""
 		raise Errors.WafError('nodes are not supposed to be copied')
 
-	def read(self, flags='r', encoding='latin-1'):
+	def read(self, flags='r', encoding='utf-8'):
 		"""
 		Reads and returns the contents of the file represented by this node, see :py:func:`waflib.Utils.readf`::
 
@@ -192,7 +192,7 @@ class Node(object):
 		"""
 		return Utils.readf(self.abspath(), flags, encoding)
 
-	def write(self, data, flags='w', encoding='latin-1'):
+	def write(self, data, flags='w', encoding='utf-8'):
 		"""
 		Writes data to the file represented by this node, see :py:func:`waflib.Utils.writef`::
 
