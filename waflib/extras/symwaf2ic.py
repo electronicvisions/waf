@@ -203,9 +203,9 @@ def options(opt):
             default=None
             )
     gr.add_option(
-        "--clone-depth", dest="clone_depth", action="store",
-        type=int, help="To clone the full history use -1 [default is full history]",
-        default=-1
+            "--clone-depth", dest="clone_depth", action="store",
+            type=int, help="Git clone depth. If not given, first use depth given in repo db then fallback to full history",
+            default=None
     )
 
 
@@ -285,6 +285,8 @@ class MainContext(Symwaf2icContext):
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
         self.clone_depth= cmdopts.clone_depth
+        if self.clone_depth is not None and (self.clone_depth is 0 or self.clone_depth < -1):
+            raise ValueError("Provided clone depth argument {} not in valid range [-1, 1, 2, ...]".format(self.clone_depth))
         self.gerrit_url = cmdopts.gerrit_url
         self.gerrit_username = cmdopts.gerrit_username
 

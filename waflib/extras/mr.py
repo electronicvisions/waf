@@ -40,6 +40,12 @@ class Repo_DB(object):
     def get_init(self, name):
         return self.db[name].get("init_cmds",'')
 
+    def get_clone_depth(self, name):
+        clone_depth = self.db[name].get("clone_depth", None)
+        if clone_depth is not None and (clone_depth is 0 or clone_depth < -1):
+            raise ValueError("Clone depth from repo db {} not in valid range [-1, 1, 2, ...]".format(self.clone_depth))
+        return clone_depth
+
     def get_aliases(self, name):
         return self.db[name].get("aliases", [])
 
@@ -239,9 +245,9 @@ class GitProject(Project):
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
 
-    def mr_checkout_cmd(self, base_node, url):
+    def mr_checkout_cmd(self, base_node, url, clone_depth):
         path = self.path_from(base_node)
-        depth = self.clone_depth
+        depth = clone_depth
         depth = '--depth {}'.format(depth) if depth >= 0 else ''
         cmd = ["git clone --branch '{branch}' {depth} '{url}' '{target}'".format(
             branch=self.required_branch, depth=depth,
@@ -370,6 +376,8 @@ class MR(object):
     def setup_repo_db(self, ctx, cfg, top, db_url, db_type):
         # first install some mock object that servers to create the repo db repository
         class MockDB(object):
+            def get_clone_depth(self, *k, **kw):
+                return None
             def get_url(self, *k, **kw):
                 return db_url
             def get_init(self, *k, **kw):
@@ -704,8 +712,14 @@ class MR(object):
             self.mr_print("Checking out repository %s {%s} to '%s'..."
                 % (self.db.get_url(p.name), p.required_branch, p.name), sep = '')
 
+        if self.clone_depth:
+            clone_depth = self.clone_depth
+        else:
+            db_clone_depth = self.db.get_clone_depth(p.name)
+            clone_depth = db_clone_depth if db_clone_depth else -1
+
         args = ['config', p.name,
-                p.mr_checkout_cmd(self.base, self.db.get_url(p.name))
+                p.mr_checkout_cmd(self.base, self.db.get_url(p.name), clone_depth)
                ]
         init_cmd = p.mr_init_cmd(self.db.get_init(p.name), self.gerrit_url)
         if init_cmd:
