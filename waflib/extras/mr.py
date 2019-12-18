@@ -42,8 +42,11 @@ class Repo_DB(object):
 
     def get_clone_depth(self, name):
         clone_depth = self.db[name].get("clone_depth", None)
-        if clone_depth is not None and (clone_depth is 0 or clone_depth < -1):
-            raise ValueError("Clone depth from repo db {} not in valid range [-1, 1, 2, ...]".format(self.clone_depth))
+        if clone_depth is not None:
+            assert clone_depth.isdigit()
+            clone_depth = int(clone_depth)
+            if (clone_depth is 0 or clone_depth < -1):
+                raise ValueError("Clone depth from repo db {} not in valid range [-1, 1, 2, ...]".format(self.clone_depth))
         return clone_depth
 
     def get_aliases(self, name):
