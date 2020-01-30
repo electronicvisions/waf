@@ -285,7 +285,7 @@ class MainContext(Symwaf2icContext):
         self.repo_db_url = cmdopts.repo_db_url
         self.repo_db_type = cmdopts.repo_db_type
         self.clone_depth= cmdopts.clone_depth
-        if self.clone_depth is not None and (self.clone_depth is 0 or self.clone_depth < -1):
+        if self.clone_depth is not None and (self.clone_depth == 0 or self.clone_depth < -1):
             raise ValueError("Provided clone depth argument {} not in valid range [-1, 1, 2, ...]".format(self.clone_depth))
         self.gerrit_url = cmdopts.gerrit_url
         self.gerrit_username = cmdopts.gerrit_username
