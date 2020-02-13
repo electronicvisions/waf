@@ -91,6 +91,8 @@ def _withoption(self, option, dest=None, default=None, help=None):
 
 # monkey-patch OptionContainer to support add_withoption
 Options.optparse.OptionContainer.add_withoption = _withoption
+# monkey-patch original OptionsContext to support add_withoption as well
+Options.OptionsContext.add_withoption = _withoption
 
 
 def _withargument(self, option, dest=None, default=None, help=None):
