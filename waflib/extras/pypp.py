@@ -338,8 +338,8 @@ def fix_pyplusplus_linkage(self):
 not_found_msg = """Could not import correct module %s
 
 Please use the patched pygccxml and pyplusplus provided at:
-git@gitviz.kip.uni-heidelberg.de:pygccxml.git
-git@gitviz.kip.uni-heidelberg.de:pyplusplus.git
+ssh://gerrit.bioai.eu:29418/pygccxml
+ssh://gerrit.bioai.eu:29418/pyplusplus
 
 Use 'python -v waf configure' to find see where the loaded packages are located
 """

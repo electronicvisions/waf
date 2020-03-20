@@ -180,7 +180,7 @@ def options(opt):
             "--gerrit-url", action="store",
             type=validate_gerrit_url if is_symwaf2ic else str,
             default=validate_gerrit_url(
-                "ssh://brainscales-r.kip.uni-heidelberg.de:29418"),
+                "ssh://gerrit.bioai.eu:29418"),
             help="URL for gerrit")
     gr.add_option(
             "--gerrit-username", action="store",
@@ -190,7 +190,7 @@ def options(opt):
     gr.add_option(
             "--repo-db-url", dest="repo_db_url", action="store",
             help="URL for the repository containing the database with information about all other repositories.",
-            default="git@gitviz.kip.uni-heidelberg.de:projects.git"
+            default="ssh://gerrit.bioai.eu:29418/projects"
             )
     gr.add_option(
             "--repo-db-type", dest="repo_db_type", action="store",
