@@ -38,7 +38,7 @@ def sniff_features(**kw):
 	:return: the list of features for a task generator processing the source files
 	:rtype: list of string
 	"""
-	exts = get_extensions(kw['source'])
+	exts = get_extensions(kw.get('source', []))
 	typ = kw['typ']
 	feats = []
 

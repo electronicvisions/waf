@@ -1,11 +1,39 @@
+NEW IN WAF 2.0.20
+-----------------
+* Detect -flto and -fno-lto in parse_config #2281
+* Improve custom option processing #2280
+* Enable Clang on cygwin #2279
+* Make distclean target 'no_lock_in_top/run' modifiers compatible with env vars #2271
+* Update irix compiler detection
+* Exclude ConfigSet from altering ConfigurationContext.run_build caches #2273
+* Add gas support in extras/gccdeps.py #2278
+* Improve compatibility with custom commands in extras/clang_compilation_database #2274
+
+NEW IN WAF 2.0.19
+-----------------
+* Enable race-free pdb file generation waflib/extras/msvc_pdb.py #1731
+* Fix negative values for -j #2256
+* Fix Swig example compatibility with Python3 #2259
+* Fix lto settings for endianness configuration tests #2250
+* Tune the application name on --help #2254
+* Improve Qt5's fPIC/fPIE detection
+* Propagate LDFLAGS to Fortran tasks (in addition to LINKFLAGS)
+* Enable local and remote build object caches waflib/extras/wafcache.py
+
 NEW IN WAF 2.0.18
 -----------------
 * Fix a deadlock with cython and subst tasks #2244
 * Fix rpath processing so that it no longer breaks dependency chains
 * Fix fast_partial.py failures on configuration tests
 * Fix duplicate -fno-strict-aliasing flags in Python compilation flags detection
+* Fix annoying PIE errors in demos/asm/
+* Improve configuration tests cache accuracy #2251
+* Improve extras/fast_partial.py compatibility
+* Improve extras/doxygen.py outdir parameter settings #2255
 * Add a dependency scanner for assembly files (Gas/Yasm)
-* Add a QtTest example to demos/qt5/
+* Add executable arguments for configuration tests / execute=True
+* Add a QtTest example to demos/qt5/ #2241
+* Add a cross-compilation option to extras/objcopy.py #2247
 
 NEW IN WAF 2.0.17
 -----------------

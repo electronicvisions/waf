@@ -259,22 +259,6 @@ cd tests/install_group/
         '''
                             }
                         }
-                        stage('C/IronPython') {
-                            agent {
-                                label "windows"
-                            }
-                            steps {
-                                bat '''
-        C:/Python34/python.exe waf-light --zip-type=gz
-        '''
-                                bat '''
-        copy waf demos\\c /Y
-        cd demos\\c
-        "C:\\Program Files (x86)\\IronPython 2.7\\ipy64.exe" waf distclean
-        "C:\\Program Files (x86)\\IronPython 2.7\\ipy64.exe" waf configure build build
-        '''
-                            }
-                        }
                     }
                 }
                 stage('OpenIndiana') {
