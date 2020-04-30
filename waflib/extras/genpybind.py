@@ -47,13 +47,19 @@ def generate_genpybind_source(self):
     Run genpybind on the headers provided in `source` and compile/link the
     generated code instead.  This works by generating the code on the fly and
     swapping the source node before `process_source` is run.
+
+    `genpybind_num_files` can be specified to control into how many files the
+    genpybind generated code is split. Default is 10.
     """
     # name of module defaults to name of target
     module = getattr(self, "module", self.target)
 
-    # create temporary source file in build directory to hold generated code
-    out = "genpybind-%s.%d.cpp" % (module, self.idx)
-    out = self.path.get_bld().find_or_declare(out)
+    out = []
+
+    for i in range(getattr(self, "genpybind_num_files", 10)):
+        # create temporary source file in build directory to hold generated code
+        single_out = "genpybind-%s-%d.%d.cpp" % (module, i, self.idx)
+        out.append(self.path.get_bld().find_or_declare(single_out))
 
     task = self.create_task("genpybind", self.to_nodes(self.source), out)
     # used to detect whether CFLAGS or CXXFLAGS should be passed to genpybind
@@ -68,13 +74,13 @@ def generate_genpybind_source(self):
 
     # Tell waf to compile/link the generated code instead of the headers
     # originally passed-in via the `source` parameter. (see `process_source`)
-    self.source = [out]
+    self.source = out
 
 
 class genpybind(Task.Task): # pylint: disable=invalid-name
     """
     Runs genpybind on headers provided as input to this task.
-    Generated code will be written to the first (and only) output node.
+    Generated code will be written distributed equally among all output nodes.
     """
     quiet = True
     color = "PINK"
@@ -91,16 +97,7 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
         args = self.find_genpybind() + self._arguments(
                 resource_dir=self.env.GENPYBIND_RESOURCE_DIR)
 
-        output = self.run_genpybind(args)
-
-        # For debugging / log output
-        pasteable_command = join_args(args)
-
-        # write generated code to file in build directory
-        # (will be compiled during process_source stage)
-        (output_node,) = self.outputs
-        output_node.write("// {}\n{}\n".format(
-            pasteable_command.replace("\n", "\n// "), output))
+        self.run_genpybind(args)
 
     def find_genpybind(self):
         return self.genpybind
@@ -135,8 +132,6 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
         if stderr.strip():
             Logs.debug("non-fatal warnings during genpybind run:\n{}".format(stderr))
 
-        return stdout
-
     def _include_paths(self):
         return self.generator.to_incnodes(self.includes + self.env.INCLUDES)
 
@@ -159,6 +154,7 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
 
         # options for genpybind
         args.extend(["--genpybind-module", self.module])
+        args.extend(["--genpybind-output-files", ",".join(o.abspath() for o in self.outputs)])
         if self.genpybind_tags:
             args.extend(["--genpybind-tag"] + self.genpybind_tags)
         if relative_includes:
