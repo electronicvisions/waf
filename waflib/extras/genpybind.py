@@ -29,7 +29,7 @@ def configure(cfg):
     if not cfg.env.GENPYBIND:
         cfg.find_program("genpybind", var="GENPYBIND")
 
-    # find clang reasource dir for builtin headers
+    # find clang resource dir for builtin headers
     cfg.env.GENPYBIND_RESOURCE_DIR = os.path.join(
             cfg.cmd_and_log(cfg.env.LLVM_CONFIG + ["--libdir"]).strip(),
             "clang",
@@ -38,6 +38,33 @@ def configure(cfg):
         cfg.msg("Checking clang resource dir", cfg.env.GENPYBIND_RESOURCE_DIR)
     else:
         cfg.fatal("Clang resource dir not found")
+    cfg.env.GENPYBIND_ARG_OUTPUT_FILES_SUPPORTED = check_arg_genpybind_output_files(cfg)
+
+
+def check_arg_genpybind_output_files(cfg):
+    """Check if current version of genpybind supports --genpybind-output-files argument.
+
+    :returns: a bool indicating whether --genpybind-output-files is supported
+    """
+    try:
+        stdout, _ = cfg.cmd_and_log(cfg.env.GENPYBIND + ["--help"], output=Context.BOTH, quiet=Context.BOTH)
+    except Errors.WafError as e:
+        cfg.fatal("Check for --genpybind-output-files failed with: {}".format(e.stderr))
+
+    return "--genpybind-output-files" in stdout
+
+
+def fallback_write_genpybind_output_manually(genpybind_args, genpybind_stdout, output_node):
+    """
+    Write genpybind output to the single output node.
+    """
+    # For debugging / log output
+    pasteable_command = join_args(genpybind_args)
+
+    # write generated code to file in build directory
+    # (will be compiled during process_source stage)
+    output_node.write("// {}\n{}\n".format(
+        pasteable_command.replace("\n", "\n// "), genpybind_stdout))
 
 
 @feature("genpybind")
@@ -56,7 +83,9 @@ def generate_genpybind_source(self):
 
     out = []
 
-    for i in range(getattr(self, "genpybind_num_files", 10)):
+    default_num_output_files = 10 if self.env.GENPYBIND_ARG_OUTPUT_FILES_SUPPORTED else 1
+
+    for i in range(getattr(self, "genpybind_num_files", default_num_output_files)):
         # create temporary source file in build directory to hold generated code
         single_out = "genpybind-%s-%d.%d.cpp" % (module, i, self.idx)
         out.append(self.path.get_bld().find_or_declare(single_out))
@@ -123,6 +152,9 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
         if stderr.strip():
             Logs.debug("non-fatal warnings during genpybind run:\n{}".format(stderr))
 
+        if not self.env.GENPYBIND_ARG_OUTPUT_FILES_SUPPORTED:
+            fallback_write_genpybind_output_manually(args, stdout, self.outputs[0])
+
     def _include_paths(self):
         return self.generator.to_incnodes(self.includes + self.env.INCLUDES)
 
@@ -145,7 +177,8 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
 
         # options for genpybind
         args.extend(["--genpybind-module", self.module])
-        args.extend(["--genpybind-output-files", ",".join(o.abspath() for o in self.outputs)])
+        if self.env.GENPYBIND_ARG_OUTPUT_FILES_SUPPORTED:
+            args.extend(["--genpybind-output-files", ",".join(o.abspath() for o in self.outputs)])
         if self.genpybind_tags:
             args.extend(["--genpybind-tag"] + self.genpybind_tags)
         if relative_includes:
