@@ -3,7 +3,7 @@ import pipes
 import subprocess
 import sys
 
-from waflib import Logs, Task, Context
+from waflib import Logs, Task, Context, Errors
 from waflib.Tools.c_preproc import scan as scan_impl
 # ^-- Note: waflib.extras.gccdeps.scan does not work for us,
 # due to its current implementation:
@@ -106,27 +106,18 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
         bld = self.generator.bld
 
         kwargs = dict(cwd=bld.variant_dir)
-        if hasattr(bld, "log_command"):
-            bld.log_command(args, kwargs)
-        else:
-            Logs.debug("runner: {!r}".format(args))
-        proc = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
-        stdout, stderr = proc.communicate()
+        try:
+            stdout, stderr = bld.cmd_and_log(
+                args, output=Context.BOTH, quiet=Context.BOTH, **kwargs)
 
-        if not isinstance(stdout, str):
-            stdout = stdout.decode(sys.stdout.encoding, errors="replace")
-        if not isinstance(stderr, str):
-            stderr = stderr.decode(sys.stderr.encoding, errors="replace")
-
-        if proc.returncode != 0:
+        except Errors.WafError as e:
             bld.fatal(
                 "genpybind returned {code} during the following call:"
                 "\n{command}\n\n{stdout}\n\n{stderr}".format(
-                    code=proc.returncode,
+                    code=e.returncode,
                     command=join_args(args),
-                    stdout=stdout,
-                    stderr=stderr,
+                    stdout=e.stdout,
+                    stderr=e.stderr,
                 ))
 
         if stderr.strip():
