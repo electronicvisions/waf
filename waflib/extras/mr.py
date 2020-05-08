@@ -228,22 +228,66 @@ class GitProject(Project):
         return ['git', 'checkout', '--force', branch if branch else self.required_branch]
 
     def gerrit_changes_cmds(self, gerrit_url):
-        cmds = []
         fetch_cmd = 'git fetch {BASE_URL}/{PROJECT} {REF}'
         apply_cmd = 'git {} FETCH_HEAD'
+        checkout_cmd = 'checkout'
+        cherry_pick_cmd = 'cherry-pick --allow-empty --keep-redundant-commits'
 
-        # checkout to first changeset
-        git_cmd = 'checkout'
+        # Previously, if there is more than one changeset for a project, the
+        # first changeset is checked out and all others are cherry-picked. This
+        # leads to errors in the following case:
+        #
+        # ProjectX: review/master -> A -> B `----`--- Depends-On: C ProjectY:
+        # review/master -> C `--- Depends-On: A
+        #
+        # In the current setup, when we want to check out B, waf detects B's
+        # dependency on C and checks it out. Then it discovers C's dependency
+        # on A and tries to checkout A in ProjectX which - with the current
+        # strategy - amounts to cherry-picking A on B which will fail in almost
+        # any case.
+        #
+        # The solution is to discover that the already checked out B is
+        # actually a descendant of A - so by keeping B checked out we also meet
+        # the requirement of A being checked out.
+        #
+        # The full strategy is:
+        # * check if one changeset is an ancestor of current HEAD or vice versa
+        #   -> switch to the "younger" commit
+        # * otherwise:
+        #   * checkout on first changeset
+        #   * cherry-pick the current changeset onto HEAD otherwise
+        #
+        # Unfortunately, this strategy needs to be implemented as one single
+        # bash command that is executed by mr.
+
+        check_ancestry_cmd = 'git merge-base --is-ancestor {ancestor} {descendant}'
+
+        # checkout the descendant (and exit 0) if the two commits are related
+        checkout_descendant_cmd = \
+            "if {cmd}; then git checkout {{descendant}}; exit 0; fi".format(
+                cmd=check_ancestry_cmd)
+
+        def generate_apply_changeset_cmd(cmd_no_relation):
+            # execute command in subshell so that we can use `exit 0`
+            return "({})".format('; '.join([
+                checkout_descendant_cmd.format(
+                    ancestor='FETCH_HEAD', descendant='HEAD'),
+                checkout_descendant_cmd.format(
+                    ancestor='HEAD', descendant='FETCH_HEAD'),
+                cmd_no_relation
+                ]))
+
+        first_commit = True
+
         for changeset in self.required_gerrit_changes:
             cref = changeset['currentPatchSet']['ref']
             project = changeset['project']
-            cmds.append(fetch_cmd.format(BASE_URL=gerrit_url.geturl(),
-                                         PROJECT=project, REF=cref))
-            cmds.append(apply_cmd.format(git_cmd))
-            # cherry-pick all following changesets
-            git_cmd = 'cherry-pick --allow-empty  --keep-redundant-commits'
-
-        return cmds
+            yield fetch_cmd.format(BASE_URL=gerrit_url.geturl(), PROJECT=project, REF=cref)
+            if first_commit:
+                yield generate_apply_changeset_cmd(apply_cmd.format(checkout_cmd))
+                first_commit = False
+            else:
+                yield generate_apply_changeset_cmd(apply_cmd.format(cherry_pick_cmd))
 
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
