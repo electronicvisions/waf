@@ -54,7 +54,8 @@ def check_arg_genpybind_output_files(cfg):
     return "--genpybind-output-files" in stdout
 
 
-def fallback_write_genpybind_output_manually(genpybind_args, genpybind_stdout, output_node):
+def fallback_write_genpybind_output_manually(
+        genpybind_args, genpybind_stdout, output_node):
     """
     Write genpybind output to the single output node.
     """
@@ -83,9 +84,10 @@ def generate_genpybind_source(self):
 
     out = []
 
-    default_num_output_files = 10 if self.env.GENPYBIND_ARG_OUTPUT_FILES_SUPPORTED else 1
+    num_output_files = 1 if not self.env.GENPYBIND_ARG_OUTPUT_FILES_SUPPORTED\
+        else getattr(self, "genpybind_num_files", 10)
 
-    for i in range(getattr(self, "genpybind_num_files", default_num_output_files)):
+    for i in range(num_output_files):
         # create temporary source file in build directory to hold generated code
         single_out = "genpybind-%s-%d.%d.cpp" % (module, i, self.idx)
         out.append(self.path.get_bld().find_or_declare(single_out))
