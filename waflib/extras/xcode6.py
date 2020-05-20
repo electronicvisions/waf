@@ -99,7 +99,7 @@ env.PROJ_CONFIGURATION = {
 		...
 	}
 	'Release': {
-		'ARCHS' x86_64'
+		'ARCHS': x86_64'
 		...
 	}
 }
@@ -163,12 +163,12 @@ class XCodeNode(object):
 			result = result + "\t\t}"
 			return result
 		elif isinstance(value, str):
-			return "\"%s\"" % value
+			return '"%s"' % value.replace('"', '\\\\\\"')
 		elif isinstance(value, list):
 			result = "(\n"
 			for i in value:
-				result = result + "\t\t\t%s,\n" % self.tostring(i)
-			result = result + "\t\t)"
+				result = result + "\t\t\t\t%s,\n" % self.tostring(i)
+			result = result + "\t\t\t)"
 			return result
 		elif isinstance(value, XCodeNode):
 			return value._id
@@ -565,13 +565,13 @@ def process_xcode(self):
 	# Override target specific build settings
 	bldsettings = {
 		'HEADER_SEARCH_PATHS': ['$(inherited)'] + self.env['INCPATHS'],
-		'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.LIBPATH) + Utils.to_list(self.env.STLIBPATH) + Utils.to_list(self.env.LIBDIR) ,
+		'LIBRARY_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.LIBPATH) + Utils.to_list(self.env.STLIBPATH) + Utils.to_list(self.env.LIBDIR),
 		'FRAMEWORK_SEARCH_PATHS': ['$(inherited)'] + Utils.to_list(self.env.FRAMEWORKPATH),
-		'OTHER_LDFLAGS': libs + ' ' + frameworks,
-		'OTHER_LIBTOOLFLAGS': bld.env['LINKFLAGS'],
+		'OTHER_LDFLAGS': libs + ' ' + frameworks + ' ' + ' '.join(bld.env['LINKFLAGS']),
 		'OTHER_CPLUSPLUSFLAGS': Utils.to_list(self.env['CXXFLAGS']),
 		'OTHER_CFLAGS': Utils.to_list(self.env['CFLAGS']),
-		'INSTALL_PATH': []
+		'INSTALL_PATH': [],
+		'GCC_PREPROCESSOR_DEFINITIONS': self.env['DEFINES']
 	}
 
 	# Install path
