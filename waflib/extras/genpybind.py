@@ -208,6 +208,8 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
             args.append("-std=c++14")
         args.extend("-I{}".format(n.abspath()) for n in self._include_paths())
         args.extend("-D{}".format(p) for p in self.env.DEFINES)
+        if hasattr(self, "defines"):
+            args.extend("-D{}".format(p) for p in self.defines)
 
         # point to clang resource dir, if specified
         if resource_dir:
