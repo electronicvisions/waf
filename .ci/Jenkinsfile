@@ -33,7 +33,7 @@ try {
 				sish("cd \$(mktemp -d) && python3 $WORKSPACE/waf_module/bin/waf --help > /dev/null")
 
 				inSingularity() {
-					deployModule([name: "waf", source: "waf_module"])
+					deployModule([name: "waf", source: "waf_module/*"])
 				}
 			} else {
 				echo "Deployment skipped: Build was not triggered by a merge event."
