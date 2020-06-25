@@ -96,9 +96,11 @@ class GccTraits(CommonTraits):
 	def get_cpp_language_standard_flags(self):
 		# Default for gcc 5.0 should be `-std=gnu++14` (cf. upstream changelog),
 		# but it's not the case for Ubuntu's 5.4.0!
-		if self.version[0] < 4 or (self.version[0] == 4 and self.version[1] < 9):
-			msg = 'gcc 4.9 (or higher) is required'
+		if self.version[0] < 4 or (self.version[0] == 4 and self.version[1] < 8):
+			msg = 'gcc 4.8 (or higher) is required'
 			raise Errors.ConfigurationError(msg)
+		elif self.version[0] == 4 and self.version[1] == 8:
+			return  ['-std=gnu++11']
 		elif self.version[0] <= 5:
 			return  ['-std=gnu++14']
 		elif self.version[0] >= 9:
