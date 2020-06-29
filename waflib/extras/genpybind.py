@@ -24,6 +24,7 @@ def configure(cfg):
     cfg.load("compiler_cxx")
     cfg.load("python")
     cfg.check_python_version(minver=(2, 7))
+    cfg.check_python_headers()
     if not cfg.env.LLVM_CONFIG:
         cfg.find_program("llvm-config", var="LLVM_CONFIG")
     if not cfg.env.GENPYBIND:
@@ -40,6 +41,12 @@ def configure(cfg):
         cfg.fatal("Clang resource dir not found")
     cfg.env.GENPYBIND_ARG_OUTPUT_FILES_SUPPORTED = check_arg_genpybind_output_files(cfg)
 
+    # check for pybind11 headers
+    if not cfg.env.HAVE_PYBIND11_PYBIND11_H:
+        cfg.check(
+            features='cxx pyembed',
+            header_name='pybind11/pybind11.h'
+        )
 
 def check_arg_genpybind_output_files(cfg):
     """Check if current version of genpybind supports --genpybind-output-files argument.
@@ -93,6 +100,11 @@ def generate_genpybind_source(self):
         out.append(self.path.get_bld().find_or_declare(single_out))
 
     task = self.create_task("genpybind", self.to_nodes(self.source), out)
+    # genpybind needs pyext and pyembed
+    if not 'pyext' in self.features:
+        self.features.append('pyext')
+    if not 'pyembed' in self.features:
+        self.features.append('pyembed')
     # used to detect whether CFLAGS or CXXFLAGS should be passed to genpybind
     task.features = self.features
     task.module = module
