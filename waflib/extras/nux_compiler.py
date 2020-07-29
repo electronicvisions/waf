@@ -23,6 +23,7 @@ def configure(conf):
 		'-fno-common',
 		'-ffunction-sections',
 		'-fdata-sections',
+		'-fno-threadsafe-statics',
 	]
 	conf.env.CXXFLAGS += [
 		'-ffreestanding',
@@ -34,6 +35,7 @@ def configure(conf):
 		'-fno-common',
 		'-ffunction-sections',
 		'-fdata-sections',
+		'-fno-threadsafe-statics',
 	]
 	conf.env.DEFINES += ['SYSTEM_HICANN_DLS_MINI']
 	conf.env.LINKFLAGS += [
