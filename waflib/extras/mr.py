@@ -237,8 +237,10 @@ class GitProject(Project):
         # first changeset is checked out and all others are cherry-picked. This
         # leads to errors in the following case:
         #
-        # ProjectX: review/master -> A -> B `----`--- Depends-On: C ProjectY:
-        # review/master -> C `--- Depends-On: A
+        # ProjectX: review/master -> A -> B
+        #                             `----`--- Depends-On: C
+        # ProjectY: review/master -> C
+        #                             `--- Depends-On: A
         #
         # In the current setup, when we want to check out B, waf detects B's
         # dependency on C and checks it out. Then it discovers C's dependency
