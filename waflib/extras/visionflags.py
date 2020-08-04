@@ -215,15 +215,32 @@ def configure(conf):
 	conf.env.append_value(*sandwich('CXXFLAGS',   compiler.get_cxxflags(build_profile)))
 	conf.env.append_value(*sandwich('LINKFLAGS', compiler.get_linkflags(build_profile)))
 
-	# Inject include and library paths (e.g. by module environment) into calls to compiler
-	def format_compiler_option(option, envvar):
-		paths = os.environ.get(envvar, '').split(':')
-		return ['{}{}'.format(option, x) for x in paths if x]
+	# Ordered set difference: paths - paths_filter.
+	def difference_paths(paths, paths_filter):
+		return [x for x in paths if x not in paths_filter]
+
+	# Get paths from environment variables.
+	def get_paths_from_env(name):
+		return [str(x) for x in os.environ.get(name, '').split(':') if x]
+
+	# Inject system paths (e.g. by module environment) from `source` into `target` using compiler options:
+	# uses `option_quiet` for `QUIET_` variables and drops those from the regular options.
+	def inject_into_environment(envvar_source, envvar_target, option_regular, option_quiet=None):
+		regular = get_paths_from_env(envvar_source)
+		quiet = []
+
+		# quiet system paths (optional, e.g. for `-I` vs. `-Isystem`)
+		if option_quiet:
+			quiet = get_paths_from_env("QUIET_" + envvar_source)
+			if len(quiet) > 0:
+				conf.env.append_value(envvar_target, ['{}{}'.format(option_quiet, x) for x in quiet])
+
+		# non-quiet system paths
+		if len(regular) > 0:
+			leftover = difference_paths(regular, quiet)
+			conf.env.append_value(envvar_target, ['{}{}'.format(option_regular, x) for x in leftover])
 
 	if not conf.env.CROSS_PLATFORM:
-		if 'C_INCLUDE_PATH' in os.environ:
-			conf.env.append_value('CFLAGS', format_compiler_option('-I', 'C_INCLUDE_PATH'))
-		if 'CPLUS_INCLUDE_PATH' in os.environ:
-			conf.env.append_value('CXXFLAGS', format_compiler_option('-I', 'CPLUS_INCLUDE_PATH'))
-		if 'LIBRARY_PATH' in os.environ:
-			conf.env.append_value('LINKFLAGS', format_compiler_option('-L', 'LIBRARY_PATH'))
+		inject_into_environment('C_INCLUDE_PATH',     'CFLAGS',       '-I', '-isystem ')
+		inject_into_environment('CPLUS_INCLUDE_PATH', 'CXXFLAGS',     '-I', '-isystem ')
+		inject_into_environment('LIBRARY_PATH',       'LIBRARY_PATH', '-L')
