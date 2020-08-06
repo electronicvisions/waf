@@ -157,6 +157,7 @@ class gtest(test.TestBase):
         test = self.inputs[0]
         xml_result_file = self.getXMLFile(test)
         cmd = [
+            "catchsegv ",
             test.abspath(),
             "--gtest_output=xml:" + xml_result_file.abspath(),
         ]
