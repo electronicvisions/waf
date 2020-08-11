@@ -8,6 +8,8 @@ A :py:class:`waflib.Dependencies.DependenciesContext` instance is created when `
 
 """
 
+from  collections import defaultdict
+import itertools as it
 import os, sys
 from waflib import Utils, Logs, Context, Options, Configure, Errors
 import json
@@ -74,6 +76,200 @@ class Repo_DB(object):
 
 class BranchError(Exception):
     pass
+
+
+class GerritChange(object):
+    """
+    Information retrieved from gerrit via ssh about a change.
+    """
+
+    def __init__(self, json_data):
+        """
+        Construct gerrit change from json data. Constructed by Gerrit-instance.
+        """
+        # if memory becomes an issue (it won't) just parse all properties in
+        # init and throw away json data
+        self._json = json_data
+        if Logs.verbose > 2:
+            for line in json.dumps(self._json, indent=2, ensure_ascii=True).split('\n'):
+                Logs.debug('gerrit: {}'.format(line))
+
+    def __getitem__(self, item):
+        """
+        Access raw json data.
+        """
+        return self._json[item]
+
+    @property
+    def commit_lines(self):
+        return self['commitMessage'].splitlines()
+
+    @property
+    def depends_on(self):
+        """
+        Retrieve all 'Depends-On:' lines from commit message with 'Depends-On:'
+        already removed and split entries by commas.
+        """
+        # Python really needs >>= operator
+        lines = filter(lambda l: l.startswith('Depends-On:'), self.commit_lines)
+        content = map(lambda l: l[len('Depends-On:'):], lines)
+        split = map(lambda l: l.split(','), content)
+        values = it.chain.from_iterable(split)
+        stripped = map(lambda l: l.strip(), values)
+        return stripped
+
+    @property
+    def depends_on_queries(self):
+        """
+        All Depends-On queries already formatted as gerrit-queries.
+        """
+        return it.chain.from_iterable(map(parse_gerrit_changes, self.depends_on))
+
+    @property
+    def number(self):
+        return self['number']
+
+    @property
+    def patchlevel(self):
+        return self.patchset['number']
+
+    @property
+    def patchset(self):
+        return self['currentPatchSet']
+
+    @property
+    def ref(self):
+        "git-ref for the commit belonging the selected patchset."
+        return self.patchset['ref']
+
+    @property
+    def title(self):
+        return self.commit_lines[0][:70]
+
+
+class Gerrit(object):
+    """
+    Interface to communicate with gerrit via ssh.
+    """
+
+    def __init__(self, ctx, gerrit_url, logger=None):
+        self.ctx = ctx
+        self.gerrit_url = gerrit_url
+        self.default_query_options = ['--current-patch-set',
+                                      '--dependencies',
+                                      '--format=json']
+        self.logger = logger
+
+    @property
+    def cmd_ssh(self):
+        assert self.gerrit_url.scheme == 'ssh'
+        cmd = ["ssh", self.gerrit_url.hostname]
+        if self.gerrit_url.username:
+            cmd.extend(['-l', self.gerrit_url.username])
+        else:
+            # If there's a [gitreview] username, use that one
+            git_p = subprocess.Popen(["git", "config", "gitreview.username"],
+                                     stdout=subprocess.PIPE)
+            review_user, _ = git_p.communicate()
+            review_user.decode(sys.stdout.encoding or "utf-8")
+            if git_p.returncode == 0:
+                cmd.extend(['-l', review_user.strip()])
+        if self.gerrit_url.port:
+            cmd.append('-p {}'.format(self.gerrit_url.port))
+        return " ".join(cmd)
+
+    def cmd_query(self, query):
+        return " ".join([self.cmd_ssh, "gerrit query", query] + self.default_query_options)
+
+    def log_gerrit_change(self, change):
+        self._print("\tChangeset {project}:{number}/{patchlevel} \"{title}\"".format(
+            number=change['number'], patchlevel=change.patchlevel, title=change.title, project=change["project"]))
+        self._print("\t    {url}".format(url=change["url"]))
+
+    def query_changes(self, query): # -> [GerritChange]
+        """
+        Query the gerrit server for changes.
+        """
+        cmd = self.cmd_query(query)
+        Logs.debug('mr: {}'.format(cmd))
+        output = self.ctx.cmd_and_log(
+                cmd, shell=True, output=Context.STDOUT, quiet=Context.STDOUT)
+        if Logs.verbose > 3:
+            Logs.debug('mr: {}'.format(output))
+
+        data = [json.loads(line) for line in output.splitlines() if line]
+        changes_json = self._validate_query_response(data, query)
+        self._print("Resolved query \"{}\":".format(query))
+        return list(map(GerritChange, changes_json))
+
+    def resolve_queries(self, gerrit_queries, ignored_cs=None):
+        """
+        Perform queries on gerrit to find all changesets.
+        Returns a dictionary containing the changesets sorted indexed by
+        project names and containing the ordered set of changesets (same order
+        as the queries).
+        :param ignored_cs: List of changeset numbers to be ignored
+        :type ignored_cs: set of int or list of int
+        """
+        seen = set() if ignored_cs is None else set(ignored_cs)
+        # one list per-project => order is preserved!
+        project_to_change = defaultdict(list)
+        for gerrit_query in gerrit_queries:
+            changes = self.query_changes(gerrit_query)
+            for change in changes:
+                if change['number'] in seen:
+                    continue
+                else:
+                    seen.add(change['number'])
+                self.log_gerrit_change(change)
+                project_to_change[change['project']].append(change)
+
+        # --- Cross-project dependencies of all changesets --- #
+        all_changes = it.chain.from_iterable(project_to_change.values())
+        cross_queries = []
+        for change in all_changes:
+            cross_queries.extend(change.depends_on_queries)
+
+        # Recursion termination: continue only if there are unseen changes left
+        if cross_queries:
+            # Resolve query strings, ignore those already seen
+            cross_project_to_change = self.resolve_queries(cross_queries, ignored_cs=seen)
+
+            # Add all cross-repo changesets to the seen changes and the
+            # results list
+            for project, cross_cs in cross_project_to_change.items():
+                for change in cross_cs:
+                    seen.add(change['number'])
+                    project_to_change[project].append(change)
+
+        return project_to_change
+
+    def _print(self, *args, **kwargs):
+        if self.logger is not None:
+            self.logger(*args, **kwargs)
+
+    def _validate_query_response(self, data, query):
+        """
+        Validate query data integrity by inspecting the stats.
+        Return changes in json format.
+        """
+        # we get at least one answer row
+        if len(data) == 0:
+            self.ctx.fatal("Failure for query '{}': no response from server".format(query))
+
+        # the last line is the stats or error field
+        stats = data.pop()
+        if stats.get('type') == 'error' or 'rowCount' not in stats:
+            self.ctx.fatal("Failure for query '{query}'. Query failed: {error}".format(
+                query=query, error=stats))
+
+        if stats['rowCount'] == 0:
+            self.ctx.fatal("No results for query '{query}'".format(query=query))
+
+        # additional consistency check (cannot happen in normal cases)
+        assert stats['rowCount'] == len(data)
+
+        return data
 
 
 class Project(object):
@@ -282,9 +478,9 @@ class GitProject(Project):
         first_commit = True
 
         for changeset in self.required_gerrit_changes:
-            cref = changeset['currentPatchSet']['ref']
-            project = changeset['project']
-            yield fetch_cmd.format(BASE_URL=gerrit_url.geturl(), PROJECT=project, REF=cref)
+            yield fetch_cmd.format(BASE_URL=gerrit_url.geturl(),
+                                   PROJECT=changeset['project'],
+                                   REF=changeset.ref)
             if first_commit:
                 yield generate_apply_changeset_cmd(apply_cmd.format(checkout_cmd))
                 first_commit = False
@@ -607,95 +803,18 @@ class MR(object):
 
     def resolve_gerrit_changes(self, ctx, gerrit_queries, ignored_cs=None):
         """
-        Perform queries on gerrit to find the all changesets.
+        Perform queries on gerrit to find all changesets matching the query.
         Returns a dictionary containing the changesets sorted indexed by
         project names and containing the ordered set of changesets (same order
         as the queries).
         :param ignored_cs: List of changeset numbers to be ignored
         :type ignored_cs: set of int or list of int
         """
-        assert self.gerrit_url.scheme == 'ssh'
-        ssh = "ssh {H}".format(H=self.gerrit_url.hostname)
-        if self.gerrit_url.username:
-            ssh += ' -l {U}'.format(U=self.gerrit_url.username)
-        else:
-            # If there's a [gitreview] username, use that one
-            git_p = subprocess.Popen(["git", "config", "gitreview.username"],
-                                     stdout=subprocess.PIPE)
-            review_user, _ = git_p.communicate()
-            review_user.decode(sys.stdout.encoding or "utf-8")
-            if git_p.returncode == 0:
-                ssh += ' -l {U}'.format(U=review_user.strip())
-        if self.gerrit_url.port:
-            ssh += ' -p {P}'.format(P=self.gerrit_url.port)
-        query_options = '--current-patch-set --dependencies --format=json'
 
-        seen = set() if ignored_cs is None else set(ignored_cs)
-        # changesets are storted as per-project-list inside a dict
-        # => per-project order is preserved!
-        changesets = dict()
-        for gerrit_query in gerrit_queries:
-            cmd = "{S} gerrit query {Q} {OPT}".format(
-                S=ssh, Q=gerrit_query, OPT=query_options)
-            ret = ctx.cmd_and_log(cmd, shell=True, output=Context.STDOUT, quiet=Context.STDOUT)
-            Logs.debug('mr: {C}'.format(C=cmd))
-            Logs.debug('mr: {R}'.format(R=ret))
-            data = [json.loads(line) for line in ret.split('\n') if line]
-
-            # we get at least one answer row
-            if len(data) == 0:
-                ctx.fatal("Failure for query '{Q}': no response from server".format(
-                    Q=gerrit_query))
-
-            # the last line is the stats or error field
-            stats = data.pop()
-            if stats.get('type') == 'error' or 'rowCount' not in stats:
-                ctx.fatal("Failure for query '{Q}'. Query failed: {E}".format(
-                    Q=gerrit_query, E=stats))
-            if stats['rowCount'] == 0:
-                ctx.fatal("No results for query '{Q}'".format(Q=gerrit_query))
-
-            # additional consistency check (cannot happen in normal cases)
-            assert stats['rowCount'] == len(data)
-
-            self.mr_print("Resolved query \"{Q}\":".format(Q=gerrit_query))
-            for result in data:
-                if result['number'] in seen:
-                    continue
-                seen.add(result['number'])
-
-                changesets.setdefault(result['project'], []).append(result)
-                rev = result['currentPatchSet']['number']
-                msg = result['commitMessage'].splitlines()[0][:70]
-                self.mr_print("\tChangeset {project}:{number}/{rev} \"{msg}\"".format(
-                    rev=rev, msg=msg, **result))
-                self.mr_print("\t    {url}".format(**result))
-
-        # --- Cross-project dependencies of all changesets --- #
-        cross_queries = list()
-        for cs in sum(changesets.values(), list()):
-            commit_msg = cs['commitMessage']
-
-            # Get changeset query strings
-            for line in commit_msg.splitlines():
-                if line.startswith('Depends-On:'):
-                    queries_raw = line[len('Depends-On:'):].strip()
-                    cross_queries += parse_gerrit_changes(queries_raw)
-
-        # Recursion termination: continue only if there are unseen changes left
-        if cross_queries:
-            # Resolve query strings, ignore those already seen
-            cross_cs = self.resolve_gerrit_changes(ctx, cross_queries,
-                                                   ignored_cs=seen)
-
-            # Add all cross-repo changesets to the seen changes and the
-            # results list
-            for project, cross_cs in cross_cs.items():
-                for changeset in cross_cs:
-                    seen.add(changeset['number'])
-                    changesets.setdefault(project, []).append(changeset)
-
-        return changesets
+        return Gerrit(ctx=ctx,
+                      gerrit_url=self.gerrit_url,
+                      logger=self.mr_print
+            ).resolve_queries(gerrit_queries, ignored_cs)
 
     def checkout_project(self, ctx, project, parent_path, branch=None, ref=None,
                          update_branch=False, gerrit_changes=None):
