@@ -207,6 +207,7 @@ class Gerrit(object):
         self.default_query_options = ['--dependencies',
                                       '--format=json']
         self.logger = logger
+        self._query_cache = {}
 
     @property
     def cmd_ssh(self):
@@ -248,17 +249,20 @@ class Gerrit(object):
 
         :arg all_patchsets: Whether or not to return the changesets with all patchsets.
         """
-        cmd = self.cmd_query(query, all_patchsets=all_patchsets)
-        Logs.debug('mr: {}'.format(cmd))
-        output = self.ctx.cmd_and_log(
-                cmd, shell=True, output=Context.STDOUT, quiet=Context.STDOUT)
-        if Logs.verbose > 3:
-            Logs.debug('mr: {}'.format(output))
+        request = (query, all_patchsets)
+        if request not in self._query_cache:
+            cmd = self.cmd_query(query, all_patchsets=all_patchsets)
+            Logs.debug('mr: {}'.format(cmd))
+            output = self.ctx.cmd_and_log(
+                    cmd, shell=True, output=Context.STDOUT, quiet=Context.STDOUT)
+            if Logs.verbose > 3:
+                Logs.debug('mr: {}'.format(output))
 
-        data = [json.loads(line) for line in output.splitlines() if line]
-        changes_json = self._validate_query_response(data, query)
-        self._print("Resolved query \"{}\":".format(query))
-        return list(map(GerritChange, changes_json))
+            data = [json.loads(line) for line in output.splitlines() if line]
+            changes_json = self._validate_query_response(data, query)
+            self._print("Resolved query \"{}\":".format(query))
+            self._query_cache[request] = list(map(GerritChange, changes_json))
+        return self._query_cache[request]
 
     def resolve_queries(self, gerrit_queries, ignored_cs=None):
         """
