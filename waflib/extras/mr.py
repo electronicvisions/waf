@@ -8,7 +8,7 @@ A :py:class:`waflib.Dependencies.DependenciesContext` instance is created when `
 
 """
 
-from  collections import defaultdict
+from  collections import defaultdict, deque
 import itertools as it
 import os, sys
 from waflib import Utils, Logs, Context, Options, Configure, Errors
@@ -17,6 +17,7 @@ import tempfile
 import re
 import shutil
 from distutils.version import LooseVersion
+import sys
 
 try:
     import urlparse
@@ -173,6 +174,14 @@ class GerritChange(object):
         return self['number']
 
     @property
+    def is_open(self):
+        return self['open']
+
+    @property
+    def parents(self):
+        return self.patchset['parents']
+
+    @property
     def patchlevel(self):
         return self.patchset['number']
 
@@ -185,6 +194,10 @@ class GerritChange(object):
                 return self['patchSets'][-1]
         else:
             return self['patchSets'][self._patchlevel_selected]
+
+    @property
+    def project(self):
+        return self['project']
 
     @property
     def ref(self):
@@ -204,13 +217,28 @@ class Gerrit(object):
     def __init__(self, ctx, gerrit_url, logger=None):
         self.ctx = ctx
         self.gerrit_url = gerrit_url
-        self.default_query_options = ['--dependencies',
-                                      '--format=json']
+        self.default_query_options = ['--format=json']
         self.logger = logger
         self._query_cache = {}
 
     @property
     def cmd_ssh(self):
+        """
+        Build a command and return list of command line arguments.
+
+        Currently, waf is setting the `shell` attribute for subprocess calls by
+        checking `shell=isinstance(cmd, str)`. This works fine in Python 3 but
+        in Python 2, when using returned gerrit change identifiers (which are
+        unicode) the check will fail because it would have to be performed
+        against `basestring`.
+
+        Since we focus on Python 3, a more elegant solution is just to return a
+        list of arguments that are executed instead of shell-interpreted
+        string, a more elegant solution is just to return a list of arguments
+        that are executed instead of shell-interpreted string. Here it does not
+        matter in Python 2 if some elements are str, but some are unicode ->
+        good enough for us!
+        """
         assert self.gerrit_url.scheme == 'ssh'
         cmd = ["ssh", self.gerrit_url.hostname]
         if self.gerrit_url.username:
@@ -224,8 +252,8 @@ class Gerrit(object):
             if git_p.returncode == 0:
                 cmd.extend(['-l', review_user.strip()])
         if self.gerrit_url.port:
-            cmd.append('-p {}'.format(self.gerrit_url.port))
-        return " ".join(cmd)
+            cmd.extend(["-p", "{}".format(self.gerrit_url.port)])
+        return cmd
 
     def cmd_query(self, query, all_patchsets=False):
         """
@@ -233,10 +261,30 @@ class Gerrit(object):
 
         :arg all_patchsets: Whether or not to return the changesets with all patchsets.
         """
-        return " ".join([
-            self.cmd_ssh, "gerrit query", query,
-            "--patch-sets" if all_patchsets else "--current-patch-set",
-            ] + self.default_query_options)
+        query_string = " ".join(["gerrit query", query,
+                                 "--patch-sets" if all_patchsets else "--current-patch-set",
+                                ] + self.default_query_options)
+        return self.cmd_ssh + [query_string]
+
+    def get_all_parents_open(self, change):
+        """
+        Recursively go up the tree and retrieve all parents that have open
+        changesets in gerrit.
+        """
+        remaining = deque(self.get_parents(change))
+        parents = []
+        while remaining:
+            current = remaining.popleft()
+            if current.is_open:
+                remaining.extend(self.get_parents(current))
+                parents.append(current)
+        return parents
+
+    def get_parents(self, change):  # -> [GerritChange]
+        """
+        Get parents to a change.
+        """
+        return list(it.chain.from_iterable(map(self.query_changes, change.parents)))
 
     def log_gerrit_change(self, change):
         self._print("\tChangeset {project}:{number}/{patchlevel} \"{title}\"".format(
@@ -276,57 +324,103 @@ class Gerrit(object):
         visited_num_to_change = dict() if ignored_cs is None else {cs: None for cs in ignored_cs}
         return self._resolve_queries(gerrit_queries, visited_num_to_change=visited_num_to_change)
 
-    def _resolve_queries(self, gerrit_queries, visited_num_to_change, all_patchsets=False):
+    def _resolve_queries(self, gerrit_queries, visited_num_to_change,
+                         num_to_explicit_patchlevel=None, with_parent_dependencies=True):
         """
         Internal implementation that tracks state via its arugments.
 
-        `visited_num_to_change` will be modified to propagate updated visit-status upwards.
+        :arg gerrit_queries: List if gerrit queries to resolve.
+
+        :arg visited_num_to_change: Dictionary tracking which changes have been
+        visited. It will be modified to propagate updated visit-status upwards.
+
+        :arg num_to_explicit_patchlevel: Dictionary tracking which change
+        numbers are requested at specific patchlevels.
+
+        :arg with_parent_dependencies: Whether or not to also check parent
+        commits currently under git review for dependencies.
+
+        :return: Dictionary mapping project name to list of dependent changes.
         """
+        if num_to_explicit_patchlevel is None:
+            num_to_explicit_patchlevel = {}
+
+        # Upon first invocation, all changes in the visited queue are ignored
+        # changes so the visited-dict is either empty or only contains None
+        #
+        # No-Parent-Depends-On is only valid for toplevel changes for the rare
+        # case that people want to construct custom stacks.
+        #
+        # Because the visited dict gets populated below we have to capture the
+        # state of is_toplevel at this point.
+        is_toplevel = all(v is None for v in visited_num_to_change.values())
+
+        # as soon as we have an explicitly requested patchlevel we retrieve all
+        # patch-sets to be sure
+        all_patchsets = len(num_to_explicit_patchlevel) > 0
+
         # one list per-project => order is preserved!
-        project_to_change = defaultdict(list)
-        for gerrit_query in gerrit_queries:
-            changes = self.query_changes(gerrit_query, all_patchsets=all_patchsets)
+        retval_project_to_change = defaultdict(list)
+        for single_query in gerrit_queries:
+            changes = self.query_changes(single_query, all_patchsets=all_patchsets)
             for change in changes:
                 if change.number in visited_num_to_change:
                     continue
                 else:
                     visited_num_to_change[change.number] = change
                 self.log_gerrit_change(change)
-                project_to_change[change['project']].append(change)
+                retval_project_to_change[change.project].append(change)
 
-        # --- Cross-project dependencies of all changesets --- #
-        all_changes = it.chain.from_iterable(project_to_change.values())
-        cross_queries = []
-        # track which changes are required at specific patchsets
-        num_to_explicit_patchlevel = {}
-        for change in all_changes:
-            cross_queries.extend(change.depends_on_queries)
+        # Keep all changes in a list because down below we are modifying
+        # retval_project_to_change which will break the loop.
+        all_changes = list(it.chain.from_iterable(retval_project_to_change.values()))
+        # explicit patchlevel has to be applied here so we chose the correct parents
+        if len(num_to_explicit_patchlevel) > 0:
+            self._set_explicit_patchlevels(
+                num_to_explicit_patchlevel=num_to_explicit_patchlevel,
+                changes=all_changes)
+
+        # Helper lambdas for below:
+        def collect(project_to_change):
+            """
+            Add all cross-repo changesets to the visited changes and the
+            results list
+            """
+            for project, changesets in project_to_change.items():
+                for change in changesets:
+                    visited_num_to_change[change.number] = change
+                    retval_project_to_change[project].append(change)
+
+        def track_custom_patchsets(change):
+            "Track which changes are required at specific patchsets"
             self._process_patchlevel_requirements(
                     change.depends_on_to_patchlevel,
                     num_to_explicit_patchlevel,  # gets updated
                     visited_num_to_change)  # gets updated
 
-        # Recursion termination: continue only if there are unseen changes left
-        if cross_queries:
-            # Resolve query strings, ignore those already seen
-            cross_project_to_change = self._resolve_queries(
-                    cross_queries,
+        def resolve(change, with_parents):
+            track_custom_patchsets(change)
+            collect(self._resolve_queries(
+                    change.depends_on_queries,
                     visited_num_to_change=visited_num_to_change,  # gets implicitly updated!
-                    all_patchsets=len(num_to_explicit_patchlevel) > 0)
+                    with_parent_dependencies=with_parents,
+                ))
 
-            if len(num_to_explicit_patchlevel) > 0:
-                self._set_explicit_patchlevels(
-                    num_to_explicit_patchlevel=num_to_explicit_patchlevel,
-                    changes=it.chain(*cross_project_to_change.values()))
+        # --- Cross-project dependencies of all changesets --- #
+        for change in all_changes:
+            # With parents can only be disabled in toplevel via commit-message-tag
+            if is_toplevel and change.has_no_parent_depends_on:
+                with_parents = False
+            else:
+                with_parents = with_parent_dependencies
 
-            # Add all cross-repo changesets to the seen changes and the
-            # results list
-            for project, cross_cs in cross_project_to_change.items():
-                for change in cross_cs:
-                    visited_num_to_change[change.number] = change
-                    project_to_change[project].append(change)
+            resolve(change, with_parents)
 
-        return project_to_change
+            if with_parents:
+                for parent in self.get_all_parents_open(change):
+                    resolve(parent, with_parents=True)
+
+        return retval_project_to_change
 
     def _print(self, *args, **kwargs):
         if self.logger is not None:
@@ -378,7 +472,7 @@ class Gerrit(object):
                 query=query, error=stats))
 
         if stats['rowCount'] == 0:
-            self.ctx.fatal("No results for query '{query}'".format(query=query))
+            Logs.warn("gerrit: No results for query '{query}', maybe not under review?".format(query=query))
 
         # additional consistency check (cannot happen in normal cases)
         assert stats['rowCount'] == len(data)
