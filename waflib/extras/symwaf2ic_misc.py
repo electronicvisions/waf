@@ -108,18 +108,27 @@ argparse.ArgumentParser.add_withargument = _withargument
 
 # --- Gerrit helper functions --- #
 def parse_gerrit_changes(arg):
-    ret = []
     # we convert integers and things that look like a changeset id to
     # explicit "change" queries
+    check = re.compile(r'|'.join([
+        r'^\d+$',         # numerical changeset number
+        r'^I[0-9a-f]+$'   # changeset id
+    ]))
+    # numerical changeset number with custom patchset requirement:
+    # <change-number>/<patchset-number>
+    # -> patchset requirement has to stripped for gerrit-query
+    check_custom_patchset = re.compile(r'^(\d+)/(\d+)$')
+
+    ret = []
     for item in arg.split(','):
-        check = re.compile(r'|'.join([
-            r'^\d+$',       # numerical changeset number
-            r'^I[0-9a-f]+$' # changeset id
-        ]))
         if check.match(item):
             ret.append('change:{}'.format(item))
         else:
-            ret.append(item)
+            match = check_custom_patchset.match(item)
+            if match:
+                ret.append('change:{}'.format(match(item).group(1)))
+            else:
+                ret.append(item)
     return ret
 
 

@@ -90,6 +90,7 @@ class GerritChange(object):
         # if memory becomes an issue (it won't) just parse all properties in
         # init and throw away json data
         self._json = json_data
+        self._patchlevel_selected = None
         if Logs.verbose > 2:
             for line in json.dumps(self._json, indent=2, ensure_ascii=True).split('\n'):
                 Logs.debug('gerrit: {}'.format(line))
@@ -99,6 +100,37 @@ class GerritChange(object):
         Access raw json data.
         """
         return self._json[item]
+
+    def set_patchlevel(self, level):
+        """
+        If patchlevel has already been set and `level` differs from it, issue
+        warning and return False. Otherwise set explicit patchlevel and return
+        True.
+        """
+        if self._patchlevel_selected is None:
+            self._patchlevel_selected = level
+            return True
+        elif self._patchlevel_selected == level:
+            return True
+        else:
+            Logs.warn("gerrit: Change {} already required at patchlevel {}. Setting to {} will break things.".format(
+                self.number, self._patchlevel_selected, level))
+            self._patchlevel_selected = level
+            return False
+
+    @property
+    def has_all_patchsets(self):
+        """
+        In gerrit you can only request the current patchset or all patchsets,
+        so `GerritChange` will only either have one patchset or all, which this
+        property distinguishes.
+        """
+        return 'patchSets' in self._json
+
+    @property
+    def has_no_parent_depends_on(self):
+        "Returns bool whether or not the change as No-Parent-Depends-On set."
+        return any((line.startswith("No-Parent-Depends-On") for line in self.commit_lines))
 
     @property
     def commit_lines(self):
@@ -126,6 +158,17 @@ class GerritChange(object):
         return it.chain.from_iterable(map(parse_gerrit_changes, self.depends_on))
 
     @property
+    def depends_on_to_patchlevel(self):
+        """
+        Return dictionary over depenendencies that have an explicit patchlevel requirement.
+        """
+        check = re.compile(r"^(\d+)/(\d+)$")
+        retval = {}
+        for depends in filter(lambda m: m, map(check.match, self.depends_on)):
+            retval[depends.group(1)] = depends.group(2)
+        return retval
+
+    @property
     def number(self):
         return self['number']
 
@@ -135,7 +178,13 @@ class GerritChange(object):
 
     @property
     def patchset(self):
-        return self['currentPatchSet']
+        if self._patchlevel_selected is None:
+            try:
+                return self['currentPatchSet']
+            except KeyError:
+                return self['patchSets'][-1]
+        else:
+            return self['patchSets'][self._patchlevel_selected]
 
     @property
     def ref(self):
@@ -155,8 +204,7 @@ class Gerrit(object):
     def __init__(self, ctx, gerrit_url, logger=None):
         self.ctx = ctx
         self.gerrit_url = gerrit_url
-        self.default_query_options = ['--current-patch-set',
-                                      '--dependencies',
+        self.default_query_options = ['--dependencies',
                                       '--format=json']
         self.logger = logger
 
@@ -178,19 +226,29 @@ class Gerrit(object):
             cmd.append('-p {}'.format(self.gerrit_url.port))
         return " ".join(cmd)
 
-    def cmd_query(self, query):
-        return " ".join([self.cmd_ssh, "gerrit query", query] + self.default_query_options)
+    def cmd_query(self, query, all_patchsets=False):
+        """
+        Construct and return query command.
+
+        :arg all_patchsets: Whether or not to return the changesets with all patchsets.
+        """
+        return " ".join([
+            self.cmd_ssh, "gerrit query", query,
+            "--patch-sets" if all_patchsets else "--current-patch-set",
+            ] + self.default_query_options)
 
     def log_gerrit_change(self, change):
         self._print("\tChangeset {project}:{number}/{patchlevel} \"{title}\"".format(
             number=change['number'], patchlevel=change.patchlevel, title=change.title, project=change["project"]))
         self._print("\t    {url}".format(url=change["url"]))
 
-    def query_changes(self, query): # -> [GerritChange]
+    def query_changes(self, query, all_patchsets=False): # -> [GerritChange]
         """
         Query the gerrit server for changes.
+
+        :arg all_patchsets: Whether or not to return the changesets with all patchsets.
         """
-        cmd = self.cmd_query(query)
+        cmd = self.cmd_query(query, all_patchsets=all_patchsets)
         Logs.debug('mr: {}'.format(cmd))
         output = self.ctx.cmd_and_log(
                 cmd, shell=True, output=Context.STDOUT, quiet=Context.STDOUT)
@@ -211,35 +269,57 @@ class Gerrit(object):
         :param ignored_cs: List of changeset numbers to be ignored
         :type ignored_cs: set of int or list of int
         """
-        seen = set() if ignored_cs is None else set(ignored_cs)
+        visited_num_to_change = dict() if ignored_cs is None else {cs: None for cs in ignored_cs}
+        return self._resolve_queries(gerrit_queries, visited_num_to_change=visited_num_to_change)
+
+    def _resolve_queries(self, gerrit_queries, visited_num_to_change, all_patchsets=False):
+        """
+        Internal implementation that tracks state via its arugments.
+
+        `visited_num_to_change` will be modified to propagate updated visit-status upwards.
+        """
         # one list per-project => order is preserved!
         project_to_change = defaultdict(list)
         for gerrit_query in gerrit_queries:
-            changes = self.query_changes(gerrit_query)
+            changes = self.query_changes(gerrit_query, all_patchsets=all_patchsets)
             for change in changes:
-                if change['number'] in seen:
+                if change.number in visited_num_to_change:
                     continue
                 else:
-                    seen.add(change['number'])
+                    visited_num_to_change[change.number] = change
                 self.log_gerrit_change(change)
                 project_to_change[change['project']].append(change)
 
         # --- Cross-project dependencies of all changesets --- #
         all_changes = it.chain.from_iterable(project_to_change.values())
         cross_queries = []
+        # track which changes are required at specific patchsets
+        num_to_explicit_patchlevel = {}
         for change in all_changes:
             cross_queries.extend(change.depends_on_queries)
+            self._process_patchlevel_requirements(
+                    change.depends_on_to_patchlevel,
+                    num_to_explicit_patchlevel,  # gets updated
+                    visited_num_to_change)  # gets updated
 
         # Recursion termination: continue only if there are unseen changes left
         if cross_queries:
             # Resolve query strings, ignore those already seen
-            cross_project_to_change = self.resolve_queries(cross_queries, ignored_cs=seen)
+            cross_project_to_change = self._resolve_queries(
+                    cross_queries,
+                    visited_num_to_change=visited_num_to_change,  # gets implicitly updated!
+                    all_patchsets=len(num_to_explicit_patchlevel) > 0)
+
+            if len(num_to_explicit_patchlevel) > 0:
+                self._set_explicit_patchlevels(
+                    num_to_explicit_patchlevel=num_to_explicit_patchlevel,
+                    changes=it.chain(*cross_project_to_change.values()))
 
             # Add all cross-repo changesets to the seen changes and the
             # results list
             for project, cross_cs in cross_project_to_change.items():
                 for change in cross_cs:
-                    seen.add(change['number'])
+                    visited_num_to_change[change.number] = change
                     project_to_change[project].append(change)
 
         return project_to_change
@@ -247,6 +327,36 @@ class Gerrit(object):
     def _print(self, *args, **kwargs):
         if self.logger is not None:
             self.logger(*args, **kwargs)
+
+    def _process_patchlevel_requirements(
+            self, depends_on_to_patchlevel, num_to_explicit_patchlevel, visited_num_to_change):
+        """
+        Ensures that required patchlevels on changes do not conflict and ensure
+        that changes required at a specific patchlevel have all their patchsets
+        requested.
+        """
+        # ensure that changes required at a specific patchlevel are queried
+        # with all patchset info
+        for num, patchlevel in depends_on_to_patchlevel.items():
+            if num in num_to_explicit_patchlevel:
+                if num_to_explicit_patchlevel[num] != patchlevel:
+                    self.ctx.fatal(
+                        "Changeset {} requested at two patchlevels {} {}.".format(
+                            num, num_to_explicit_patchlevel[num], patchlevel))
+            else:
+                num_to_explicit_patchlevel[num] = patchlevel
+                change = visited_num_to_change.get(num, None)
+                if change is not None:
+                    if not change.has_all_patchsets:
+                        # re-query the changeset to get all patchsets
+                        del visited_num_to_change[num]
+
+    def _set_explicit_patchlevels(self, num_to_explicit_patchlevel, changes):
+        for change in changes:
+            patchlevel = num_to_explicit_patchlevel.get(change.number, None)
+            if patchlevel is not None:
+                if not change.set_patchlevel(patchlevel):
+                    self.ctx.fatal("Aborting due to conflicting patchlevels.")
 
     def _validate_query_response(self, data, query):
         """
