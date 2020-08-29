@@ -84,6 +84,9 @@ class GerritChange(object):
     Information retrieved from gerrit via ssh about a change.
     """
 
+    def __eq__(self, other):
+        return self.id == other.id
+
     def __init__(self, json_data):
         """
         Construct gerrit change from json data. Constructed by Gerrit-instance.
@@ -95,6 +98,9 @@ class GerritChange(object):
         if Logs.verbose > 2:
             for line in json.dumps(self._json, indent=2, ensure_ascii=True).split('\n'):
                 Logs.debug('gerrit: {}'.format(line))
+        # Indicate that parents have not been discovered yet
+        self._ancestors_open = None
+        self._parents = None
 
     def __getitem__(self, item):
         """
@@ -105,6 +111,23 @@ class GerritChange(object):
     def __str__(self):
         return "#{number}@{patchlevel}({title})".format(
             number=self.number, patchlevel=self.patchlevel, title=self.title)
+
+    def query_ancestors_open(self, gerrit):
+        "Use supplied Gerrit instance to query all open ancestors of this change."
+        if self.ancestors_open_queried:
+            return
+        self.query_parents(gerrit)
+        self._ancestors_open = []
+        for parent in self.parents:
+            if parent.is_open:
+                parent.query_ancestors_open(gerrit)
+                self._ancestors_open.append(parent)
+                self._ancestors_open.extend(parent.ancestors_open)
+
+    def query_parents(self, gerrit):
+        "Use supplied Gerrit instance to query direct parents of this change."
+        if not self.parents_queried:
+            self._parents = list(it.chain.from_iterable(map(gerrit.query_changes, self.parent_refs)))
 
     def set_patchlevel(self, level):
         """
@@ -122,6 +145,20 @@ class GerritChange(object):
                 self.number, self._patchlevel_selected, level))
             self._patchlevel_selected = level
             return False
+
+    @property
+    def ancestors_open(self):
+        """Returns list of GerritChanges of open changesets that are ancestors.
+        Raises exception otherwise."""
+        if not self.ancestors_open_queried:
+            raise ValueError("Open ancestors of change {} have not been queried.".format(self))
+        else:
+            return self._ancestors_open
+
+    @property
+    def ancestors_open_queried(self):
+        "Is True if parents have been queried and retrieved from gerrit, False otherwise."
+        return self._ancestors_open is not None
 
     @property
     def has_all_patchsets(self):
@@ -178,11 +215,28 @@ class GerritChange(object):
         return self['number']
 
     @property
+    def id(self):
+        return self['id']
+
+    @property
     def is_open(self):
         return self['open']
 
     @property
     def parents(self):
+        "Returns list of GerritChanges that are parents. Raises exception otherwise."
+        if not self.parents_queried:
+            raise ValueError("Parents of change {} have not been queried.".format(self))
+        else:
+            return self._parents
+
+    @property
+    def parents_queried(self):
+        "Is True if parents have been queried and retrieved from gerrit, False otherwise."
+        return self._parents is not None
+
+    @property
+    def parent_refs(self):
         return self.patchset['parents']
 
     @property
@@ -270,30 +324,14 @@ class Gerrit(object):
                                 ] + self.default_query_options)
         return self.cmd_ssh + [query_string]
 
-    def get_all_parents_open(self, change):
-        """
-        Recursively go up the tree and retrieve all parents that have open
-        changesets in gerrit.
-        """
-        remaining = deque(self.get_parents(change))
-        parents = []
-        while remaining:
-            current = remaining.popleft()
-            if current.is_open:
-                remaining.extend(self.get_parents(current))
-                parents.append(current)
-        return parents
-
-    def get_parents(self, change):  # -> [GerritChange]
-        """
-        Get parents to a change.
-        """
-        return list(it.chain.from_iterable(map(self.query_changes, change.parents)))
-
     def log_gerrit_change(self, change):
         self._print("\tChangeset {project}:{number}/{patchlevel} \"{title}\"".format(
             number=change['number'], patchlevel=change.patchlevel, title=change.title, project=change["project"]))
         self._print("\t    {url}".format(url=change["url"]))
+
+    def make_changes_unique(self, changes):
+        seen = set()
+        return [c for c in changes if c.id not in seen and seen.add(c.id) is None]
 
     def query_changes(self, query, all_patchsets=False): # -> [GerritChange]
         """
@@ -326,13 +364,38 @@ class Gerrit(object):
         :type ignored_cs: set of int or list of int
         """
         visited_num_to_change = dict() if ignored_cs is None else {cs: None for cs in ignored_cs}
-        resolved = self._resolve_queries(gerrit_queries, visited_num_to_change=visited_num_to_change)
+        resolved = {project: self.sort_changes_parents_first(self.make_changes_unique(changes))
+            for project, changes in self._resolve_queries(
+                gerrit_queries, visited_num_to_change=visited_num_to_change).items()
+            }
         if Logs.verbose > 2:
             for project, changesets in resolved.items():
                 Logs.debug("gerrit: Resolved queries for project {}:".format(project))
                 for change in changesets:
                     Logs.debug("gerrit:     {change}".format(change=change))
         return resolved
+
+    def sort_changes_parents_first(self, changesets):
+        """
+        Return a partially ordered list of changes where each element is
+        guaranteed to have no parents in the remainder of the list.
+
+        That means first come the parents of a change and then the change. This
+        allow for trivial cherry-picking of several non-intersecting commit
+        stacks.
+        """
+        partially_sorted = []
+        for change in changesets:
+            # We insert the change after the last parent we saw.
+            # Note that these are direct parents and not only ancestors!
+            # Yes, this is O(n^2) but we typically have <<100 changes so it does not matter.
+            insert_at = 0
+            for i, compare in enumerate(partially_sorted):
+                if change.ancestors_open_queried and compare in change.ancestors_open:
+                    # we found a ancestors_open -> insert afterwards
+                    insert_at = i + 1
+            partially_sorted.insert(insert_at, change)
+        return partially_sorted
 
     def _resolve_queries(self, gerrit_queries, visited_num_to_change,
                          num_to_explicit_patchlevel=None, with_parent_dependencies=True):
@@ -397,13 +460,11 @@ class Gerrit(object):
             Add all cross-repo changesets to the visited changes and the
             results list
             """
-            if Logs.verbose > 2:
-                for project, changesets in project_to_change.items():
-                    for change in changesets:
-                        Logs.debug("gerrit: Collecting for {project}: {change}".format(
-                            project=project, change=change))
             for project, changesets in project_to_change.items():
                 for change in changesets:
+                    if Logs.verbose > 2:
+                        Logs.debug("gerrit: Collecting for {project}: {change}".format(
+                            project=project, change=change))
                     visited_num_to_change[change.number] = change
                     retval_project_to_change[project].append(change)
 
@@ -414,13 +475,17 @@ class Gerrit(object):
                     num_to_explicit_patchlevel,  # gets updated
                     visited_num_to_change)  # gets updated
 
-        def resolve(change, with_parents):
+        def resolve(change, with_parents, is_parent):
             track_custom_patchsets(change)
-            collect(self._resolve_queries(
-                    change.depends_on_queries,
-                    visited_num_to_change=visited_num_to_change,  # gets implicitly updated!
-                    with_parent_dependencies=with_parents,
-                ))
+            changes_to_add = self._resolve_queries(
+                change.depends_on_queries,
+                visited_num_to_change=visited_num_to_change,  # gets implicitly updated!
+                with_parent_dependencies=with_parents)
+            if is_parent and not change in retval_project_to_change[change.project]:
+                # parents need to be explicitly added as dependencies or they
+                # might get lost if changes are applied via cherry picking
+                retval_project_to_change[change.project].append(change)
+            collect(changes_to_add)
 
         # --- Cross-project dependencies of all changesets --- #
         for change in all_changes:
@@ -430,16 +495,16 @@ class Gerrit(object):
             else:
                 with_parents = with_parent_dependencies
 
-            resolve(change, with_parents)
+            resolve(change, with_parents, is_parent=False)
 
             if with_parents:
-                all_open_parents = self.get_all_parents_open(change)
+                change.query_ancestors_open(self)
                 if Logs.verbose > 2:
-                    Logs.debug("gerrit: Parents of {}".format(change))
-                    for parent in all_open_parents:
-                        Logs.debug("gerrit:    {}".format(parent))
-                for parent in all_open_parents:
-                    resolve(parent, with_parents=True)
+                    Logs.debug("gerrit: Open ancestors of {}".format(change))
+                    for ancestor in change.ancestors_open:
+                        Logs.debug("gerrit:    {}".format(ancestor))
+                for ancestor in change.ancestors_open:
+                    resolve(ancestor, with_parents=True, is_parent=True)
 
         return retval_project_to_change
 
