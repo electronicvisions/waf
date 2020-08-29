@@ -102,6 +102,10 @@ class GerritChange(object):
         """
         return self._json[item]
 
+    def __str__(self):
+        return "#{number}@{patchlevel}({title})".format(
+            number=self.number, patchlevel=self.patchlevel, title=self.title)
+
     def set_patchlevel(self, level):
         """
         If patchlevel has already been set and `level` differs from it, issue
@@ -322,7 +326,13 @@ class Gerrit(object):
         :type ignored_cs: set of int or list of int
         """
         visited_num_to_change = dict() if ignored_cs is None else {cs: None for cs in ignored_cs}
-        return self._resolve_queries(gerrit_queries, visited_num_to_change=visited_num_to_change)
+        resolved = self._resolve_queries(gerrit_queries, visited_num_to_change=visited_num_to_change)
+        if Logs.verbose > 2:
+            for project, changesets in resolved.items():
+                Logs.debug("gerrit: Resolved queries for project {}:".format(project))
+                for change in changesets:
+                    Logs.debug("gerrit:     {change}".format(change=change))
+        return resolved
 
     def _resolve_queries(self, gerrit_queries, visited_num_to_change,
                          num_to_explicit_patchlevel=None, with_parent_dependencies=True):
@@ -386,6 +396,11 @@ class Gerrit(object):
             Add all cross-repo changesets to the visited changes and the
             results list
             """
+            if Logs.verbose > 2:
+                for project, changesets in project_to_change.items():
+                    for change in changesets:
+                        Logs.debug("gerrit: Collecting for {project}: {change}".format(
+                            project=project, change=change))
             for project, changesets in project_to_change.items():
                 for change in changesets:
                     visited_num_to_change[change.number] = change
@@ -417,7 +432,12 @@ class Gerrit(object):
             resolve(change, with_parents)
 
             if with_parents:
-                for parent in self.get_all_parents_open(change):
+                all_open_parents = self.get_all_parents_open(change)
+                if Logs.verbose > 2:
+                    Logs.debug("gerrit: Parents of {}".format(change))
+                    for parent in all_open_parents:
+                        Logs.debug("gerrit:    {}".format(parent))
+                for parent in all_open_parents:
                     resolve(parent, with_parents=True)
 
         return retval_project_to_change
