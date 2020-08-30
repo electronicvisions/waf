@@ -1005,6 +1005,8 @@ class MR(object):
     def get_mr_env(self):
         env = os.environ
         path = env["PATH"].split(os.pathsep)
+        # ensure that mr path is in PATH only once
+        path = list(filter(lambda p: p != self.mr_path, path))
         path.insert(0, self.mr_path)
         env["PATH"] = os.pathsep.join(path)
         return env # KHS: jihaa function was a noop (return statement was missing)
