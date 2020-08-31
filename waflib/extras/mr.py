@@ -379,7 +379,8 @@ class Gerrit(object):
                 else:
                     visited_num_to_change[change.number] = change
                 self.log_gerrit_change(change)
-                retval_project_to_change[change.project].append(change)
+                if change.is_open:
+                    retval_project_to_change[change.project].append(change)
 
         # Keep all changes in a list because down below we are modifying
         # retval_project_to_change which will break the loop.
