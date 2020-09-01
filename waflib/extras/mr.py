@@ -764,10 +764,9 @@ class GitProject(Project):
             "if {cmd}; then git checkout {{descendant}}; exit 0; fi".format(
                 cmd=check_ancestry_cmd)
 
-        def generate_apply_changeset_cmd(cmd_no_relation, changeset):
+        def generate_apply_changeset_cmd(cmd_no_relation):
             # execute command in subshell so that we can use `exit 0`
             return "({})".format('; '.join([
-                check_if_change_present.format(change_id=changeset.id),
                 checkout_descendant_cmd.format(
                     ancestor='FETCH_HEAD', descendant='HEAD'),
                 checkout_descendant_cmd.format(
@@ -778,16 +777,25 @@ class GitProject(Project):
         first_commit = True
 
         for changeset in self.required_gerrit_changes:
-            yield fetch_cmd.format(BASE_URL=gerrit_url.geturl(),
-                                   PROJECT=changeset['project'],
-                                   REF=changeset.ref)
+            cmds_in_subshell = [
+                # Check if change is present -> exit 0 if it is
+                check_if_change_present.format(change_id=changeset.id),
+
+                # THEN fetch the remote ref
+                fetch_cmd.format(
+                    BASE_URL=gerrit_url.geturl(),
+                    PROJECT=changeset['project'],
+                    REF=changeset.ref)
+            ]
+
             if first_commit:
-                yield generate_apply_changeset_cmd(apply_cmd.format(checkout_cmd),
-                                                   changeset=changeset)
+                cmds_in_subshell.append(
+                    generate_apply_changeset_cmd(apply_cmd.format(checkout_cmd)))
                 first_commit = False
             else:
-                yield generate_apply_changeset_cmd(apply_cmd.format(cherry_pick_cmd),
-                                                   changeset=changeset)
+                cmds_in_subshell.append(
+                    generate_apply_changeset_cmd(apply_cmd.format(cherry_pick_cmd)))
+            yield "({})".format("; ".join(cmds_in_subshell))
 
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
