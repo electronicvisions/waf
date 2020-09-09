@@ -444,6 +444,8 @@ class Gerrit(object):
                 self.log_gerrit_change(change)
                 if change.is_open:
                     retval_project_to_change[change.project].append(change)
+                else:
+                    Logs.warn("gerrit: Not applying because changeset not open: {}".format(change))
 
         # Keep all changes in a list because down below we are modifying
         # retval_project_to_change which will break the loop.
