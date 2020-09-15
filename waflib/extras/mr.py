@@ -131,8 +131,8 @@ class GerritChange(object):
 
     def set_patchlevel(self, level):
         """
-        If patchlevel has already been set and `level` differs from it, issue
-        warning and return False. Otherwise set explicit patchlevel and return
+        If patchlevel has already been set and `level` differs from it, print
+        error and return False. Otherwise set explicit patchlevel and return
         True.
         """
         if self._patchlevel_selected is None:
@@ -141,7 +141,7 @@ class GerritChange(object):
         elif self._patchlevel_selected == level:
             return True
         else:
-            Logs.warn("gerrit: Change {} already required at patchlevel {}. Setting to {} will break things.".format(
+            Logs.error("gerrit: Change {} already required at patchlevel {}. Setting to {} will break things.".format(
                 self.number, self._patchlevel_selected, level))
             self._patchlevel_selected = level
             return False
@@ -173,6 +173,13 @@ class GerritChange(object):
     def has_no_parent_depends_on(self):
         "Returns bool whether or not the change as No-Parent-Depends-On set."
         return any((line.startswith("No-Parent-Depends-On") for line in self.commit_lines))
+
+    @property
+    def has_explicit_patchlevel(self):
+        """
+        Return whether this changeset is pinned to a specific patchset.
+        """
+        return self._patchlevel_selected is not None
 
     @property
     def commit_lines(self):
@@ -219,6 +226,10 @@ class GerritChange(object):
         return self['id']
 
     @property
+    def is_merged(self):
+        return self.status == "MERGED"
+
+    @property
     def is_open(self):
         return self['open']
 
@@ -261,6 +272,10 @@ class GerritChange(object):
     def ref(self):
         "git-ref for the commit belonging the selected patchset."
         return self.patchset['ref']
+
+    @property
+    def status(self):
+        return self["status"]
 
     @property
     def title(self):
@@ -442,10 +457,7 @@ class Gerrit(object):
                 else:
                     visited_num_to_change[change.number] = change
                 self.log_gerrit_change(change)
-                if change.is_open:
-                    retval_project_to_change[change.project].append(change)
-                else:
-                    Logs.warn("gerrit: Not applying because changeset not open: {}".format(change))
+                retval_project_to_change[change.project].append(change)
 
         # Keep all changes in a list because down below we are modifying
         # retval_project_to_change which will break the loop.
@@ -455,6 +467,14 @@ class Gerrit(object):
             self._set_explicit_patchlevels(
                 num_to_explicit_patchlevel=num_to_explicit_patchlevel,
                 changes=all_changes)
+
+        self._verify_state_changes(all_changes)
+        # filter already merged changesets without explicit patchlevel at this stage
+        for project, changesets in retval_project_to_change.items():
+            retval_project_to_change[project] = [cs for cs in changesets
+                                                 if not cs.is_merged or cs.has_explicit_patchlevel]
+        # make sure that all_changes does not contain merged changesets
+        all_changes = list(it.chain.from_iterable(retval_project_to_change.values()))
 
         # Helper lambdas for below:
         def collect(project_to_change):
@@ -566,6 +586,17 @@ class Gerrit(object):
         assert stats['rowCount'] == len(data)
 
         return data
+
+    def _verify_state_changes(self, changesets):
+        """
+        Ensure that all changes supplied are either open, merged or have an explicit patchlevel defined.
+
+        We break hard in all other cases to force users to fix their code.
+        """
+        for change in changesets:
+            if not (change.is_merged or change.is_open or change.has_explicit_patchlevel):
+                Logs.error("Change neither open nor requested at explicit patchlevel: {}".format(change))
+                self.ctx.fatal("Please fix your 'Depends-On:'s and/or explicitly requested gerrit changes!")
 
 
 class Project(object):
