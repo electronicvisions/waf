@@ -6,16 +6,16 @@ cat <<EOF
 Usage: $0 <executeable> [ARG...]
 
 Run the given executable and log which child processes have what maximum memory
-(VmPeak) usage.
+(VmHWM) usage.
 
 Checks are performed once per second this can be adjusted by specifying
 VMPEAK_INTERVAL.
 
 The output file can be specified via VMPEAK_OUTFILE. The default is
-"vmpeak.log".
+"vmhwm.log".
 
 After execution, the output file will contain one line for each child process:
-<process-id>\t<VmPeak>\t<cmdline>
+<process-id>\t<VmHWM>\t<cmdline>
 
 You can just prefix your waf build like so:
 $ $0 waf configure build install <...>
@@ -32,7 +32,7 @@ fi
 shopt -s extglob
 
 args=( "${@}" )
-stats_file="${VMPEAK_OUTFILE:-vmpeak.log}"
+stats_file="${VMPEAK_OUTFILE:-vmhwm.log}"
 tmpfile="${stats_file}.tmp"
 interval="${VMPEAK_INTERVAL:-1}"
 
@@ -66,7 +66,7 @@ while kill -0 ${exec_pid} 2>/dev/null; do
             continue
         fi
         echo -ne "${child_pid}\t" > "${tmpfile}"
-        get_status VmPeak "${child_pid}" >> "${tmpfile}" || continue
+        get_status VmHWM "${child_pid}" >> "${tmpfile}" || continue
         echo -ne "\t" >> "${tmpfile}"
         cmdline="/proc/${child_pid}/cmdline"
         if (( $(cat "${cmdline}" | wc -c) > 0 )); then
@@ -77,7 +77,7 @@ while kill -0 ${exec_pid} 2>/dev/null; do
         echo "" >> "${tmpfile}"
         cat >>"${stats_file}" <"${tmpfile}"
     done
-    # sort by size in reverse and then uniquely for process id -> largest VmPeak
+    # sort by size in reverse and then uniquely for process id -> largest VmHWM
     sort -n -k 2 -r "${stats_file}" | sort -n -k 1 -u >"${stats_file}.uniq"
     mv "${stats_file}.uniq" "${stats_file}"
     sleep "${interval}"
