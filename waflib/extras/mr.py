@@ -369,7 +369,7 @@ class Gerrit(object):
             self._query_cache[request] = list(map(GerritChange, changes_json))
         return self._query_cache[request]
 
-    def resolve_queries(self, gerrit_queries, ignored_cs=None):
+    def resolve_queries(self, gerrit_queries, ignored_cs=None, ignore_abandoned=False):
         """
         Perform queries on gerrit to find all changesets.
         Returns a dictionary containing the changesets sorted indexed by
@@ -381,7 +381,8 @@ class Gerrit(object):
         visited_num_to_change = dict() if ignored_cs is None else {cs: None for cs in ignored_cs}
         resolved = {project: self.sort_changes_parents_first(self.make_changes_unique(changes))
             for project, changes in self._resolve_queries(
-                gerrit_queries, visited_num_to_change=visited_num_to_change).items()
+                gerrit_queries, visited_num_to_change=visited_num_to_change,
+                ignore_abandoned=ignore_abandoned).items()
             }
         if Logs.verbose > 2:
             for project, changesets in resolved.items():
@@ -413,7 +414,8 @@ class Gerrit(object):
         return partially_sorted
 
     def _resolve_queries(self, gerrit_queries, visited_num_to_change,
-                         num_to_explicit_patchlevel=None, with_parent_dependencies=True):
+                         num_to_explicit_patchlevel=None, with_parent_dependencies=True,
+                         ignore_abandoned=False):
         """
         Internal implementation that tracks state via its arugments.
 
@@ -468,11 +470,16 @@ class Gerrit(object):
                 num_to_explicit_patchlevel=num_to_explicit_patchlevel,
                 changes=all_changes)
 
-        self._verify_state_changes(all_changes)
-        # filter already merged changesets without explicit patchlevel at this stage
+        self._verify_state_changes(all_changes, ignore_abandoned=ignore_abandoned)
+        # Filter non-open changesets without explicit patchlevel at this stage
+        # because abandoned changesets are not open.
+        # Either _verify_state_changes already exited if we found an abandoned change
+        # or, in case we ignore them, they are still present but need to be filtered.
+        # Only if changes are expected at a specific patch level we ignore them
+        # possibly being merged/abandoned.
         for project, changesets in retval_project_to_change.items():
             retval_project_to_change[project] = [cs for cs in changesets
-                                                 if not cs.is_merged or cs.has_explicit_patchlevel]
+                                                 if cs.is_open or cs.has_explicit_patchlevel]
         # make sure that all_changes does not contain merged changesets
         all_changes = list(it.chain.from_iterable(retval_project_to_change.values()))
 
@@ -502,7 +509,8 @@ class Gerrit(object):
             changes_to_add = self._resolve_queries(
                 change.depends_on_queries,
                 visited_num_to_change=visited_num_to_change,  # gets implicitly updated!
-                with_parent_dependencies=with_parents)
+                with_parent_dependencies=with_parents,
+                ignore_abandoned=ignore_abandoned)
             if is_parent and not change in retval_project_to_change[change.project]:
                 # parents need to be explicitly added as dependencies or they
                 # might get lost if changes are applied via cherry picking
@@ -587,7 +595,7 @@ class Gerrit(object):
 
         return data
 
-    def _verify_state_changes(self, changesets):
+    def _verify_state_changes(self, changesets, ignore_abandoned=False):
         """
         Ensure that all changes supplied are either open, merged or have an explicit patchlevel defined.
 
@@ -595,8 +603,11 @@ class Gerrit(object):
         """
         for change in changesets:
             if not (change.is_merged or change.is_open or change.has_explicit_patchlevel):
-                Logs.error("Change neither open nor requested at explicit patchlevel: {}".format(change))
-                self.ctx.fatal("Please fix your 'Depends-On:'s and/or explicitly requested gerrit changes!")
+                if not ignore_abandoned:
+                    Logs.error("Change neither open nor requested at explicit patchlevel: {}".format(change))
+                    self.ctx.fatal("Please fix your 'Depends-On:'s and/or explicitly requested gerrit changes!")
+                else:
+                    Logs.warn("Change neither open nor requested at explicit patchlevel: {}".format(change))
 
 
 class Project(object):
@@ -1146,7 +1157,8 @@ class MR(object):
         env["PATH"] = os.pathsep.join(path)
         return env # KHS: jihaa function was a noop (return statement was missing)
 
-    def resolve_gerrit_changes(self, ctx, gerrit_queries, ignored_cs=None):
+    def resolve_gerrit_changes(self, ctx, gerrit_queries,
+                               ignored_cs=None, ignore_abandoned=False):
         """
         Perform queries on gerrit to find all changesets matching the query.
         Returns a dictionary containing the changesets sorted indexed by
@@ -1159,7 +1171,7 @@ class MR(object):
         return Gerrit(ctx=ctx,
                       gerrit_url=self.gerrit_url,
                       logger=self.mr_print
-            ).resolve_queries(gerrit_queries, ignored_cs)
+            ).resolve_queries(gerrit_queries, ignored_cs, ignore_abandoned=ignore_abandoned)
 
     def checkout_project(self, ctx, project, parent_path, branch=None, ref=None,
                          update_branch=False, gerrit_changes=None):

@@ -177,6 +177,12 @@ def options(opt):
                  "automatic dependency resolution based on \"Depends-On:\" "
                  "keywords in commit messages.")
     gr.add_option(
+            "--gerrit-changes-ignore-abandoned", action="store_true",
+            help="By default waf exits if it enounters an abandoned changeset as dependency "
+                 "because dependency information in changes should be kept up-to-date. "
+                 "In some circumstances - if the users knows what he/she is doing - it can "
+                 "be beneficial to simply ignore abandoned changesets with a warning.")
+    gr.add_option(
             "--gerrit-url", action="store",
             type=validate_gerrit_url if is_symwaf2ic else str,
             default=validate_gerrit_url(
@@ -526,7 +532,8 @@ class DependencyContext(Symwaf2icContext):
         if (SETUP_CMD in sys.argv) and storage.setup_options["gerrit_changes"]:
                 self.gerrit_changes = storage.repo_tool.resolve_gerrit_changes(
                     self, storage.setup_options["gerrit_changes"],
-                    ignored_cs=storage.setup_options["gerrit_changes_ignored"])
+                    ignored_cs=storage.setup_options["gerrit_changes_ignored"],
+                    ignore_abandoned=storage.setup_options["gerrit_changes_ignore_abandoned"])
         self.write_dot_file = storage.current_options["write_dot_file"]
         self.clone_depth = storage.setup_options["clone_depth"]
         # Dependency graph
