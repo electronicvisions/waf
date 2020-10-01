@@ -6,6 +6,7 @@
 # Support for --build-profile=
 DEFAULT_PROFILE = 'release_with_debug'
 
+from functools import wraps
 import os
 import shlex
 from waflib import Logs, Options, Errors
@@ -137,6 +138,16 @@ COMPILER_MAPPING = {
 	'powerpc-ppu-gcc': GccTraits,
 }
 
+def _add_confcache_warning_to_fatal(klass):
+	fatal_orig = klass.fatal
+	@wraps(klass.fatal)
+	def fatal(self, msg, *args, **kwargs):
+		if getattr(Options.options, 'confcache', None):
+			msg = "{}\nNOTE: confcache is enabled, make sure you supply " \
+                  "--disable-confcache to configure from scratch!".format(msg)
+		fatal_orig(self, msg, *args, **kwargs)
+	klass.fatal = fatal
+
 def options(opt):
 	profiles = CompilerTraits.profiles
 
@@ -244,3 +255,5 @@ def configure(conf):
 		inject_into_environment('C_INCLUDE_PATH',     'CFLAGS',       '-I', '-isystem ')
 		inject_into_environment('CPLUS_INCLUDE_PATH', 'CXXFLAGS',     '-I', '-isystem ')
 		inject_into_environment('LIBRARY_PATH',       'LIBRARY_PATH', '-L')
+
+	_add_confcache_warning_to_fatal(conf.__class__)
