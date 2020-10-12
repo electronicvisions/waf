@@ -280,7 +280,8 @@ def write_summary_xml(results, path):
         if status is TestBase.PASSED:
             continue
         elif status is TestBase.FAILED:
-            ElementTree.SubElement(testcase, "failure")
+            ElementTree.SubElement(testcase, "failure",
+                                   dict(message=stderr_text))
             continue
         else:
             ElementTree.SubElement(testcase, "error")
