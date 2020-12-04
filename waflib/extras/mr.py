@@ -843,6 +843,31 @@ class GitProject(Project):
 
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
+        # Format is short hash followed by subject
+        self.describe_format = "%h: '%s'"
+
+    def describe(self, ctx):
+        """
+            Describe current state of the project.
+
+            :returns: String describing git repository status.
+        """
+        from waflib.extras import symwaf2ic
+        description = self.name + "@"
+        description += ctx.cmd_and_log(
+            "cd '{path}' && git log -1 --format=\"{fmt}\"".format(
+                path = self.path,
+                fmt=self.describe_format,
+            ),
+            output=Context.STDOUT, quiet=Context.STDOUT).strip()
+        dirty = ctx.cmd_and_log(
+            "cd '{path}' && git diff HEAD".format(
+                path = self.path
+            ),
+            output=Context.STDOUT, quiet=Context.STDOUT).strip()
+        if dirty.strip() != "":
+            description += " (dirty)"
+        return description
 
     def mr_checkout_cmd(self, base_node, url, clone_depth):
         path = self.path_from(base_node)

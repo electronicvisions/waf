@@ -19,6 +19,7 @@ except ImportError:
     from urllib.parse import urlparse
 
 from waflib import Build, Context, Errors, Logs, Utils, Options
+from waflib.Configure import conf
 from waflib.extras import mr
 
 from waflib.extras.symwaf2ic_misc import add_username_to_gerrit_url
@@ -65,6 +66,21 @@ def get_required_paths():
 def get_projects():
     for p in storage.projects:
         yield Project(**p)
+
+
+@conf
+def describe_project(ctx, project):
+    """
+        Describe a symwaf2ic project.
+
+        :param project: The project for which to extract information.
+
+        :returns: a line describing the current state of the given project.
+    """
+    if project in storage.repo_tool.projects:
+        return storage.repo_tool.projects[project].describe(ctx)
+    else:
+        raise Symwaf2icError("Cannot describe unknown project {}".format(project))
 
 
 def count_projects():
@@ -127,6 +143,14 @@ class Project(object):
     @staticmethod
     def from_dir_opt(arg):
         return {'project' : None, "directory" : arg, 'branch' : None}
+
+    def describe(self, ctx):
+        """
+        Return a string describing the current toplevel state of the repository.
+
+        ctx: The context in which to execute.
+        """
+        raise NotImplementedError
 
 
 def options(opt):
