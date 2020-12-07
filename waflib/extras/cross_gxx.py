@@ -15,7 +15,9 @@ def find_cross_gxx(conf):
 	"""
 	Find the cross compiler and if present, try to detect its version number
 	"""
-	cxx = conf.find_program('%s-g++' % conf.env.CROSS_PLATFORM, var='CXX')
+	# call twice (kw "value") to avoid usage of preset CXX variable
+	cxx = conf.find_program('%s-g++' % conf.env.CROSS_PLATFORM)
+	cxx = conf.find_program('%s-g++' % conf.env.CROSS_PLATFORM, value=cxx,var='CXX')
 	conf.get_cc_version(cxx, gcc=True)
 	conf.env.CXX_NAME = '%s-gxx' % conf.env.CROSS_PLATFORM
 
