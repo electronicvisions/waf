@@ -28,7 +28,8 @@ When using this tool, the wscript will look like:
 
 import os, os.path, re
 from collections import OrderedDict
-from waflib import Task, Utils, Node
+from waflib import Task, Utils, Node, Options
+from waflib.Logs import info
 from waflib.TaskGen import feature
 
 DOXY_STR = '"${DOXYGEN}" - '
@@ -198,6 +199,9 @@ class tar(Task.Task):
 
 @feature('doxygen')
 def process_doxy(self):
+	if self.env.disable_doxygen:
+		return
+
 	if not getattr(self, 'doxyfile', None):
 		self.bld.fatal('no doxyfile variable specified??')
 
@@ -223,6 +227,16 @@ def process_doxy(self):
 		if getattr(self, 'install_path', None):
 			self.add_install_files(install_to=self.install_path, install_from=tsk.outputs)
 
+
+def options(opt):
+    """
+    Provide options for doxygen
+    """
+    grp = opt.add_option_group('doxygen Options')
+    grp.add_option('--disable-doxygen', action='store_true', default=False,
+                   help='Disables doxygen', dest='disable_doxygen')
+
+
 def configure(conf):
 	'''
 	Check if doxygen and tar commands are present in the system
@@ -232,5 +246,9 @@ def configure(conf):
 	TAR environmental variables.
 	'''
 
+	conf.env.disable_doxygen = getattr(Options.options, 'disable_doxygen')
+	if conf.env.disable_doxygen:
+		info("Skipping tool doxygen due to option --disable-doxygen.")
+		return
 	conf.find_program('doxygen', var='DOXYGEN', mandatory=False)
 	conf.find_program('tar', var='TAR', mandatory=False)
