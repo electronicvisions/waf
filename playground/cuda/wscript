@@ -18,6 +18,9 @@ def configure(conf):
 
 	conf.load('cuda', tooldir='.')
 
+	# Add a few flags to test proper passing to nvcc
+	conf.env.CXXFLAGS=['-fPIC', '--std=c++11']
+
 def build(bld):
 
 	# cuda application
@@ -35,7 +38,7 @@ def build(bld):
 	# native application
 	bld.program(
 		source = 'test.cpp',
-		target = 'testapp')
+		target = 'testapp-native')
 
 	# cuda application
 	bld.program(

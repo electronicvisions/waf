@@ -16,12 +16,22 @@ The following environment variables may be set:
   - URL to a cache server, for example:
     export WAFCACHE=http://localhost:8080/files/
     in that case, GET/POST requests are made to urls of the form
-    http://localhost:8080/files/000000000/0 (cache management is then up to the server)
-  - GCS or S3 bucket
-    gs://my-bucket/
-    s3://my-bucket/
+    http://localhost:8080/files/000000000/0 (cache management is delegated to the server)
+  - GCS, S3 or MINIO bucket
+    gs://my-bucket/    (uses gsutil command line tool or WAFCACHE_CMD)
+    s3://my-bucket/    (uses aws command line tool or WAFCACHE_CMD)
+    minio://my-bucket/ (uses mc command line tool or WAFCACHE_CMD)
+* WAFCACHE_CMD: bucket upload/download command, for example:
+    WAFCACHE_CMD="gsutil cp %{SRC} %{TGT}"
+  Note that the WAFCACHE bucket value is used for the source or destination
+  depending on the operation (upload or download). For example, with:
+    WAFCACHE="gs://mybucket/"
+  the following commands may be run:
+    gsutil cp build/myprogram  gs://mybucket/aa/aaaaa/1
+    gsutil cp gs://mybucket/bb/bbbbb/2 build/somefile
 * WAFCACHE_NO_PUSH: if set, disables pushing to the cache
 * WAFCACHE_VERBOSITY: if set, displays more detailed cache operations
+* WAFCACHE_STATS: if set, displays cache usage statistics on exit
 
 File cache specific options:
   Files are copied using hard links by default; if the cache is located
@@ -30,6 +40,7 @@ File cache specific options:
 * WAFCACHE_EVICT_MAX_BYTES: maximum amount of cache size in bytes (10GB)
 * WAFCACHE_EVICT_INTERVAL_MINUTES: minimum time interval to try
                                    and trim the cache (3 minutess)
+
 Usage::
 
 	def build(bld):
@@ -41,7 +52,7 @@ To troubleshoot::
 	waf clean build --zones=wafcache
 """
 
-import atexit, base64, errno, fcntl, getpass, os, shutil, sys, time, traceback, urllib3
+import atexit, base64, errno, fcntl, getpass, os, re, shutil, sys, time, traceback, urllib3, shlex
 try:
 	import subprocess32 as subprocess
 except ImportError:
@@ -53,12 +64,16 @@ if not os.path.isdir(base_cache):
 default_wafcache_dir = os.path.join(base_cache, 'wafcache_' + getpass.getuser())
 
 CACHE_DIR = os.environ.get('WAFCACHE', default_wafcache_dir)
+WAFCACHE_CMD = os.environ.get('WAFCACHE_CMD')
 TRIM_MAX_FOLDERS = int(os.environ.get('WAFCACHE_TRIM_MAX_FOLDER', 1000000))
 EVICT_INTERVAL_MINUTES = int(os.environ.get('WAFCACHE_EVICT_INTERVAL_MINUTES', 3))
 EVICT_MAX_BYTES = int(os.environ.get('WAFCACHE_EVICT_MAX_BYTES', 10**10))
 WAFCACHE_NO_PUSH = 1 if os.environ.get('WAFCACHE_NO_PUSH') else 0
 WAFCACHE_VERBOSITY = 1 if os.environ.get('WAFCACHE_VERBOSITY') else 0
+WAFCACHE_STATS = 1 if os.environ.get('WAFCACHE_STATS') else 0
 OK = "ok"
+
+re_waf_cmd = re.compile('(?P<src>%{SRC})|(?P<tgt>%{TGT})')
 
 try:
 	import cPickle
@@ -80,6 +95,9 @@ def can_retrieve_cache(self):
 	sig = self.signature()
 	ssig = Utils.to_hex(self.uid() + sig)
 
+	if WAFCACHE_STATS:
+		self.generator.bld.cache_reqs += 1
+
 	files_to = [node.abspath() for node in self.outputs]
 	err = cache_command(ssig, [], files_to)
 	if err.startswith(OK):
@@ -87,6 +105,8 @@ def can_retrieve_cache(self):
 			Logs.pprint('CYAN', '  Fetched %r from cache' % files_to)
 		else:
 			Logs.debug('wafcache: fetched %r from cache', files_to)
+		if WAFCACHE_STATS:
+			self.generator.bld.cache_hits += 1
 	else:
 		if WAFCACHE_VERBOSITY:
 			Logs.pprint('YELLOW', '  No cache entry %s' % files_to)
@@ -104,11 +124,17 @@ def put_files_cache(self):
 	if WAFCACHE_NO_PUSH or getattr(self, 'cached', None) or not self.outputs:
 		return
 
+	files_from = []
+	for node in self.outputs:
+		path = node.abspath()
+		if not os.path.isfile(path):
+			return
+		files_from.append(path)
+
 	bld = self.generator.bld
 	sig = self.signature()
 	ssig = Utils.to_hex(self.uid() + sig)
 
-	files_from = [node.abspath() for node in self.outputs]
 	err = cache_command(ssig, files_from, [])
 
 	if err.startswith(OK):
@@ -116,6 +142,8 @@ def put_files_cache(self):
 			Logs.pprint('CYAN', '  Successfully uploaded %s to cache' % files_from)
 		else:
 			Logs.debug('wafcache: Successfully uploaded %r to cache', files_from)
+		if WAFCACHE_STATS:
+			self.generator.bld.cache_puts += 1
 	else:
 		if WAFCACHE_VERBOSITY:
 			Logs.pprint('RED', '  Error caching step results %s: %s' % (files_from, err))
@@ -180,6 +208,10 @@ def make_cached(cls):
 	if getattr(cls, 'nocache', None) or getattr(cls, 'has_cache', False):
 		return
 
+	full_name = "%s.%s" % (cls.__module__, cls.__name__)
+	if full_name in ('waflib.Tools.ccroot.vnum', 'waflib.Build.inst'):
+		return
+
 	m1 = getattr(cls, 'run', None)
 	def run(self):
 		if getattr(self, 'nocache', False):
@@ -195,9 +227,6 @@ def make_cached(cls):
 			return m2(self)
 		ret = m2(self)
 		self.put_files_cache()
-		if hasattr(self, 'chmod'):
-			for node in self.outputs:
-				os.chmod(node.abspath(), self.chmod)
 		return ret
 	cls.post_run = post_run
 	cls.has_cache = True
@@ -233,8 +262,9 @@ def build(bld):
 		# already called once
 		return
 
-	for x in range(bld.jobs):
-		process_pool.append(get_process())
+	# pre-allocation
+	processes = [get_process() for x in range(bld.jobs)]
+	process_pool.extend(processes)
 
 	Task.Task.can_retrieve_cache = can_retrieve_cache
 	Task.Task.put_files_cache = put_files_cache
@@ -242,6 +272,19 @@ def build(bld):
 	Build.BuildContext.hash_env_vars = hash_env_vars
 	for x in reversed(list(Task.classes.values())):
 		make_cached(x)
+
+	if WAFCACHE_STATS:
+		# Init counter for statistics and hook to print results at the end
+		bld.cache_reqs = bld.cache_hits = bld.cache_puts = 0
+
+		def printstats(bld):
+			hit_ratio = 0
+			if bld.cache_reqs > 0:
+				hit_ratio = (bld.cache_hits / bld.cache_reqs) * 100
+			Logs.pprint('CYAN', '  wafcache stats: requests: %s, hits, %s, ratio: %.2f%%, writes %s' %
+					 (bld.cache_reqs, bld.cache_hits, hit_ratio, bld.cache_puts) )
+
+		bld.add_post_fun(printstats)
 
 def cache_command(sig, files_from, files_to):
 	"""
@@ -306,7 +349,10 @@ def lru_trim():
 
 				size = 0
 				for fname in os.listdir(path):
-					size += os.lstat(os.path.join(path, fname)).st_size
+					try:
+						size += os.lstat(os.path.join(path, fname)).st_size
+					except OSError:
+						pass
 				lst.append((os.stat(path).st_mtime, size, path))
 
 	lst.sort(key=lambda x: x[0])
@@ -317,7 +363,7 @@ def lru_trim():
 		_, tmp_size, path = lst.pop()
 		tot -= tmp_size
 
-		tmp = path + '.tmp'
+		tmp = path + '.remove'
 		try:
 			shutil.rmtree(tmp)
 		except OSError:
@@ -325,12 +371,12 @@ def lru_trim():
 		try:
 			os.rename(path, tmp)
 		except OSError:
-			sys.stderr.write('Could not rename %r to %r' % (path, tmp))
+			sys.stderr.write('Could not rename %r to %r\n' % (path, tmp))
 		else:
 			try:
 				shutil.rmtree(tmp)
 			except OSError:
-				sys.stderr.write('Could not remove %r' % tmp)
+				sys.stderr.write('Could not remove %r\n' % tmp)
 	sys.stderr.write("Cache trimmed: %r bytes in %r folders left\n" % (tot, len(lst)))
 
 
@@ -357,8 +403,8 @@ def lru_evict():
 			try:
 				fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
 			except EnvironmentError:
-				sys.stderr.write('another process is running!\n')
-				pass
+				if WAFCACHE_VERBOSITY:
+					sys.stderr.write('wafcache: another cleaning process is running\n')
 			else:
 				# now dow the actual cleanup
 				lru_trim()
@@ -429,7 +475,10 @@ class fcache(object):
 		else:
 			# attempt trimming if caching was successful:
 			# we may have things to trim!
-			lru_evict()
+			try:
+				lru_evict()
+			except Exception:
+				return traceback.format_exc()
 		return OK
 
 	def copy_from_cache(self, sig, files_from, files_to):
@@ -449,15 +498,25 @@ class fcache(object):
 
 class bucket_cache(object):
 	def bucket_copy(self, source, target):
-		if CACHE_DIR.startswith('s3://'):
+		if WAFCACHE_CMD:
+			def replacer(match):
+				if match.group('src'):
+					return source
+				elif match.group('tgt'):
+					return target
+			cmd = [re_waf_cmd.sub(replacer, x) for x in shlex.split(WAFCACHE_CMD)]
+		elif CACHE_DIR.startswith('s3://'):
 			cmd = ['aws', 's3', 'cp', source, target]
-		else:
+		elif CACHE_DIR.startswith('gs://'):
 			cmd = ['gsutil', 'cp', source, target]
+		else:
+			cmd = ['mc', 'cp', source, target]
+
 		proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		out, err = proc.communicate()
 		if proc.returncode:
 			raise OSError('Error copy %r to %r using: %r (exit %r):\n  out:%s\n  err:%s' % (
-				source, target, cmd, proc.returncode, out.decode(), err.decode()))
+				source, target, cmd, proc.returncode, out.decode(errors='replace'), err.decode(errors='replace')))
 
 	def copy_to_cache(self, sig, files_from, files_to):
 		try:
@@ -510,7 +569,9 @@ def loop(service):
 	sys.stdout.flush()
 
 if __name__ == '__main__':
-	if CACHE_DIR.startswith('s3://') or CACHE_DIR.startswith('gs://'):
+	if CACHE_DIR.startswith('s3://') or CACHE_DIR.startswith('gs://') or CACHE_DIR.startswith('minio://'):
+		if CACHE_DIR.startswith('minio://'):
+			CACHE_DIR = CACHE_DIR[8:]   # minio doesn't need the protocol part, uses config aliases
 		service = bucket_cache()
 	elif CACHE_DIR.startswith('http'):
 		service = netcache()
