@@ -18,6 +18,7 @@ class CompilerTraits(object):
 		'debug',                 # optimized for debugging
 		'sanitize',              # like debug plus sanitizers
 		'release',               # performance-optimized
+		'ci',                    # default profile for CI
 		'release_with_debug',    # performance-optimized with debugging support
 		'release_with_sanitize',  # performance-optimized with sanitizer support
 	)
@@ -44,6 +45,7 @@ class CommonTraits(CompilerTraits):
 		'release_with_debug':    '-fdiagnostics-color=always -O2 -g -fno-omit-frame-pointer -fno-strict-aliasing'.split(),
 		'release_with_sanitize': '-fdiagnostics-color=always -O2 -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
 		'release':               '-fdiagnostics-color=always -O2 -fno-strict-aliasing'.split(),
+		'ci':                    '-fdiagnostics-color=always -O2 -fno-strict-aliasing'.split(),
 	}
 	ldflags = {
 		'coverage':           '--coverage'.split(),
@@ -66,7 +68,7 @@ class CommonTraits(CompilerTraits):
 		return self.get_cpp_language_standard_flags() + self.get_cflags(build_profile)
 
 	def get_defines(self, build_profile):
-		if 'debug' not in build_profile and 'sanitize' not in build_profile:
+		if all([substr not in build_profile for substr in ('debug', 'sanitize', 'ci')]):
 			return ['NDEBUG']
 		return []
 
