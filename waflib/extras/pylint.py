@@ -102,6 +102,7 @@ class pylint(test_base.TestBase):
         output = self.xmlDir.find_or_declare("pylint_" + self.generator.name)
 
         pylint_cmd = [self.env.PYLINT[0]]
+        pylint_cmd.append("-j%d" % self.env.PYLINT_NUM_JOBS)
         if self.rcfile is not None:
             pylint_cmd.append("--rcfile=%s" % self.rcfile.abspath())
         pylint_cmd += self._get_pylint_target()
@@ -158,9 +159,19 @@ def options(opt):
     opt.load('python')
     test_base.options(opt)
 
+    opt.add_option("--pylint-num-jobs",
+                   dest="pylint_num_jobs",
+                   default=1,
+                   type="int",
+                   action="store",
+                   help="Number of parallel jobs (-j) to use for pylint "
+                        "(default=1, use '0' to auto-detect the number "
+                        "of cores available)")
+
 
 def configure(ctx):
     test_base.configure(ctx)
     ctx.load('python')
     ctx.check_python_version()
     ctx.find_program('pylint', mandatory=True)
+    ctx.env.PYLINT_NUM_JOBS = ctx.options.pylint_num_jobs
