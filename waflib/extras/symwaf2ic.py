@@ -83,6 +83,25 @@ def describe_project(ctx, project):
         raise Symwaf2icError("Cannot describe unknown project {}".format(project))
 
 
+class DescribeContext(Build.BuildContext):
+    '''Describe all current projects.'''
+    cmd = 'projectstatus'
+
+    def execute(self):
+        descriptions = [
+                project.describe(self).split(' ')
+                for name, project in storage.repo_tool.projects.items()
+                if not name.startswith(".")
+            ]
+        padding = max((len(d[0]) for d in descriptions)) + 1
+        for projdesc in descriptions:
+            name = projdesc[0]
+            pad = ' ' * (padding - len(name))
+            remainder = ' '.join(projdesc[1:])
+            print("%s%s%s" % (name.replace('@', ' @ '), pad, remainder))
+
+
+
 def count_projects():
     return len(storage.projects)
 

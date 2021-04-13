@@ -844,7 +844,7 @@ class GitProject(Project):
     def __init__(self, *args, **kw):
         super(self.__class__, self).__init__(*args, **kw)
         # Format is short hash followed by subject
-        self.describe_format = "%h: '%s'"
+        self.describe_format = "%H '%s'"
 
     def describe(self, ctx):
         """
@@ -853,7 +853,7 @@ class GitProject(Project):
             :returns: String describing git repository status.
         """
         from waflib.extras import symwaf2ic
-        description = self.name + "@"
+        description = self.name + " @ "
         description += ctx.cmd_and_log(
             "cd '{path}' && git log -1 --format=\"{fmt}\"".format(
                 path = self.path,
