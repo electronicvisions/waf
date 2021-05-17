@@ -29,7 +29,7 @@ When using this tool, the wscript will look like:
 import os, os.path, re
 from collections import OrderedDict
 from waflib import Task, Utils, Node, Options
-from waflib.Logs import info
+from waflib.Logs import info, warn
 from waflib.TaskGen import feature
 
 DOXY_STR = '"${DOXYGEN}" - '
@@ -95,7 +95,11 @@ class doxygen(Task.Task):
 
 			if self.pars.get('OUTPUT_DIRECTORY'):
 				# Use the path parsed from the Doxyfile as an absolute path
-				output_node = self.inputs[0].parent.get_bld().make_node(self.pars['OUTPUT_DIRECTORY'])
+				tmp = self.pars.get('OUTPUT_DIRECTORY')
+				if os.path.isabs(tmp):
+					output_node = self.generator.bld.root.make_node(tmp)
+				else:
+					output_node = self.inputs[0].parent.get_bld().make_node(self.pars['OUTPUT_DIRECTORY'])
 			else:
 				# If no OUTPUT_PATH was specified in the Doxyfile, build path from the Doxyfile name + '.doxy'
 				output_node = self.inputs[0].parent.get_bld().make_node(self.inputs[0].name + '.doxy')
@@ -103,7 +107,10 @@ class doxygen(Task.Task):
 			self.pars['OUTPUT_DIRECTORY'] = output_node.abspath()
 
 			self.doxy_inputs = getattr(self, 'doxy_inputs', [])
-			if not self.pars.get('INPUT'):
+			if len(self.doxy_inputs) > 0:
+				tmp = ' '.join([x.abspath() for x in self.doxy_inputs])
+				self.pars['INPUT'] = tmp
+			elif not self.pars.get('INPUT'):
 				self.doxy_inputs.append(self.inputs[0].parent)
 			else:
 				for i in self.pars.get('INPUT').split():
@@ -126,6 +133,17 @@ class doxygen(Task.Task):
 			# in case the files were removed
 			self.add_install()
 		return ret
+
+	def uid(self):
+		try:
+			return self.uid_
+		except AttributeError:
+			m = Utils.md5(self.__class__.__name__.encode('latin-1', 'xmlcharrefreplace'))
+			up = m.update
+			for x in self.inputs + self.outputs + getattr(self, 'doxy_inputs', []):
+				up(x.abspath().encode('latin-1', 'xmlcharrefreplace'))
+			self.uid_ = m.digest()
+			return self.uid_
 
 	def scan(self):
 		exclude_patterns = self.pars.get('EXCLUDE_PATTERNS','').split()
@@ -212,7 +230,18 @@ def process_doxy(self):
 		self.bld.fatal('doxygen file %s not found' % self.doxyfile)
 
 	# the task instance
-	dsk = self.create_task('doxygen', node, always_run=getattr(self, 'always', False))
+	if not hasattr(self, 'doxy_inputs'):
+		warn('no doxy_inputs variable specified, resorting to old behavior')
+		dsk = self.create_task('doxygen', node, always_run=getattr(self, 'always', False))
+	else:
+		doxy_inputs = list()
+		for i in Utils.to_list(self.doxy_inputs):
+			if os.path.isabs(i):
+				tmp = self.bld.root.find_node(i)
+			else:
+				tmp = self.path.find_node(i)
+			doxy_inputs.append(tmp)
+		dsk = self.create_task('doxygen', node, always_run=getattr(self, 'always', False), doxy_inputs=doxy_inputs)
 
 	if getattr(self, 'doxy_tar', None):
 		tsk = self.create_task('tar', always_run=getattr(self, 'always', False))
