@@ -1347,7 +1347,7 @@ class MR(object):
             vcs = self.db.get_type(name)
         except KeyError as e:
             Logs.error("Missing information in repository database: %s" % name)
-            raise KeyError("Missing information in repository database. Missing key: '%s'" % e.message)
+            raise KeyError("Missing information in repository database. Missing key: '%s'" % e)
 
         p = self.project_types[vcs](name=name, path=os.path.join(self.base, name), clone_depth=self.clone_depth)
         default_branch = self.db.get_default_branch(name)
