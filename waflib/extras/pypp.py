@@ -212,7 +212,7 @@ class pyplusplus(Task.Task):
             tsk.env.append_value('CXXFLAGS', ['-Wno-unused-local-typedefs'])
 
             # ignore some more warnings introduced with g++ 8.x
-            if tsk.env['COMPILER_CXX'] == 'g++' and tsk.env['CC_VERSION'][0] > 7:
+            if tsk.env['COMPILER_CXX'] == 'g++' and int(tsk.env['CC_VERSION'][0]) > 7:
                 tsk.env.append_value('CXXFLAGS', ['-Wno-catch-value'])
                 tsk.env.append_value('CXXFLAGS', ['-Wno-ignored-qualifiers'])
                 tsk.env.append_value('CXXFLAGS', ['-Wno-maybe-uninitialized'])
