@@ -18,7 +18,7 @@ Support for Python, detect the headers and libraries and provide
 		bld.shlib(features='pyext', source='b.c', target='mylib')
 """
 
-import os, sys
+import os, re, sys
 from waflib import Errors, Logs, Node, Options, Task, Utils
 from waflib.TaskGen import extension, before_method, after_method, feature
 from waflib.Configure import conf
@@ -303,6 +303,30 @@ def remove_ndebug_from_env(env):
 		except:
 			pass
 
+def remove_goption_from_env(env):
+	"""
+	remove -g options
+	"""
+	regex = re.compile("-g[0-9]*")
+	for module in [ 'PYEMBED', 'PYEXT' ]:
+		try:
+			for flags_module in ['CFLAGS_%s' % module, 'CXXFLAGS_%s' % module]:
+				env[flags_module] = list(filter(lambda a: not regex.match(a), env[flags_module]))
+		except:
+			pass
+
+def remove_Ooption_from_env(env):
+	"""
+	remove -O options
+	"""
+	regex = re.compile("-O([sg0-3]|fast)")
+	for module in [ 'PYEMBED', 'PYEXT' ]:
+		try:
+			for flags_module in ['CFLAGS_%s' % module, 'CXXFLAGS_%s' % module]:
+				env[flags_module] = list(filter(lambda a: not regex.match(a), env[flags_module]))
+		except:
+			pass
+
 @conf
 def check_python_headers(conf, features='pyembed pyext'):
 	"""
@@ -399,6 +423,8 @@ def check_python_headers(conf, features='pyembed pyext'):
 		conf.define('HAVE_PYTHON_H', 1)
 
 		remove_ndebug_from_env(env)
+		remove_goption_from_env(env)
+		remove_Ooption_from_env(env)
 
 		return
 
