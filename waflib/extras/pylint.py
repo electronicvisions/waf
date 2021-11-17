@@ -116,7 +116,11 @@ class pylint(test_base.TestBase):
 @after_method('apply_link')
 @before_method('process_use')
 def add_pyext_pylint(self):
-    self.pyext_task = self.link_task
+    # store link_task if there is one
+    try:
+        self.pyext_task = self.link_task
+    except AttributeError:
+        pass
 
 
 @feature("pylint")
