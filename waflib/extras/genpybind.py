@@ -100,11 +100,9 @@ def generate_genpybind_source(self):
         out.append(self.path.get_bld().find_or_declare(single_out))
 
     task = self.create_task("genpybind", self.to_nodes(self.source), out)
-    # genpybind needs pyext and pyembed
-    if not 'pyext' in self.features:
-        self.features.append('pyext')
-    if not 'pyembed' in self.features:
-        self.features.append('pyembed')
+    # genpybind needs pyext or pyembed
+    if not (('pyext' in self.features) or ('pyembed' in self.features)):
+        self.bld.fatal("genpybind requires feature 'pyext' or 'pyembed' to be present")
     # used to detect whether CFLAGS or CXXFLAGS should be passed to genpybind
     task.features = self.features
     task.module = module
