@@ -23,7 +23,7 @@ from waflib import Errors, Logs, Node, Options, Task, Utils
 from waflib.TaskGen import extension, before_method, after_method, feature
 from waflib.Configure import conf
 
-FRAG = '''
+FRAG_EMBED = '''
 #include <Python.h>
 #ifdef __cplusplus
 extern "C" {
@@ -42,8 +42,24 @@ int main(int argc, char **argv)
 }
 '''
 """
-Piece of C/C++ code used in :py:func:`waflib.Tools.python.check_python_headers`
+Piece of C/C++ code (for embedding Python) used in :py:func:`waflib.Tools.python.check_python_headers`
 """
+
+# TODO: This is an incomplete test for a python extension. We could have
+# `PyModuleDef`, and a call to `PyInit_modulename(…)` in there; then try to
+# import it in the python interpeter. However, as a CPython extension shall not
+# be linked to libpython at build time there is no need for a import check here.
+FRAG_EXT = '''
+#include <Python.h>
+
+#ifndef PY_VERSION
+#error "Undefined Python version."
+#endif
+'''
+"""
+Piece of C/C++ code for Python extensions used in :py:func:`waflib.Tools.python.check_python_headers`
+"""
+
 
 INST = '''
 import sys, py_compile
@@ -241,13 +257,13 @@ def get_python_variables(self, variables, imports=None):
 @conf
 def test_pyembed(self, mode, msg='Testing pyembed configuration'):
 	self.check(header_name='Python.h', define_name='HAVE_PYEMBED', msg=msg,
-		fragment=FRAG, errmsg='Could not build a python embedded interpreter',
+		fragment=FRAG_EMBED, errmsg='Could not build a python embedded interpreter',
 		features='%s %sprogram pyembed' % (mode, mode))
 
 @conf
 def test_pyext(self, mode, msg='Testing pyext configuration'):
 	self.check(header_name='Python.h', define_name='HAVE_PYEXT', msg=msg,
-		fragment=FRAG, errmsg='Could not build python extensions',
+		fragment=FRAG_EXT, errmsg='Could not build python extensions',
 		features='%s %sshlib pyext' % (mode, mode))
 
 @conf
@@ -409,7 +425,8 @@ def check_python_headers(conf, features='pyembed pyext'):
 		if 'pyext' in features:
 			for flags in all_flags:
 				conf.check_cfg(msg='Asking python-config for pyext %r flags' % ' '.join(flags), path=env.PYTHON_CONFIG, package='', uselib_store='PYEXT', args=flags)
-
+				# Python extensions are expected to have missing linker references to Py_* symbols.
+				env.append_unique('LINKFLAGS_PYEXT', '-Wl,--allow-shlib-undefined')
 			try:
 				conf.test_pyext(xx)
 			except conf.errors.ConfigurationError:
@@ -499,7 +516,7 @@ def check_python_headers(conf, features='pyembed pyext'):
 		env.append_value('LINKFLAGS_PYEXT', dist_compiler.ldflags_shared)
 
 	# See if it compiles
-	conf.check(header_name='Python.h', define_name='HAVE_PYTHON_H', uselib='PYEMBED', fragment=FRAG, errmsg='Distutils not installed? Broken python installation? Get python-config now!')
+	conf.check(header_name='Python.h', define_name='HAVE_PYTHON_H', uselib='PYEMBED', fragment=FRAG_EMBED, errmsg='Distutils not installed? Broken python installation? Get python-config now!')
 
 @conf
 def check_python_version(conf, minver=None):
