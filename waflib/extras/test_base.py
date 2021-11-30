@@ -229,6 +229,12 @@ def write_summary_xml(results, path):
     """
     Create a JUnit-parseable XML file wih all test-binaries that should have
     been run.
+
+    We replicate googletest xml format.
+    Googletest example:
+    https://github.com/google/googletest/blob/1b18723e874b256c1e39378c6774a90701d70f7a/googletest/test/gtest_xml_output_unittest.py
+    Jenkins interpretation:
+    https://github.com/jenkinsci/xunit-plugin/blob/46706674400963bef203f4b569303a2c0f82e44a/src/main/resources/org/jenkinsci/plugins/xunit/types/googletest-to-junit.xsl
     """
 
     def remove_evil_chars(string):
@@ -279,13 +285,13 @@ def write_summary_xml(results, path):
 
         if status is TestBase.PASSED:
             continue
-        elif status is TestBase.FAILED:
-            ElementTree.SubElement(testcase, "failure",
-                                   dict(message=stderr_text))
-            continue
-        else:
-            ElementTree.SubElement(testcase, "error")
-            continue
+
+        error_element = ElementTree.SubElement(
+            testcase,
+            "failure" if status is TestBase.FAILED else "error",
+            dict(message=stderr_text)
+        )
+        error_element.text = stdout_text
 
     tree = ElementTree.ElementTree(testsuites)
     tree.write(path)
