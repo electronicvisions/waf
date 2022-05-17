@@ -21,6 +21,11 @@ sys.path.append(os.path.abspath('.'))
 
 graphviz_output_format = 'svg'
 
+html_theme_options = {
+	"body_min_width": "none",
+	"body_max_width": "none",
+}
+
 # monkey patch a few waf classes for documentation purposes!
 #-----------------------------------------------------------
 
@@ -207,7 +212,7 @@ for x in lst:
 				tool_to_features[x].append(feat)
 
 	txt = ""
-	txt += "%s\n%s\n\n.. automodule:: waflib.Tools.%s\n\n" % (x, "="*len(x), x)
+	txt += "%s\n%s\n\n.. automodule:: waflib.Tools.%s\n  :members:\n\n" % (x, "="*len(x), x)
 	if x in tool_to_features:
 		txt += "Features defined in this module:"
 		for feat in sorted(list(set(tool_to_features[x]))):
@@ -348,7 +353,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Waf'
-copyright = u'2005-2018, Thomas Nagy'
+copyright = u'2005-2022, Thomas Nagy'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
