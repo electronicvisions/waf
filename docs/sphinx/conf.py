@@ -258,7 +258,8 @@ for z in lst:
 	for x, y in links:
 		ms.append('\t\t"%s" -> "%s" [arrowsize=0.5,style="setlinewidth(0.5)"];' % (x, y))
 
-	rs = '\tdigraph feature_%s {\n\t\tsize="8.0, 12.0";\n%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
+	#rs = '\tdigraph feature_%s {\n\t\tsize="8.0, 12.0";\n%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
+	rs = '\tdigraph feature_%s {\n\t\t\n%s\n\t}\n' % (z == '*' and 'all' or z, '\n'.join(ms))
 	title = "Feature %s" % (z == '*' and '\\*' or z)
 	title += "\n" + len(title) * '='
 
