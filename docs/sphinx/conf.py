@@ -26,6 +26,9 @@ html_theme_options = {
 	"body_max_width": "none",
 }
 
+
+inheritance_graph_attrs = dict(rankdir="LR", size='""', fontsize=14, ratio='compress')
+
 # monkey patch a few waf classes for documentation purposes!
 #-----------------------------------------------------------
 
@@ -175,8 +178,9 @@ Configure.ConfigurationContext.__doc__ = """
 			ctx.myhelper()
 """
 
-
-
+from waflib.Tools import asm
+del asm.__dict__['link_task']
+del asm.__dict__['stlink_task']
 
 # Import all tools and build tool->feature map
 tool_to_features = {}

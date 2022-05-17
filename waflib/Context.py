@@ -144,7 +144,7 @@ class Context(ctx):
 	:type fun: string
 
 	.. inheritance-diagram:: waflib.Context.Context waflib.Build.BuildContext waflib.Build.InstallContext waflib.Build.UninstallContext waflib.Build.StepContext waflib.Build.ListContext waflib.Configure.ConfigurationContext waflib.Scripting.Dist waflib.Scripting.DistCheck waflib.Build.CleanContext
-
+	   :top-classes: waflib.Context.Context
 	"""
 
 	errors = Errors
