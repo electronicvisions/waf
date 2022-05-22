@@ -9,7 +9,7 @@ def configure(ctx):
 def test(ctx):
 	errors = []
 	msvc_versions = ['wsdk 6.1', 'winphone 8.0', 'msvc 9.0', 'msvc 16.6', 'msvc 16.0', 'msvc 15.9', 'msvc 15.0', 'msvc 14.0', 'msvc 12.0', 'msvc 11.0']
-	sorted_versions = ['wsdk 6.1', 'winphone 8.0', 'msvc 16.6', 'msvc 16.0', 'msvc 15.9', 'msvc 15.0', 'msvc 14.0', 'msvc 12.0', 'msvc 11.0', 'msvc 9.0']
+	sorted_versions = ['msvc 16.6', 'msvc 16.0', 'msvc 15.9', 'msvc 15.0', 'msvc 14.0', 'msvc 12.0', 'msvc 11.0', 'msvc 9.0', 'winphone 8.0', 'wsdk 6.1']
 
 	def tt(msg, result, expected):
 		color = 'RED'
