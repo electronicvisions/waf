@@ -396,9 +396,9 @@ def create_waf(self, *k, **kw):
 
 			sig = Utils.readf('waf.asc')
 			sig = sig.replace('\r', '').replace('\n', '\\n')
-			f.write('#')
-			f.write(sig)
-			f.write('\n')
+			f.write(to_bytes('#'))
+			f.write(to_bytes(sig))
+			f.write(to_bytes('\n'))
 			os.remove('waf.asc')
 
 
