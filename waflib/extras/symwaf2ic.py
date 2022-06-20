@@ -180,7 +180,7 @@ def options(opt):
             "--project", dest="projects", action="append", default=[],
             type=Project.from_project_opt if is_symwaf2ic else str,
             metavar="REPOSITORY[@BRANCH]",
-            help="Declare the specified project (repository) as required build target . Branches can be specified by appending '@branch', e.g. --project halbe@dev. (Can be specified several times.)"
+            help="Declare the specified project (repository) as required build target. Branches can be specified by appending '@branch', e.g. --project=halbe@dev. (This can be specified several times.)"
     )
     gr.add_option(
             "--directory", dest="projects", action="append",
@@ -197,17 +197,17 @@ def options(opt):
     gr.add_option(
             "--gerrit-changes", "--gerrit-changesets", default=[], action="store",
             type=parse_gerrit_changes if is_symwaf2ic else str,
-            help="Comma-seperated list of gerrit query ids. Possible values "
+            help="Comma-separated list of gerrit query ids. Possible values "
                  "are changeset numbers, changeset ids or complex queries like "
                  "--gerrit-changes='topic:hicann_version status:open,change:925,926'. "
-                 "Plain numbers are interpreted are automatically prefixed with 'change:'. "
-                 "The resuling changesets are applied to the sources. If "
+                 "Plain numbers are interpreted and are automatically prefixed with 'change:'. "
+                 "The resulting changesets are applied to the sources. If "
                  "multiple changeset are found for one repo, the repo is "
-                 "resetted to the first and all others will be cherrypicked.\n"
-                 "To remove gerrit changsets --update-branches can be used."
+                 "reset to the first and all others will be cherry-picked.\n"
+                 "To remove gerrit changesets --update-branches can be used."
                  "Dependent changesets (listed as \"Depends-On:\" in the "
                  "commit message) will be collected and resolved after the "
-                 "explicitely stated ones (breadth-first). Use "
+                 "explicitly stated ones (breadth-first). Use "
                  "--gerrit-changes-ignored to exclude specific changesets "
                  "from this automatic resolution.")
     gr.add_option(
@@ -221,7 +221,7 @@ def options(opt):
                  "keywords in commit messages.")
     gr.add_option(
             "--gerrit-changes-ignore-abandoned", action="store_true",
-            help="By default waf exits if it enounters an abandoned changeset as dependency "
+            help="By default waf exits if it encounters an abandoned changeset as dependency "
                  "because dependency information in changes should be kept up-to-date. "
                  "In some circumstances - if the users knows what he/she is doing - it can "
                  "be beneficial to simply ignore abandoned changesets with a warning.")
@@ -243,7 +243,7 @@ def options(opt):
             )
     gr.add_option(
             "--repo-db-type", dest="repo_db_type", action="store",
-            help="Type of the repository containting the repo DB (default: 'git'). Can also be 'wget'.",
+            help="Type of the repository containing the repo DB (default: 'git'). Can also be 'wget'.",
             default="git"
             )
     gr.add_option(
