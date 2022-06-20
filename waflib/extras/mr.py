@@ -704,14 +704,14 @@ class Project(object):
         cmd = self.reset_branch_cmd() if force else self.set_branch_cmd()
         ret, stdout, stderr = self.exec_cmd(cmd)
         if ret != 0:
-            raise BranchError(cmd + ":\n" + stdout + stderr)
+            raise BranchError(str(cmd) + ":\n" + stdout + stderr)
         self._real_branch = None
 
     def update_gerrit_changes(self, gerrit_url):
         for cmd in self.gerrit_changes_cmds(gerrit_url):
             ret, stdout, stderr = self.exec_cmd(cmd, shell=True)
             if ret != 0:
-                raise BranchError(cmd + ":\n" + stdout + stderr)
+                raise BranchError(str(cmd) + ":\n" + stdout + stderr)
 
     def path_from(self, start):
         assert os.path.isabs(start)
