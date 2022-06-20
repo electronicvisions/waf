@@ -256,6 +256,11 @@ def options(opt):
             type=int, help="Git clone depth. If not given, first use depth given in repo db then fallback to full history",
             default=None
     )
+    gr.add_option(
+            "--release-branch", dest="release_branch", action="store",
+            type=str, help="Specify a release branch to be used for all repositories if available. This overwrites branch settings (@branch syntax) by wscripts. It does not interfere with --gerrit-changes.",
+            default=None
+    )
 
 
 class Symwaf2icContext(Context.Context):
@@ -593,13 +598,14 @@ class DependencyContext(Symwaf2icContext):
         Logs.debug("dependency: Required by {script}: {project}{branch}{subfolder}".format(
                     project=project,
                     subfolder="" if len(subfolder) == 0 else " ({0})".format(subfolder),
-                    branch="" if branch is None else "@{0}".format(branch),
+                    branch="@{0}".format(storage.setup_options["release_branch"]) if storage.setup_options["release_branch"] else ("@{0}".format(branch) if branch else ""),
                     ref="" if ref is None else "@ref:{0}".format(ref),
                     script=required_from,
                 ))
         path = storage.repo_tool.checkout_project(
-            self, project, required_from, branch=branch, ref=ref,
-            update_branch=self.update_branches,
+            self, project, required_from,
+            branch=storage.setup_options["release_branch"] if storage.setup_options["release_branch"] else branch,
+            ref=ref, update_branch=self.update_branches,
             gerrit_changes=self.gerrit_changes)
 
         if len(subfolder) > 0:
