@@ -11,7 +11,7 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 
 from __future__ import with_statement
 
-VERSION="2.0.22"
+VERSION="2.0.24"
 APPNAME='waf'
 REVISION=''
 
@@ -396,9 +396,9 @@ def create_waf(self, *k, **kw):
 
 			sig = Utils.readf('waf.asc')
 			sig = sig.replace('\r', '').replace('\n', '\\n')
-			f.write('#')
-			f.write(sig)
-			f.write('\n')
+			f.write(to_bytes('#'))
+			f.write(to_bytes(sig))
+			f.write(to_bytes('\n'))
 			os.remove('waf.asc')
 
 

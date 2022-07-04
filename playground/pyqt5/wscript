@@ -14,16 +14,19 @@ def options(opt):
 	opt.load('python pyqt5')
 
 def configure(conf):
+	# Recent UIC/RCC versions require explicit python generator selection
+	conf.env.QT_PYUIC_FLAGS = ['-g', 'python']
+	conf.env.QT_PYRCC_FLAGS = ['-g', 'python']
 	# Load also python to demonstrate mixed calls
 	conf.load('python pyqt5')
-	conf.check_python_version((2,7,4))	
+	conf.check_python_version((2,7,4))
 
 def build(bld):
 	# Demonstrates mixed usage of py and pyqt5 module, and tests also install_path and install_from
 	# (since generated files go into build it has to be reset inside the pyqt5 tool)
-	bld(features="py pyqt5", source="src/sample.py src/firstgui.ui",  install_path="${PREFIX}/play/", install_from="src/") 
+	bld(features="py pyqt5", source="src/sample.py src/firstgui.ui",  install_path="${PREFIX}/play/", install_from="src/")
 
-	# Simple usage on a resource file. If a file referenced inside the resource changes it will be rebuilt 
+	# Simple usage on a resource file. If a file referenced inside the resource changes it will be rebuilt
 	# as the qrc XML is parsed and dependencies are calculated
-	bld(features="pyqt5", source="sampleRes.qrc") 
-	
+	bld(features="pyqt5", source="sampleRes.qrc")
+
