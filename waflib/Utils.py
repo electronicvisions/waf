@@ -452,6 +452,8 @@ def console_encoding():
 			pass
 		else:
 			if codepage:
+				if 65001 == codepage and sys.version_info < (3, 3):
+					return 'utf-8'
 				return 'cp%d' % codepage
 	return sys.stdout.encoding or ('cp1252' if is_win32 else 'latin-1')
 
