@@ -132,23 +132,36 @@ def put_files_cache(self):
 		files_from.append(path)
 
 	bld = self.generator.bld
+	old_sig = self.signature()
+
+	for node in self.inputs:
+		try:
+			del node.ctx.cache_sig[node]
+		except KeyError:
+			pass
+
+	delattr(self, 'cache_sig')
 	sig = self.signature()
-	ssig = Utils.to_hex(self.uid() + sig)
 
-	err = cache_command(ssig, files_from, [])
+	if old_sig == sig:
+		ssig = Utils.to_hex(self.uid() + sig)
+		err = cache_command(ssig, files_from, [])
 
-	if err.startswith(OK):
-		if WAFCACHE_VERBOSITY:
-			Logs.pprint('CYAN', '  Successfully uploaded %s to cache' % files_from)
+		if err.startswith(OK):
+			if WAFCACHE_VERBOSITY:
+				Logs.pprint('CYAN', '  Successfully uploaded %s to cache' % files_from)
+			else:
+				Logs.debug('wafcache: Successfully uploaded %r to cache', files_from)
+			if WAFCACHE_STATS:
+				self.generator.bld.cache_puts += 1
 		else:
-			Logs.debug('wafcache: Successfully uploaded %r to cache', files_from)
-		if WAFCACHE_STATS:
-			self.generator.bld.cache_puts += 1
+			if WAFCACHE_VERBOSITY:
+				Logs.pprint('RED', '  Error caching step results %s: %s' % (files_from, err))
+			else:
+				Logs.debug('wafcache: Error caching results %s: %s', files_from, err)
 	else:
-		if WAFCACHE_VERBOSITY:
-			Logs.pprint('RED', '  Error caching step results %s: %s' % (files_from, err))
-		else:
-			Logs.debug('wafcache: Error caching results %s: %s', files_from, err)
+		Logs.debug('wafcache: skipped %r upload due to late input modifications %r', self.outputs, self.inputs)
+
 
 	bld.task_sigs[self.uid()] = self.cache_sig
 
