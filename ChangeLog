@@ -3,7 +3,7 @@ NEW IN WAF 2.0.24
 * Use EXT_SUFFIX config var over the deprecated/removed SO (Python 3.11 regression) #2386
 * When detecting Visual Studio compilers, prefer the oldest version regardless of compiler type #2352
 * Update the MacOS-specific examples #2337
-
+* Fix Configure.find_program() invalid character handling in default variable names #2397
 
 NEW IN WAF 2.0.23
 -----------------
