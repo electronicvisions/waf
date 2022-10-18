@@ -290,7 +290,7 @@ class Gerrit(object):
     def __init__(self, ctx, gerrit_url, logger=None):
         self.ctx = ctx
         self.gerrit_url = gerrit_url
-        self.default_query_options = ['--format=json']
+        self.default_query_options = ['--format=json', '--commit-message']
         self.logger = logger
         self._query_cache = {}
 
