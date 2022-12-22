@@ -870,6 +870,19 @@ def lib64():
 				return '64'
 	return ''
 
+def loose_version(ver_str):
+	# private for the time being!
+	# see #2402
+	lst = re.split(r'([.]|\\d+|[a-zA-Z])', ver_str)
+	ver = []
+	for i, val in enumerate(lst):
+		try:
+			ver.append(int(val))
+		except ValueError:
+			if val != '.':
+				ver.append(val)
+	return ver
+
 def sane_path(p):
 	# private function for the time being!
 	return os.path.abspath(os.path.expanduser(p))
