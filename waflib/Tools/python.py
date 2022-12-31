@@ -59,7 +59,7 @@ try:
 except ImportError:
 	from sysconfig import get_config_var, get_path
 	def get_python_lib(*k, **kw):
-		keyword='stdlib' if kw.get('plat_specific') else 'platstdlib'
+		keyword='purelib' if kw.get('plat_specific') else 'platlib'
 		if 'prefix' in kw:
 			return get_path(keyword, vars={'installed_base': kw['prefix'], 'platbase': kw['prefix']})
 		return get_path(keyword)
