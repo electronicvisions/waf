@@ -1,3 +1,12 @@
+NEW IN WAF 2.0.25
+-----------------
+* Fix invalid characters returned by find_program #2397
+* Prepare for distutils removal (Python 3.12 regression) #2402
+* Improve cp65001 compat in cpython < 3.3 #2346
+* Added Fujitsu Fortran compiler detection on ARM64FX #2348
+* Support multiple Sphinx output formats #2344
+* Improve PyQt5 detection #2343
+
 NEW IN WAF 2.0.24
 -----------------
 * Use EXT_SUFFIX config var over the deprecated/removed SO (Python 3.11 regression) #2386
