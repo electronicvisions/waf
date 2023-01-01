@@ -357,7 +357,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Waf'
-copyright = u'2005-2022, Thomas Nagy'
+copyright = u'2005-2023, Thomas Nagy'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
