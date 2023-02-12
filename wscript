@@ -293,6 +293,8 @@ def create_waf(self, *k, **kw):
 			tarinfo = tarfile.TarInfo(x)
 		tarinfo.uid   = tarinfo.gid   = 0
 		tarinfo.uname = tarinfo.gname = 'root'
+		if os.environ.get('SOURCE_DATE_EPOCH'):
+			tarinfo.mtime = int(os.environ.get('SOURCE_DATE_EPOCH'))
 		(code, size, cnt) = sfilter(x)
 		tarinfo.size = size
 
