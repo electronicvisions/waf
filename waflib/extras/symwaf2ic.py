@@ -773,7 +773,7 @@ class DependencyContext(Symwaf2icContext):
 
 
     def _dump_dot_file(self, filename):
-        prefix = len(os.path.commonprefix(self.dependencies.keys()))
+        prefix = len(os.path.commonprefix(list(self.dependencies.keys())))
         with open(filename, 'w') as outfile:
             outfile.write("digraph {\n")
             for source, targets in self.dependencies.items():
