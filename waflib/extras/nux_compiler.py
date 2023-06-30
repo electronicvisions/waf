@@ -42,4 +42,4 @@ def configure(conf):
 		'-nostdlib',
 		'-Wl,--gc-sections',
 	]
-	conf.env.STLIB += ['gcc']
+	conf.env.STLIB += ['gcc', 'c', 'gcc']
