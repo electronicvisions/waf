@@ -11,22 +11,16 @@ Waf is a Python-based framework for configuring, compiling and installing applic
   * *Documentation*: the application is based on a robust model documented in [The Waf Book](https://waf.io/book/) and in the [API docs](https://waf.io/apidocs/)
   * *Python compatibility*: cPython 2.5 to 3.x, Jython 2.5, IronPython, and Pypy
 
-Waf is used in particular by innovative companies such as [Avalanche Studios](http://www.avalanchestudios.se) and by open-source projects such as [RTEMS](https://www.rtems.org/). Learn more about Waf by reading [The Waf Book](https://waf.io/book/).
+Learn more about Waf by reading [The Waf Book](https://waf.io/book/). For researchers and build system writers, Waf also provides a framework and examples for creating [custom build systems](https://gitlab.com/ita1024/waf/tree/master/build_system_kit) and [package distribution systems](https://gitlab.com/ita1024/waf/blob/master/playground/distnet/README.rst).
 
-For researchers and build system writers, Waf also provides a framework for creating [custom build systems](https://gitlab.com/ita1024/waf/tree/master/build_system_kit) and [package distribution systems](https://gitlab.com/ita1024/waf/blob/master/playground/distnet/README.rst).
-
-Download the project from our page on [waf.io](https://waf.io/) or from a mirror on [freehackers.org](http://www.freehackers.org/~tnagy/release/), consult the [manual](https://waf.io/book/), the [API documentation](https://waf.io/apidocs/) and the [showcases](https://gitlab.com/ita1024/waf/tree/master/demos) and [experiments](https://gitlab.com/ita1024/waf/tree/master/playground).
+Download the project from our page on [waf.io](https://waf.io/), consult the [manual](https://waf.io/book/), the [API documentation](https://waf.io/apidocs/) and the [showcases](https://gitlab.com/ita1024/waf/tree/master/demos) and [experiments](https://gitlab.com/ita1024/waf/tree/master/playground).
 
 ## HOW TO CREATE THE WAF SCRIPT
 
-Python >= 2.6 is required to generate the waf script, and the resulting file can then run on Python 2.5.
-Just run:
+Python >= 2.7 is required to generate the waf script:
+
 ```sh
 $ python ./waf-light configure build
-```
-Or, if several python versions are installed:
-```sh
-$ python3 ./waf-light configure build
 ```
 
 ## CUSTOMIZATION
