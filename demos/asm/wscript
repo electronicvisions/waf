@@ -19,10 +19,10 @@ def build(bld):
 		target   = 'asmtest',
 		defines  = 'foo=12',
 		asflags  = '-Os',
-		includes = '.')
+		includes = '.',
+                linkflags = '-no-pie')
 
 	def disp(ctx):
 		node = ctx.bldnode.ant_glob('asmtest*', remove=False)[0]
 		ctx.exec_command('%s' % node.abspath(), shell=False)
 	bld.add_post_fun(disp)
-
