@@ -6,7 +6,6 @@
 Detects the Intel C++ compiler
 """
 
-import sys
 from waflib.Tools import ccroot, ar, gxx
 from waflib.Configure import conf
 
@@ -15,7 +14,7 @@ def find_icpc(conf):
 	"""
 	Finds the program icpc, and execute it to ensure it really is icpc
 	"""
-	cxx = conf.find_program('icpc', var='CXX')
+	cxx = conf.find_program(['icpx', 'icpc'], var='CXX')
 	conf.get_cc_version(cxx, icc=True)
 	conf.env.CXX_NAME = 'icc'
 
