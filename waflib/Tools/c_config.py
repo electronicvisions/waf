@@ -1038,8 +1038,8 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 		if out.find('__GNUC__') < 0 and out.find('__clang__') < 0:
 			conf.fatal('Could not determine the compiler type')
 
-	if icc and out.find('__INTEL_COMPILER') < 0:
-		conf.fatal('Not icc/icpc')
+	if icc and out.find('__INTEL_COMPILER') < 0 and out.find('__INTEL_CLANG_COMPILER') < 0:
+		conf.fatal('Not icc/icx/icpc/icpx')
 
 	if clang and out.find('__clang__') < 0:
 		conf.fatal('Not clang/clang++')
@@ -1094,8 +1094,13 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 
 		Logs.debug('ccroot: dest platform: ' + ' '.join([conf.env[x] or '?' for x in ('DEST_OS', 'DEST_BINFMT', 'DEST_CPU')]))
 		if icc:
-			ver = k['__INTEL_COMPILER']
-			conf.env.CC_VERSION = (ver[:-2], ver[-2], ver[-1])
+			if isD('__INTEL_CLANG_COMPILER'):
+				# 20230100
+				ver = k['__INTEL_CLANG_COMPILER']
+				conf.env.CC_VERSION = (ver[:4], ver[4:6], ver[-2:])
+			else:
+				ver = k['__INTEL_COMPILER']
+				conf.env.CC_VERSION = (ver[:-2], ver[-2], ver[-1])
 		else:
 			if isD('__clang__') and isD('__clang_major__'):
 				conf.env.CC_VERSION = (k['__clang_major__'], k['__clang_minor__'], k['__clang_patchlevel__'])
