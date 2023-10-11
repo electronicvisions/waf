@@ -212,8 +212,17 @@ class OptionsContext(Context.Context):
 				# on Windows, use the NUMBER_OF_PROCESSORS environment variable
 				count = int(os.environ.get('NUMBER_OF_PROCESSORS', 1))
 			else:
-				# on everything else, first try the POSIX sysconf values
-				if hasattr(os, 'sysconf_names'):
+				# on everything else, first try nproc (which looks at OpenMP
+				# env vars, the affinity mask, and the sysconf vars), and if
+				# that's not available, look directly at the POSIX sysconf values
+				try:
+					tmp = self.cmd_and_log(['nproc'], quiet=0)
+				except Errors.WafError:
+					pass
+				else:
+					if re.match('^[0-9]+$', tmp):
+						count = int(tmp)
+				if not count and hasattr(os, 'sysconf_names'):
 					if 'SC_NPROCESSORS_ONLN' in os.sysconf_names:
 						count = int(os.sysconf('SC_NPROCESSORS_ONLN'))
 					elif 'SC_NPROCESSORS_CONF' in os.sysconf_names:
