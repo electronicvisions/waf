@@ -1043,7 +1043,7 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 
 	if clang and out.find('__clang__') < 0:
 		conf.fatal('Not clang/clang++')
-	if not clang and out.find('__clang__') >= 0:
+	if not clang and not icc and out.find('__clang__') >= 0:
 		conf.fatal('Could not find gcc/g++ (only Clang), if renamed try eg: CC=gcc48 CXX=g++48 waf configure')
 
 	k = {}
@@ -1098,6 +1098,7 @@ def get_cc_version(conf, cc, gcc=False, icc=False, clang=False):
 				# 20230100
 				ver = k['__INTEL_CLANG_COMPILER']
 				conf.env.CC_VERSION = (ver[:4], ver[4:6], ver[-2:])
+				conf.env.INTEL_CLANG_COMPILER = 1
 			else:
 				ver = k['__INTEL_COMPILER']
 				conf.env.CC_VERSION = (ver[:-2], ver[-2], ver[-1])

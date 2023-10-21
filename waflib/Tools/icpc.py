@@ -20,10 +20,31 @@ def find_icpc(conf):
 
 def configure(conf):
 	conf.find_icpc()
-	conf.find_ar()
-	conf.gxx_common_flags()
-	conf.gxx_modifier_platform()
-	conf.cxx_load_tools()
-	conf.cxx_add_flags()
-	conf.link_add_flags()
+	if conf.env.INTEL_CLANG_COMPILER and Utils.is_win32:
+		# need the linker from msvc
+		cc = conf.env.CC
+		cxx = conf.env.CXX
+		cxx_name = conf.env.CXX_NAME
+		conf.find_msvc()
+		conf.env.CC = cc
+		conf.env.CXX = cxx
+		conf.env.CC_NAME = 'icc'
+		conf.env.CXX_NAME = cxx_name
 
+		conf.msvc_common_flags()
+
+		conf.env.CFLAGS = []
+		conf.cc_load_tools()
+		conf.cc_add_flags()
+		conf.link_add_flags()
+
+		conf.visual_studio_add_flags()
+		conf.env.LINK_CXX = conf.env.AR
+		conf.env.CXX_TGT_F = ['/c', '/o']
+	else:
+		conf.find_ar()
+		conf.gcc_common_flags()
+		conf.gcc_modifier_platform()
+		conf.cc_load_tools()
+		conf.cc_add_flags()
+		conf.link_add_flags()
