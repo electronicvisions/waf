@@ -24,7 +24,7 @@ def find_icc(conf):
 			conf.env.CC = conf.env.ICXCL
 
 	if not conf.env.INTEL_CLANG_COMPILER:
-		conf.find_program(['icx', 'icc', 'ICL'], var='CC')
+		cc = conf.find_program(['icx', 'icc', 'ICL'], var='CC')
 		conf.get_cc_version(cc, icc=True)
 
 	conf.env.CC_NAME = 'icc'
