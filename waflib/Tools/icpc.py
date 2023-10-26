@@ -17,12 +17,12 @@ def find_icpc(conf):
 	Finds the program icpc, and execute it to ensure it really is icpc
 	"""
 	if Utils.is_win32:
-		conf.find_program(['icx-cl'], var='ICXCL', mandatory=False)
-		if conf.env.ICXCL:
+		conf.find_program(['icx-cl'], var='ICPXCL', mandatory=False)
+		if conf.env.ICPXCL:
 			conf.env.INTEL_CLANG_COMPILER = True
-			conf.env.CXX = conf.env.ICXCL
+			conf.env.CXX = conf.env.ICPXCL
 
-	if not conf.env.INTEL_CLANG_COMPILER:
+	if not conf.env.ICPXCL:
 		cc = conf.find_program(['icpx', 'icpc', 'ICL'], var='CXX')
 		conf.get_cc_version(cc, icc=True)
 
@@ -30,7 +30,7 @@ def find_icpc(conf):
 
 def configure(conf):
 	conf.find_icpc()
-	if conf.env.INTEL_CLANG_COMPILER and Utils.is_win32:
+	if conf.env.ICPXCL and Utils.is_win32:
 		conf.find_msvc()
 		conf.find_program('MT', var='MT')
 		conf.env.MTFLAGS = ['/nologo']

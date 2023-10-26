@@ -23,7 +23,7 @@ def find_icc(conf):
 			conf.env.INTEL_CLANG_COMPILER = True
 			conf.env.CC = conf.env.ICXCL
 
-	if not conf.env.INTEL_CLANG_COMPILER:
+	if not conf.env.ICXCL:
 		cc = conf.find_program(['icx', 'icc', 'ICL'], var='CC')
 		conf.get_cc_version(cc, icc=True)
 
@@ -31,7 +31,7 @@ def find_icc(conf):
 
 def configure(conf):
 	conf.find_icc()
-	if conf.env.INTEL_CLANG_COMPILER and Utils.is_win32:
+	if conf.env.ICXCL and Utils.is_win32:
 		conf.find_msvc()
 		conf.find_program('MT', var='MT')
 		conf.env.MTFLAGS = ['/nologo']
