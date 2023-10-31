@@ -26,7 +26,7 @@ def find_icpc(conf):
 		cc = conf.find_program(['icpx', 'icpc', 'ICL'], var='CXX')
 		conf.get_cc_version(cc, icc=True)
 
-	conf.env.CC_NAME = 'icc'
+	conf.env.CXX_NAME = 'icc'
 
 def configure(conf):
 	conf.find_icpc()
