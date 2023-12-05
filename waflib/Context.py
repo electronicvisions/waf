@@ -348,7 +348,10 @@ class Context(ctx):
 			kw['stderr'] = subprocess.PIPE
 
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0]):
-			raise Errors.WafError('Program %s not found!' % cmd[0])
+			# This call isn't a shell command, and if the specified exe doesn't exist, check for a relative path being set
+			# with cwd and if so assume the caller knows what they're doing and don't pre-emptively fail
+			if not (cmd[0][0] == '.' and 'cwd' in kw):
+				raise Errors.WafError('Program %s not found!' % cmd[0])
 
 		cargs = {}
 		if 'timeout' in kw:
