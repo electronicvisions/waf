@@ -530,13 +530,20 @@ def configure(self):
 		Logs.error('No xml.sax support was found, rcc dependencies will be incomplete!')
 
 	feature = 'qt6' if self.want_qt6 else 'qt5'
-	# Qt6 requires C++17 (https://www.qt.io/blog/qt-6.0-released)
-	stdflag = '-std=c++17' if self.want_qt6 else '-std=c++11'
 
 	# Qt5 may be compiled with '-reduce-relocations' which requires dependent programs to have -fPIE or -fPIC?
 	frag = '#include <QMap>\nint main(int argc, char **argv) {QMap<int,int> m;return m.keys().size();}\n'
 	uses = 'QT6CORE' if self.want_qt6 else 'QT5CORE'
-	for flag in [[], '-fPIE', '-fPIC', stdflag, [stdflag, '-fPIE'], [stdflag, '-fPIC']]:
+
+	# Qt6 requires C++17 (https://www.qt.io/blog/qt-6.0-released)
+	flag_list = []
+	if self.env.CXX_NAME == 'msvc':
+		stdflag = '/std:c++17' if self.want_qt6 else '/std:c++11'
+		flag_list = [[], ['/Zc:__cplusplus', '/permissive-', stdflag]]
+	else:
+		stdflag = '-std=c++17' if self.want_qt6 else '-std=c++11'
+		flag_list = [[], '-fPIE', '-fPIC', stdflag, [stdflag, '-fPIE'], [stdflag, '-fPIC']]
+	for flag in flag_list:
 		msg = 'See if Qt files compile '
 		if flag:
 			msg += 'with %s' % flag
