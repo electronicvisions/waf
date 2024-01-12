@@ -426,7 +426,10 @@ class Context(ctx):
 		to_ret = kw.pop('output', STDOUT)
 
 		if Logs.verbose and not kw['shell'] and not Utils.check_exe(cmd[0], env=kw.get('env', os.environ)):
-			raise Errors.WafError('Program %r not found!' % cmd[0])
+			# This call isn't a shell command, and if the specified exe doesn't exist, check for a relative path being set
+			# with cwd and if so assume the caller knows what they're doing and don't pre-emptively fail
+			if not (cmd[0][0] == '.' and 'cwd' in kw):
+				raise Errors.WafError('Program %s not found!' % cmd[0])
 
 		kw['stdout'] = kw['stderr'] = subprocess.PIPE
 		if quiet is None:
