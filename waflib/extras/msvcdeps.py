@@ -269,7 +269,7 @@ def exec_command(self, cmd, **kw):
 			# msvc will output the input file name by default, which is not useful
 			# in the single-file case as waf will already print task. For multi-file
 			# inputs or other messages, allow the full message to be forwarded.
-			Logs.info(os.linesep.join(out))
+			Logs.info(os.linesep.join(out), extra={'stream':sys.stdout, 'c1': ''})
 
 		return ret
 	finally:
