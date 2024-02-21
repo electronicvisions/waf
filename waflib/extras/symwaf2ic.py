@@ -691,6 +691,7 @@ class DependencyContext(Symwaf2icContext):
         # some more symwaf2ic generated stuff
         ignores.update([
             '.waf-*',
+            '.waf3-*',
             '.lock-waf_*_build',
             '.symwaf2ic*',
             'build/',
