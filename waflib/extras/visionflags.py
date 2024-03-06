@@ -180,7 +180,6 @@ def configure(conf):
 	if conf.env.LOADED_VISIONFLAGS:
 		return
 	conf.env.LOADED_VISIONFLAGS = True
-	conf.load("gccdeps")  # not necessary for visionflags functionality
 
 	cc = conf.env['COMPILER_CC'] or (conf.env['CC_NAME'] or None)
 	cxx = conf.env['COMPILER_CXX'] or (conf.env['CXX_NAME'] or None)

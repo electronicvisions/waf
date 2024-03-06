@@ -10,7 +10,7 @@ gcc/llvm detection.
 
 from waflib.Tools import ccroot, ar
 from waflib.Configure import conf
-from waflib.extras import gccdeps, visionflags
+from waflib.extras import visionflags
 
 @conf
 def find_gcc(conf):
