@@ -360,7 +360,7 @@ class OptionsContext(Context.Context):
 		:param _args: arguments
 		:type _args: list of strings
 		"""
-		options, commands, envvars = self.parse_cmd_args(allow_unknown=allow_unknown)
+		options, commands, envvars = self.parse_cmd_args(_args, allow_unknown=allow_unknown)
 		self.init_logs(options, commands, envvars)
 		self.init_module_vars(options, commands, envvars)
 
@@ -371,4 +371,3 @@ class OptionsContext(Context.Context):
 		super(OptionsContext, self).execute()
 		self.parse_args(allow_unknown=allow_unknown)
 		Utils.alloc_process_pool(options.jobs)
-

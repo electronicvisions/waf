@@ -1,5 +1,5 @@
 top = '.'
-out = 'bin/waf'
+out = 'build'
 
 def configure(ctx):
     ctx.recurse('src')

@@ -1,1 +1,1 @@
-place hashlink c libraries here (e.g. libhl.lib) - dedicated directory is used for a case when hashlink libs are statically linked
+place hashlink libraries here (e.g. libhl.so) or replace this directory with symlink if using package manager - dedicated directory is used when native hashlink libs are linked

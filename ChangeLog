@@ -1,9 +1,30 @@
+NEW IN WAF 2.0.27
+-----------------
+* Improve Qt6 detection on msvc #2423
+
+NEW IN WAF 2.0.26
+-----------------
+* Improve "waf dist" - Support SOURCE_DATE_EPOCH
+* Detect Qt6 #2355
+* Haxe toolkit support #2352
+* Updated the project's gpg key
+
+NEW IN WAF 2.0.25
+-----------------
+* Fix invalid characters returned by find_program #2397
+* Prepare for distutils removal (Python 3.12 regression) #2402
+* Improve cp65001 compat in cpython < 3.3 #2346
+* Add Fujitsu Fortran compiler detection on ARM64FX #2348
+* Support multiple Sphinx output formats #2344
+* Improve PyQt5 detection #2343
+* Add asynchronous wafcache uploads
+
 NEW IN WAF 2.0.24
 -----------------
 * Use EXT_SUFFIX config var over the deprecated/removed SO (Python 3.11 regression) #2386
 * When detecting Visual Studio compilers, prefer the oldest version regardless of compiler type #2352
 * Update the MacOS-specific examples #2337
-
+* Fix Configure.find_program() invalid character handling in default variable names #2397
 
 NEW IN WAF 2.0.23
 -----------------

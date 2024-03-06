@@ -357,7 +357,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Waf'
-copyright = u'2005-2022, Thomas Nagy'
+copyright = u'2005-2023 waf.io'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -505,7 +505,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'waf.tex', u'waf Documentation',
-   u'Thomas Nagy', 'manual'),
+   u'waf.io', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -538,7 +538,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'waf', u'waf Documentation',
-     [u'Thomas Nagy'], 1)
+     [u'waf.io'], 1)
 ]
 
 #autodoc_default_flags = ['members', 'no-undoc-members', 'show-inheritance']

@@ -11,7 +11,7 @@ To add a tool that does not exist in the folder compat15, pass an absolute path:
 
 from __future__ import with_statement
 
-VERSION="2.0.24"
+VERSION="2.0.26"
 APPNAME='waf'
 REVISION=''
 
@@ -116,7 +116,7 @@ def options(opt):
 	opt.add_option('--namesfrom', action='store', help='Obtain the file names from a model archive', dest='namesfrom', default=None)
 	opt.load('python')
 
-def process_tokens(tokens):
+def process_tokens(tokens, filename):
 	accu = []
 	prev = tokenize.NEWLINE
 
@@ -147,7 +147,10 @@ def process_tokens(tokens):
 			line_buf.append(token)
 		elif type == tokenize.STRING:
 			if not line_buf and token.startswith('"'): pass
-			else: line_buf.append(token)
+			else:
+				if token.lower().startswith('f'):
+					raise ValueError('Found f-strings in %s which require Python >= 3.6, use "waf-light --nostrip"' % filename)
+				line_buf.append(token)
 		elif type == tokenize.COMMENT:
 			pass
 		elif type == tokenize.OP:
@@ -189,10 +192,10 @@ def sfilter(path):
 				with open(path, 'rb') as f:
 					tk = tokenize.tokenize(f.readline)
 					next(tk) # the first one is always tokenize.ENCODING for Python 3, ignore it
-					cnt = process_tokens(tk)
+					cnt = process_tokens(tk, path)
 			else:
 				with open(path, 'r') as f:
-					cnt = process_tokens(tokenize.generate_tokens(f.readline))
+					cnt = process_tokens(tokenize.generate_tokens(f.readline), path)
 		else:
 			with open(path, 'r') as f:
 				cnt = f.read()
@@ -293,6 +296,8 @@ def create_waf(self, *k, **kw):
 			tarinfo = tarfile.TarInfo(x)
 		tarinfo.uid   = tarinfo.gid   = 0
 		tarinfo.uname = tarinfo.gname = 'root'
+		if os.environ.get('SOURCE_DATE_EPOCH'):
+			tarinfo.mtime = int(os.environ.get('SOURCE_DATE_EPOCH'))
 		(code, size, cnt) = sfilter(x)
 		tarinfo.size = size
 
