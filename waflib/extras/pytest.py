@@ -18,6 +18,8 @@ class pytest(test_base.TestBase):
     in_ext = [".py"]
     vars = ["PYTHON"]
 
+    exit_codes_pass = [0, 5]  # pytest returns exit code 5 if no tests are discovered
+
     def run(self):
         """
         Execute the test. The execution is always successful, but the results
@@ -25,18 +27,11 @@ class pytest(test_base.TestBase):
         """
         for test in self.inputs:
             xml = self.getXMLFile(test)
-
-            frickeling = "import sys; sys.path.append(r{0}{1}{0}); import nose; import nosepatch; nose.main()".format('"', str(os.path.dirname(os.path.abspath(__file__))))
-
-            #self.env['PYNOSETESTS'],
-            cmd = [ self.env.get_flat("PYTHON"),
-                    '-c',
-                    "'%s'" % frickeling,
-                    test.abspath(),
-                    '--with-xunit',
-                    '--xunit-file="%s"' % xml.abspath() if xml else '',
-                    ]
+            cmd = [self.env.get_flat("PYTEST"), test.abspath()]
+            if xml:
+                cmd += ['--junitxml', xml.abspath()]
             self.runTest(test, cmd)
+
 
 @feature('pyext')
 @after_method('apply_link')
@@ -96,4 +91,4 @@ def configure(ctx):
     test_base.configure(ctx)
     ctx.load('python')
     ctx.check_python_version()
-    ctx.find_program('nosetests', mandatory=True, var='PYNOSETESTS')
+    ctx.find_program('pytest', mandatory=True, var='PYTEST')
