@@ -23,7 +23,6 @@ import os
 import signal
 import sys
 import traceback
-import errno
 
 from threading import Thread, Lock
 from subprocess import Popen, PIPE, check_output, CalledProcessError
@@ -543,20 +542,51 @@ class TestBase(Task.Task):
 
     def readTestResult(self, test):
         """
-        Extract the test result from the xml file
+        Extract the test result from a junit xml file.
         """
-        try:
-            xmlfile = self.getXMLFile(test)
-            tree = ElementTree.parse(xmlfile.abspath())
-            root = tree.getroot()
-            return [int(root.attrib.get(attr, 0))
-                    for attr in ('tests', 'errors', 'failures', 'skip')]
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise
-        except ElementTree.ParseError:
-            pass
-        return None
+
+        # names of attributes we want to extract as statistics
+        stat_names = ('tests', 'errors', 'failures', 'skip')
+
+        def extract_statistics_testsuite(element):
+            '''
+            Extract the statistics of a single test suite.
+
+            :returns: Tuple of statistics.
+            '''
+            return [int(element.attrib.get(attr, 0)) for attr in stat_names]
+
+        xmlfile = self.getXMLFile(test).abspath()
+        # return early if XML file does not exist
+        if not os.path.exists(xmlfile):
+            return
+
+        # parse XML file
+        tree = ElementTree.parse(xmlfile)
+        root = tree.getroot()
+
+        # junit XML file may have <testsuites> as root or if just a single
+        # suit was executed <testsuite>
+        if root.tag == "testsuite":
+            # just a single testsuite
+            return extract_statistics_testsuite(root)
+        if root.tag != "testsuites":
+            raise RuntimeError("Can not parse XML test file. Does not conform "
+                               "with junitxml format.")
+
+        # some test runners save summary statistics in the <testsuites> element
+        if set(stat_names).issubset(root.attrib.keys()):
+            return extract_statistics_testsuite(root)
+
+        # if no summary statistics are present, we need to iterate
+        # over all <testsuite> elements.
+        summary_stats = [0 for _ in stat_names]
+        for suite in root.iter("testsuite"):
+            stats = extract_statistics_testsuite(suite)
+            for entry, value in enumerate(stats):
+                summary_stats[entry] += value
+        return summary_stats
+
 
     def runTest(self, test, cmd, cwd=None):
         if cwd is None: cwd = self.cwd
