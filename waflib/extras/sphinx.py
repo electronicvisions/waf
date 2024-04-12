@@ -40,6 +40,18 @@ def configure(cnf):
 
 
 @feature('sphinx')
+@after_method('process_use')
+def add_use_to_path(self):
+    if not 'env' in self.env:
+        self.env.env = {}
+
+    paths = Utils.get_use_paths(self)
+    Utils.add_paths_to_env_var(self.env.env, paths,
+                               ['PATH', 'PYTHONPATH', 'LD_LIBRARY_PATH'])
+
+
+@feature('sphinx')
+@after_method('add_use_to_path')
 def build_sphinx(self):
     """Builds sphinx sources.
     """
@@ -71,6 +83,12 @@ def build_sphinx(self):
         sphinx_build_task.sphinx_output_directory = self.path.get_bld().make_node(cfmt)
         sphinx_build_task.set_outputs(sphinx_build_task.sphinx_output_directory)
         sphinx_build_task.sphinx_output_directory.mkdir()
+
+        # handle dependencies
+        for use in self.tmp_use_seen:
+            tgen = self.bld.get_tgen_by_name(use)
+            for task in tgen.tasks:
+                sphinx_build_task.dep_nodes.extend(task.outputs)
 
         Utils.def_attrs(sphinx_build_task, install_path=getattr(self, 'install_path_' + cfmt, getattr(self, 'install_path', get_install_path(sphinx_build_task))))
 
