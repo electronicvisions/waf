@@ -39,7 +39,6 @@ def configure(conf):
 	]
 	conf.env.DEFINES += ['SYSTEM_HICANN_DLS_MINI']
 	conf.env.LINKFLAGS += [
-		'-nostdlib',
+		'-nostartfiles',
 		'-Wl,--gc-sections',
 	]
-	conf.env.STLIB += ['gcc', 'c', 'gcc']
