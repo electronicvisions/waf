@@ -411,6 +411,7 @@ class TestBase(Task.Task):
     """
     color = COLOR
     after = ['vnum', 'inst']
+    exit_codes_pass = [0]  # exits code for which a test is regarded as passed
 
     FAILED = "failed"
     PASSED = "passed"
@@ -609,7 +610,7 @@ class TestBase(Task.Task):
                 stdout = stdout.decode(sys.stdout.encoding or "utf-8")
                 stderr = stderr.decode(sys.stderr.encoding or "utf-8")
                 result["stdout"], result["stderr"] = stdout, stderr
-                if self.proc.returncode == 0:
+                if self.proc.returncode in self.exit_codes_pass:
                     result["status"] = self.PASSED
                     result["statistic"] = self.readTestResult(test)
                 elif self.proc.returncode < 0:
