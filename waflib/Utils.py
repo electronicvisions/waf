@@ -1051,3 +1051,58 @@ if os.environ.get('WAF_NO_PREFORK') or sys.platform == 'cli' or not sys.executab
 	run_process = run_regular_process
 	get_process = alloc_process_pool = nada
 
+
+def get_use_paths(tgen):
+    """
+    For all tasks used in "use", collect paths to outputs (for link tasks)
+        or paths to source files (for python tasks).
+
+    :note: This method can only be run after `process_use`.
+    :param tgen: Task generator from which to extract taksed defined in "use".
+    :return: Pats to the outputs of link tasks and source files of
+        python tasks (configured in the "use" argument of the task).
+    """
+    paths = set()
+    for use in tgen.tmp_use_seen:
+        tg = tgen.bld.get_tgen_by_name(use)
+        if 'py' in tg.features:
+            # py thingy, lets add the paths to the build folder
+            if hasattr(tg, 'relative_trick'):
+                if tg.relative_trick:
+                    if tg.install_from is not None:
+                        paths.add(tg.install_from.abspath())
+                    else:
+                        paths.add(tg.path.get_src().abspath())
+                else:
+                    for sf in tg.source:
+                        paths.add(sf.parent.abspath())
+            else:
+                for sf in tg.source:
+                    paths.add(sf.parent.abspath())
+        if hasattr(tg, 'link_task'):
+            paths.add(tg.link_task.outputs[0].parent.abspath())
+    return paths
+
+
+
+def add_paths_to_env_var(env, paths, env_vars):
+    """
+    Add the given paths to the env_vars given in env.
+
+    :param env: Directory of enviroment variables to which paths
+        will be added.
+    :param paths: Paths to add.
+    :param env_var: Name of enviroment variables which will be altered.
+    """
+    def removeDuplicates(seq):
+        seen = set()
+        return [x for x in seq if x not in seen and not seen.add(x)]
+
+    for var in env_vars:
+        # Evalutate enviroment variables, see module docstring
+        p = []
+        p.extend(env.get(var, "").split(os.pathsep))
+        p.extend(paths)
+        if var in os.environ:
+            p.extend(os.environ[var].split(os.pathsep))
+        env[var] = os.pathsep.join(removeDuplicates(p))

@@ -42,6 +42,7 @@ DEFAULT_TEST_TIMEOUT = 30
 SPECIAL_ENV_VARS = [
     "PATH", 'DYLD_LIBRARY_PATH', 'LD_LIBRARY_PATH', 'PYTHONPATH']
 
+
 @Utils.run_once
 def options(opt):
     """
@@ -159,10 +160,6 @@ def formatStatisticsBrokenTests(results):
     ]
 
     return os.linesep.join(statistics), os.linesep.join(broken)
-
-def removeDuplicates(seq):
-    seen = set()
-    return [ x for x in seq if x not in seen and not seen.add(x)]
 
 def to_dirs(task_gen, paths):
     """
@@ -506,35 +503,8 @@ class TestBase(Task.Task):
         env = os.environ.copy()
         env.update(self.test_environ)
 
-        pathes = set()
-        for use in self.generator.tmp_use_seen:
-            tg = self.generator.bld.get_tgen_by_name(use)
-            if 'py' in tg.features:
-                # py thingy, lets add the paths to the build folder
-                if hasattr(tg, 'relative_trick'):
-                    if tg.relative_trick:
-                        if tg.install_from is not None:
-                            pathes.add(tg.install_from.abspath())
-                        else:
-                            pathes.add(tg.path.get_src().abspath())
-                    else:
-                        for sf in tg.source:
-                            pathes.add(sf.parent.abspath())
-                else:
-                    for sf in tg.source:
-                        pathes.add(sf.parent.abspath())
-            if hasattr(tg, 'link_task'):
-                pathes.add(tg.link_task.outputs[0].parent.abspath())
-
-        # Env polution, hihi
-        for var in SPECIAL_ENV_VARS:
-            # Evalutate enviroment variables, see module docstring
-            p = []
-            p.extend(env.get(var, "").split(os.pathsep))
-            p.extend(pathes)
-            if var in os.environ:
-                p.extend(os.environ[var].split(os.pathsep))
-            env[var] = os.pathsep.join(removeDuplicates(p))
+        paths = Utils.get_use_paths(self.generator)
+        Utils.add_paths_to_env_var(env, paths, SPECIAL_ENV_VARS)
         return env
 
     def getXMLFile(self, test):
