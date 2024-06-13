@@ -1057,13 +1057,14 @@ def get_use_paths(tgen):
     For all tasks used in "use", collect paths to outputs (for link tasks)
         or paths to source files (for python tasks).
 
-    :note: This method can only be run after `process_use`.
+    :note: This method should be run after `process_use` such that the
+        attribute `tmp_use_seen` is set.
     :param tgen: Task generator from which to extract taksed defined in "use".
     :return: Pats to the outputs of link tasks and source files of
         python tasks (configured in the "use" argument of the task).
     """
     paths = set()
-    for use in tgen.tmp_use_seen:
+    for use in getattr(tgen, "tmp_use_seen", []):
         tg = tgen.bld.get_tgen_by_name(use)
         if 'py' in tg.features:
             # py thingy, lets add the paths to the build folder

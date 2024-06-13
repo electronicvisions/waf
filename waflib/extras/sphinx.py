@@ -85,7 +85,7 @@ def build_sphinx(self):
         sphinx_build_task.sphinx_output_directory.mkdir()
 
         # handle dependencies
-        for use in self.tmp_use_seen:
+        for use in getattr(self, "tmp_use_seen", []):
             tgen = self.bld.get_tgen_by_name(use)
             for task in tgen.tasks:
                 sphinx_build_task.dep_nodes.extend(task.outputs)
