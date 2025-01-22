@@ -647,6 +647,13 @@ class TestBase(Task.Task):
                         except OSError as e:
                             # ignore "process not found"
                             pass
+                        try:
+                            os.kill(pid, 0)
+                        except OSError:
+                            pass
+                        else:
+                            Logs.warn("Process {} still exists after " \
+                                      "killing.".format(pid))
                 thread.join(0.5) # to avoid another hang...
                 result["status"] = self.TIMEOUT
 
