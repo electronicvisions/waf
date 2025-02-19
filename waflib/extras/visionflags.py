@@ -106,6 +106,10 @@ class GccTraits(CommonTraits):
 			return  ['-std=gnu++11']
 		elif self.version[0] <= 5:
 			return  ['-std=gnu++14']
+		elif self.version[0] >= 11:
+			return  ['-std=gnu++2b']
+		elif self.version[0] >= 10:
+			return  ['-std=gnu++20']
 		elif self.version[0] >= 9:
 			return  ['-std=gnu++2a']
 		elif self.version[0] >= 7:

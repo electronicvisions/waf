@@ -210,7 +210,11 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
         args.append("-xc++" if is_cxx else "-xc")
         has_std_argument = False
         for flag in self.env["CXXFLAGS" if is_cxx else "CFLAGS"]:
-            flag = flag.replace("-std=gnu", "-std=c")
+            if "-std=gnu++2b" in flag:
+                # stick to C++20 for now w/ genpybind's usage of clang++
+                flag = flag.replace("-std=gnu++2b", "-std=c++20")
+            else:
+                flag = flag.replace("-std=gnu", "-std=c")
             if flag.startswith("-std=c"):
                 has_std_argument = True
             args.append(flag)
