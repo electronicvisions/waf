@@ -35,6 +35,8 @@ def configure(cfg):
             cfg.cmd_and_log(cfg.env.LLVM_CONFIG + ["--libdir"]).strip(),
             "clang",
             cfg.cmd_and_log(cfg.env.LLVM_CONFIG + ["--version"]).strip())
+    cfg.env.LLVM_VERSION = tuple(map(int, cfg.cmd_and_log(
+        cfg.env.LLVM_CONFIG + ["--version"]).strip().split(".")))
     if os.path.exists(cfg.env.GENPYBIND_RESOURCE_DIR):
         cfg.msg("Checking clang resource dir", cfg.env.GENPYBIND_RESOURCE_DIR)
     else:
@@ -224,6 +226,10 @@ class genpybind(Task.Task): # pylint: disable=invalid-name
         args.extend("-D{}".format(p) for p in self.env.DEFINES)
         if hasattr(self, "defines"):
             args.extend("-D{}".format(p) for p in self.defines)
+
+        # ECM: Not sure which llvm version supports, e.g., gcc@14's concepts
+        if self.env.LLVM_VERSION < (20, 0, 0):
+            args.extend("-U__cpp_lib_concepts")
 
         # point to clang resource dir, if specified
         if resource_dir:
