@@ -40,10 +40,10 @@ class CommonTraits(CompilerTraits):
 	warning_flags = '-Wall -Wextra -pedantic'.split()
 	cflags = {
 		'coverage':              '-fdiagnostics-color=always -O0 --coverage'.split(),
-		'debug':                 '-fdiagnostics-color=always -Og -ggdb -g3 -fno-omit-frame-pointer'.split(),
-		'sanitize':              '-fdiagnostics-color=always -Og -ggdb -g3 -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
-		'release_with_debug':    '-fdiagnostics-color=always -O2 -g -fno-omit-frame-pointer -fno-strict-aliasing'.split(),
-		'release_with_sanitize': '-fdiagnostics-color=always -O2 -g -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
+		'debug':                 '-fdiagnostics-color=always -Og -ggdb -g3 -gz -fno-omit-frame-pointer'.split(),
+		'sanitize':              '-fdiagnostics-color=always -Og -ggdb -g3 -gz -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
+		'release_with_debug':    '-fdiagnostics-color=always -O2 -g -gz -fno-omit-frame-pointer -fno-strict-aliasing'.split(),
+		'release_with_sanitize': '-fdiagnostics-color=always -O2 -g -gz -fno-omit-frame-pointer -fno-strict-aliasing -fsanitize=address -fsanitize-recover=address -fsanitize=leak'.split(),
 		'release':               '-fdiagnostics-color=always -O2 -fno-strict-aliasing'.split(),
 		'ci':                    '-fdiagnostics-color=always -O2 -fno-strict-aliasing'.split(),
 	}
