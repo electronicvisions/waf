@@ -893,9 +893,17 @@ class GitProject(Project):
         return " && ".join(ret)
 
     def mr_update_cmd(self, remote=None, branch=None, *a, **kw):
+        if self.ref:
+            # if the repo has a pinned ref: don't touch local state, just fetch
+            return "git fetch {remote} {branch}".format(
+                remote=remote if remote is not None else "origin",
+                branch=branch if branch is not None else self.required_branch
+            )
+
         return "git pull --rebase {remote} {branch}".format(
             remote=remote if remote is not None else "origin",
-            branch=branch if branch is not None else self.required_branch)
+            branch=branch if branch is not None else self.required_branch
+        )
 
 
 class MR(object):
